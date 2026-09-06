@@ -32,6 +32,7 @@ class Trip {
   final TripClassification classification;
   final String? originAddress;
   final String? destinationAddress;
+  final List<String> linkedExpenseIds; // Evidence Graph: Connected expenses (Fuel, Bunnings, Tolls)
 
   Trip({
     required this.id,
@@ -44,7 +45,8 @@ class Trip {
     this.classification = TripClassification.business,
     this.originAddress,
     this.destinationAddress,
-  });
+    List<String>? linkedExpenseIds,
+  }) : linkedExpenseIds = linkedExpenseIds ?? [];
 
   bool get isBusiness => classification == TripClassification.business;
 

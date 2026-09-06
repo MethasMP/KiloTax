@@ -44,7 +44,10 @@ class AtoReportService {
     for (final e in engine.expenses) {
       final dateStr = e.date.toIso8601String().split('T').first;
       final hasReceipt = e.receiptPath != null && e.receiptPath!.isNotEmpty ? 'YES (Preserved)' : 'NO';
-      buffer.writeln('$dateStr,"${e.category.displayName}",${e.amount.toStringAsFixed(2)},${Formatters.percentage(e.businessPercentage)},${e.deductibleAmount.toStringAsFixed(2)},$hasReceipt');
+      final linkedTrip = e.linkedTripId != null ? engine.trips.cast<Trip?>().firstWhere((t) => t?.id == e.linkedTripId, orElse: () => null) : null;
+      final tripDesc = linkedTrip != null ? '"Trip: ${linkedTrip.purpose} (${linkedTrip.distanceKm} km)"' : '"Stand-alone Running Cost"';
+      final linkId = e.linkedTripId ?? 'DIRECT-CLAIM';
+      buffer.writeln('$dateStr,"${e.category.displayName}",${e.amount.toStringAsFixed(2)},${Formatters.percentage(e.businessPercentage)},${e.deductibleAmount.toStringAsFixed(2)},$hasReceipt,$tripDesc,$linkId');
     }
     buffer.writeln('');
 
@@ -59,3 +62,35 @@ class AtoReportService {
     return buffer.toString();
   }
 }
+
+  /// Generates a clean 1-Click summary message for the Tradie to WhatsApp or Email directly to their Accountant
+  static String generateAccountantEmailText({
+    required Vehicle vehicle,
+    required TaxSummary summary,
+    required int tripCount,
+    required int expenseCount,
+  }) {
+    return '''Hi [Accountant Name],
+
+Here is my official ATO Vehicle Tax Substantiation Summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
+
+--------------------------------------------------
+📊 ATO TAX DEDUCTION CLAIM SUMMARY (FY2025-26):
+--------------------------------------------------
+• Primary Tax Method: ${summary.recommendedMethod.displayName}
+• ATO Tax Return Box D1 Claim: ${Formatters.currency(summary.highestClaim)}
+• Statutory Business Percentage: ${Formatters.percentage(summary.businessPercentage)}
+• Total Distance Driven: ${Formatters.distance(summary.totalKm)}
+• Total Business Work Distance: ${Formatters.distance(summary.businessKm)}
+
+📁 ATTACHED AUDIT-PROOF EVIDENCE GRAPH:
+• Total Logged Work Trips: $tripCount
+• Total Substantiated Receipts: $expenseCount
+• Continuous Odometer Baseline: ${Formatters.odometer(vehicle.initialOdometer)} km (Locked)
+
+Full ATO TR 97/11 CSV log and cryptographic evidence vault are attached for direct import into Xero / MYOB.
+
+Regards,
+[Tradie Name]
+''';
+  }

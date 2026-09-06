@@ -38,6 +38,46 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// EVIDENCE GRAPH: Connect an expense (e.g. Bunnings/Fuel receipt) to a specific Trip
+  void linkExpenseToTrip({required String expenseId, required String tripId}) {
+    final expIndex = _expenses.indexWhere((e) => e.id == expenseId);
+    if (expIndex != -1) {
+      final oldExp = _expenses[expIndex];
+      _expenses[expIndex] = VehicleExpense(
+        id: oldExp.id,
+        vehicleId: oldExp.vehicleId,
+        amount: oldExp.amount,
+        category: oldExp.category,
+        date: oldExp.date,
+        receiptPath: oldExp.receiptPath,
+        businessPercentage: oldExp.businessPercentage,
+        notes: oldExp.notes,
+        linkedTripId: tripId,
+      );
+    }
+
+    final tripIndex = _trips.indexWhere((t) => t.id == tripId);
+    if (tripIndex != -1) {
+      final oldTrip = _trips[tripIndex];
+      if (!oldTrip.linkedExpenseIds.contains(expenseId)) {
+        _trips[tripIndex] = Trip(
+          id: oldTrip.id,
+          vehicleId: oldTrip.vehicleId,
+          distanceKm: oldTrip.distanceKm,
+          date: oldTrip.date,
+          purpose: oldTrip.purpose,
+          startOdometer: oldTrip.startOdometer,
+          endOdometer: oldTrip.endOdometer,
+          classification: oldTrip.classification,
+          originAddress: oldTrip.originAddress,
+          destinationAddress: oldTrip.destinationAddress,
+          linkedExpenseIds: [...oldTrip.linkedExpenseIds, expenseId],
+        );
+      }
+    }
+    notifyListeners();
+  }
+
   void recordExpense(VehicleExpense expense) {
     _expenses.add(expense);
     notifyListeners();

@@ -31,6 +31,7 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
   final _notesController = TextEditingController();
   ExpenseCategory _selectedCategory = ExpenseCategory.fuel;
   String? _receiptPhotoPath;
+  String? _selectedTripId;
 
   @override
   void dispose() {
@@ -76,6 +77,7 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
       date: DateTime.now(),
       receiptPath: _receiptPhotoPath,
       notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      linkedTripId: _selectedTripId,
     );
 
     widget.appState.recordExpense(expense);

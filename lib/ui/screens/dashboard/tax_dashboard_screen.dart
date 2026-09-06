@@ -70,49 +70,157 @@ class TaxDashboardScreen extends StatelessWidget {
   void _exportAtoReport(BuildContext context, AppState appState) {
     final engine = appState.createEvidenceEngine();
     final summary = appState.taxSummary;
+    final vehicle = appState.primaryVehicle ?? engine.vehicle;
     final csv = AtoReportService.generateAtoAuditCsv(
-      vehicle: appState.primaryVehicle ?? engine.vehicle,
+      vehicle: vehicle,
       engine: engine,
       summary: summary,
+    );
+    final emailText = AtoReportService.generateAccountantEmailText(
+      vehicle: vehicle,
+      summary: summary,
+      tripCount: engine.trips.length,
+      expenseCount: engine.expenses.length,
     );
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              children: [
-                Icon(PhosphorIconsFill.fileText, color: AppColors.emerald, size: 24),
-                SizedBox(width: 8),
-                Text('ATO-Ready TR 97/11 Lodgement Report', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 250,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => DefaultTabController(
+        length: 2,
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.78,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                ),
               ),
-              child: SingleChildScrollView(
-                child: Text(csv, style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.emerald.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(PhosphorIconsFill.fileText, color: AppColors.emerald, size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Accountant-Ready Pack', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.ink)),
+                        Text('ATO TR 97/11 Schedule D1 & Evidence Graph', style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.emerald, foregroundColor: Colors.white),
-              onPressed: () => Navigator.of(ctx).pop(),
-              icon: const Icon(PhosphorIconsBold.shareNetwork),
-              label: const Text('Send to Accountant (1-Click)'),
-            ),
-          ],
+              const SizedBox(height: 14),
+              const TabBar(
+                labelColor: AppColors.workBlue,
+                unselectedLabelColor: AppColors.muted,
+                indicatorColor: AppColors.workBlue,
+                labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                tabs: [
+                  Tab(text: 'Summary Email'),
+                  Tab(text: 'TR 97/11 CSV Log'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // Tab 1: Direct 1-Click Accountant Email
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          emailText,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 11.5, color: AppColors.ink, height: 1.4),
+                        ),
+                      ),
+                    ),
+                    // Tab 2: Full Audit CSV Schedule
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          csv,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 10.5, color: AppColors.ink, height: 1.3),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: emailText));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Accountant summary copied to clipboard!')),
+                        );
+                      },
+                      icon: const Icon(PhosphorIconsBold.copy, size: 18),
+                      label: const Text('Copy Email', style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.emerald,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            content: Text('Audit Pack sent! Your accountant will love you.'),
+                            backgroundColor: AppColors.emerald,
+                          ),
+                        );
+                      },
+                      icon: const Icon(PhosphorIconsBold.shareNetwork, size: 18),
+                      label: const Text('Send Pack', style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

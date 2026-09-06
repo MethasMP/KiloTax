@@ -43,6 +43,7 @@ class VehicleExpense {
   final DateTime date;
   final double businessPercentage; // 100.0 for direct, or custom/logbook scaled
   final String? notes;
+  final String? linkedTripId; // Link to Trip in Evidence Graph
 
   VehicleExpense({
     required this.id,
@@ -53,6 +54,7 @@ class VehicleExpense {
     this.receiptPath,
     double? businessPercentage,
     this.notes,
+    this.linkedTripId,
   }) : businessPercentage = businessPercentage ?? (category.isDirectlyDeductibleByDefault ? 100.0 : 100.0);
 
   /// Computes deductible amount based on statutory logbook % for general running costs,
