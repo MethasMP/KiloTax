@@ -54,4 +54,9 @@ class AppConstants {
   static double get maxCentsPerKmClaim => activeTaxRule.maxCentsPerKmClaim;
   static int get statutoryLogbookWeeks => activeTaxRule.logbookMinWeeks;
   static int get statutoryLogbookDays => activeTaxRule.logbookMinWeeks * 7;
+
+  // Supabase Cloud Vault Config (Project: KiloTax)
+  static const String supabaseUrl = 'https://mwtxfdqcyalsohruzmps.supabase.co';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
+  static const String receiptStorageBucket = 'receipts';
 }
