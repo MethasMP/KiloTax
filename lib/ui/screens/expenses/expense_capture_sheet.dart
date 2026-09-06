@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../data/models/vehicle.dart';
 import '../../../data/models/vehicle_expense.dart';
 import '../../../state/app_state.dart';
 
@@ -141,50 +142,40 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           ),
           const SizedBox(height: 12),
 
-          // ATO DOUBLE-CLAIM PROTECTION GUARD BANNER
+          // ATO DOUBLE-CLAIM GUARD (Apple HIG: Concise, Actionable, Zero Jargon)
           if (widget.appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm &&
               (_selectedCategory == ExpenseCategory.fuel || _selectedCategory == ExpenseCategory.maintenanceTyres)) ...[
             Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.amberLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.shield_outlined, color: AppColors.amber, size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(PhosphorIconsFill.info, color: AppColors.amber, size: 18),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'ATO Double-Claim Protection Active',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.ink),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Fuel & repairs are already covered inside the set ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}c/km rate for this vehicle. We'll safely store this receipt in your vault so you don't claim it twice by mistake.',
-                          style: const TextStyle(fontSize: 11.5, color: AppColors.ink, height: 1.35),
-                        ),
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: () {
-                            widget.appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Switched vehicle to Logbook Method (Actual Expenses).')),
-                            );
-                          },
-                          child: const Text(
-                            'Want to claim actual fuel costs instead? Switch to Logbook →',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.workBlue),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Fuel is included in your ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢/km rate. Saved for proof only.',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink),
                     ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: AppColors.workBlue,
+                    ),
+                    onPressed: () {
+                      widget.appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Switched to Logbook (claims actual fuel %)')),
+                      );
+                    },
+                    child: const Text('Logbook', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
                   ),
                 ],
               ),

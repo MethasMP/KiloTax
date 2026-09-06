@@ -1,6 +1,7 @@
 import '../../core/utils/formatters.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/tax_summary.dart';
+import '../../data/models/trip.dart';
 import 'evidence_engine.dart';
 
 /// ATO-READY REPORT (Layer 6):
@@ -61,7 +62,6 @@ class AtoReportService {
 
     return buffer.toString();
   }
-}
 
   /// Generates a clean 1-Click summary message for the Tradie to WhatsApp or Email directly to their Accountant
   static String generateAccountantEmailText({
@@ -94,3 +94,4 @@ Regards,
 [Tradie Name]
 ''';
   }
+}
