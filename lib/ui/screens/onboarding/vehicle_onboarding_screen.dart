@@ -290,6 +290,50 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     }
   }
 
+  Widget _buildQuickPickChip(String shortLabel, String fullName, String engine, VehicleType type) {
+    final isSelected = _makeModelController.text == fullName;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ActionChip(
+        avatar: Icon(
+          type == VehicleType.ute
+              ? PhosphorIconsFill.truck
+              : (type == VehicleType.van ? PhosphorIconsFill.van : PhosphorIconsFill.carProfile),
+          size: 14,
+          color: isSelected ? Colors.white : AppColors.workBlue,
+        ),
+        label: Text(shortLabel),
+        labelStyle: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+          color: isSelected ? Colors.white : AppColors.ink,
+        ),
+        backgroundColor: isSelected ? AppColors.workBlue : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: isSelected ? AppColors.workBlue : AppColors.border),
+        ),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          setState(() {
+            _makeModelController.text = fullName;
+            _engineCapacityController.text = engine;
+            _selectedVehicleType = type;
+            _lookupResult = VehicleLookupResult(
+              id: fullName.toLowerCase().replaceAll(' ', '-'),
+              make: fullName.split(' ').first,
+              model: fullName.split(' ')[1],
+              variant: fullName.split(' ').skip(2).join(' '),
+              displayName: fullName,
+              vehicleType: type,
+              engineCapacity: engine,
+            );
+          });
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -392,98 +436,54 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           const TaxPotentialHookBanner(),
           const SizedBox(height: 18),
 
-          // Section 1: Official Australian Rego Lookup (Magic 1-Tap Autofill)
-          const Row(
+          // Section 1: Smart Vehicle Selector (Primary Flow for Lazy User)
+          Row(
             children: [
-              Icon(PhosphorIconsFill.magnifyingGlass, size: 16, color: AppColors.workBlue),
-              SizedBox(width: 6),
-              Text(
-                'LOOKUP BY REGO PLATE',
+              const Icon(PhosphorIconsFill.carProfile, size: 16, color: AppColors.workBlue),
+              const SizedBox(width: 6),
+              const Text(
+                'WHAT DO YOU DRIVE?',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5),
               ),
+              const Spacer(),
+              if (_lookupResult != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.emeraldLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.emerald),
+                      const SizedBox(width: 4),
+                      Text(
+                        _lookupResult!.vehicleType.shortCategoryName.toUpperCase(),
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.emerald),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // State Selector + Rego Plate Input + Lookup Button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 95,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedState,
-                    isExpanded: true,
-                    items: _aussieStates.map((s) {
-                      return DropdownMenuItem(
-                        value: s,
-                        child: Text(
-                          '🇦🇺 $s',
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.ink),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedState = val);
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  controller: _regoController,
-                  textCapitalization: TextCapitalization.characters,
-                  style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 15),
-                  onFieldSubmitted: (_) => _lookupRegoPlate(),
-                  decoration: InputDecoration(
-                    labelText: 'Rego Plate',
-                    hintText: 'e.g. 1ABC234',
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    prefixIcon: const Icon(Icons.credit_card_rounded, color: AppColors.muted, size: 20),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: _isLookingUpRego ? null : _lookupRegoPlate,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.workBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  minimumSize: const Size(60, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: _isLookingUpRego
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.search_rounded, size: 18),
-                          SizedBox(width: 4),
-                          Text('Find', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                        ],
-                      ),
-              ),
-            ],
+          // 1-Tap Quick Pick Pills for the Most Popular Aussie Tradie Vehicles
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildQuickPickChip('Hilux SR5', 'Toyota Hilux SR5 4x4 Dual Cab', '2.8L Turbo Diesel', VehicleType.ute),
+                _buildQuickPickChip('Ranger Wildtrak', 'Ford Ranger Wildtrak Dual Cab 3.0L V6', '3.0L V6 Turbo Diesel', VehicleType.ute),
+                _buildQuickPickChip('D-Max X-Terrain', 'Isuzu D-Max X-Terrain 4x4 Crew Cab', '3.0L Turbo Diesel', VehicleType.ute),
+                _buildQuickPickChip('HiAce Van', 'Toyota HiAce LWB Van 2.8L Diesel', '2.8L Turbo Diesel', VehicleType.van),
+                _buildQuickPickChip('Model Y RWD', 'Tesla Model Y RWD Standard Range', 'Single Motor Electric (LFP)', VehicleType.car),
+                _buildQuickPickChip('RAV4 Hybrid', 'Toyota RAV4 GXL AWD Hybrid e-Four', '2.5L Hybrid e-Four', VehicleType.car),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-
+          const SizedBox(height: 12),
           // Section 2: Vehicle Specs (Auto-Filled or Manual Entry)
           Row(
             children: [
@@ -705,6 +705,69 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                         if (val != null) setState(() => _selectedVehicleType = val);
                       },
                     ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Section 2: Registration Plate & State (Mandatory for ATO TR 97/11 Compliance)
+          const Row(
+            children: [
+              Icon(PhosphorIconsFill.identificationCard, size: 16, color: AppColors.workBlue),
+              SizedBox(width: 6),
+              Text(
+                'REGISTRATION PLATE (ATO MANDATORY)',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 95,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedState,
+                    isExpanded: true,
+                    items: _aussieStates.map((s) {
+                      return DropdownMenuItem(
+                        value: s,
+                        child: Text(
+                          '🇦🇺 $s',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.ink),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedState = val);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: _regoController,
+                  textCapitalization: TextCapitalization.characters,
+                  style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 15),
+                  decoration: InputDecoration(
+                    labelText: 'Plate Number',
+                    hintText: 'e.g. 1ABC234',
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    prefixIcon: const Icon(Icons.credit_card_rounded, color: AppColors.muted, size: 20),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ),
