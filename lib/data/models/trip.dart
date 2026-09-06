@@ -33,6 +33,8 @@ class Trip {
   final String? originAddress;
   final String? destinationAddress;
   final List<String> linkedExpenseIds; // Evidence Graph: Connected expenses (Fuel, Bunnings, Tolls)
+  final String? clientDedupId; // Idempotency Key (Prevents duplicate syncs)
+  final DateTime? deletedAt; // Soft Delete support
 
   Trip({
     required this.id,
@@ -46,11 +48,14 @@ class Trip {
     this.originAddress,
     this.destinationAddress,
     List<String>? linkedExpenseIds,
+    this.clientDedupId,
+    this.deletedAt,
   })  : assert(distanceKm >= 0, 'Trip distance cannot be negative'),
         assert(endOdometer >= startOdometer, 'End odometer cannot be less than start odometer'),
         linkedExpenseIds = linkedExpenseIds ?? [];
 
   bool get isBusiness => classification == TripClassification.business;
+  bool get isDeleted => deletedAt != null;
 
   Map<String, dynamic> toMap() {
     return {
@@ -64,6 +69,8 @@ class Trip {
       'classification': classification.name,
       'origin_address': originAddress,
       'destination_address': destinationAddress,
+      'client_dedup_id': clientDedupId,
+      'deleted_at': deletedAt?.toIso8601String(),
     };
   }
 }

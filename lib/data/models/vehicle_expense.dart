@@ -61,6 +61,8 @@ class VehicleExpense {
   final double businessPercentage; // 100.0 for direct, or custom/logbook scaled
   final String? notes;
   final String? linkedTripId; // Link to Trip in Evidence Graph
+  final String? clientDedupId; // Idempotency Key (Prevents duplicate expense syncs)
+  final DateTime? deletedAt; // Soft Delete support
 
   VehicleExpense({
     required this.id,
@@ -72,7 +74,11 @@ class VehicleExpense {
     double? businessPercentage,
     this.notes,
     this.linkedTripId,
+    this.clientDedupId,
+    this.deletedAt,
   }) : businessPercentage = businessPercentage ?? (category.isDirectlyDeductibleByDefault ? 100.0 : 100.0);
+
+  bool get isDeleted => deletedAt != null;
 
   /// Computes deductible amount based on statutory logbook % for general running costs,
   /// or 100% direct claim for work tolls & parking.
