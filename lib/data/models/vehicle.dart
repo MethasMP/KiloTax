@@ -68,6 +68,7 @@ class Vehicle {
   final String? bluetoothDeviceName;
   final bool isPrimary;
   final TaxMethod taxMethod;
+  final DateTime? logbookStartDate; // Start date of the 12-week statutory period
 
   Vehicle({
     required this.id,
@@ -80,6 +81,7 @@ class Vehicle {
     this.bluetoothDeviceName,
     this.isPrimary = true,
     this.taxMethod = TaxMethod.centsPerKm,
+    this.logbookStartDate,
   });
 
   String get displayName => '$make $model ($regoPlate)';

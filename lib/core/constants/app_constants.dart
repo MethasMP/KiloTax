@@ -12,13 +12,46 @@ class AppColors {
   static const Color crimsonLight = Color(0xFFFEF2F2);
   static const Color workBlue = Color(0xFF2563EB);
   static const Color workBlueLight = Color(0xFFEFF6FF);
+  static const Color amber = Color(0xFFD97706);
+  static const Color amberLight = Color(0xFFFFFBEB);
+}
+
+/// Versioned ATO Tax Legislation Rules (Income Year Aligned)
+/// Prevents hardcoding tax rates and allows historical audit reproducibility
+class AtoTaxRule {
+  final String financialYear; // e.g. '2026-27'
+  final double centsPerKmRate; // 91 cents
+  final double centsPerKmMaxKm; // 5,000 km
+  final double carDepreciationLimit; // ,674
+  final int logbookMinWeeks; // 12 weeks
+  final int logbookValidityYears; // 5 years
+
+  const AtoTaxRule({
+    required this.financialYear,
+    required this.centsPerKmRate,
+    required this.centsPerKmMaxKm,
+    required this.carDepreciationLimit,
+    this.logbookMinWeeks = 12,
+    this.logbookValidityYears = 5,
+  });
+
+  double get maxCentsPerKmClaim => centsPerKmRate * centsPerKmMaxKm;
 }
 
 class AppConstants {
   static const String appTitle = 'KiloTax';
-  static const double centsPerKmRate2026 = 0.91; // 91c / km for 2026/27 ATO rate
-  static const double centsPerKmCapKm = 5000.0;
-  static const double maxCentsPerKmClaim = centsPerKmRate2026 * centsPerKmCapKm; // $4,550.00
-  static const int statutoryLogbookWeeks = 12;
-  static const int statutoryLogbookDays = 84;
+
+  // Active ATO Tax Year: 2026-27
+  static const AtoTaxRule activeTaxRule = AtoTaxRule(
+    financialYear: '2026-27',
+    centsPerKmRate: 0.91,
+    centsPerKmMaxKm: 5000.0,
+    carDepreciationLimit: 69674.0,
+  );
+
+  static double get centsPerKmRate2026 => activeTaxRule.centsPerKmRate;
+  static double get centsPerKmCapKm => activeTaxRule.centsPerKmMaxKm;
+  static double get maxCentsPerKmClaim => activeTaxRule.maxCentsPerKmClaim;
+  static int get statutoryLogbookWeeks => activeTaxRule.logbookMinWeeks;
+  static int get statutoryLogbookDays => activeTaxRule.logbookMinWeeks * 7;
 }

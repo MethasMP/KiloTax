@@ -103,6 +103,68 @@ class AppState extends ChangeNotifier {
     return engine;
   }
 
+
+  /// 12-WEEK STATUTORY COMPLIANCE: Current week in 12-week period (1-12)
+  int get currentLogbookWeek {
+    final start = _primaryVehicle?.logbookStartDate ?? DateTime.now().subtract(const Duration(days: 21)); // default week 4
+    final diffDays = DateTime.now().difference(start).inDays;
+    final week = (diffDays / 7).floor() + 1;
+    return week.clamp(1, 12);
+  }
+
+  /// 12-WEEK STATUTORY COMPLIANCE: Progress percentage (0.0 - 1.0)
+  double get logbookProgressPercentage => currentLogbookWeek / 12.0;
+
+  /// COMPLIANCE STATE: Trips with missing purpose or unclassified status
+  List<Trip> get missingComplianceTrips => _trips
+      .where((t) =>
+          t.purpose.trim().isEmpty ||
+          t.purpose.contains('?') ||
+          t.classification == TripClassification.unclassified)
+      .toList();
+
+  /// Fix a trip purpose directly in 1 tap
+  void resolveTripPurpose(String tripId, String newPurpose) {
+    final idx = _trips.indexWhere((t) => t.id == tripId);
+    if (idx != -1) {
+      final old = _trips[idx];
+      _trips[idx] = Trip(
+        id: old.id,
+        vehicleId: old.vehicleId,
+        distanceKm: old.distanceKm,
+        date: old.date,
+        purpose: newPurpose,
+        startOdometer: old.startOdometer,
+        endOdometer: old.endOdometer,
+        classification: TripClassification.business,
+        originAddress: old.originAddress,
+        destinationAddress: old.destinationAddress,
+        linkedExpenseIds: old.linkedExpenseIds,
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Switch active Tax Method for Primary Vehicle
+  void updatePrimaryVehicleTaxMethod(TaxMethod newMethod) {
+    if (_primaryVehicle == null) return;
+    final old = _primaryVehicle!;
+    _primaryVehicle = Vehicle(
+      id: old.id,
+      make: old.make,
+      model: old.model,
+      regoPlate: old.regoPlate,
+      initialOdometer: old.initialOdometer,
+      engineCapacity: old.engineCapacity,
+      vehicleType: old.vehicleType,
+      bluetoothDeviceName: old.bluetoothDeviceName,
+      isPrimary: old.isPrimary,
+      taxMethod: newMethod,
+      logbookStartDate: old.logbookStartDate ?? DateTime.now().subtract(const Duration(days: 21)),
+    );
+    notifyListeners();
+  }
+
   TaxSummary get taxSummary => TaxCalculatorService.evaluateSummary(
         trips: _trips,
         expenses: _expenses,

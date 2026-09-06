@@ -141,6 +141,56 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           ),
           const SizedBox(height: 12),
 
+          // ATO DOUBLE-CLAIM PROTECTION GUARD BANNER
+          if (widget.appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm &&
+              (_selectedCategory == ExpenseCategory.fuel || _selectedCategory == ExpenseCategory.maintenanceTyres)) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.amberLight,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.shield_outlined, color: AppColors.amber, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ATO Double-Claim Protection Active',
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.ink),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Your ${widget.appState.primaryVehicle?.displayName ?? "vehicle"} uses the 91c/km Cents-per-KM method, which ALREADY includes fuel & maintenance in the set rate. This receipt will be stored in your private vault for proof, but won't be double-claimed at Box D1.',
+                          style: const TextStyle(fontSize: 11, color: AppColors.ink, height: 1.35),
+                        ),
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: () {
+                            widget.appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Switched vehicle to Logbook Method (Actual Expenses).')),
+                            );
+                          },
+                          child: const Text(
+                            'Switch vehicle to Logbook to claim actual fuel % →',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.workBlue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Category Dropdown
           DropdownButtonFormField<ExpenseCategory>(
             value: _selectedCategory,
