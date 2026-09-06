@@ -284,6 +284,54 @@ class TaxDashboardScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // CLOUD SYNC TRIGGER & STATUS
+          IconButton(
+            icon: appState.syncStatus == SyncStatus.syncing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.workBlue),
+                  )
+                : Icon(
+                    appState.syncStatus == SyncStatus.error
+                        ? PhosphorIconsBold.cloudWarning
+                        : (appState.syncStatus == SyncStatus.success ? PhosphorIconsFill.cloudCheck : PhosphorIconsBold.cloudArrowUp),
+                    color: appState.syncStatus == SyncStatus.error
+                        ? AppColors.rustRed
+                        : (appState.syncStatus == SyncStatus.success ? AppColors.emerald : AppColors.workBlue),
+                  ),
+            tooltip: 'Sync Business Evidence to Supabase',
+            onPressed: appState.syncStatus == SyncStatus.syncing
+                ? null
+                : () async {
+                    final res = await appState.triggerSyncToCloud();
+                    if (context.mounted) {
+                      if (res.success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: AppColors.emerald,
+                            content: Text(
+                              '☁️ Synced: ${res.syncedTrips} trips, ${res.syncedExpenses} expenses (Ignored/Local: ${res.rejectedOrIgnored} personal)',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: AppColors.rustRed,
+                            content: Text(
+                              '❌ Sync failed: ${res.errorMessage ?? "Unknown error"}',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+          ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.fileArrowDown, color: AppColors.emerald),
             tooltip: 'Export ATO Report',

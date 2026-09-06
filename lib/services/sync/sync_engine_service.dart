@@ -65,6 +65,33 @@ class SyncEngineService {
       int syncedTripCount = 0;
       int syncedExpenseCount = 0;
 
+      // 1. Ensure Vehicle exists in Cloud (FK Dependency)
+      final vehicleUri = Uri.parse('$supabaseUrl/rest/v1/vehicles?on_conflict=client_dedup_id');
+      final vehicleDedupId = vehicle.clientDedupId ?? 'veh_${vehicle.regoPlate.trim().toUpperCase()}';
+      final vehiclePayload = [
+        {
+          'id': vehicle.id,
+          'make': vehicle.make,
+          'model': vehicle.model,
+          'rego_plate': vehicle.regoPlate,
+          'initial_odometer': vehicle.initialOdometer,
+          'engine_capacity': vehicle.engineCapacity,
+          'vehicle_type': vehicle.vehicleType.name,
+          'bluetooth_device_name': vehicle.bluetoothDeviceName,
+          'is_primary': vehicle.isPrimary,
+          'tax_method': vehicle.taxMethod.name,
+          'logbook_start_date': vehicle.logbookStartDate?.toIso8601String(),
+          'client_dedup_id': vehicleDedupId,
+          'updated_at': DateTime.now().toIso8601String(),
+        }
+      ];
+
+      await _httpClient.post(
+        vehicleUri,
+        headers: _headers,
+        body: jsonEncode(vehiclePayload),
+      );
+
       if (eligibleTrips.isNotEmpty) {
         final tripPayloads = eligibleTrips.map((t) {
           final dedupId = t.clientDedupId ?? generateTripDedupKey(t);

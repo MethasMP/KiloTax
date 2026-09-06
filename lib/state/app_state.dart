@@ -5,12 +5,27 @@ import '../data/models/vehicle_expense.dart';
 import '../data/models/tax_summary.dart';
 import '../services/engine/evidence_engine.dart';
 import '../services/engine/tax_calculator_service.dart';
+import '../services/sync/sync_engine_service.dart';
+
+enum SyncStatus { idle, syncing, success, error }
 
 class AppState extends ChangeNotifier {
   Vehicle? _primaryVehicle;
   final List<Vehicle> _vehicles = [];
   final List<Trip> _trips = [];
   final List<VehicleExpense> _expenses = [];
+
+  // SYNC ENGINE STATE
+  final SyncEngineService _syncEngine = SyncEngineService();
+  SyncStatus _syncStatus = SyncStatus.idle;
+  DateTime? _lastSyncedAt;
+  String? _syncErrorMessage;
+  SyncResult? _lastSyncResult;
+
+  SyncStatus get syncStatus => _syncStatus;
+  DateTime? get lastSyncedAt => _lastSyncedAt;
+  String? get syncErrorMessage => _syncErrorMessage;
+  SyncResult? get lastSyncResult => _lastSyncResult;
 
   Vehicle? get primaryVehicle => _primaryVehicle;
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);
@@ -169,4 +184,57 @@ class AppState extends ChangeNotifier {
         trips: _trips,
         expenses: _expenses,
       );
+
+  /// Trigger Zero-Knowledge Cloud Sync to Supabase
+  Future<SyncResult> triggerSyncToCloud() async {
+    if (_primaryVehicle == null) {
+      final res = SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+        errorMessage: 'No primary vehicle configured to sync.',
+      );
+      _syncStatus = SyncStatus.error;
+      _syncErrorMessage = res.errorMessage;
+      notifyListeners();
+      return res;
+    }
+
+    _syncStatus = SyncStatus.syncing;
+    _syncErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final res = await _syncEngine.syncToCloud(
+        vehicle: _primaryVehicle!,
+        trips: _trips,
+        expenses: _expenses,
+      );
+
+      _lastSyncResult = res;
+      if (res.success) {
+        _syncStatus = SyncStatus.success;
+        _lastSyncedAt = DateTime.now();
+      } else {
+        _syncStatus = SyncStatus.error;
+        _syncErrorMessage = res.errorMessage;
+      }
+      notifyListeners();
+      return res;
+    } catch (e) {
+      final errRes = SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+        errorMessage: e.toString(),
+      );
+      _syncStatus = SyncStatus.error;
+      _syncErrorMessage = e.toString();
+      _lastSyncResult = errRes;
+      notifyListeners();
+      return errRes;
+    }
+  }
 }
