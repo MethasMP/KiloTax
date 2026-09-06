@@ -587,7 +587,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                           ),
                           subtitle: Text(
-                            '${option.engineCapacity} • ${option.fuelType}',
+                            '${option.engineCapacity} • ${option.atoCategoryLabel}',
                             style: const TextStyle(fontSize: 11, color: AppColors.muted),
                           ),
                           trailing: Container(
@@ -610,6 +610,54 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
               );
             },
           ),
+          if (_lookupResult != null && _lookupResult!.popularTrims.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.tune_rounded, size: 14, color: AppColors.muted),
+                const SizedBox(width: 4),
+                Text(
+                  'SELECT TRIM / VARIANT (ATO ALIGNED):',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _lookupResult!.popularTrims.map((trim) {
+                  final isSelected = _makeModelController.text.contains(trim);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(trim),
+                      selected: isSelected,
+                      selectedColor: AppColors.workBlue.withOpacity(0.12),
+                      backgroundColor: Colors.white,
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected ? AppColors.workBlue : AppColors.ink,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: isSelected ? AppColors.workBlue : AppColors.border,
+                        ),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          final base = '${_lookupResult!.make} ${_lookupResult!.model}';
+                          _makeModelController.text = selected ? '$base $trim' : base;
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
 
           // Engine Specs & Vehicle Type Row
