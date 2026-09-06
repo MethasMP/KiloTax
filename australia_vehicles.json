@@ -1,32 +1,12 @@
 {
-  "version": "2026.2",
-  "standard": "Normalized Flat Australian Vehicle Schema",
+  "version": "2026.3",
+  "standard": "Fully-Disaggregated Flat Australian Vehicle Directory",
   "source": "BITRE Road Vehicles Australia / NEVDIS extract (CC BY 3.0 AU)",
   "updated_at": "2026-09-06",
-  "total": 77,
+  "total": 143,
   "vehicles": [
     {
-      "id": "toyota-hilux-sr5",
-      "make": "Toyota",
-      "model": "Hilux",
-      "variant": "SR5 4x4",
-      "type": "ute",
-      "engine": "2.8L Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Toyota Hilux SR5 4x4"
-    },
-    {
-      "id": "toyota-hilux-sr",
-      "make": "Toyota",
-      "model": "Hilux",
-      "variant": "SR 4x4",
-      "type": "ute",
-      "engine": "2.8L Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Toyota Hilux SR 4x4"
-    },
-    {
-      "id": "toyota-hilux-workmate-petrol",
+      "id": "toyota-hilux-workmate-petrol-single-cab",
       "make": "Toyota",
       "model": "Hilux",
       "variant": "Workmate 4x2 Single Cab",
@@ -36,7 +16,7 @@
       "display_name": "Toyota Hilux Workmate 4x2 Single Cab"
     },
     {
-      "id": "toyota-hilux-workmate-diesel",
+      "id": "toyota-hilux-workmate-diesel-dual-cab",
       "make": "Toyota",
       "model": "Hilux",
       "variant": "Workmate 4x4 Dual Cab",
@@ -46,214 +26,274 @@
       "display_name": "Toyota Hilux Workmate 4x4 Dual Cab"
     },
     {
-      "id": "toyota-hilux-rogue",
+      "id": "toyota-hilux-sr-extra-cab",
       "make": "Toyota",
       "model": "Hilux",
-      "variant": "Rogue 4x4 Wide-Track",
+      "variant": "SR 4x4 Extra Cab",
       "type": "ute",
       "engine": "2.8L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota Hilux Rogue 4x4 Wide-Track"
+      "display_name": "Toyota Hilux SR 4x4 Extra Cab"
+    },
+    {
+      "id": "toyota-hilux-sr-dual-cab",
+      "make": "Toyota",
+      "model": "Hilux",
+      "variant": "SR 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota Hilux SR 4x4 Dual Cab"
+    },
+    {
+      "id": "toyota-hilux-sr5-dual-cab",
+      "make": "Toyota",
+      "model": "Hilux",
+      "variant": "SR5 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota Hilux SR5 4x4 Dual Cab"
+    },
+    {
+      "id": "toyota-hilux-rogue",
+      "make": "Toyota",
+      "model": "Hilux",
+      "variant": "Rogue 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota Hilux Rogue 4x4 Dual Cab"
     },
     {
       "id": "toyota-hilux-gr-sport",
       "make": "Toyota",
       "model": "Hilux",
-      "variant": "GR Sport 4x4",
+      "variant": "GR Sport 4x4 Dual Cab",
       "type": "ute",
       "engine": "2.8L High-Output Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota Hilux GR Sport 4x4"
+      "display_name": "Toyota Hilux GR Sport 4x4 Dual Cab"
     },
     {
       "id": "toyota-lc79-single-cab",
       "make": "Toyota",
       "model": "LandCruiser 79",
-      "variant": "Workmate/GXL Single Cab",
+      "variant": "Workmate Single Cab Chassis",
       "type": "ute",
-      "engine": "4.5L V8 / 2.8L 4-Cyl Turbo Diesel",
+      "engine": "4.5L V8 Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser 79 Workmate/GXL Single Cab"
+      "display_name": "Toyota LandCruiser 79 Workmate Single Cab Chassis"
     },
     {
-      "id": "toyota-lc79-double-cab",
+      "id": "toyota-lc79-single-cab-4cyl",
       "make": "Toyota",
       "model": "LandCruiser 79",
-      "variant": "GXL Double Cab Cab-Chassis",
+      "variant": "GXL Single Cab Chassis",
       "type": "ute",
-      "engine": "4.5L V8 / 2.8L 4-Cyl Turbo Diesel",
+      "engine": "2.8L 4-Cyl Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser 79 GXL Double Cab Cab-Chassis"
+      "display_name": "Toyota LandCruiser 79 GXL Single Cab Chassis"
     },
     {
-      "id": "toyota-lc76-wagon",
+      "id": "toyota-lc79-double-cab-gxl",
+      "make": "Toyota",
+      "model": "LandCruiser 79",
+      "variant": "GXL Double Cab Chassis",
+      "type": "ute",
+      "engine": "4.5L V8 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser 79 GXL Double Cab Chassis"
+    },
+    {
+      "id": "toyota-lc76-wagon-gxl",
       "make": "Toyota",
       "model": "LandCruiser 76",
-      "variant": "Workmate/GXL 4-Door Wagon",
+      "variant": "GXL 4-Door Wagon",
       "type": "suv",
-      "engine": "4.5L V8 / 2.8L 4-Cyl Turbo Diesel",
+      "engine": "4.5L V8 Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser 76 Workmate/GXL 4-Door Wagon"
+      "display_name": "Toyota LandCruiser 76 GXL 4-Door Wagon"
     },
     {
-      "id": "toyota-lc78-troopcarrier",
+      "id": "toyota-lc78-troopy-workmate",
       "make": "Toyota",
       "model": "LandCruiser 78",
-      "variant": "Troop Carrier (Troopy)",
+      "variant": "Troop Carrier Workmate",
       "type": "van",
-      "engine": "4.5L V8 / 2.8L Turbo Diesel",
+      "engine": "4.5L V8 Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser 78 Troop Carrier (Troopy)"
-    },
-    {
-      "id": "ford-ranger-wildtrak-v6",
-      "make": "Ford",
-      "model": "Ranger",
-      "variant": "Wildtrak 3.0L V6 4x4",
-      "type": "ute",
-      "engine": "3.0L V6 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Ranger Wildtrak 3.0L V6 4x4"
-    },
-    {
-      "id": "ford-ranger-wildtrak-biturbo",
-      "make": "Ford",
-      "model": "Ranger",
-      "variant": "Wildtrak 2.0L Bi-Turbo 4x4",
-      "type": "ute",
-      "engine": "2.0L Bi-Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Ranger Wildtrak 2.0L Bi-Turbo 4x4"
-    },
-    {
-      "id": "ford-ranger-xlt-v6",
-      "make": "Ford",
-      "model": "Ranger",
-      "variant": "XLT 3.0L V6 4x4",
-      "type": "ute",
-      "engine": "3.0L V6 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Ranger XLT 3.0L V6 4x4"
-    },
-    {
-      "id": "ford-ranger-xlt-biturbo",
-      "make": "Ford",
-      "model": "Ranger",
-      "variant": "XLT 2.0L Bi-Turbo 4x4",
-      "type": "ute",
-      "engine": "2.0L Bi-Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Ranger XLT 2.0L Bi-Turbo 4x4"
-    },
-    {
-      "id": "ford-ranger-sport-v6",
-      "make": "Ford",
-      "model": "Ranger",
-      "variant": "Sport 3.0L V6 4x4",
-      "type": "ute",
-      "engine": "3.0L V6 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Ranger Sport 3.0L V6 4x4"
+      "display_name": "Toyota LandCruiser 78 Troop Carrier Workmate"
     },
     {
       "id": "ford-ranger-xl-single-cab",
       "make": "Ford",
       "model": "Ranger",
-      "variant": "XL Single Cab Chassis",
+      "variant": "XL Single Cab Chassis 2.0L",
       "type": "ute",
       "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Ford Ranger XL Single Cab Chassis"
+      "display_name": "Ford Ranger XL Single Cab Chassis 2.0L"
+    },
+    {
+      "id": "ford-ranger-xl-dual-cab",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "XL Dual Cab 2.0L Bi-Turbo",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger XL Dual Cab 2.0L Bi-Turbo"
+    },
+    {
+      "id": "ford-ranger-xls-dual-cab",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "XLS Dual Cab 2.0L Bi-Turbo",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger XLS Dual Cab 2.0L Bi-Turbo"
+    },
+    {
+      "id": "ford-ranger-xlt-biturbo",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "XLT Dual Cab 2.0L Bi-Turbo",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger XLT Dual Cab 2.0L Bi-Turbo"
+    },
+    {
+      "id": "ford-ranger-xlt-v6",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "XLT Dual Cab 3.0L V6",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger XLT Dual Cab 3.0L V6"
+    },
+    {
+      "id": "ford-ranger-sport-v6",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "Sport Dual Cab 3.0L V6",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger Sport Dual Cab 3.0L V6"
+    },
+    {
+      "id": "ford-ranger-wildtrak-biturbo",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "Wildtrak Dual Cab 2.0L Bi-Turbo",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger Wildtrak Dual Cab 2.0L Bi-Turbo"
+    },
+    {
+      "id": "ford-ranger-wildtrak-v6",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "Wildtrak Dual Cab 3.0L V6",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger Wildtrak Dual Cab 3.0L V6"
+    },
+    {
+      "id": "ford-ranger-platinum-v6",
+      "make": "Ford",
+      "model": "Ranger",
+      "variant": "Platinum Dual Cab 3.0L V6",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Ranger Platinum Dual Cab 3.0L V6"
     },
     {
       "id": "ford-ranger-raptor",
       "make": "Ford",
       "model": "Ranger",
-      "variant": "Raptor Twin-Turbo EcoBoost V6",
+      "variant": "Raptor 3.0L Twin-Turbo EcoBoost",
       "type": "ute",
       "engine": "3.0L Twin-Turbo EcoBoost V6",
       "fuel": "Petrol",
-      "display_name": "Ford Ranger Raptor Twin-Turbo EcoBoost V6"
+      "display_name": "Ford Ranger Raptor 3.0L Twin-Turbo EcoBoost"
     },
     {
-      "id": "isuzu-dmax-x-terrain",
+      "id": "isuzu-dmax-sx-single-19",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "SX Single Cab Chassis 1.9L",
+      "type": "ute",
+      "engine": "1.9L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max SX Single Cab Chassis 1.9L"
+    },
+    {
+      "id": "isuzu-dmax-sx-single-30",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "SX Single Cab Chassis 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max SX Single Cab Chassis 3.0L"
+    },
+    {
+      "id": "isuzu-dmax-sx-crew-cab",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "SX Crew Cab 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max SX Crew Cab 3.0L"
+    },
+    {
+      "id": "isuzu-dmax-lsm-crew-cab",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "LS-M Crew Cab 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max LS-M Crew Cab 3.0L"
+    },
+    {
+      "id": "isuzu-dmax-lsu-crew-cab",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "LS-U Crew Cab 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max LS-U Crew Cab 3.0L"
+    },
+    {
+      "id": "isuzu-dmax-lsu-plus-crew",
+      "make": "Isuzu",
+      "model": "D-Max",
+      "variant": "LS-U+ Crew Cab 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu D-Max LS-U+ Crew Cab 3.0L"
+    },
+    {
+      "id": "isuzu-dmax-xterrain",
       "make": "Isuzu",
       "model": "D-Max",
       "variant": "X-Terrain 4x4 Crew Cab",
       "type": "ute",
-      "engine": "3.0L 4JJ3 Turbo Diesel",
+      "engine": "3.0L Turbo Diesel",
       "fuel": "Diesel",
       "display_name": "Isuzu D-Max X-Terrain 4x4 Crew Cab"
-    },
-    {
-      "id": "isuzu-dmax-lsu",
-      "make": "Isuzu",
-      "model": "D-Max",
-      "variant": "LS-U / LS-U+ 4x4 Crew Cab",
-      "type": "ute",
-      "engine": "3.0L 4JJ3 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Isuzu D-Max LS-U / LS-U+ 4x4 Crew Cab"
-    },
-    {
-      "id": "isuzu-dmax-lsm",
-      "make": "Isuzu",
-      "model": "D-Max",
-      "variant": "LS-M 4x4 Crew Cab",
-      "type": "ute",
-      "engine": "3.0L 4JJ3 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Isuzu D-Max LS-M 4x4 Crew Cab"
-    },
-    {
-      "id": "isuzu-dmax-sx-30",
-      "make": "Isuzu",
-      "model": "D-Max",
-      "variant": "SX 3.0L Single Cab Chassis",
-      "type": "ute",
-      "engine": "3.0L 4JJ3 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Isuzu D-Max SX 3.0L Single Cab Chassis"
-    },
-    {
-      "id": "isuzu-dmax-sx-19",
-      "make": "Isuzu",
-      "model": "D-Max",
-      "variant": "SX 1.9L Single Cab Chassis",
-      "type": "ute",
-      "engine": "1.9L RZ4E Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Isuzu D-Max SX 1.9L Single Cab Chassis"
-    },
-    {
-      "id": "mitsubishi-triton-gsr",
-      "make": "Mitsubishi",
-      "model": "Triton",
-      "variant": "GSR 4x4 Dual Cab",
-      "type": "ute",
-      "engine": "2.4L Bi-Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Mitsubishi Triton GSR 4x4 Dual Cab"
-    },
-    {
-      "id": "mitsubishi-triton-gls",
-      "make": "Mitsubishi",
-      "model": "Triton",
-      "variant": "GLS 4x4 Dual Cab",
-      "type": "ute",
-      "engine": "2.4L Bi-Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Mitsubishi Triton GLS 4x4 Dual Cab"
-    },
-    {
-      "id": "mitsubishi-triton-glx-plus",
-      "make": "Mitsubishi",
-      "model": "Triton",
-      "variant": "GLX+ / GLX 4x4 Dual Cab",
-      "type": "ute",
-      "engine": "2.4L Bi-Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Mitsubishi Triton GLX+ / GLX 4x4 Dual Cab"
     },
     {
       "id": "mitsubishi-triton-glx-single",
@@ -266,104 +306,214 @@
       "display_name": "Mitsubishi Triton GLX Single Cab Chassis"
     },
     {
-      "id": "mazda-bt50-gt",
+      "id": "mitsubishi-triton-glx-dual",
+      "make": "Mitsubishi",
+      "model": "Triton",
+      "variant": "GLX 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.4L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mitsubishi Triton GLX 4x4 Dual Cab"
+    },
+    {
+      "id": "mitsubishi-triton-glx-plus",
+      "make": "Mitsubishi",
+      "model": "Triton",
+      "variant": "GLX+ 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.4L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mitsubishi Triton GLX+ 4x4 Dual Cab"
+    },
+    {
+      "id": "mitsubishi-triton-gls-dual",
+      "make": "Mitsubishi",
+      "model": "Triton",
+      "variant": "GLS 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.4L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mitsubishi Triton GLS 4x4 Dual Cab"
+    },
+    {
+      "id": "mitsubishi-triton-gsr-dual",
+      "make": "Mitsubishi",
+      "model": "Triton",
+      "variant": "GSR 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.4L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mitsubishi Triton GSR 4x4 Dual Cab"
+    },
+    {
+      "id": "mazda-bt50-xs-single",
       "make": "Mazda",
       "model": "BT-50",
-      "variant": "GT 4x4 Dual Cab",
+      "variant": "XS Single Cab Chassis 1.9L",
+      "type": "ute",
+      "engine": "1.9L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mazda BT-50 XS Single Cab Chassis 1.9L"
+    },
+    {
+      "id": "mazda-bt50-xt-dual",
+      "make": "Mazda",
+      "model": "BT-50",
+      "variant": "XT 4x4 Dual Cab 3.0L",
       "type": "ute",
       "engine": "3.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Mazda BT-50 GT 4x4 Dual Cab"
+      "display_name": "Mazda BT-50 XT 4x4 Dual Cab 3.0L"
     },
     {
-      "id": "mazda-bt50-sp",
+      "id": "mazda-bt50-xtr-dual",
       "make": "Mazda",
       "model": "BT-50",
-      "variant": "SP / Thunder 4x4 Dual Cab",
+      "variant": "XTR 4x4 Dual Cab 3.0L",
       "type": "ute",
       "engine": "3.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Mazda BT-50 SP / Thunder 4x4 Dual Cab"
+      "display_name": "Mazda BT-50 XTR 4x4 Dual Cab 3.0L"
     },
     {
-      "id": "mazda-bt50-xt",
+      "id": "mazda-bt50-gt-dual",
       "make": "Mazda",
       "model": "BT-50",
-      "variant": "XT 4x4 Dual Cab / Single Cab",
+      "variant": "GT 4x4 Dual Cab 3.0L",
       "type": "ute",
-      "engine": "3.0L / 1.9L Turbo Diesel",
+      "engine": "3.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Mazda BT-50 XT 4x4 Dual Cab / Single Cab"
+      "display_name": "Mazda BT-50 GT 4x4 Dual Cab 3.0L"
+    },
+    {
+      "id": "mazda-bt50-sp-dual",
+      "make": "Mazda",
+      "model": "BT-50",
+      "variant": "SP 4x4 Dual Cab 3.0L",
+      "type": "ute",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mazda BT-50 SP 4x4 Dual Cab 3.0L"
+    },
+    {
+      "id": "nissan-navara-sl-single",
+      "make": "Nissan",
+      "model": "Navara",
+      "variant": "SL Single Cab Chassis",
+      "type": "ute",
+      "engine": "2.3L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Nissan Navara SL Single Cab Chassis"
+    },
+    {
+      "id": "nissan-navara-sl-dual",
+      "make": "Nissan",
+      "model": "Navara",
+      "variant": "SL 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.3L Twin-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Nissan Navara SL 4x4 Dual Cab"
+    },
+    {
+      "id": "nissan-navara-st-dual",
+      "make": "Nissan",
+      "model": "Navara",
+      "variant": "ST 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.3L Twin-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Nissan Navara ST 4x4 Dual Cab"
+    },
+    {
+      "id": "nissan-navara-stx-dual",
+      "make": "Nissan",
+      "model": "Navara",
+      "variant": "ST-X 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.3L Twin-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Nissan Navara ST-X 4x4 Dual Cab"
     },
     {
       "id": "nissan-navara-pro4x",
       "make": "Nissan",
       "model": "Navara",
-      "variant": "PRO-4X / Warrior 4x4 Dual Cab",
+      "variant": "PRO-4X 4x4 Dual Cab",
       "type": "ute",
       "engine": "2.3L Twin-Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Nissan Navara PRO-4X / Warrior 4x4 Dual Cab"
+      "display_name": "Nissan Navara PRO-4X 4x4 Dual Cab"
     },
     {
-      "id": "nissan-navara-stx",
+      "id": "nissan-navara-warrior",
       "make": "Nissan",
       "model": "Navara",
-      "variant": "ST-X / ST 4x4 Dual Cab",
+      "variant": "PRO-4X Warrior Premcar Dual Cab",
       "type": "ute",
       "engine": "2.3L Twin-Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Nissan Navara ST-X / ST 4x4 Dual Cab"
+      "display_name": "Nissan Navara PRO-4X Warrior Premcar Dual Cab"
     },
     {
-      "id": "nissan-navara-sl",
-      "make": "Nissan",
-      "model": "Navara",
-      "variant": "SL Single / King Cab Chassis",
-      "type": "ute",
-      "engine": "2.3L Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Nissan Navara SL Single / King Cab Chassis"
-    },
-    {
-      "id": "vw-amarok-panamericana",
+      "id": "vw-amarok-core-tdi",
       "make": "Volkswagen",
       "model": "Amarok",
-      "variant": "PanAmericana / Aventura V6",
-      "type": "ute",
-      "engine": "3.0L V6 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Volkswagen Amarok PanAmericana / Aventura V6"
-    },
-    {
-      "id": "vw-amarok-style",
-      "make": "Volkswagen",
-      "model": "Amarok",
-      "variant": "Style 3.0L V6 / 2.0L Diesel",
-      "type": "ute",
-      "engine": "3.0L V6 / 2.0L Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Volkswagen Amarok Style 3.0L V6 / 2.0L Diesel"
-    },
-    {
-      "id": "vw-amarok-core",
-      "make": "Volkswagen",
-      "model": "Amarok",
-      "variant": "Core / Life 2.0L TDI",
-      "type": "ute",
-      "engine": "2.0L TDI Diesel",
-      "fuel": "Diesel",
-      "display_name": "Volkswagen Amarok Core / Life 2.0L TDI"
-    },
-    {
-      "id": "gwm-cannon-x",
-      "make": "GWM",
-      "model": "Cannon",
-      "variant": "Cannon-X / Vanta 4x4 Dual Cab",
+      "variant": "Core TDI405 4Motion Dual Cab",
       "type": "ute",
       "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "GWM Cannon Cannon-X / Vanta 4x4 Dual Cab"
+      "display_name": "Volkswagen Amarok Core TDI405 4Motion Dual Cab"
+    },
+    {
+      "id": "vw-amarok-life-tdi",
+      "make": "Volkswagen",
+      "model": "Amarok",
+      "variant": "Life TDI500 4Motion Dual Cab",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Amarok Life TDI500 4Motion Dual Cab"
+    },
+    {
+      "id": "vw-amarok-style-v6",
+      "make": "Volkswagen",
+      "model": "Amarok",
+      "variant": "Style TDI600 V6 4Motion Dual Cab",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Amarok Style TDI600 V6 4Motion Dual Cab"
+    },
+    {
+      "id": "vw-amarok-panamericana-v6",
+      "make": "Volkswagen",
+      "model": "Amarok",
+      "variant": "PanAmericana TDI600 V6 Dual Cab",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Amarok PanAmericana TDI600 V6 Dual Cab"
+    },
+    {
+      "id": "vw-amarok-aventura-v6",
+      "make": "Volkswagen",
+      "model": "Amarok",
+      "variant": "Aventura TDI600 V6 Dual Cab",
+      "type": "ute",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Amarok Aventura TDI600 V6 Dual Cab"
+    },
+    {
+      "id": "gwm-cannon-base",
+      "make": "GWM",
+      "model": "Cannon",
+      "variant": "Base 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "GWM Cannon Base 4x4 Dual Cab"
     },
     {
       "id": "gwm-cannon-l",
@@ -376,264 +526,344 @@
       "display_name": "GWM Cannon Cannon-L 4x4 Dual Cab"
     },
     {
-      "id": "ldv-t60-max-luxe",
+      "id": "gwm-cannon-x",
+      "make": "GWM",
+      "model": "Cannon",
+      "variant": "Cannon-X 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "GWM Cannon Cannon-X 4x4 Dual Cab"
+    },
+    {
+      "id": "gwm-cannon-vanta",
+      "make": "GWM",
+      "model": "Cannon",
+      "variant": "Vanta 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "GWM Cannon Vanta 4x4 Dual Cab"
+    },
+    {
+      "id": "ldv-t60-max-pro",
       "make": "LDV",
       "model": "T60 Max",
-      "variant": "Luxe / Pro 4x4 Dual Cab",
+      "variant": "Pro 4x4 Dual Cab",
       "type": "ute",
       "engine": "2.0L Bi-Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "LDV T60 Max Luxe / Pro 4x4 Dual Cab"
+      "display_name": "LDV T60 Max Pro 4x4 Dual Cab"
     },
     {
-      "id": "ram-1500-laramie",
+      "id": "ldv-t60-max-luxe",
+      "make": "LDV",
+      "model": "T60 Max",
+      "variant": "Luxe 4x4 Dual Cab",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "LDV T60 Max Luxe 4x4 Dual Cab"
+    },
+    {
+      "id": "ram-1500-express-quad",
       "make": "RAM",
       "model": "1500",
-      "variant": "Laramie / Limited 5.7L V8",
+      "variant": "Express Quad Cab 5.7L V8",
       "type": "ute",
       "engine": "5.7L HEMI V8",
       "fuel": "Petrol",
-      "display_name": "RAM 1500 Laramie / Limited 5.7L V8"
+      "display_name": "RAM 1500 Express Quad Cab 5.7L V8"
     },
     {
-      "id": "ram-1500-express",
+      "id": "ram-1500-express-crew",
       "make": "RAM",
       "model": "1500",
-      "variant": "Express Quad / Crew Cab",
+      "variant": "Express Crew Cab 5.7L V8",
       "type": "ute",
       "engine": "5.7L HEMI V8",
       "fuel": "Petrol",
-      "display_name": "RAM 1500 Express Quad / Crew Cab"
+      "display_name": "RAM 1500 Express Crew Cab 5.7L V8"
     },
     {
-      "id": "chevy-silverado-1500",
+      "id": "ram-1500-laramie-v8",
+      "make": "RAM",
+      "model": "1500",
+      "variant": "Laramie Crew Cab 5.7L V8",
+      "type": "ute",
+      "engine": "5.7L HEMI V8",
+      "fuel": "Petrol",
+      "display_name": "RAM 1500 Laramie Crew Cab 5.7L V8"
+    },
+    {
+      "id": "ram-1500-limited-v8",
+      "make": "RAM",
+      "model": "1500",
+      "variant": "Limited Crew Cab 5.7L V8",
+      "type": "ute",
+      "engine": "5.7L HEMI V8",
+      "fuel": "Petrol",
+      "display_name": "RAM 1500 Limited Crew Cab 5.7L V8"
+    },
+    {
+      "id": "chevy-silverado-ltz",
       "make": "Chevrolet",
       "model": "Silverado 1500",
-      "variant": "LTZ Premium / ZR2 V8",
+      "variant": "LTZ Premium Crew Cab 6.2L V8",
       "type": "ute",
       "engine": "6.2L EcoTec3 V8",
       "fuel": "Petrol",
-      "display_name": "Chevrolet Silverado 1500 LTZ Premium / ZR2 V8"
+      "display_name": "Chevrolet Silverado 1500 LTZ Premium Crew Cab 6.2L V8"
+    },
+    {
+      "id": "chevy-silverado-zr2",
+      "make": "Chevrolet",
+      "model": "Silverado 1500",
+      "variant": "ZR2 Off-Road Crew Cab 6.2L V8",
+      "type": "ute",
+      "engine": "6.2L EcoTec3 V8",
+      "fuel": "Petrol",
+      "display_name": "Chevrolet Silverado 1500 ZR2 Off-Road Crew Cab 6.2L V8"
     },
     {
       "id": "ford-f150-xlt",
       "make": "Ford",
       "model": "F-150",
-      "variant": "XLT / Lariat 3.5L EcoBoost",
+      "variant": "XLT SWB/LWB 3.5L EcoBoost",
       "type": "ute",
       "engine": "3.5L Twin-Turbo EcoBoost V6",
       "fuel": "Petrol",
-      "display_name": "Ford F-150 XLT / Lariat 3.5L EcoBoost"
+      "display_name": "Ford F-150 XLT SWB/LWB 3.5L EcoBoost"
+    },
+    {
+      "id": "ford-f150-lariat",
+      "make": "Ford",
+      "model": "F-150",
+      "variant": "Lariat SWB/LWB 3.5L EcoBoost",
+      "type": "ute",
+      "engine": "3.5L Twin-Turbo EcoBoost V6",
+      "fuel": "Petrol",
+      "display_name": "Ford F-150 Lariat SWB/LWB 3.5L EcoBoost"
     },
     {
       "id": "toyota-hiace-lwb",
       "make": "Toyota",
       "model": "HiAce",
-      "variant": "LWB Van (Long Wheelbase)",
+      "variant": "LWB Van 2.8L Diesel",
       "type": "van",
       "engine": "2.8L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota HiAce LWB Van (Long Wheelbase)"
+      "display_name": "Toyota HiAce LWB Van 2.8L Diesel"
     },
     {
       "id": "toyota-hiace-slwb",
       "make": "Toyota",
       "model": "HiAce",
-      "variant": "SLWB Super LWB High-Roof",
+      "variant": "SLWB Super Long Wheelbase High Roof",
       "type": "van",
       "engine": "2.8L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Toyota HiAce SLWB Super LWB High-Roof"
+      "display_name": "Toyota HiAce SLWB Super Long Wheelbase High Roof"
     },
     {
-      "id": "ford-transit-custom",
+      "id": "toyota-hiace-commuter",
+      "make": "Toyota",
+      "model": "HiAce",
+      "variant": "Commuter Bus 12-Seat",
+      "type": "van",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota HiAce Commuter Bus 12-Seat"
+    },
+    {
+      "id": "ford-transit-custom-300s",
       "make": "Ford",
       "model": "Transit Custom",
-      "variant": "300S / 340L Van",
+      "variant": "300S Short Wheelbase Van",
       "type": "van",
       "engine": "2.0L EcoBlue Diesel",
       "fuel": "Diesel",
-      "display_name": "Ford Transit Custom 300S / 340L Van"
+      "display_name": "Ford Transit Custom 300S Short Wheelbase Van"
     },
     {
-      "id": "hyundai-staria-load",
+      "id": "ford-transit-custom-340l",
+      "make": "Ford",
+      "model": "Transit Custom",
+      "variant": "340L Long Wheelbase Van",
+      "type": "van",
+      "engine": "2.0L EcoBlue Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Transit Custom 340L Long Wheelbase Van"
+    },
+    {
+      "id": "hyundai-staria-load-2seat",
       "make": "Hyundai",
       "model": "Staria Load",
-      "variant": "2-Seat / 5-Seat Crew Van",
+      "variant": "2-Seat Van Liftback",
       "type": "van",
       "engine": "2.2L CRDi Diesel",
       "fuel": "Diesel",
-      "display_name": "Hyundai Staria Load 2-Seat / 5-Seat Crew Van"
+      "display_name": "Hyundai Staria Load 2-Seat Van Liftback"
     },
     {
-      "id": "hyundai-iload",
+      "id": "hyundai-staria-load-5seat",
+      "make": "Hyundai",
+      "model": "Staria Load",
+      "variant": "5-Seat Crew Van Twin Swing",
+      "type": "van",
+      "engine": "2.2L CRDi Diesel",
+      "fuel": "Diesel",
+      "display_name": "Hyundai Staria Load 5-Seat Crew Van Twin Swing"
+    },
+    {
+      "id": "hyundai-iload-liftback",
       "make": "Hyundai",
       "model": "iLoad",
-      "variant": "Liftback / Twin Swing Door Van",
+      "variant": "Liftback 3-Seat Van",
       "type": "van",
       "engine": "2.5L CRDi Diesel",
       "fuel": "Diesel",
-      "display_name": "Hyundai iLoad Liftback / Twin Swing Door Van"
+      "display_name": "Hyundai iLoad Liftback 3-Seat Van"
     },
     {
       "id": "renault-trafic-pro",
       "make": "Renault",
       "model": "Trafic",
-      "variant": "Pro / Premium L1/L2 Van",
+      "variant": "Pro Short Wheelbase L1 Van",
       "type": "van",
       "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Renault Trafic Pro / Premium L1/L2 Van"
+      "display_name": "Renault Trafic Pro Short Wheelbase L1 Van"
     },
     {
-      "id": "mercedes-vito-116",
+      "id": "renault-trafic-premium",
+      "make": "Renault",
+      "model": "Trafic",
+      "variant": "Premium Long Wheelbase L2 Van",
+      "type": "van",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Renault Trafic Premium Long Wheelbase L2 Van"
+    },
+    {
+      "id": "mercedes-vito-114-cdi",
       "make": "Mercedes-Benz",
       "model": "Vito",
-      "variant": "114 / 116 / 119 CDI Mid/Long",
+      "variant": "114 CDI Medium Wheelbase Van",
       "type": "van",
       "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Mercedes-Benz Vito 114 / 116 / 119 CDI Mid/Long"
+      "display_name": "Mercedes-Benz Vito 114 CDI Medium Wheelbase Van"
     },
     {
-      "id": "mercedes-sprinter-316",
+      "id": "mercedes-vito-116-cdi",
+      "make": "Mercedes-Benz",
+      "model": "Vito",
+      "variant": "116 CDI Long Wheelbase Van",
+      "type": "van",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mercedes-Benz Vito 116 CDI Long Wheelbase Van"
+    },
+    {
+      "id": "mercedes-vito-119-cdi",
+      "make": "Mercedes-Benz",
+      "model": "Vito",
+      "variant": "119 CDI Sport Long Wheelbase",
+      "type": "van",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mercedes-Benz Vito 119 CDI Sport Long Wheelbase"
+    },
+    {
+      "id": "mercedes-sprinter-314-cdi",
       "make": "Mercedes-Benz",
       "model": "Sprinter",
-      "variant": "314 / 316 / 319 CDI LWB",
+      "variant": "314 CDI Medium Wheelbase",
       "type": "van",
-      "engine": "2.0L / 3.0L V6 Turbo Diesel",
+      "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "Mercedes-Benz Sprinter 314 / 316 / 319 CDI LWB"
+      "display_name": "Mercedes-Benz Sprinter 314 CDI Medium Wheelbase"
+    },
+    {
+      "id": "mercedes-sprinter-316-cdi",
+      "make": "Mercedes-Benz",
+      "model": "Sprinter",
+      "variant": "316 CDI Long Wheelbase High Roof",
+      "type": "van",
+      "engine": "2.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mercedes-Benz Sprinter 316 CDI Long Wheelbase High Roof"
+    },
+    {
+      "id": "mercedes-sprinter-319-v6",
+      "make": "Mercedes-Benz",
+      "model": "Sprinter",
+      "variant": "319 CDI V6 Turbo Diesel LWB",
+      "type": "van",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Mercedes-Benz Sprinter 319 CDI V6 Turbo Diesel LWB"
     },
     {
       "id": "vw-transporter-tdi340",
       "make": "Volkswagen",
       "model": "Transporter",
-      "variant": "TDI340 / TDI450 SWB/LWB",
+      "variant": "TDI340 Short Wheelbase Van",
       "type": "van",
       "engine": "2.0L TDI Diesel",
       "fuel": "Diesel",
-      "display_name": "Volkswagen Transporter TDI340 / TDI450 SWB/LWB"
+      "display_name": "Volkswagen Transporter TDI340 Short Wheelbase Van"
+    },
+    {
+      "id": "vw-transporter-tdi450",
+      "make": "Volkswagen",
+      "model": "Transporter",
+      "variant": "TDI450 Long Wheelbase 4Motion",
+      "type": "van",
+      "engine": "2.0L Bi-TDI Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Transporter TDI450 Long Wheelbase 4Motion"
+    },
+    {
+      "id": "vw-caddy-cargo",
+      "make": "Volkswagen",
+      "model": "Caddy Cargo",
+      "variant": "TDI320 Compact Delivery Van",
+      "type": "van",
+      "engine": "2.0L TDI Diesel",
+      "fuel": "Diesel",
+      "display_name": "Volkswagen Caddy Cargo TDI320 Compact Delivery Van"
     },
     {
       "id": "vw-caddy-cargo-maxi",
       "make": "Volkswagen",
       "model": "Caddy Cargo",
-      "variant": "Maxi Compact Delivery Van",
+      "variant": "Maxi TDI320 Extended Van",
       "type": "van",
       "engine": "2.0L TDI Diesel",
       "fuel": "Diesel",
-      "display_name": "Volkswagen Caddy Cargo Maxi Compact Delivery Van"
+      "display_name": "Volkswagen Caddy Cargo Maxi TDI320 Extended Van"
     },
     {
       "id": "ldv-g10-diesel",
       "make": "LDV",
       "model": "G10",
-      "variant": "1.9L Diesel / 2.0L Petrol Van",
+      "variant": "1.9L Turbo Diesel Van",
       "type": "van",
-      "engine": "1.9L Diesel / 2.0L Petrol",
+      "engine": "1.9L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "LDV G10 1.9L Diesel / 2.0L Petrol Van"
+      "display_name": "LDV G10 1.9L Turbo Diesel Van"
     },
     {
-      "id": "ldv-deliver-9",
+      "id": "ldv-deliver-9-mid-roof",
       "make": "LDV",
       "model": "Deliver 9",
-      "variant": "Mid / High Roof Large Van",
+      "variant": "Mid Roof LWB Delivery Van",
       "type": "van",
       "engine": "2.0L Turbo Diesel",
       "fuel": "Diesel",
-      "display_name": "LDV Deliver 9 Mid / High Roof Large Van"
-    },
-    {
-      "id": "toyota-rav4-hybrid",
-      "make": "Toyota",
-      "model": "RAV4",
-      "variant": "GX / GXL / Cruiser AWD Hybrid",
-      "type": "suv",
-      "engine": "2.5L Hybrid e-Four",
-      "fuel": "Hybrid",
-      "display_name": "Toyota RAV4 GX / GXL / Cruiser AWD Hybrid"
-    },
-    {
-      "id": "toyota-prado-gxl",
-      "make": "Toyota",
-      "model": "LandCruiser Prado",
-      "variant": "GXL / VX / Kakadu",
-      "type": "suv",
-      "engine": "2.8L Turbo Diesel (48V Assist)",
-      "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser Prado GXL / VX / Kakadu"
-    },
-    {
-      "id": "toyota-lc300-gxl",
-      "make": "Toyota",
-      "model": "LandCruiser 300",
-      "variant": "GX / GXL / Sahara / GR Sport",
-      "type": "suv",
-      "engine": "3.3L Twin-Turbo V6 Diesel",
-      "fuel": "Diesel",
-      "display_name": "Toyota LandCruiser 300 GX / GXL / Sahara / GR Sport"
-    },
-    {
-      "id": "ford-everest-v6",
-      "make": "Ford",
-      "model": "Everest",
-      "variant": "Sport / Platinum 3.0L V6 4WD",
-      "type": "suv",
-      "engine": "3.0L V6 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Ford Everest Sport / Platinum 3.0L V6 4WD"
-    },
-    {
-      "id": "isuzu-mux-lsu",
-      "make": "Isuzu",
-      "model": "MU-X",
-      "variant": "LS-U / LS-T 4x4 7-Seat SUV",
-      "type": "suv",
-      "engine": "3.0L 4JJ3 Turbo Diesel",
-      "fuel": "Diesel",
-      "display_name": "Isuzu MU-X LS-U / LS-T 4x4 7-Seat SUV"
-    },
-    {
-      "id": "mitsubishi-outlander-phev",
-      "make": "Mitsubishi",
-      "model": "Outlander",
-      "variant": "Aspire / Exceed PHEV AWD",
-      "type": "suv",
-      "engine": "2.4L Plug-in Hybrid",
-      "fuel": "Plug-in Hybrid",
-      "display_name": "Mitsubishi Outlander Aspire / Exceed PHEV AWD"
-    },
-    {
-      "id": "mazda-cx5-maxx",
-      "make": "Mazda",
-      "model": "CX-5",
-      "variant": "Maxx Sport / Touring / Akera AWD",
-      "type": "suv",
-      "engine": "2.5L Petrol / 2.2L Diesel",
-      "fuel": "Petrol",
-      "display_name": "Mazda CX-5 Maxx Sport / Touring / Akera AWD"
-    },
-    {
-      "id": "subaru-forester-25i",
-      "make": "Subaru",
-      "model": "Forester",
-      "variant": "2.5i-L / 2.5i-S AWD",
-      "type": "suv",
-      "engine": "2.5L Boxer Petrol",
-      "fuel": "Petrol",
-      "display_name": "Subaru Forester 2.5i-L / 2.5i-S AWD"
-    },
-    {
-      "id": "subaru-outback-awd",
-      "make": "Subaru",
-      "model": "Outback",
-      "variant": "AWD / Touring XT 2.4T",
-      "type": "suv",
-      "engine": "2.5L / 2.4L Turbo Boxer",
-      "fuel": "Petrol",
-      "display_name": "Subaru Outback AWD / Touring XT 2.4T"
+      "display_name": "LDV Deliver 9 Mid Roof LWB Delivery Van"
     },
     {
       "id": "tesla-model-y-rwd",
@@ -641,49 +871,109 @@
       "model": "Model Y",
       "variant": "RWD Standard Range",
       "type": "ev",
-      "engine": "Single Motor EV (LFP)",
+      "engine": "Single Motor Electric (LFP)",
       "fuel": "Electric",
       "display_name": "Tesla Model Y RWD Standard Range"
     },
     {
-      "id": "tesla-model-y-lr",
+      "id": "tesla-model-y-long-range",
       "make": "Tesla",
       "model": "Model Y",
-      "variant": "Long Range / Performance Dual Motor",
+      "variant": "Long Range Dual Motor AWD",
       "type": "ev",
-      "engine": "Dual Motor AWD EV",
+      "engine": "Dual Motor Electric AWD",
       "fuel": "Electric",
-      "display_name": "Tesla Model Y Long Range / Performance Dual Motor"
+      "display_name": "Tesla Model Y Long Range Dual Motor AWD"
+    },
+    {
+      "id": "tesla-model-y-performance",
+      "make": "Tesla",
+      "model": "Model Y",
+      "variant": "Performance Dual Motor AWD",
+      "type": "ev",
+      "engine": "Dual Motor High-Output Electric AWD",
+      "fuel": "Electric",
+      "display_name": "Tesla Model Y Performance Dual Motor AWD"
     },
     {
       "id": "tesla-model-3-rwd",
       "make": "Tesla",
       "model": "Model 3",
-      "variant": "RWD / Long Range",
+      "variant": "RWD Standard Range",
       "type": "ev",
-      "engine": "Single / Dual Motor EV",
+      "engine": "Single Motor Electric (LFP)",
       "fuel": "Electric",
-      "display_name": "Tesla Model 3 RWD / Long Range"
+      "display_name": "Tesla Model 3 RWD Standard Range"
     },
     {
-      "id": "byd-atto3-ext",
+      "id": "tesla-model-3-long-range",
+      "make": "Tesla",
+      "model": "Model 3",
+      "variant": "Long Range Dual Motor AWD",
+      "type": "ev",
+      "engine": "Dual Motor Electric AWD",
+      "fuel": "Electric",
+      "display_name": "Tesla Model 3 Long Range Dual Motor AWD"
+    },
+    {
+      "id": "tesla-model-3-performance",
+      "make": "Tesla",
+      "model": "Model 3",
+      "variant": "Performance Dual Motor AWD",
+      "type": "ev",
+      "engine": "Dual Motor High-Output Electric AWD",
+      "fuel": "Electric",
+      "display_name": "Tesla Model 3 Performance Dual Motor AWD"
+    },
+    {
+      "id": "byd-atto3-standard",
       "make": "BYD",
       "model": "Atto 3",
-      "variant": "Extended Range",
+      "variant": "Standard Range 50kWh",
       "type": "ev",
-      "engine": "150kW Electric Motor (Blade Battery)",
+      "engine": "150kW Electric Motor",
       "fuel": "Electric",
-      "display_name": "BYD Atto 3 Extended Range"
+      "display_name": "BYD Atto 3 Standard Range 50kWh"
+    },
+    {
+      "id": "byd-atto3-extended",
+      "make": "BYD",
+      "model": "Atto 3",
+      "variant": "Extended Range 60kWh",
+      "type": "ev",
+      "engine": "150kW Electric Motor",
+      "fuel": "Electric",
+      "display_name": "BYD Atto 3 Extended Range 60kWh"
+    },
+    {
+      "id": "byd-seal-dynamic",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Dynamic RWD 61kWh",
+      "type": "ev",
+      "engine": "150kW Electric Motor",
+      "fuel": "Electric",
+      "display_name": "BYD Seal Dynamic RWD 61kWh"
     },
     {
       "id": "byd-seal-premium",
       "make": "BYD",
       "model": "Seal",
-      "variant": "Premium / Performance Dual Motor",
+      "variant": "Premium RWD 82kWh",
       "type": "ev",
-      "engine": "Single / Dual Motor EV",
+      "engine": "230kW Electric Motor",
       "fuel": "Electric",
-      "display_name": "BYD Seal Premium / Performance Dual Motor"
+      "display_name": "BYD Seal Premium RWD 82kWh"
+    },
+    {
+      "id": "byd-seal-performance",
+      "make": "BYD",
+      "model": "Seal",
+      "variant": "Performance AWD 82kWh",
+      "type": "ev",
+      "engine": "390kW Dual Motor Electric AWD",
+      "fuel": "Electric",
+      "display_name": "BYD Seal Performance AWD 82kWh"
     },
     {
       "id": "byd-shark-6-phev",
@@ -696,84 +986,454 @@
       "display_name": "BYD Shark 6 DMO Dual-Cab Plug-in Hybrid Ute"
     },
     {
-      "id": "mg-mg4-excite",
+      "id": "mg-mg4-excite-51",
       "make": "MG",
       "model": "MG4",
-      "variant": "Excite 64 / Essence / XPower AWD",
+      "variant": "Excite 51kWh RWD",
       "type": "ev",
-      "engine": "Single / Dual Motor EV",
+      "engine": "125kW Electric Motor",
       "fuel": "Electric",
-      "display_name": "MG MG4 Excite 64 / Essence / XPower AWD"
+      "display_name": "MG MG4 Excite 51kWh RWD"
     },
     {
-      "id": "polestar-2-lr",
+      "id": "mg-mg4-excite-64",
+      "make": "MG",
+      "model": "MG4",
+      "variant": "Excite 64kWh RWD",
+      "type": "ev",
+      "engine": "150kW Electric Motor",
+      "fuel": "Electric",
+      "display_name": "MG MG4 Excite 64kWh RWD"
+    },
+    {
+      "id": "mg-mg4-essence-64",
+      "make": "MG",
+      "model": "MG4",
+      "variant": "Essence 64kWh RWD",
+      "type": "ev",
+      "engine": "150kW Electric Motor",
+      "fuel": "Electric",
+      "display_name": "MG MG4 Essence 64kWh RWD"
+    },
+    {
+      "id": "mg-mg4-xpower",
+      "make": "MG",
+      "model": "MG4",
+      "variant": "XPower Dual Motor AWD 320kW",
+      "type": "ev",
+      "engine": "Dual Motor Electric AWD",
+      "fuel": "Electric",
+      "display_name": "MG MG4 XPower Dual Motor AWD 320kW"
+    },
+    {
+      "id": "polestar-2-standard",
       "make": "Polestar",
       "model": "Polestar 2",
-      "variant": "Long Range Single / Dual Motor",
+      "variant": "Standard Range Single Motor",
       "type": "ev",
-      "engine": "Single / Dual Motor EV",
+      "engine": "200kW Electric Motor RWD",
       "fuel": "Electric",
-      "display_name": "Polestar Polestar 2 Long Range Single / Dual Motor"
+      "display_name": "Polestar Polestar 2 Standard Range Single Motor"
     },
     {
-      "id": "toyota-corolla-hybrid",
+      "id": "polestar-2-long-range-single",
+      "make": "Polestar",
+      "model": "Polestar 2",
+      "variant": "Long Range Single Motor",
+      "type": "ev",
+      "engine": "220kW Electric Motor RWD",
+      "fuel": "Electric",
+      "display_name": "Polestar Polestar 2 Long Range Single Motor"
+    },
+    {
+      "id": "polestar-2-long-range-dual",
+      "make": "Polestar",
+      "model": "Polestar 2",
+      "variant": "Long Range Dual Motor AWD",
+      "type": "ev",
+      "engine": "310kW Dual Motor Electric AWD",
+      "fuel": "Electric",
+      "display_name": "Polestar Polestar 2 Long Range Dual Motor AWD"
+    },
+    {
+      "id": "toyota-rav4-gx-hybrid",
+      "make": "Toyota",
+      "model": "RAV4",
+      "variant": "GX 2WD Hybrid",
+      "type": "suv",
+      "engine": "2.5L Hybrid",
+      "fuel": "Hybrid",
+      "display_name": "Toyota RAV4 GX 2WD Hybrid"
+    },
+    {
+      "id": "toyota-rav4-gxl-awd-hybrid",
+      "make": "Toyota",
+      "model": "RAV4",
+      "variant": "GXL AWD Hybrid e-Four",
+      "type": "suv",
+      "engine": "2.5L Hybrid e-Four",
+      "fuel": "Hybrid",
+      "display_name": "Toyota RAV4 GXL AWD Hybrid e-Four"
+    },
+    {
+      "id": "toyota-rav4-cruiser-awd-hybrid",
+      "make": "Toyota",
+      "model": "RAV4",
+      "variant": "Cruiser AWD Hybrid e-Four",
+      "type": "suv",
+      "engine": "2.5L Hybrid e-Four",
+      "fuel": "Hybrid",
+      "display_name": "Toyota RAV4 Cruiser AWD Hybrid e-Four"
+    },
+    {
+      "id": "toyota-prado-gx",
+      "make": "Toyota",
+      "model": "LandCruiser Prado",
+      "variant": "GX 4x4 5-Seat 2.8L Diesel",
+      "type": "suv",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser Prado GX 4x4 5-Seat 2.8L Diesel"
+    },
+    {
+      "id": "toyota-prado-gxl",
+      "make": "Toyota",
+      "model": "LandCruiser Prado",
+      "variant": "GXL 4x4 7-Seat 2.8L Diesel",
+      "type": "suv",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser Prado GXL 4x4 7-Seat 2.8L Diesel"
+    },
+    {
+      "id": "toyota-prado-vx",
+      "make": "Toyota",
+      "model": "LandCruiser Prado",
+      "variant": "VX 4x4 7-Seat 2.8L Diesel",
+      "type": "suv",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser Prado VX 4x4 7-Seat 2.8L Diesel"
+    },
+    {
+      "id": "toyota-prado-kakadu",
+      "make": "Toyota",
+      "model": "LandCruiser Prado",
+      "variant": "Kakadu 4x4 7-Seat 2.8L Diesel",
+      "type": "suv",
+      "engine": "2.8L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser Prado Kakadu 4x4 7-Seat 2.8L Diesel"
+    },
+    {
+      "id": "toyota-lc300-gx",
+      "make": "Toyota",
+      "model": "LandCruiser 300",
+      "variant": "GX 4x4 5-Seat V6 Diesel",
+      "type": "suv",
+      "engine": "3.3L Twin-Turbo V6 Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser 300 GX 4x4 5-Seat V6 Diesel"
+    },
+    {
+      "id": "toyota-lc300-gxl",
+      "make": "Toyota",
+      "model": "LandCruiser 300",
+      "variant": "GXL 4x4 7-Seat V6 Diesel",
+      "type": "suv",
+      "engine": "3.3L Twin-Turbo V6 Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser 300 GXL 4x4 7-Seat V6 Diesel"
+    },
+    {
+      "id": "toyota-lc300-sahara",
+      "make": "Toyota",
+      "model": "LandCruiser 300",
+      "variant": "Sahara 4x4 7-Seat V6 Diesel",
+      "type": "suv",
+      "engine": "3.3L Twin-Turbo V6 Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser 300 Sahara 4x4 7-Seat V6 Diesel"
+    },
+    {
+      "id": "toyota-lc300-gr-sport",
+      "make": "Toyota",
+      "model": "LandCruiser 300",
+      "variant": "GR Sport 4x4 5-Seat V6 Diesel",
+      "type": "suv",
+      "engine": "3.3L Twin-Turbo V6 Diesel",
+      "fuel": "Diesel",
+      "display_name": "Toyota LandCruiser 300 GR Sport 4x4 5-Seat V6 Diesel"
+    },
+    {
+      "id": "ford-everest-trend-biturbo",
+      "make": "Ford",
+      "model": "Everest",
+      "variant": "Trend 4WD 2.0L Bi-Turbo",
+      "type": "suv",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Everest Trend 4WD 2.0L Bi-Turbo"
+    },
+    {
+      "id": "ford-everest-sport-v6",
+      "make": "Ford",
+      "model": "Everest",
+      "variant": "Sport 4WD 3.0L V6",
+      "type": "suv",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Everest Sport 4WD 3.0L V6"
+    },
+    {
+      "id": "ford-everest-platinum-v6",
+      "make": "Ford",
+      "model": "Everest",
+      "variant": "Platinum 4WD 3.0L V6",
+      "type": "suv",
+      "engine": "3.0L V6 Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Ford Everest Platinum 4WD 3.0L V6"
+    },
+    {
+      "id": "isuzu-mux-lsu",
+      "make": "Isuzu",
+      "model": "MU-X",
+      "variant": "LS-U 4x4 7-Seat SUV 3.0L",
+      "type": "suv",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu MU-X LS-U 4x4 7-Seat SUV 3.0L"
+    },
+    {
+      "id": "isuzu-mux-lst",
+      "make": "Isuzu",
+      "model": "MU-X",
+      "variant": "LS-T 4x4 7-Seat SUV 3.0L",
+      "type": "suv",
+      "engine": "3.0L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Isuzu MU-X LS-T 4x4 7-Seat SUV 3.0L"
+    },
+    {
+      "id": "mitsubishi-outlander-aspire-phev",
+      "make": "Mitsubishi",
+      "model": "Outlander",
+      "variant": "Aspire PHEV AWD",
+      "type": "suv",
+      "engine": "2.4L Plug-in Hybrid",
+      "fuel": "Plug-in Hybrid",
+      "display_name": "Mitsubishi Outlander Aspire PHEV AWD"
+    },
+    {
+      "id": "mitsubishi-outlander-exceed-phev",
+      "make": "Mitsubishi",
+      "model": "Outlander",
+      "variant": "Exceed PHEV AWD",
+      "type": "suv",
+      "engine": "2.4L Plug-in Hybrid",
+      "fuel": "Plug-in Hybrid",
+      "display_name": "Mitsubishi Outlander Exceed PHEV AWD"
+    },
+    {
+      "id": "mazda-cx5-maxx-sport",
+      "make": "Mazda",
+      "model": "CX-5",
+      "variant": "Maxx Sport AWD 2.5L Petrol",
+      "type": "suv",
+      "engine": "2.5L Petrol",
+      "fuel": "Petrol",
+      "display_name": "Mazda CX-5 Maxx Sport AWD 2.5L Petrol"
+    },
+    {
+      "id": "mazda-cx5-gt-sp",
+      "make": "Mazda",
+      "model": "CX-5",
+      "variant": "GT SP Turbo AWD 2.5L",
+      "type": "suv",
+      "engine": "2.5L Turbo Petrol",
+      "fuel": "Petrol",
+      "display_name": "Mazda CX-5 GT SP Turbo AWD 2.5L"
+    },
+    {
+      "id": "subaru-forester-25i-l",
+      "make": "Subaru",
+      "model": "Forester",
+      "variant": "2.5i-L AWD Boxer",
+      "type": "suv",
+      "engine": "2.5L Boxer Petrol",
+      "fuel": "Petrol",
+      "display_name": "Subaru Forester 2.5i-L AWD Boxer"
+    },
+    {
+      "id": "subaru-forester-25i-s",
+      "make": "Subaru",
+      "model": "Forester",
+      "variant": "2.5i-S AWD Boxer",
+      "type": "suv",
+      "engine": "2.5L Boxer Petrol",
+      "fuel": "Petrol",
+      "display_name": "Subaru Forester 2.5i-S AWD Boxer"
+    },
+    {
+      "id": "subaru-outback-touring-xt",
+      "make": "Subaru",
+      "model": "Outback",
+      "variant": "Touring XT 2.4L Turbo Boxer AWD",
+      "type": "suv",
+      "engine": "2.4L Turbo Boxer Petrol",
+      "fuel": "Petrol",
+      "display_name": "Subaru Outback Touring XT 2.4L Turbo Boxer AWD"
+    },
+    {
+      "id": "toyota-corolla-ascent-sport-hybrid",
       "make": "Toyota",
       "model": "Corolla",
-      "variant": "Ascent Sport / SX / ZR Hybrid",
+      "variant": "Ascent Sport Hybrid Hatch",
       "type": "passenger",
       "engine": "1.8L Hybrid",
       "fuel": "Hybrid",
-      "display_name": "Toyota Corolla Ascent Sport / SX / ZR Hybrid"
+      "display_name": "Toyota Corolla Ascent Sport Hybrid Hatch"
     },
     {
-      "id": "toyota-camry-hybrid",
+      "id": "toyota-corolla-zr-hybrid",
+      "make": "Toyota",
+      "model": "Corolla",
+      "variant": "ZR Hybrid Sedan",
+      "type": "passenger",
+      "engine": "1.8L Hybrid",
+      "fuel": "Hybrid",
+      "display_name": "Toyota Corolla ZR Hybrid Sedan"
+    },
+    {
+      "id": "toyota-camry-ascent-hybrid",
       "make": "Toyota",
       "model": "Camry",
-      "variant": "Ascent / SL Hybrid Sedan",
+      "variant": "Ascent Hybrid Sedan",
       "type": "passenger",
       "engine": "2.5L Hybrid",
       "fuel": "Hybrid",
-      "display_name": "Toyota Camry Ascent / SL Hybrid Sedan"
+      "display_name": "Toyota Camry Ascent Hybrid Sedan"
     },
     {
-      "id": "hyundai-i30-nline",
+      "id": "toyota-camry-sl-hybrid",
+      "make": "Toyota",
+      "model": "Camry",
+      "variant": "SL Luxury Hybrid Sedan",
+      "type": "passenger",
+      "engine": "2.5L Hybrid",
+      "fuel": "Hybrid",
+      "display_name": "Toyota Camry SL Luxury Hybrid Sedan"
+    },
+    {
+      "id": "hyundai-i30-active-hatch",
       "make": "Hyundai",
       "model": "i30",
-      "variant": "Active / N-Line Hatch & Sedan",
+      "variant": "Active 2.0L Hatch",
       "type": "passenger",
-      "engine": "2.0L / 1.6T Petrol",
+      "engine": "2.0L Petrol",
       "fuel": "Petrol",
-      "display_name": "Hyundai i30 Active / N-Line Hatch & Sedan"
+      "display_name": "Hyundai i30 Active 2.0L Hatch"
     },
     {
-      "id": "kia-cerato-gt",
+      "id": "hyundai-i30-n-line-sedan",
+      "make": "Hyundai",
+      "model": "i30",
+      "variant": "N-Line 1.6L Turbo Sedan",
+      "type": "passenger",
+      "engine": "1.6L Turbo Petrol",
+      "fuel": "Petrol",
+      "display_name": "Hyundai i30 N-Line 1.6L Turbo Sedan"
+    },
+    {
+      "id": "hyundai-i30-n-performance",
+      "make": "Hyundai",
+      "model": "i30",
+      "variant": "N Performance 2.0L Turbo Hatch",
+      "type": "passenger",
+      "engine": "2.0L Turbo Petrol",
+      "fuel": "Petrol",
+      "display_name": "Hyundai i30 N Performance 2.0L Turbo Hatch"
+    },
+    {
+      "id": "kia-cerato-sport-plus",
       "make": "Kia",
       "model": "Cerato",
-      "variant": "Sport+ / GT 1.6T Hatch & Sedan",
+      "variant": "Sport+ 2.0L Sedan",
       "type": "passenger",
-      "engine": "2.0L / 1.6T Petrol",
+      "engine": "2.0L Petrol",
       "fuel": "Petrol",
-      "display_name": "Kia Cerato Sport+ / GT 1.6T Hatch & Sedan"
+      "display_name": "Kia Cerato Sport+ 2.0L Sedan"
     },
     {
-      "id": "mazda-3-g25",
+      "id": "kia-cerato-gt-turbo",
+      "make": "Kia",
+      "model": "Cerato",
+      "variant": "GT 1.6L Turbo Hatch",
+      "type": "passenger",
+      "engine": "1.6L Turbo Petrol",
+      "fuel": "Petrol",
+      "display_name": "Kia Cerato GT 1.6L Turbo Hatch"
+    },
+    {
+      "id": "mazda-3-g20-pure",
       "make": "Mazda",
       "model": "Mazda 3",
-      "variant": "G20 Pure / G25 Evolve / Astina",
+      "variant": "G20 Pure 2.0L Hatch",
       "type": "passenger",
-      "engine": "2.0L / 2.5L Skyactiv-G",
+      "engine": "2.0L Skyactiv-G",
       "fuel": "Petrol",
-      "display_name": "Mazda Mazda 3 G20 Pure / G25 Evolve / Astina"
+      "display_name": "Mazda Mazda 3 G20 Pure 2.0L Hatch"
+    },
+    {
+      "id": "mazda-3-g25-astina",
+      "make": "Mazda",
+      "model": "Mazda 3",
+      "variant": "G25 Astina 2.5L Sedan",
+      "type": "passenger",
+      "engine": "2.5L Skyactiv-G",
+      "fuel": "Petrol",
+      "display_name": "Mazda Mazda 3 G25 Astina 2.5L Sedan"
+    },
+    {
+      "id": "vw-golf-life",
+      "make": "Volkswagen",
+      "model": "Golf",
+      "variant": "Life 1.4L TSI Hatch",
+      "type": "passenger",
+      "engine": "1.4L TSI Petrol",
+      "fuel": "Petrol",
+      "display_name": "Volkswagen Golf Life 1.4L TSI Hatch"
+    },
+    {
+      "id": "vw-golf-r-line",
+      "make": "Volkswagen",
+      "model": "Golf",
+      "variant": "R-Line 1.4L TSI Hatch",
+      "type": "passenger",
+      "engine": "1.4L TSI Petrol",
+      "fuel": "Petrol",
+      "display_name": "Volkswagen Golf R-Line 1.4L TSI Hatch"
     },
     {
       "id": "vw-golf-gti",
       "make": "Volkswagen",
       "model": "Golf",
-      "variant": "Life / R-Line / GTI 2.0TSI",
+      "variant": "GTI 2.0L TSI Hatch",
       "type": "passenger",
-      "engine": "1.4T / 2.0T TSI Petrol",
+      "engine": "2.0L TSI Petrol",
       "fuel": "Petrol",
-      "display_name": "Volkswagen Golf Life / R-Line / GTI 2.0TSI"
+      "display_name": "Volkswagen Golf GTI 2.0L TSI Hatch"
+    },
+    {
+      "id": "vw-golf-r-awd",
+      "make": "Volkswagen",
+      "model": "Golf",
+      "variant": "Golf R 2.0L TSI 4Motion AWD",
+      "type": "passenger",
+      "engine": "2.0L TSI Petrol",
+      "fuel": "Petrol",
+      "display_name": "Volkswagen Golf Golf R 2.0L TSI 4Motion AWD"
     }
   ]
 }
