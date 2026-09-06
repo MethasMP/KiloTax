@@ -4,7 +4,9 @@ enum ExpenseCategory {
   insurance,
   maintenanceTyres,
   interest,
-  tollsParking;
+  tollsParking,
+  toolsMaterials,
+  otherBusiness;
 
   String get displayName {
     switch (this) {
@@ -20,12 +22,27 @@ enum ExpenseCategory {
         return 'Car Loan Interest / Lease';
       case ExpenseCategory.tollsParking:
         return 'Work Tolls & Parking';
+      case ExpenseCategory.toolsMaterials:
+        return 'Tools & Job Materials (Bunnings)';
+      case ExpenseCategory.otherBusiness:
+        return 'General Business Cost';
     }
   }
 
-  /// ATO Rule: Work-related tolls & parking are 100% directly deductible,
-  /// whereas general running costs are scaled by the logbook business percentage.
-  bool get isDirectlyDeductibleByDefault => this == ExpenseCategory.tollsParking;
+  /// Categorizes whether this is directly tied to the car running cost vs general business
+  bool get isCarExpense =>
+      this == ExpenseCategory.fuel ||
+      this == ExpenseCategory.rego ||
+      this == ExpenseCategory.insurance ||
+      this == ExpenseCategory.maintenanceTyres ||
+      this == ExpenseCategory.interest;
+
+  /// ATO Rule: Work tolls, tools & direct business items are 100% deductible directly,
+  /// whereas general car running costs are scaled by logbook business %.
+  bool get isDirectlyDeductibleByDefault =>
+      this == ExpenseCategory.tollsParking ||
+      this == ExpenseCategory.toolsMaterials ||
+      this == ExpenseCategory.otherBusiness;
 }
 
 /// Core Expense Entity conforming to Layer 2 (EXPENSES):

@@ -1,9 +1,11 @@
 import '../onboarding/vehicle_onboarding_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../data/models/vehicle.dart';
 import '../../../data/models/trip.dart';
 import '../../../data/models/tax_summary.dart';
 import '../../../state/app_state.dart';
@@ -16,53 +18,97 @@ class TaxDashboardScreen extends StatelessWidget {
   const TaxDashboardScreen({super.key});
 
   void _showAddTripDialog(BuildContext context, AppState appState) {
-    final distController = TextEditingController(text: '45.0');
-    final purposeController = TextEditingController(text: 'Client site electrical service');
+    final distController = TextEditingController(text: '32.5');
+    String selectedPurpose = 'Client / Job Site';
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Simulate Drive Trip', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: distController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Distance (KM)'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(PhosphorIconsBold.steeringWheel, color: AppColors.workBlue, size: 22),
+              SizedBox(width: 8),
+              Text('Log Drive Trip', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: distController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Distance (KM)',
+                  suffixText: 'km',
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('What was this trip for? (1-Tap)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.muted)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  'Client / Job',
+                  'Materials / Bunnings',
+                  'Work Site',
+                  'Client Meeting',
+                  'Personal / Other',
+                ].map((p) {
+                  final isSel = selectedPurpose == p;
+                  return ChoiceChip(
+                    label: Text(p, style: TextStyle(fontSize: 11.5, fontWeight: isSel ? FontWeight.w800 : FontWeight.w600, color: isSel ? Colors.white : AppColors.ink)),
+                    selected: isSel,
+                    selectedColor: AppColors.workBlue,
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: isSel ? AppColors.workBlue : AppColors.border),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    onSelected: (val) {
+                      if (val) setDialogState(() => selectedPurpose = p);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
             ),
-            TextField(
-              controller: purposeController,
-              decoration: const InputDecoration(labelText: 'Trip Purpose'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.workBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                final dist = double.tryParse(distController.text) ?? 25.0;
+                final isPersonal = selectedPurpose.contains('Personal');
+                final lastOdo = appState.trips.isNotEmpty ? appState.trips.last.endOdometer : (appState.primaryVehicle?.initialOdometer ?? 10000.0);
+                final trip = Trip(
+                  id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
+                  vehicleId: appState.primaryVehicle?.id ?? 'default_vehicle',
+                  distanceKm: dist,
+                  date: DateTime.now(),
+                  purpose: selectedPurpose,
+                  startOdometer: lastOdo,
+                  endOdometer: lastOdo + dist,
+                  classification: isPersonal ? TripClassification.personal : TripClassification.business,
+                );
+                appState.recordTrip(trip);
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Save Trip', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.workBlue, foregroundColor: Colors.white),
-            onPressed: () {
-              final dist = double.tryParse(distController.text) ?? 25.0;
-              final trip = Trip(
-                id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
-                vehicleId: appState.primaryVehicle?.id ?? 'default_vehicle',
-                distanceKm: dist,
-                date: DateTime.now(),
-                purpose: purposeController.text.trim(),
-                startOdometer: 10000.0,
-                endOdometer: 10000.0 + dist,
-                classification: TripClassification.business,
-              );
-              appState.recordTrip(trip);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Save Business Trip'),
-          ),
-        ],
       ),
     );
   }
@@ -338,163 +384,266 @@ class TaxDashboardScreen extends StatelessWidget {
               ),
             ),
 
-            // 12-WEEK STATUTORY COMPLIANCE TRACKER & COMPLIANCE STATE
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.workBlue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(PhosphorIconsFill.shieldCheck, color: AppColors.workBlue, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ATO 12-WEEK COMPLIANCE TRACKER',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
-                            ),
-                            Text(
-                              'Week ${appState.currentLogbookWeek} of 12 (${(appState.logbookProgressPercentage * 100).toInt()}%)',
-                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: appState.missingComplianceTrips.isEmpty ? AppColors.emeraldLight : AppColors.amberLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              appState.missingComplianceTrips.isEmpty ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
-                              size: 13,
-                              color: appState.missingComplianceTrips.isEmpty ? AppColors.emerald : AppColors.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              appState.missingComplianceTrips.isEmpty
-                                  ? '100% CLAIM-READY'
-                                  : '${appState.missingComplianceTrips.length} MISSING RECORDS',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color: appState.missingComplianceTrips.isEmpty ? AppColors.emerald : AppColors.amber,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 12-Week Linear Progress Indicator
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: appState.logbookProgressPercentage,
-                      minHeight: 8,
-                      backgroundColor: AppColors.background,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.workBlue),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Missing Record Quick-Action Card (if any)
-                  if (appState.missingComplianceTrips.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.amberLight.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(PhosphorIconsBold.warningCircle, color: AppColors.amber, size: 16),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Resolve Trip Purpose to prevent ATO Audit flags:',
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.ink),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '🚗 ${appState.missingComplianceTrips.first.distanceKm} km trip missing work reason',
-                                  style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.amber,
-                                  foregroundColor: Colors.white,
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  elevation: 0,
-                                ),
-                                onPressed: () {
-                                  appState.resolveTripPurpose(
-                                    appState.missingComplianceTrips.first.id,
-                                    'Client Job Site Service & Installation',
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Trip marked as Client Job Site (100% Deductible).')),
-                                  );
-                                },
-                                child: const Text('Mark as Job Site', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else ...[
+            // DYNAMIC COMPLIANCE HUD:
+            // If vehicle uses Cents/KM -> Show 5,000 km Statutory Cap & Progress Meter
+            // If vehicle uses Logbook  -> Show 12-Week Statutory Period & Missing Purpose Tracker
+            if (appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
-                        const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 14),
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppColors.workBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(PhosphorIconsFill.gauge, color: AppColors.workBlue, size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'ATO CENTS-PER-KM 5,000 KM CAP',
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
+                              ),
+                              Text(
+                                '${Formatters.distance(summary.businessKm)} / 5,000 km',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: summary.businessKm >= 5000.0 ? AppColors.crimsonLight : AppColors.emeraldLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            summary.businessKm >= 5000.0
+                                ? 'CAP REACHED'
+                                : '${(5000.0 - summary.businessKm).clamp(0.0, 5000.0).toStringAsFixed(0)} KM REMAINING',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: summary.businessKm >= 5000.0 ? AppColors.crimson : AppColors.emerald,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: (summary.businessKm / 5000.0).clamp(0.0, 1.0),
+                        minHeight: 8,
+                        backgroundColor: AppColors.background,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          summary.businessKm >= 5000.0 ? AppColors.crimson : AppColors.workBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(
+                          summary.businessKm >= 5000.0 ? Icons.info_outline_rounded : Icons.check_circle_outline_rounded,
+                          size: 13,
+                          color: summary.businessKm >= 5000.0 ? AppColors.crimson : AppColors.muted,
+                        ),
                         const SizedBox(width: 4),
-                        const Text(
-                          'Continuous logbook entries preserved. Valid for 5 consecutive tax years.',
-                          style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
+                        Expanded(
+                          child: Text(
+                            summary.businessKm >= 5000.0
+                                ? 'ATO maximum limit reached. Any additional business km should use Logbook.'
+                                : 'Rate: ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢ / km. Fuel & repairs included in rate.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: summary.businessKm >= 5000.0 ? AppColors.crimson : AppColors.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
+            ] else ...[
+              // 12-WEEK STATUTORY COMPLIANCE TRACKER & COMPLIANCE STATE
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppColors.workBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(PhosphorIconsFill.shieldCheck, color: AppColors.workBlue, size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ATO 12-WEEK COMPLIANCE TRACKER',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
+                              ),
+                              Text(
+                                'Week ${appState.currentLogbookWeek} of 12 (${(appState.logbookProgressPercentage * 100).toInt()}%)',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: appState.missingComplianceTrips.isEmpty ? AppColors.emeraldLight : AppColors.amberLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                appState.missingComplianceTrips.isEmpty ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                                size: 13,
+                                color: appState.missingComplianceTrips.isEmpty ? AppColors.emerald : AppColors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                appState.missingComplianceTrips.isEmpty
+                                    ? '100% CLAIM-READY'
+                                    : '${appState.missingComplianceTrips.length} MISSING RECORDS',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: appState.missingComplianceTrips.isEmpty ? AppColors.emerald : AppColors.amber,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 12-Week Linear Progress Indicator
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: appState.logbookProgressPercentage,
+                        minHeight: 8,
+                        backgroundColor: AppColors.background,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.workBlue),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Missing Record Quick-Action Card (if any)
+                    if (appState.missingComplianceTrips.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.amberLight.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(PhosphorIconsBold.warningCircle, color: AppColors.amber, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Resolve Trip Purpose to prevent ATO Audit flags:',
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.ink),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '🚗 ${appState.missingComplianceTrips.first.distanceKm} km trip missing work reason',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.amber,
+                                    foregroundColor: Colors.white,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    elevation: 0,
+                                  ),
+                                  onPressed: () {
+                                    appState.resolveTripPurpose(
+                                      appState.missingComplianceTrips.first.id,
+                                      'Client Job Site Service & Installation',
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Trip marked as Client Job Site (100% Deductible).')),
+                                    );
+                                  },
+                                  child: const Text('Mark as Job Site', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 14),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Continuous logbook entries preserved. Valid for 5 consecutive tax years.',
+                            style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
 
             // TAX SUMMARY: Optimal Comparison Hero Banner
             Container(
@@ -597,6 +746,7 @@ class TaxDashboardScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
             const SizedBox(height: 24),
 
             // RECENT TRIPS STREAM (Layer 1 Feed)

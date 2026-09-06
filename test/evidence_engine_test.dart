@@ -89,5 +89,56 @@ void main() {
       appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
       expect(appState.primaryVehicle?.taxMethod, equals(TaxMethod.logbook));
     });
+
+    test('Section 9 Expense Architecture: Tools & Materials claim 100% directly regardless of Logbook %', () {
+      final trip = Trip(
+        id: 'trip_1',
+        vehicleId: 'v1',
+        distanceKm: 50.0,
+        date: DateTime.now(),
+        purpose: 'Work Job',
+        startOdometer: 1000.0,
+        endOdometer: 1050.0,
+        classification: TripClassification.business,
+      );
+      final personalTrip = Trip(
+        id: 'trip_2',
+        vehicleId: 'v1',
+        distanceKm: 50.0,
+        date: DateTime.now(),
+        purpose: 'Weekend Groceries',
+        startOdometer: 1050.0,
+        endOdometer: 1100.0,
+        classification: TripClassification.personal,
+      );
+      // Business percentage = 50% (50km / 100km)
+
+      final fuelExpense = VehicleExpense(
+        id: 'e1',
+        vehicleId: 'v1',
+        amount: 100.0,
+        category: ExpenseCategory.fuel,
+        date: DateTime.now(),
+      );
+
+      final bunningsTools = VehicleExpense(
+        id: 'e2',
+        vehicleId: 'v1',
+        amount: 300.0,
+        category: ExpenseCategory.toolsMaterials,
+        date: DateTime.now(),
+      );
+
+      final summary = TaxCalculatorService.evaluateSummary(
+        trips: [trip, personalTrip],
+        expenses: [fuelExpense, bunningsTools],
+      );
+
+      expect(summary.businessPercentage, equals(50.0));
+      expect(fuelExpense.category.isCarExpense, isTrue);
+      expect(bunningsTools.category.isDirectlyDeductibleByDefault, isTrue);
+      // Logbook Claim should be: (Fuel $100 * 50%) + (Bunnings Tools $300 * 100%) = $50 + $300 = $350
+      expect(summary.logbookClaim, equals(350.0));
+    });
   });
 }

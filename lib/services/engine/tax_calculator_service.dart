@@ -69,7 +69,7 @@ class TaxCalculatorService {
     double totalDirect = 0.0;
 
     for (final exp in expenses) {
-      if (exp.category == ExpenseCategory.tollsParking) {
+      if (exp.category.isDirectlyDeductibleByDefault) {
         totalDirect += exp.amount * (exp.businessPercentage / 100.0);
       } else {
         totalRunning += exp.amount;

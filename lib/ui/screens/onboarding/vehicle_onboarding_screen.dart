@@ -162,7 +162,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     }
   }
 
-  void _adjustOdometer(int delta) {
+  void _adjustOdometer(double delta) {
     HapticFeedback.lightImpact();
     final current = double.tryParse(_odoController.text.replaceAll(',', '').trim()) ?? 0.0;
     final next = (current + delta).clamp(0.0, 999999.0);
@@ -436,10 +436,6 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Dynamic Tax Hook Banner (YC-Grade Value Realization)
-          const TaxPotentialHookBanner(),
-          const SizedBox(height: 18),
-
           // Section 1: Smart Vehicle Selector (Primary Flow for Lazy User)
           Row(
             children: [
@@ -579,25 +575,18 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                           dense: true,
                           visualDensity: VisualDensity.compact,
                           leading: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.workBlue.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(PhosphorIconsFill.carProfile, size: 16, color: AppColors.workBlue),
-                          ),
                           title: Text(
                             option.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
                           ),
                           subtitle: Text(
-                            '${option.engineCapacity} • ${option.atoCategoryLabel}',
+                            '${option.engineCapacity} • ${option.fuelType} • ${option.atoCategoryLabel}',
                             style: const TextStyle(fontSize: 11, color: AppColors.muted),
                           ),
                           trailing: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.cardBorder.withOpacity(0.5),
+                              color: AppColors.border.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -614,54 +603,6 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
               );
             },
           ),
-          if (_lookupResult != null && _lookupResult!.popularTrims.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.tune_rounded, size: 14, color: AppColors.muted),
-                const SizedBox(width: 4),
-                Text(
-                  'SELECT TRIM / VARIANT (ATO ALIGNED):',
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _lookupResult!.popularTrims.map((trim) {
-                  final isSelected = _makeModelController.text.contains(trim);
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(trim),
-                      selected: isSelected,
-                      selectedColor: AppColors.workBlue.withOpacity(0.12),
-                      backgroundColor: Colors.white,
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? AppColors.workBlue : AppColors.ink,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: isSelected ? AppColors.workBlue : AppColors.border,
-                        ),
-                      ),
-                      onSelected: (selected) {
-                        setState(() {
-                          final base = '${_lookupResult!.make} ${_lookupResult!.model}';
-                          _makeModelController.text = selected ? '$base $trim' : base;
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
           const SizedBox(height: 12),
 
           // Engine Specs & Vehicle Type Row
@@ -869,8 +810,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           const SizedBox(height: 20),
 
           const Text(
-            'How do you want to track
-this vehicle for tax?',
+            'How do you want to track this vehicle for tax?',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -896,7 +836,7 @@ this vehicle for tax?',
             bullets: [
               'No need to keep receipts for fuel or servicing',
               'Fastest claim under ATO Division 28 rules',
-              'Maximum claim capped at 5,000 work km ($4,550)',
+              'Maximum claim capped at 5,000 work km (\$4,550)',
             ],
             isSelected: _selectedTaxMethod == TaxMethod.centsPerKm,
             onTap: () {
@@ -915,7 +855,7 @@ this vehicle for tax?',
             rateHighlight: 'Actual Costs %',
             bullets: [
               'Claim fuel, rego, insurance, repairs & loan interest',
-              'Unlocks depreciation (up to $69,674 car limit)',
+              'Unlocks depreciation (up to \$69,674 car limit)',
               'Valid for 5 consecutive tax years once established',
             ],
             isSelected: _selectedTaxMethod == TaxMethod.logbook,

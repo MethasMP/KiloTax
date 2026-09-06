@@ -31,6 +31,12 @@ class VehicleLookupResult {
         return 'Commercial Ute (>1t)';
       case VehicleType.van:
         return 'Delivery Van';
+      case VehicleType.truck:
+        return 'Light Truck';
+      case VehicleType.suv:
+        return 'SUV / 4WD';
+      case VehicleType.motorcycle:
+        return 'Motorcycle';
       case VehicleType.car:
         return 'Passenger Car (<1t)';
     }

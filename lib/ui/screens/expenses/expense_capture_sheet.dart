@@ -69,6 +69,49 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
       return;
     }
 
+    final isCentsPerKm = widget.appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm;
+    final isCarRunningCost = _selectedCategory == ExpenseCategory.fuel || _selectedCategory == ExpenseCategory.maintenanceTyres;
+
+    if (isCentsPerKm && isCarRunningCost) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Car Running Expense', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          content: Text(
+            'This ${_selectedCategory.displayName.toLowerCase()} expense is already covered by your vehicle\'s ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢/km rate.\n\nKeep receipt backed up in your Evidence Vault?',
+            style: const TextStyle(fontSize: 13.5, height: 1.45, color: AppColors.ink),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Dismiss confirmation dialog
+                Navigator.of(context).pop(); // Close sheet without saving
+              },
+              child: const Text('Cancel / Don\'t Save', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.emerald,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _commitSaveExpense(amount);
+              },
+              child: const Text('Keep Receipt in Vault', style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    _commitSaveExpense(amount);
+  }
+
+  void _commitSaveExpense(double amount) {
     HapticFeedback.heavyImpact();
     final expense = VehicleExpense(
       id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
@@ -83,6 +126,13 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
 
     widget.appState.recordExpense(expense);
     Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('✓ Receipt backed up securely in your Evidence Vault.'),
+        backgroundColor: AppColors.ink,
+      ),
+    );
   }
 
   @override
@@ -141,46 +191,6 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
             ),
           ),
           const SizedBox(height: 12),
-
-          // ATO DOUBLE-CLAIM GUARD (Apple HIG: Concise, Actionable, Zero Jargon)
-          if (widget.appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm &&
-              (_selectedCategory == ExpenseCategory.fuel || _selectedCategory == ExpenseCategory.maintenanceTyres)) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.amberLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(PhosphorIconsFill.info, color: AppColors.amber, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Fuel is included in your ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢/km rate. Saved for proof only.',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink),
-                    ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      visualDensity: VisualDensity.compact,
-                      foregroundColor: AppColors.workBlue,
-                    ),
-                    onPressed: () {
-                      widget.appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Switched to Logbook (claims actual fuel %)')),
-                      );
-                    },
-                    child: const Text('Logbook', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
-                  ),
-                ],
-              ),
-            ),
-          ],
 
           // Category Dropdown
           DropdownButtonFormField<ExpenseCategory>(
