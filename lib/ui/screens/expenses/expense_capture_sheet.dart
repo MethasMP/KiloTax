@@ -167,8 +167,8 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Your ${widget.appState.primaryVehicle?.displayName ?? "vehicle"} uses the 91c/km Cents-per-KM method, which ALREADY includes fuel & maintenance in the set rate. This receipt will be stored in your private vault for proof, but won't be double-claimed at Box D1.',
-                          style: const TextStyle(fontSize: 11, color: AppColors.ink, height: 1.35),
+                          'Fuel & repairs are already covered inside the set ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}c/km rate for this vehicle. We'll safely store this receipt in your vault so you don't claim it twice by mistake.',
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.ink, height: 1.35),
                         ),
                         const SizedBox(height: 6),
                         GestureDetector(
@@ -179,7 +179,7 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                             );
                           },
                           child: const Text(
-                            'Switch vehicle to Logbook to claim actual fuel % →',
+                            'Want to claim actual fuel costs instead? Switch to Logbook →',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.workBlue),
                           ),
                         ),

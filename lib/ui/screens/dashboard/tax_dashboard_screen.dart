@@ -524,7 +524,7 @@ class TaxDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      Text('ATO Box D1', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
+                      Text('Estimated Tax Deduction (ATO Form D1)', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5, fontWeight: FontWeight.w600)),
                     ],
                   ),
                   const SizedBox(height: 12),
