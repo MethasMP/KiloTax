@@ -75,6 +75,11 @@ class VehicleLookupResult {
 /// Fetches normalized flat dataset (BITRE / CC BY 3.0 AU) hosted on jsDelivr Global Edge CDN.
 /// Zero-app-bloat, in-memory cached, and offline resilient.
 class VehicleLookupService {
+  // Primary: GitHub Raw (Always real-time, no stale CDN cache)
+  static const String primaryUrl =
+      'https://raw.githubusercontent.com/MethasMP/KiloTax/main/australia_vehicles.json';
+
+  // Fallback: Global jsDelivr Edge CDN
   static const String cdnUrl =
       'https://cdn.jsdelivr.net/gh/MethasMP/KiloTax@main/australia_vehicles.json';
 
@@ -99,7 +104,7 @@ class VehicleLookupService {
     try {
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 4);
-      final request = await client.getUrl(Uri.parse(cdnUrl));
+      final request = await client.getUrl(Uri.parse(primaryUrl));
       request.headers.set('User-Agent', 'KiloTax-ATO/1.0 (Privacy-First Client)');
       final response = await request.close();
 
