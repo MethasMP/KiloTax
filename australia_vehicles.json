@@ -1,0 +1,504 @@
+{
+  "version": "2026.1",
+  "source": "BITRE Road Vehicles Australia / NEVDIS extract (CC BY 3.0 AU)",
+  "updated_at": "2026-09-06",
+  "total": 62,
+  "vehicles": [
+    {
+      "make": "Toyota",
+      "model": "Hilux SR5 4x4",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.8L Turbo Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "Hilux Workmate",
+      "type": "ute",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "2.7L Petrol"
+    },
+    {
+      "make": "Toyota",
+      "model": "Hilux Rogue / Rugged X",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2018-2025",
+      "engine": "2.8L Turbo Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "LandCruiser 79 Series Single/Double Cab",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2007-2025",
+      "engine": "4.5L V8 / 2.8L 4-Cyl Turbo Diesel"
+    },
+    {
+      "make": "Ford",
+      "model": "Ranger Wildtrak",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2018-2025",
+      "engine": "3.0L V6 / 2.0L Bi-Turbo Diesel"
+    },
+    {
+      "make": "Ford",
+      "model": "Ranger XL / XLT",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.0L Bi-Turbo Diesel"
+    },
+    {
+      "make": "Ford",
+      "model": "Ranger Raptor",
+      "type": "ute",
+      "fuel": "Petrol",
+      "years": "2022-2025",
+      "engine": "3.0L Twin-Turbo EcoBoost V6"
+    },
+    {
+      "make": "Isuzu",
+      "model": "D-Max LS-U / X-Terrain",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2017-2025",
+      "engine": "3.0L 4JJ3 Turbo Diesel"
+    },
+    {
+      "make": "Isuzu",
+      "model": "D-Max SX Cab Chassis",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2017-2025",
+      "engine": "1.9L / 3.0L Turbo Diesel"
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "Triton GLX / GLS / GSR",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.4L MIVEC Bi-Turbo Diesel"
+    },
+    {
+      "make": "Mazda",
+      "model": "BT-50 GT / XT / SP",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "3.0L Turbo Diesel"
+    },
+    {
+      "make": "Nissan",
+      "model": "Navara ST / ST-X / PRO-4X",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.3L Twin-Turbo Diesel"
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Amarok TDI580 / PanAmericana",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "3.0L V6 Turbo Diesel"
+    },
+    {
+      "make": "GWM",
+      "model": "Cannon L / X / Vanta",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2020-2025",
+      "engine": "2.0L Turbo Diesel"
+    },
+    {
+      "make": "LDV",
+      "model": "T60 Max Pro / Luxe",
+      "type": "ute",
+      "fuel": "Diesel",
+      "years": "2020-2025",
+      "engine": "2.0L Bi-Turbo Diesel"
+    },
+    {
+      "make": "RAM",
+      "model": "1500 Express / Laramie",
+      "type": "ute",
+      "fuel": "Petrol",
+      "years": "2018-2025",
+      "engine": "5.7L HEMI V8"
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Silverado 1500 LTZ",
+      "type": "ute",
+      "fuel": "Petrol",
+      "years": "2020-2025",
+      "engine": "6.2L EcoTec3 V8"
+    },
+    {
+      "make": "Toyota",
+      "model": "HiAce LWB / SLWB",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.8L Turbo Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "Granvia",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2019-2025",
+      "engine": "2.8L Turbo Diesel"
+    },
+    {
+      "make": "Ford",
+      "model": "Transit Custom 300S / 340L",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.0L EcoBlue Diesel"
+    },
+    {
+      "make": "Hyundai",
+      "model": "iLoad / Staria Load",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.2L CRDi / 2.5L CRDi"
+    },
+    {
+      "make": "Renault",
+      "model": "Trafic Pro / Premium",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.0L Turbo Diesel"
+    },
+    {
+      "make": "Mercedes-Benz",
+      "model": "Vito 114 / 116 / 119 CDI",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.0L / 2.1L Turbo Diesel"
+    },
+    {
+      "make": "Mercedes-Benz",
+      "model": "Sprinter 314 / 316 / 519 CDI",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.0L / 3.0L V6 Turbo Diesel"
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Transporter TDI340 / TDI450",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.0L TDI Diesel"
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Caddy Cargo Maxi",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2017-2025",
+      "engine": "2.0L TDI Diesel"
+    },
+    {
+      "make": "LDV",
+      "model": "G10 / Deliver 9",
+      "type": "van",
+      "fuel": "Diesel",
+      "years": "2018-2025",
+      "engine": "2.0L Turbo Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "RAV4 GXL / Cruiser Hybrid",
+      "type": "suv",
+      "fuel": "Hybrid",
+      "years": "2019-2025",
+      "engine": "2.5L Hybrid e-Four"
+    },
+    {
+      "make": "Toyota",
+      "model": "Prado GXL / VX / Kakadu",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2015-2025",
+      "engine": "2.8L Turbo Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "LandCruiser 300 Series (GX/GXL/Sahara)",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2021-2025",
+      "engine": "3.3L Twin-Turbo V6 Diesel"
+    },
+    {
+      "make": "Toyota",
+      "model": "Kluger GX / Grande Hybrid",
+      "type": "suv",
+      "fuel": "Hybrid",
+      "years": "2017-2025",
+      "engine": "2.5L Hybrid"
+    },
+    {
+      "make": "Toyota",
+      "model": "Corolla Cross GXL / Atmos Hybrid",
+      "type": "suv",
+      "fuel": "Hybrid",
+      "years": "2022-2025",
+      "engine": "2.0L Hybrid"
+    },
+    {
+      "make": "Ford",
+      "model": "Everest Trend / Sport / Platinum",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2018-2025",
+      "engine": "3.0L V6 / 2.0L Bi-Turbo Diesel"
+    },
+    {
+      "make": "Isuzu",
+      "model": "MU-X LS-U / LS-T",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2017-2025",
+      "engine": "3.0L 4JJ3 Turbo Diesel"
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "Outlander Aspire / Exceed PHEV",
+      "type": "suv",
+      "fuel": "Plug-in Hybrid",
+      "years": "2018-2025",
+      "engine": "2.4L PHEV / 2.5L Petrol"
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "Pajero Sport GLX / GLS / Exceed",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.4L MIVEC Turbo Diesel"
+    },
+    {
+      "make": "Mazda",
+      "model": "CX-5 Maxx / Touring / Akera",
+      "type": "suv",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "2.5L Petrol / 2.2L Diesel"
+    },
+    {
+      "make": "Mazda",
+      "model": "CX-3 / CX-30 G20 / G25",
+      "type": "suv",
+      "fuel": "Petrol",
+      "years": "2017-2025",
+      "engine": "2.0L / 2.5L Petrol"
+    },
+    {
+      "make": "Hyundai",
+      "model": "Tucson Active / Elite / Highlander",
+      "type": "suv",
+      "fuel": "Petrol",
+      "years": "2016-2025",
+      "engine": "2.0L / 1.6T Petrol / 2.0D"
+    },
+    {
+      "make": "Hyundai",
+      "model": "Santa Fe Elite / Calligraphy",
+      "type": "suv",
+      "fuel": "Hybrid",
+      "years": "2018-2025",
+      "engine": "1.6T Hybrid / 2.2D Diesel"
+    },
+    {
+      "make": "Kia",
+      "model": "Sportage S / SX / GT-Line",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2016-2025",
+      "engine": "2.0D Diesel / 1.6T Petrol"
+    },
+    {
+      "make": "Kia",
+      "model": "Sorento Sport+ / GT-Line",
+      "type": "suv",
+      "fuel": "Diesel",
+      "years": "2017-2025",
+      "engine": "2.2D Diesel / 1.6T PHEV"
+    },
+    {
+      "make": "Subaru",
+      "model": "Forester 2.5i-L / 2.5i-S",
+      "type": "suv",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "2.5L Boxer Petrol"
+    },
+    {
+      "make": "Subaru",
+      "model": "Outback AWD / Touring XT",
+      "type": "suv",
+      "fuel": "Petrol",
+      "years": "2016-2025",
+      "engine": "2.5L / 2.4L Turbo Boxer"
+    },
+    {
+      "make": "Nissan",
+      "model": "X-Trail ST-L / Ti e-POWER",
+      "type": "suv",
+      "fuel": "Hybrid",
+      "years": "2016-2025",
+      "engine": "1.5L e-POWER Hybrid"
+    },
+    {
+      "make": "Tesla",
+      "model": "Model Y RWD / Long Range / Performance",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2022-2025",
+      "engine": "Dual / Single Motor EV"
+    },
+    {
+      "make": "Tesla",
+      "model": "Model 3 RWD / Long Range",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2019-2025",
+      "engine": "Dual / Single Motor EV"
+    },
+    {
+      "make": "BYD",
+      "model": "Atto 3 Standard / Extended",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2022-2025",
+      "engine": "150kW Electric Motor"
+    },
+    {
+      "make": "BYD",
+      "model": "Seal Dynamic / Premium / Performance",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2023-2025",
+      "engine": "Single / Dual Motor EV"
+    },
+    {
+      "make": "BYD",
+      "model": "Shark 6 PHEV Dual-cab Ute",
+      "type": "ute",
+      "fuel": "Plug-in Hybrid",
+      "years": "2024-2025",
+      "engine": "1.5T DMO PHEV Dual-Motor"
+    },
+    {
+      "make": "MG",
+      "model": "MG4 Excite / Essence / XPower",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2023-2025",
+      "engine": "Single / Dual Motor EV"
+    },
+    {
+      "make": "Polestar",
+      "model": "Polestar 2 Standard / Long Range",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2022-2025",
+      "engine": "Single / Dual Motor EV"
+    },
+    {
+      "make": "Hyundai",
+      "model": "IONIQ 5 Dynamiq / Techniq / Epiq",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2021-2025",
+      "engine": "Single / Dual Motor EV"
+    },
+    {
+      "make": "Kia",
+      "model": "EV6 Air / GT-Line / GT",
+      "type": "ev",
+      "fuel": "Electric",
+      "years": "2022-2025",
+      "engine": "Single / Dual Motor EV"
+    },
+    {
+      "make": "Toyota",
+      "model": "Corolla Ascent Sport / ZR Hybrid",
+      "type": "passenger",
+      "fuel": "Hybrid",
+      "years": "2015-2025",
+      "engine": "1.8L Hybrid / 2.0L Petrol"
+    },
+    {
+      "make": "Toyota",
+      "model": "Camry Ascent / SL Hybrid",
+      "type": "passenger",
+      "fuel": "Hybrid",
+      "years": "2015-2025",
+      "engine": "2.5L Hybrid"
+    },
+    {
+      "make": "Toyota",
+      "model": "Yaris / Yaris Cross Hybrid",
+      "type": "passenger",
+      "fuel": "Hybrid",
+      "years": "2016-2025",
+      "engine": "1.5L Hybrid"
+    },
+    {
+      "make": "Hyundai",
+      "model": "i30 Active / N-Line / Sedan",
+      "type": "passenger",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "2.0L / 1.6T Petrol"
+    },
+    {
+      "make": "Kia",
+      "model": "Cerato S / Sport+ / GT",
+      "type": "passenger",
+      "fuel": "Petrol",
+      "years": "2016-2025",
+      "engine": "2.0L / 1.6T Petrol"
+    },
+    {
+      "make": "Mazda",
+      "model": "Mazda 3 Pure / Evolve / Astina",
+      "type": "passenger",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "2.0L / 2.5L Skyactiv-G"
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Golf Life / R-Line / GTI",
+      "type": "passenger",
+      "fuel": "Petrol",
+      "years": "2015-2025",
+      "engine": "1.4T / 2.0T TSI Petrol"
+    },
+    {
+      "make": "MG",
+      "model": "MG3 Core / Excite",
+      "type": "passenger",
+      "fuel": "Petrol",
+      "years": "2016-2025",
+      "engine": "1.5L Petrol / Hybrid"
+    }
+  ]
+}
