@@ -24,6 +24,39 @@ enum VehicleType {
   }
 }
 
+/// Tax Tracking Strategy per Vehicle (ATO Aligned)
+enum TaxMethod {
+  centsPerKm,
+  logbook;
+
+  String get title {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return 'Cents per Kilometre';
+      case TaxMethod.logbook:
+        return 'Logbook Method';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return 'Best if you drive less than 5,000 work km/year. Set rate 91c/km, no receipt hoarding required.';
+      case TaxMethod.logbook:
+        return 'Best if you drive a lot for work. 12-week logbook unlocks actual fuel, lease & depreciation claims.';
+    }
+  }
+
+  String get shortBadge {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return '91c/km';
+      case TaxMethod.logbook:
+        return 'Logbook %';
+    }
+  }
+}
+
 class Vehicle {
   final String id;
   final String make;
@@ -34,6 +67,7 @@ class Vehicle {
   final VehicleType vehicleType;
   final String? bluetoothDeviceName;
   final bool isPrimary;
+  final TaxMethod taxMethod;
 
   Vehicle({
     required this.id,
@@ -45,6 +79,7 @@ class Vehicle {
     this.vehicleType = VehicleType.car,
     this.bluetoothDeviceName,
     this.isPrimary = true,
+    this.taxMethod = TaxMethod.centsPerKm,
   });
 
   String get displayName => '$make $model ($regoPlate)';

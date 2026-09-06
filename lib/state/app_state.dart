@@ -27,6 +27,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selectVehicle(String vehicleId) {
+    final found = _vehicles.firstWhere((v) => v.id == vehicleId, orElse: () => _primaryVehicle!);
+    _primaryVehicle = found;
+    notifyListeners();
+  }
+
   void recordTrip(Trip trip) {
     _trips.add(trip);
     notifyListeners();

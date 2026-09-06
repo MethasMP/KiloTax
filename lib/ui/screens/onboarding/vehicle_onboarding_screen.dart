@@ -31,7 +31,8 @@ class VehicleOnboardingScreen extends StatefulWidget {
 }
 
 class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
-  int _currentStep = 0; // 0 = Vehicle Profile & Bluetooth, 1 = Baseline Odometer & 12-Week Shield, 2 = Permission Pre-Prompt (KiloTax Auto-Tracking)
+  int _currentStep = 0; // 0 = Identify Vehicle, 1 = Choose Tax Method, 2 = Baseline Odo, 3 = Start Tracking
+  TaxMethod _selectedTaxMethod = TaxMethod.centsPerKm;
   bool _isRequestingPermission = false;
 
   // Step 1 Controllers & State (Clean, no prefilled dummy data)
@@ -257,7 +258,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     }
 
     HapticFeedback.mediumImpact();
-    setState(() => _currentStep = 2);
+    setState(() => _currentStep = 3);
   }
 
   Future<void> _finishOnboarding(AppState appState, {bool enableAutoTracking = true}) async {
@@ -279,6 +280,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
       vehicleType: _selectedVehicleType,
       bluetoothDeviceName: _selectedBluetooth.isNotEmpty ? _selectedBluetooth : null,
       isPrimary: true,
+      taxMethod: _selectedTaxMethod,
     );
 
     await appState.addVehicle(vehicle);
@@ -367,7 +369,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                 border: Border.all(color: AppColors.workBlue.withValues(alpha: 0.2)),
               ),
               child: Text(
-                'STEP ${_currentStep + 1} OF 3',
+                'STEP ${_currentStep + 1} OF 4',
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -399,8 +401,10 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
             child: _currentStep == 0
                 ? _buildStep1VehicleProfile(context)
                 : (_currentStep == 1
-                    ? _buildStep2OdometerAndPeriod(context, appState)
-                    : _buildStep3Permissions(context, appState)),
+                    ? _buildStepTaxMethodSelection(context)
+                    : (_currentStep == 2
+                        ? _buildStep2OdometerAndPeriod(context, appState)
+                        : _buildStep3Permissions(context, appState))),
           ),
         ),
       ),
@@ -798,7 +802,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Continue to Odometer Scan',
+                    'Continue to Tax Strategy',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                   ),
                   SizedBox(width: 8),
@@ -813,6 +817,240 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     );
   }
 
+  /// STEP: Choose Tax Strategy for this Vehicle (Decoupled Architecture)
+  Widget _buildStepTaxMethodSelection(BuildContext context) {
+    return SingleChildScrollView(
+      key: const ValueKey('step_tax_method'),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Vehicle Summary Banner
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.workBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(PhosphorIconsFill.carProfile, color: AppColors.workBlue, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _makeModelController.text.trim().isNotEmpty
+                            ? _makeModelController.text.trim()
+                            : 'Selected Vehicle',
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: AppColors.ink),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_regoController.text.trim().toUpperCase()} ($_selectedState) • ${_selectedVehicleType.shortCategoryName}',
+                        style: const TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 20),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          const Text(
+            'How do you want to track
+this vehicle for tax?',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: AppColors.ink,
+              letterSpacing: -0.5,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Select your active deduction method for FY2025–26. You can switch or compare anytime.',
+            style: TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
+          ),
+          const SizedBox(height: 20),
+
+          // Option 1: Cents per Kilometre
+          _buildTaxMethodCard(
+            method: TaxMethod.centsPerKm,
+            icon: PhosphorIconsFill.gauge,
+            title: 'Cents per Kilometre',
+            subtitle: 'Best if you drive less than 5,000 work km/year',
+            rateHighlight: '91c / KM',
+            bullets: [
+              'No need to keep receipts for fuel or servicing',
+              'Fastest claim under ATO Division 28 rules',
+              'Maximum claim capped at 5,000 work km ($4,550)',
+            ],
+            isSelected: _selectedTaxMethod == TaxMethod.centsPerKm,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedTaxMethod = TaxMethod.centsPerKm);
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // Option 2: Logbook Method
+          _buildTaxMethodCard(
+            method: TaxMethod.logbook,
+            icon: PhosphorIconsFill.bookBookmark,
+            title: '12-Week Logbook Method',
+            subtitle: 'Best if you drive heavily for business',
+            rateHighlight: 'Actual Costs %',
+            bullets: [
+              'Claim fuel, rego, insurance, repairs & loan interest',
+              'Unlocks depreciation (up to $69,674 car limit)',
+              'Valid for 5 consecutive tax years once established',
+            ],
+            isSelected: _selectedTaxMethod == TaxMethod.logbook,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedTaxMethod = TaxMethod.logbook);
+            },
+          ),
+          const SizedBox(height: 28),
+
+          // Continue Button
+          SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.workBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 2,
+              ),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                setState(() => _currentStep = 3);
+              },
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Confirm Tax Method & Continue',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_rounded, size: 18),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaxMethodCard({
+    required TaxMethod method,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String rateHighlight,
+    required List<String> bullets,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? AppColors.workBlue : AppColors.border,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.workBlue.withValues(alpha: 0.12),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.workBlue : AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: isSelected ? Colors.white : AppColors.ink, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink)),
+                      Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.emeraldLight : AppColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    rateHighlight,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: isSelected ? AppColors.emerald : AppColors.muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...bullets.map((b) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.check_rounded, size: 14, color: AppColors.emerald),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(b, style: const TextStyle(fontSize: 11.5, color: AppColors.ink, height: 1.3)),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
   /// STEP 2: Baseline Odometer & 12-Week Statutory ATO Shield
   Widget _buildStep2OdometerAndPeriod(BuildContext context, AppState appState) {
     final now = DateTime.now();

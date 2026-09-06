@@ -1,3 +1,4 @@
+import '../onboarding/vehicle_onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -141,6 +142,94 @@ class TaxDashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // MULTI-VEHICLE SWITCHER & + ADD VEHICLE (User Journey Aligned)
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.workBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      (appState.primaryVehicle?.vehicleType == VehicleType.ute)
+                          ? PhosphorIconsFill.truck
+                          : ((appState.primaryVehicle?.vehicleType == VehicleType.van)
+                              ? PhosphorIconsFill.van
+                              : PhosphorIconsFill.carProfile),
+                      color: AppColors.workBlue,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appState.primaryVehicle != null
+                              ? '${appState.primaryVehicle!.make} ${appState.primaryVehicle!.model}'
+                              : 'No Vehicle Configured',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, color: AppColors.ink),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              appState.primaryVehicle?.regoPlate ?? '',
+                              style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.emeraldLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                appState.primaryVehicle?.taxMethod.shortBadge ?? '91c/km',
+                                style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: AppColors.emerald),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Add Vehicle Button (Fast flow, no need to reset entire app)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.workBlue,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      backgroundColor: AppColors.workBlue.withValues(alpha: 0.08),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (ctx) => VehicleOnboardingScreen(
+                            isDismissible: true,
+                            onCompleted: () => Navigator.of(ctx).pop(),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: const Text('+ Add Vehicle', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+
             // TAX SUMMARY: Optimal Comparison Hero Banner
             Container(
               padding: const EdgeInsets.all(20),
