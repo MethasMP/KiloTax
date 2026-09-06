@@ -517,17 +517,98 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           ),
           const SizedBox(height: 8),
 
-          TextFormField(
-            controller: _makeModelController,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-            decoration: InputDecoration(
-              labelText: 'Make & Model',
-              hintText: 'e.g. Toyota Hilux SR5 or Tesla Model Y',
-              filled: true,
-              fillColor: Colors.white,
-              prefixIcon: const Icon(PhosphorIconsFill.carProfile, color: AppColors.muted, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            ),
+          RawAutocomplete<VehicleLookupResult>(
+            textEditingController: _makeModelController,
+            focusNode: FocusNode(),
+            optionsBuilder: (TextEditingValue textEditingValue) async {
+              if (textEditingValue.text.trim().length < 2) {
+                return const Iterable<VehicleLookupResult>.empty();
+              }
+              return await VehicleLookupService.search(textEditingValue.text);
+            },
+            displayStringForOption: (VehicleLookupResult option) => option.displayName,
+            onSelected: (VehicleLookupResult selection) {
+              setState(() {
+                _lookupResult = selection;
+                _makeModelController.text = selection.displayName;
+                _engineCapacityController.text = selection.engineCapacity;
+                _selectedVehicleType = selection.vehicleType;
+              });
+            },
+            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+              return TextFormField(
+                controller: controller,
+                focusNode: focusNode,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Make & Model',
+                  hintText: 'e.g. Toyota Hilux, Ford Ranger, Tesla Model Y',
+                  helperText: 'Type 2+ letters to search Australian vehicle directory',
+                  helperStyle: const TextStyle(fontSize: 11, color: AppColors.muted),
+                  filled: true,
+                  fillColor: Colors.white,
+                  prefixIcon: const Icon(PhosphorIconsFill.carProfile, color: AppColors.muted, size: 20),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: 240,
+                      maxWidth: MediaQuery.of(context).size.width - 32,
+                    ),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
+                      itemBuilder: (context, index) {
+                        final option = options.elementAt(index);
+                        return ListTile(
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          leading: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.workBlue.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(PhosphorIconsFill.carProfile, size: 16, color: AppColors.workBlue),
+                          ),
+                          title: Text(
+                            option.displayName,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          subtitle: Text(
+                            '${option.engineCapacity} • ${option.fuelType}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBorder.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              option.vehicleType.shortCategoryName.toUpperCase(),
+                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.ink),
+                            ),
+                          ),
+                          onTap: () => onSelected(option),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 12),
 
