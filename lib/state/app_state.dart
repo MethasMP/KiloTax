@@ -51,6 +51,8 @@ class AppState extends ChangeNotifier {
   void recordTrip(Trip trip) {
     _trips.add(trip);
     notifyListeners();
+    // Silent Background Sync (Ultra-Lazy Ergonomics: No user manual button needed)
+    _autoSyncInBackground();
   }
 
   /// EVIDENCE GRAPH: Connect an expense (e.g. Bunnings/Fuel receipt) to a specific Trip
@@ -91,11 +93,19 @@ class AppState extends ChangeNotifier {
       }
     }
     notifyListeners();
+    _autoSyncInBackground();
   }
 
   void recordExpense(VehicleExpense expense) {
     _expenses.add(expense);
     notifyListeners();
+    _autoSyncInBackground();
+  }
+
+  void _autoSyncInBackground() {
+    if (_primaryVehicle != null && _syncStatus != SyncStatus.syncing) {
+      triggerSyncToCloud();
+    }
   }
 
   EvidenceEngine createEvidenceEngine() {
