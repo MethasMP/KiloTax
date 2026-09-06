@@ -7,6 +7,7 @@ import 'package:kilotax/data/models/tax_summary.dart';
 import 'package:kilotax/services/engine/evidence_engine.dart';
 import 'package:kilotax/services/engine/tax_calculator_service.dart';
 import 'package:kilotax/services/engine/ato_report_service.dart';
+import 'package:kilotax/services/sync/sync_engine_service.dart';
 import 'package:kilotax/state/app_state.dart';
 
 void main() {
@@ -139,6 +140,38 @@ void main() {
       expect(bunningsTools.category.isDirectlyDeductibleByDefault, isTrue);
       // Logbook Claim should be: (Fuel $100 * 50%) + (Bunnings Tools $300 * 100%) = $50 + $300 = $350
       expect(summary.logbookClaim, equals(350.0));
+    });
+
+    test('SyncEngine Data Pipeline: Generates SHA-256 dedup keys and filters personal trips', () {
+      final trip = Trip(
+        id: 'trip_work',
+        vehicleId: 'v1',
+        distanceKm: 35.0,
+        date: DateTime.parse('2026-08-14 09:30:00'),
+        purpose: 'Site repair',
+        startOdometer: 10000.0,
+        endOdometer: 10035.0,
+        classification: TripClassification.business,
+      );
+
+      final key1 = SyncEngineService.generateTripDedupKey(trip);
+      final key2 = SyncEngineService.generateTripDedupKey(trip);
+      expect(key1, equals(key2));
+      expect(key1.length, equals(64)); // SHA-256 Hex length
+
+      // Changing odo should generate different key
+      final tripModified = Trip(
+        id: 'trip_work_2',
+        vehicleId: 'v1',
+        distanceKm: 35.0,
+        date: DateTime.parse('2026-08-14 09:30:00'),
+        purpose: 'Site repair',
+        startOdometer: 10005.0,
+        endOdometer: 10040.0,
+        classification: TripClassification.business,
+      );
+      final key3 = SyncEngineService.generateTripDedupKey(tripModified);
+      expect(key1, isNot(equals(key3)));
     });
   });
 }
