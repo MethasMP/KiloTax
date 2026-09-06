@@ -46,7 +46,9 @@ class Trip {
     this.originAddress,
     this.destinationAddress,
     List<String>? linkedExpenseIds,
-  }) : linkedExpenseIds = linkedExpenseIds ?? [];
+  })  : assert(distanceKm >= 0, 'Trip distance cannot be negative'),
+        assert(endOdometer >= startOdometer, 'End odometer cannot be less than start odometer'),
+        linkedExpenseIds = linkedExpenseIds ?? [];
 
   bool get isBusiness => classification == TripClassification.business;
 
