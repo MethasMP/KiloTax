@@ -35,12 +35,14 @@ class SyncEngineService {
         anonKey = anonKey ?? AppConstants.supabaseAnonKey,
         _httpClient = httpClient ?? http.Client();
 
-  Map<String, String> get _headers => {
+  Map<String, String> _buildHeaders([String? userToken]) => {
         'apikey': anonKey,
-        'Authorization': 'Bearer $anonKey',
+        'Authorization': 'Bearer ${userToken ?? anonKey}',
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates,return=representation',
       };
+
+  Map<String, String> get headers => _buildHeaders();
 
   static String generateTripDedupKey(Trip trip) {
     final raw = '${trip.vehicleId}_${trip.date.toIso8601String()}_${trip.startOdometer}_${trip.endOdometer}_${trip.distanceKm}';
@@ -56,8 +58,11 @@ class SyncEngineService {
     required Vehicle vehicle,
     required List<Trip> trips,
     required List<VehicleExpense> expenses,
+    String? userToken,
+    String? userId,
   }) async {
     try {
+      final headers = _buildHeaders(userToken);
       final eligibleTrips = trips.where((t) => t.isBusiness && !t.isDeleted).toList();
       final ignoredPersonalCount = trips.length - eligibleTrips.length;
       final eligibleExpenses = expenses.where((e) => !e.isDeleted).toList();
@@ -71,6 +76,7 @@ class SyncEngineService {
       final vehiclePayload = [
         {
           'id': vehicle.id,
+          if (userId != null) 'user_id': userId,
           'make': vehicle.make,
           'model': vehicle.model,
           'rego_plate': vehicle.regoPlate,
@@ -88,7 +94,7 @@ class SyncEngineService {
 
       await _httpClient.post(
         vehicleUri,
-        headers: _headers,
+        headers: headers,
         body: jsonEncode(vehiclePayload),
       );
 
@@ -97,6 +103,7 @@ class SyncEngineService {
           final dedupId = t.clientDedupId ?? generateTripDedupKey(t);
           return {
             'id': t.id,
+            if (userId != null) 'user_id': userId,
             'vehicle_id': vehicle.id,
             'date': t.date.toIso8601String(),
             'distance_km': t.distanceKm,
@@ -106,6 +113,8 @@ class SyncEngineService {
             'classification': 'business',
             'origin_address': t.originAddress,
             'destination_address': t.destinationAddress,
+            'tax_method': t.taxMethod.name,
+            'evidence_source': t.evidenceSource,
             'client_dedup_id': dedupId,
             'deleted_at': t.deletedAt?.toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
@@ -115,7 +124,7 @@ class SyncEngineService {
         final tripUri = Uri.parse('$supabaseUrl/rest/v1/trips?on_conflict=client_dedup_id');
         final res = await _httpClient.post(
           tripUri,
-          headers: _headers,
+          headers: headers,
           body: jsonEncode(tripPayloads),
         );
 
@@ -129,6 +138,7 @@ class SyncEngineService {
           final dedupId = e.clientDedupId ?? generateExpenseDedupKey(e);
           return {
             'id': e.id,
+            if (userId != null) 'user_id': userId,
             'vehicle_id': vehicle.id,
             'linked_trip_id': e.linkedTripId,
             'date': e.date.toIso8601String(),
@@ -146,7 +156,7 @@ class SyncEngineService {
         final expUri = Uri.parse('$supabaseUrl/rest/v1/expenses?on_conflict=client_dedup_id');
         final expRes = await _httpClient.post(
           expUri,
-          headers: _headers,
+          headers: headers,
           body: jsonEncode(expensePayloads),
         );
 
@@ -171,4 +181,92 @@ class SyncEngineService {
       );
     }
   }
+
+  /// RESTORE FROM CLOUD: Pulls existing vehicles, trips, and expenses
+  /// Allows instant data recovery when reinstalling the app or switching devices.
+  Future<CloudRestoreResult> restoreFromCloud({
+    String? vehicleId,
+    String? userToken,
+    String? userId,
+  }) async {
+    try {
+      final headers = _buildHeaders(userToken);
+      final userFilter = userId != null ? '&user_id=eq.$userId' : '';
+
+      // 1. Fetch Vehicles
+      final vehUri = Uri.parse('$supabaseUrl/rest/v1/vehicles?select=*$userFilter');
+      final vehRes = await _httpClient.get(vehUri, headers: headers);
+
+      final List<Vehicle> restoredVehicles = [];
+      if (vehRes.statusCode >= 200 && vehRes.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(vehRes.body);
+        for (final item in data) {
+          try {
+            restoredVehicles.add(Vehicle.fromJson(item as Map<String, dynamic>));
+          } catch (_) {}
+        }
+      }
+
+      // 2. Fetch Trips
+      final tripFilter = vehicleId != null ? '&vehicle_id=eq.$vehicleId' : '';
+      final tripUri = Uri.parse('$supabaseUrl/rest/v1/trips?select=*$userFilter$tripFilter&order=date.asc');
+      final tripRes = await _httpClient.get(tripUri, headers: headers);
+
+      final List<Trip> restoredTrips = [];
+      if (tripRes.statusCode >= 200 && tripRes.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(tripRes.body);
+        for (final item in data) {
+          try {
+            restoredTrips.add(Trip.fromJson(item as Map<String, dynamic>));
+          } catch (_) {}
+        }
+      }
+
+      // 3. Fetch Expenses
+      final expFilter = vehicleId != null ? '&vehicle_id=eq.$vehicleId' : '';
+      final expUri = Uri.parse('$supabaseUrl/rest/v1/expenses?select=*$userFilter$expFilter&order=date.asc');
+      final expRes = await _httpClient.get(expUri, headers: headers);
+
+      final List<VehicleExpense> restoredExpenses = [];
+      if (expRes.statusCode >= 200 && expRes.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(expRes.body);
+        for (final item in data) {
+          try {
+            restoredExpenses.add(VehicleExpense.fromJson(item as Map<String, dynamic>));
+          } catch (_) {}
+        }
+      }
+
+      return CloudRestoreResult(
+        success: true,
+        vehicles: restoredVehicles,
+        trips: restoredTrips,
+        expenses: restoredExpenses,
+      );
+    } catch (e) {
+      return CloudRestoreResult(
+        success: false,
+        vehicles: [],
+        trips: [],
+        expenses: [],
+        errorMessage: e.toString(),
+      );
+    }
+  }
+}
+
+class CloudRestoreResult {
+  final bool success;
+  final List<Vehicle> vehicles;
+  final List<Trip> trips;
+  final List<VehicleExpense> expenses;
+  final String? errorMessage;
+
+  CloudRestoreResult({
+    required this.success,
+    required this.vehicles,
+    required this.trips,
+    required this.expenses,
+    this.errorMessage,
+  });
 }

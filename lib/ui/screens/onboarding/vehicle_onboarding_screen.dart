@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/vehicle/vehicle_lookup_service.dart';
 import '../../../state/app_state.dart';
@@ -140,8 +140,8 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.ink,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            content: Row(
-              children: const [
+            content: const Row(
+              children: [
                 Icon(Icons.info_outline_rounded, color: Colors.amberAccent, size: 20),
                 SizedBox(width: 8),
                 Expanded(
@@ -172,38 +172,38 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     });
   }
 
-  void _simulateAIOcrScan() {
+  Future<void> _scanOdometerPhoto() async {
     HapticFeedback.mediumImpact();
     setState(() {
       _isScanningOcr = true;
       _scanSuccess = false;
     });
 
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        // If empty, set a realistic baseline or keep current
-        final reading = _detectedOdo > 0 ? _detectedOdo : 42150.0;
-        setState(() {
-          _isScanningOcr = false;
-          _scanSuccess = true;
-          _detectedOdo = reading;
-          _odoController.text = reading.toStringAsFixed(0);
-        });
+    try {
+      final picker = ImagePicker();
+      final photo = await picker.pickImage(source: ImageSource.camera, maxWidth: 1600, imageQuality: 85);
+      if (!mounted) return;
 
+      setState(() {
+        _isScanningOcr = false;
+        _scanSuccess = photo != null;
+      });
+
+      if (photo != null) {
+        HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.ink,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            content: Row(
+            content: const Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 20),
-                const SizedBox(width: 8),
+                Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 20),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'AI OCR: Read ${Formatters.odometer(reading)} km with 99.8% confidence',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white),
+                    'Dashboard photo captured! Enter or verify reading below.',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white),
                   ),
                 ),
               ],
@@ -211,7 +211,13 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           ),
         );
       }
-    });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isScanningOcr = false;
+        });
+      }
+    }
   }
 
   void _validateAndContinueToStep2() {
@@ -221,18 +227,6 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
         const SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text('Please enter or select your vehicle make and model.'),
-          backgroundColor: AppColors.crimson,
-        ),
-      );
-      return;
-    }
-
-    if (_regoController.text.trim().isEmpty) {
-      HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Please enter your vehicle registration plate.'),
           backgroundColor: AppColors.crimson,
         ),
       );
@@ -268,7 +262,8 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
     final parts = _makeModelController.text.trim().split(' ');
     final make = parts.isNotEmpty ? parts.first : 'Vehicle';
     final model = parts.length > 1 ? parts.sublist(1).join(' ') : 'Car';
-    final plate = '${_regoController.text.trim().toUpperCase()} ($_selectedState)';
+    final rawRego = _regoController.text.trim().toUpperCase();
+    final plate = rawRego.isNotEmpty ? '$rawRego ($_selectedState)' : 'Pending Rego';
 
     final vehicle = Vehicle(
       id: 'veh_${DateTime.now().millisecondsSinceEpoch}',
@@ -298,9 +293,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
       padding: const EdgeInsets.only(right: 6),
       child: ActionChip(
         avatar: Icon(
-          type == VehicleType.ute
-              ? PhosphorIconsFill.truck
-              : (type == VehicleType.van ? PhosphorIconsFill.van : PhosphorIconsFill.carProfile),
+          type.iconData,
           size: 14,
           color: isSelected ? Colors.white : AppColors.workBlue,
         ),
@@ -381,7 +374,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
             const Spacer(),
             const Row(
               children: [
-                Icon(PhosphorIconsFill.timer, size: 14, color: AppColors.muted),
+                Icon(LucideIcons.timer, size: 14, color: AppColors.muted),
                 SizedBox(width: 4),
                 Text(
                   '30-Sec Setup',
@@ -439,7 +432,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           // Section 1: Smart Vehicle Selector (Primary Flow for Lazy User)
           Row(
             children: [
-              const Icon(PhosphorIconsFill.carProfile, size: 16, color: AppColors.workBlue),
+              const Icon(LucideIcons.car, size: 16, color: AppColors.workBlue),
               const SizedBox(width: 6),
               const Text(
                 'WHAT DO YOU DRIVE?',
@@ -487,7 +480,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           // Section 2: Vehicle Specs (Auto-Filled or Manual Entry)
           Row(
             children: [
-              const Icon(PhosphorIconsFill.carProfile, size: 16, color: AppColors.workBlue),
+              const Icon(LucideIcons.car, size: 16, color: AppColors.workBlue),
               const SizedBox(width: 6),
               const Text(
                 'VEHICLE DETAILS',
@@ -547,7 +540,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                   helperStyle: const TextStyle(fontSize: 11, color: AppColors.muted),
                   filled: true,
                   fillColor: Colors.white,
-                  prefixIcon: const Icon(PhosphorIconsFill.carProfile, color: AppColors.muted, size: 20),
+                  prefixIcon: const Icon(LucideIcons.car, color: AppColors.muted, size: 20),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               );
@@ -575,6 +568,13 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                           dense: true,
                           visualDensity: VisualDensity.compact,
                           leading: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.workBlue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(LucideIcons.car, size: 16, color: AppColors.workBlue),
+                          ),
                           title: Text(
                             option.displayName,
                             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
@@ -660,7 +660,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           // Section 2: Registration Plate & State (Mandatory for ATO TR 97/11 Compliance)
           const Row(
             children: [
-              Icon(PhosphorIconsFill.identificationCard, size: 16, color: AppColors.workBlue),
+              Icon(LucideIcons.contact, size: 16, color: AppColors.workBlue),
               SizedBox(width: 6),
               Text(
                 'REGISTRATION PLATE (ATO MANDATORY)',
@@ -712,6 +712,13 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                     prefixIcon: const Icon(Icons.credit_card_rounded, color: AppColors.muted, size: 20),
+                    suffixIcon: IconButton(
+                      icon: _isLookingUpRego
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.workBlue))
+                          : const Icon(Icons.search_rounded, color: AppColors.workBlue),
+                      tooltip: 'Lookup Rego',
+                      onPressed: _isLookingUpRego ? null : _lookupRegoPlate,
+                    ),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
@@ -782,7 +789,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                     color: AppColors.workBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(PhosphorIconsFill.carProfile, color: AppColors.workBlue, size: 22),
+                  child: const Icon(LucideIcons.car, color: AppColors.workBlue, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -829,7 +836,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           // Option 1: Cents per Kilometre
           _buildTaxMethodCard(
             method: TaxMethod.centsPerKm,
-            icon: PhosphorIconsFill.gauge,
+            icon: LucideIcons.gauge,
             title: 'Cents per Kilometre',
             subtitle: 'Best if you drive less than 5,000 work km/year',
             rateHighlight: '91c / KM',
@@ -849,7 +856,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           // Option 2: Logbook Method
           _buildTaxMethodCard(
             method: TaxMethod.logbook,
-            icon: PhosphorIconsFill.bookBookmark,
+            icon: LucideIcons.bookmark,
             title: '12-Week Logbook Method',
             subtitle: 'Best if you drive heavily for business',
             rateHighlight: 'Actual Costs %',
@@ -1025,7 +1032,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
             scanSuccess: _scanSuccess,
             detectedOdo: _detectedOdo,
             odoController: _odoController,
-            onScanPressed: _simulateAIOcrScan,
+            onScanPressed: _scanOdometerPhoto,
             onOdoChanged: (val) {
               final clean = double.tryParse(val.replaceAll(',', '').trim()) ?? 0.0;
               setState(() => _detectedOdo = clean);
@@ -1117,7 +1124,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                     color: AppColors.workBlue,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(PhosphorIconsBold.steeringWheel, color: Colors.white, size: 24),
+                  child: const Icon(LucideIcons.car, color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 14),
                 const Expanded(
@@ -1158,7 +1165,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           const SizedBox(height: 10),
 
           _buildGuaranteeTile(
-            icon: PhosphorIconsFill.batteryCharging,
+            icon: LucideIcons.batteryCharging,
             iconColor: AppColors.emerald,
             title: 'Zero Battery Drain (Smart Motion)',
             subtitle: 'Uses on-device motion detection. GPS activates ONLY when vehicle movement (>15 km/h) is detected, preserving battery.',
@@ -1166,7 +1173,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           const SizedBox(height: 10),
 
           _buildGuaranteeTile(
-            icon: PhosphorIconsFill.shieldCheck,
+            icon: LucideIcons.shieldCheck,
             iconColor: AppColors.workBlue,
             title: '100% Local-First & Private',
             subtitle: 'Trip coordinates remain securely encrypted on your phone. Never streamed or sold to external servers.',
@@ -1174,7 +1181,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
           const SizedBox(height: 10),
 
           _buildGuaranteeTile(
-            icon: PhosphorIconsFill.fileText,
+            icon: LucideIcons.fileText,
             iconColor: Colors.amber.shade800,
             title: '100% ATO Audit-Proof (Subdiv 28-G)',
             subtitle: 'Meets Australian Taxation Office continuous 12-week logbook compliance for maximum deductions.',
@@ -1213,7 +1220,7 @@ class _VehicleOnboardingScreenState extends State<VehicleOnboardingScreen> {
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(PhosphorIconsBold.broadcast, size: 20),
+                        Icon(LucideIcons.radio, size: 20),
                         SizedBox(width: 8),
                         Text(
                           'Enable Auto-Tracking & Start',

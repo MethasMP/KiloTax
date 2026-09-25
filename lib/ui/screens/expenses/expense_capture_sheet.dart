@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../data/models/vehicle_expense.dart';
 import '../../../state/app_state.dart';
@@ -41,18 +41,28 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
     super.dispose();
   }
 
-  void _simulateCameraSnap() {
+  Future<void> _captureReceipt() async {
     HapticFeedback.mediumImpact();
-    setState(() {
-      _receiptPhotoPath = '/mock/receipts/rec_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text('Receipt photo captured & saved to offline vault.'),
-        backgroundColor: AppColors.ink,
-      ),
-    );
+    try {
+      final picker = ImagePicker();
+      final photo = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (photo != null && mounted) {
+        setState(() {
+          _receiptPhotoPath = photo.path;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('✓ Receipt photo attached to expense.'),
+            backgroundColor: AppColors.emerald,
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   void _saveExpense() {
@@ -69,17 +79,23 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
       return;
     }
 
-    final isCentsPerKm = widget.appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm;
-    final isCarRunningCost = _selectedCategory == ExpenseCategory.fuel || _selectedCategory == ExpenseCategory.maintenanceTyres;
+    final vehicle = widget.appState.primaryVehicle;
+    final isCentsPerKm = vehicle?.taxMethod == TaxMethod.centsPerKm;
+    final isCarRunningCost = _selectedCategory.isCarExpense;
 
     if (isCentsPerKm && isCarRunningCost) {
+      final vehicleName = vehicle != null
+          ? (vehicle.make.isNotEmpty ? vehicle.make : vehicle.vehicleType.displayName.toLowerCase())
+          : 'vehicle';
+      final rateCents = widget.appState.taxRuleService.getRateCentsForDate(DateTime.now());
+
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Car Running Expense', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          title: const Text('Fuel already covered', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
           content: Text(
-            'This ${_selectedCategory.displayName.toLowerCase()} expense is already covered by your vehicle\'s ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢/km rate.\n\nKeep receipt backed up in your Evidence Vault?',
+            'Your $vehicleName is claiming ${rateCents}c/km, which already includes fuel and servicing.\n\nWe\'ll save the receipt for your records without claiming it twice.',
             style: const TextStyle(fontSize: 13.5, height: 1.45, color: AppColors.ink),
           ),
           actions: [
@@ -88,19 +104,19 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 Navigator.of(ctx).pop(); // Dismiss confirmation dialog
                 Navigator.of(context).pop(); // Close sheet without saving
               },
-              child: const Text('Cancel / Don\'t Save', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.emerald,
+                backgroundColor: AppColors.deepNavy,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                _commitSaveExpense(amount);
+                _commitSaveExpense(amount, isVaultOnly: true, vaultReason: 'cents_per_km_running_cost');
               },
-              child: const Text('Keep Receipt in Vault', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Save Receipt', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ],
         ),
@@ -111,17 +127,27 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
     _commitSaveExpense(amount);
   }
 
-  void _commitSaveExpense(double amount) {
+  void _commitSaveExpense(double amount, {bool isVaultOnly = false, String? vaultReason}) {
     HapticFeedback.heavyImpact();
+    final statutoryGst = (_selectedCategory == ExpenseCategory.fuel ||
+            _selectedCategory == ExpenseCategory.maintenanceTyres ||
+            _selectedCategory == ExpenseCategory.toolsMaterials ||
+            _selectedCategory == ExpenseCategory.tollsParking)
+        ? double.parse((amount / 11.0).toStringAsFixed(2))
+        : null;
+
     final expense = VehicleExpense(
       id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
       vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
       amount: amount,
+      gstAmount: statutoryGst,
       category: _selectedCategory,
       date: DateTime.now(),
       receiptPath: _receiptPhotoPath,
       notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       linkedTripId: _selectedTripId,
+      isVaultOnly: isVaultOnly,
+      vaultReason: vaultReason,
     );
 
     widget.appState.recordExpense(expense);
@@ -160,12 +186,12 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                   color: AppColors.workBlueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(PhosphorIconsBold.receipt, color: AppColors.workBlue, size: 20),
+                child: const Icon(LucideIcons.receipt, color: AppColors.workBlue, size: 20),
               ),
               const SizedBox(width: 10),
               const Text(
                 'Record Vehicle Expense',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.ink),
+                style: AppTextStyles.sectionTitle,
               ),
               const Spacer(),
               IconButton(
@@ -180,10 +206,10 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           TextField(
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.ink),
+            style: AppTextStyles.pageTitle,
             decoration: InputDecoration(
               prefixText: '\$AUD ',
-              prefixStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.muted),
+              prefixStyle: AppTextStyles.cardPrimarySubtle.copyWith(color: AppColors.muted),
               labelText: 'Expense Total',
               filled: true,
               fillColor: Colors.white,
@@ -192,15 +218,95 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           ),
           const SizedBox(height: 12),
 
-          // Category Dropdown
+          // Category Dropdown - Grouped by 3 Core Pillars (Fuel, Fixed/Repairs, Tolls) + Other
           DropdownButtonFormField<ExpenseCategory>(
-            value: _selectedCategory,
-            items: ExpenseCategory.values.map((cat) {
-              return DropdownMenuItem(
-                value: cat,
-                child: Text(cat.displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-              );
-            }).toList(),
+            initialValue: _selectedCategory,
+            items: [
+              // Pillar 1: Fuel
+              DropdownMenuItem(
+                value: ExpenseCategory.fuel,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.fuel, size: 16, color: AppColors.emerald),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.fuel.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              // Pillar 2: Service, Tyres & Fixed Costs
+              DropdownMenuItem(
+                value: ExpenseCategory.maintenanceTyres,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.wrench, size: 16, color: AppColors.workBlue),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.maintenanceTyres.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: ExpenseCategory.rego,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.fileText, size: 16, color: AppColors.workBlue),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.rego.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: ExpenseCategory.insurance,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.workBlue),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.insurance.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              // Pillar 3: Work Tolls & Parking (100% Direct Claim)
+              DropdownMenuItem(
+                value: ExpenseCategory.tollsParking,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.parkingSquare, size: 16, color: AppColors.amberDark),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.tollsParking.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              // Other Secondary Costs
+              DropdownMenuItem(
+                value: ExpenseCategory.toolsMaterials,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.hammer, size: 16, color: AppColors.muted),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.toolsMaterials.displayName, style: const TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: ExpenseCategory.interest,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.percent, size: 16, color: AppColors.muted),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.interest.displayName, style: const TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+              ),
+              DropdownMenuItem(
+                value: ExpenseCategory.otherBusiness,
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.moreHorizontal, size: 16, color: AppColors.muted),
+                    const SizedBox(width: 8),
+                    Text(ExpenseCategory.otherBusiness.displayName, style: const TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+              ),
+            ],
             onChanged: (cat) {
               if (cat != null) setState(() => _selectedCategory = cat);
             },
@@ -224,16 +330,17 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               backgroundColor: _receiptPhotoPath != null ? AppColors.emeraldLight : Colors.white,
             ),
-            onPressed: _simulateCameraSnap,
+            onPressed: _captureReceipt,
             icon: Icon(
-              _receiptPhotoPath != null ? PhosphorIconsFill.checkCircle : PhosphorIconsBold.camera,
+              _receiptPhotoPath != null ? LucideIcons.checkCircle2 : LucideIcons.camera,
               color: _receiptPhotoPath != null ? AppColors.emerald : AppColors.ink,
               size: 20,
             ),
             label: Text(
               _receiptPhotoPath != null ? 'Receipt Attached (Audit Proof)' : 'Snap Receipt Photo (Optional)',
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
                 color: _receiptPhotoPath != null ? AppColors.emerald : AppColors.ink,
               ),
             ),
@@ -243,13 +350,13 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           // Save CTA
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.emerald,
+              backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: _saveExpense,
-            child: const Text('Save Expense to Evidence Vault', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+            child: const Text('Save Expense to Evidence Vault', style: AppTextStyles.button),
           ),
         ],
       ),

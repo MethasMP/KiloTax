@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" fill="none">
+  <!-- Commercial Light Truck / Cab-Chassis (Apple / Tesla HIG Style Line-Art) -->
+  <!-- Cab Outline -->
+  <path d="M4 21V18.5C4 17.7 4.6 17 5.4 16.9L10 16.3L13.5 7.8C13.9 7 14.8 6.5 15.7 6.5H23C24.1 6.5 25 7.4 25 8.5V21" 
+        stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Front Cab Window -->
+  <path d="M14.5 13H22V8.5H16.2C15.5 8.5 14.9 8.9 14.6 9.5L13.2 13" 
+        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Flatbed / Cargo Box -->
+  <path d="M26 12H44C44.6 12 45 12.4 45 13V21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M26 16H45" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Chassis Base -->
+  <path d="M4 21H8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M17 21H30" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M39 21H45" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Front Wheel & Rim -->
+  <circle cx="12.5" cy="21" r="4.5" stroke="currentColor" stroke-width="2.2"/>
+  <circle cx="12.5" cy="21" r="1.8" fill="currentColor"/>
+  <!-- Rear Dual-Wheel & Rim -->
+  <circle cx="34.5" cy="21" r="4.5" stroke="currentColor" stroke-width="2.2"/>
+  <circle cx="34.5" cy="21" r="1.8" fill="currentColor"/>
+</svg>

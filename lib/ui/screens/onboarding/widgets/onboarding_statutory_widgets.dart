@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 
 class Ato12WeekStatutoryCard extends StatelessWidget {
@@ -35,7 +35,7 @@ class Ato12WeekStatutoryCard extends StatelessWidget {
                   color: AppColors.emeraldLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(PhosphorIconsFill.shieldCheck, color: AppColors.emerald, size: 20),
+                child: const Icon(LucideIcons.shieldCheck, color: AppColors.emerald, size: 20),
               ),
               const SizedBox(width: 10),
               const Expanded(

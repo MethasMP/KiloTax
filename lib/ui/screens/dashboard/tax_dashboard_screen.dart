@@ -2,7 +2,7 @@ import '../onboarding/vehicle_onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/vehicle.dart';
@@ -11,6 +11,11 @@ import '../../../data/models/tax_summary.dart';
 import '../../../state/app_state.dart';
 import '../../../services/engine/ato_report_service.dart';
 import '../expenses/expense_capture_sheet.dart';
+import '../trips/trip_review_sheet.dart';
+import '../trips/trip_quick_resolve_sheet.dart';
+import '../compliance/compliance_center_screen.dart';
+import '../migration/migration_screen.dart';
+import 'widgets/money_left_on_table_card.dart';
 
 /// COMPLETE EVIDENCE ENGINE DASHBOARD (Layers 1-6):
 /// Unifies Trips + Expenses -> Evidence Engine -> Cents/KM vs Logbook -> Tax Summary & ATO Report
@@ -28,7 +33,7 @@ class TaxDashboardScreen extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: const Row(
             children: [
-              Icon(PhosphorIconsBold.steeringWheel, color: AppColors.workBlue, size: 22),
+              Icon(LucideIcons.car, color: AppColors.workBlue, size: 22),
               SizedBox(width: 8),
               Text('Log Drive Trip', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
             ],
@@ -91,7 +96,7 @@ class TaxDashboardScreen extends StatelessWidget {
               onPressed: () {
                 final dist = double.tryParse(distController.text) ?? 25.0;
                 final isPersonal = selectedPurpose.contains('Personal');
-                final lastOdo = appState.trips.isNotEmpty ? appState.trips.last.endOdometer : (appState.primaryVehicle?.initialOdometer ?? 10000.0);
+                final lastOdo = appState.currentOdometer;
                 final trip = Trip(
                   id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
                   vehicleId: appState.primaryVehicle?.id ?? 'default_vehicle',
@@ -117,16 +122,19 @@ class TaxDashboardScreen extends StatelessWidget {
     final engine = appState.createEvidenceEngine();
     final summary = appState.taxSummary;
     final vehicle = appState.primaryVehicle ?? engine.vehicle;
-    final csv = AtoReportService.generateAtoAuditCsv(
+    final isCpk = vehicle.taxMethod == TaxMethod.centsPerKm;
+    final csv = AtoReportService.generateMethodAppropriateCsv(
       vehicle: vehicle,
       engine: engine,
       summary: summary,
+      taxRule: appState.activeTaxRule,
     );
     final emailText = AtoReportService.generateAccountantEmailText(
       vehicle: vehicle,
       summary: summary,
       tripCount: engine.trips.length,
       expenseCount: engine.expenses.length,
+      taxRule: appState.activeTaxRule,
     );
 
     showModalBottomSheet(
@@ -158,29 +166,35 @@ class TaxDashboardScreen extends StatelessWidget {
                       color: AppColors.emerald.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(PhosphorIconsFill.fileText, color: AppColors.emerald, size: 22),
+                    child: const Icon(LucideIcons.fileText, color: AppColors.emerald, size: 22),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Accountant-Ready Pack', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.ink)),
-                        Text('ATO TR 97/11 Schedule D1 & Evidence Graph', style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
+                        Text(
+                          isCpk ? 'ATO Box D1 (CPK) Tax Pack' : 'ATO TR 97/11 Logbook Audit Pack',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.ink),
+                        ),
+                        Text(
+                          isCpk ? '1-Page Lodgement Summary & 14-Col Ledger' : 'Full 12-Week Audit Vault & Odometer Ledger',
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
-              const TabBar(
+              TabBar(
                 labelColor: AppColors.workBlue,
                 unselectedLabelColor: AppColors.muted,
                 indicatorColor: AppColors.workBlue,
-                labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                 tabs: [
-                  Tab(text: 'Summary Email'),
-                  Tab(text: 'TR 97/11 CSV Log'),
+                  const Tab(text: 'Summary Email'),
+                  Tab(text: isCpk ? 'CPK Ledger CSV' : 'TR 97/11 CSV Log'),
                 ],
               ),
               const SizedBox(height: 12),
@@ -202,7 +216,7 @@ class TaxDashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Tab 2: Full Audit CSV Schedule
+                    // Tab 2: Method Appropriate CSV
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -235,7 +249,7 @@ class TaxDashboardScreen extends StatelessWidget {
                           const SnackBar(content: Text('Accountant summary copied to clipboard!')),
                         );
                       },
-                      icon: const Icon(PhosphorIconsBold.copy, size: 18),
+                      icon: const Icon(LucideIcons.copy, size: 18),
                       label: const Text('Copy Email', style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
@@ -259,7 +273,7 @@ class TaxDashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(PhosphorIconsBold.shareNetwork, size: 18),
+                      icon: const Icon(LucideIcons.share2, size: 18),
                       label: const Text('Send Pack', style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
@@ -285,7 +299,29 @@ class TaxDashboardScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(PhosphorIconsBold.fileArrowDown, color: AppColors.emerald),
+            icon: const Icon(LucideIcons.shieldCheck, color: AppColors.workBlue),
+            tooltip: 'Tax Compliance Readiness',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ComplianceCenterScreen(appState: appState),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.arrowLeftRight, color: AppColors.ink),
+            tooltip: 'Import Past Records (Driversnote/CSV)',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => MigrationScreen(appState: appState),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.fileDown, color: AppColors.emerald),
             tooltip: 'Export ATO Report',
             onPressed: () => _exportAtoReport(context, appState),
           ),
@@ -314,11 +350,7 @@ class TaxDashboardScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      (appState.primaryVehicle?.vehicleType == VehicleType.ute)
-                          ? PhosphorIconsFill.truck
-                          : ((appState.primaryVehicle?.vehicleType == VehicleType.van)
-                              ? PhosphorIconsFill.van
-                              : PhosphorIconsFill.carProfile),
+                      appState.primaryVehicle?.vehicleType.iconData ?? Icons.directions_car_rounded,
                       color: AppColors.workBlue,
                       size: 18,
                     ),
@@ -353,6 +385,13 @@ class TaxDashboardScreen extends StatelessWidget {
                                 style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: AppColors.emerald),
                               ),
                             ),
+                            if (appState.currentOdometer > 0) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '• ${appState.currentOdometer.toStringAsFixed(0)} km',
+                                style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w700),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -410,7 +449,7 @@ class TaxDashboardScreen extends StatelessWidget {
                             color: AppColors.workBlue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(PhosphorIconsFill.gauge, color: AppColors.workBlue, size: 18),
+                          child: const Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 18),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -472,7 +511,7 @@ class TaxDashboardScreen extends StatelessWidget {
                           child: Text(
                             summary.businessKm >= 5000.0
                                 ? 'ATO maximum limit reached. Any additional business km should use Logbook.'
-                                : 'Rate: ${(AppConstants.activeTaxRule.centsPerKmRate * 100).toInt()}¢ / km. Fuel & repairs included in rate.',
+                                : 'Rate: ${(appState.activeTaxRule.centsPerKmRate * 100).toInt()}c/km. Fuel & repairs included in rate.',
                             style: TextStyle(
                               fontSize: 11,
                               color: summary.businessKm >= 5000.0 ? AppColors.crimson : AppColors.muted,
@@ -481,6 +520,19 @@ class TaxDashboardScreen extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Spec #2: [ Review trips ] CTA
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        side: const BorderSide(color: AppColors.border),
+                      ),
+                      onPressed: () => TripReviewSheet.show(context, appState),
+                      icon: const Icon(LucideIcons.search, size: 16, color: AppColors.ink),
+                      label: const Text('Review trips', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppColors.ink)),
                     ),
                   ],
                 ),
@@ -509,16 +561,16 @@ class TaxDashboardScreen extends StatelessWidget {
                             color: AppColors.workBlue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(PhosphorIconsFill.shieldCheck, color: AppColors.workBlue, size: 18),
+                          child: const Icon(LucideIcons.shieldCheck, color: AppColors.workBlue, size: 18),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'ATO 12-WEEK COMPLIANCE TRACKER',
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
                               ),
                               Text(
                                 'Week ${appState.currentLogbookWeek} of 12 (${(appState.logbookProgressPercentage * 100).toInt()}%)',
@@ -571,7 +623,7 @@ class TaxDashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
 
-                    // Missing Record Quick-Action Card (if any)
+                    // Missing Record Quick-Action Card (Spec #6, #7, #8: 1-Tap Confirmation)
                     if (appState.missingComplianceTrips.isNotEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -583,13 +635,13 @@ class TaxDashboardScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            const Row(
                               children: [
-                                const Icon(PhosphorIconsBold.warningCircle, color: AppColors.amber, size: 16),
-                                const SizedBox(width: 6),
+                                Icon(LucideIcons.alertCircle, color: AppColors.amber, size: 16),
+                                SizedBox(width: 6),
                                 Text(
                                   'Resolve Trip Purpose to prevent ATO Audit flags:',
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.ink),
+                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.ink),
                                 ),
                               ],
                             ),
@@ -613,15 +665,13 @@ class TaxDashboardScreen extends StatelessWidget {
                                     elevation: 0,
                                   ),
                                   onPressed: () {
-                                    appState.resolveTripPurpose(
-                                      appState.missingComplianceTrips.first.id,
-                                      'Client Job Site Service & Installation',
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Trip marked as Client Job Site (100% Deductible).')),
+                                    TripQuickResolveSheet.show(
+                                      context,
+                                      trip: appState.missingComplianceTrips.first,
+                                      appState: appState,
                                     );
                                   },
-                                  child: const Text('Mark as Job Site', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
+                                  child: const Text('1-Tap Resolve', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
                                 ),
                               ],
                             ),
@@ -629,11 +679,11 @@ class TaxDashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ] else ...[
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 14),
-                          const SizedBox(width: 4),
-                          const Text(
+                          Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 14),
+                          SizedBox(width: 4),
+                          Text(
                             'Continuous logbook entries preserved. Valid for 5 consecutive tax years.',
                             style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
                           ),
@@ -644,6 +694,9 @@ class TaxDashboardScreen extends StatelessWidget {
                 ),
               ),
             ],
+
+            // STRATEGIC DIFFERENTIATION ADVISOR:
+            MoneyLeftOnTableCard(appState: appState),
 
             // TAX SUMMARY: Optimal Comparison Hero Banner
             Container(
@@ -686,6 +739,46 @@ class TaxDashboardScreen extends StatelessWidget {
                     'Higher by ${Formatters.currency(summary.taxSavingsDiff)} vs alternative method',
                     style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
                   ),
+                  const SizedBox(height: 14),
+                  // Spec #17: Tax Season Claim Breakdown
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Car deduction', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+                            Text(Formatters.currency(summary.highestClaim), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                          ],
+                        ),
+                        Text('+', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 16)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Other business costs', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+                            Text(Formatters.currency(summary.totalDirectDeductions), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                          ],
+                        ),
+                        Text('=', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 16)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text('Total Tax Claim', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w800)),
+                            Text(
+                              Formatters.currency(summary.highestClaim + summary.totalDirectDeductions),
+                              style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w900, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -727,7 +820,7 @@ class TaxDashboardScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => _showAddTripDialog(context, appState),
-                    icon: const Icon(PhosphorIconsBold.steeringWheel, size: 18),
+                    icon: const Icon(LucideIcons.car, size: 18),
                     label: const Text('Log Trip', style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
                 ),
@@ -741,7 +834,7 @@ class TaxDashboardScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => ExpenseCaptureSheet.show(context, appState),
-                    icon: const Icon(PhosphorIconsBold.receipt, size: 18),
+                    icon: const Icon(LucideIcons.receipt, size: 18),
                     label: const Text('Snap Expense', style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
                 ),
@@ -752,7 +845,7 @@ class TaxDashboardScreen extends StatelessWidget {
             // RECENT TRIPS STREAM (Layer 1 Feed)
             Row(
               children: [
-                const Icon(PhosphorIconsFill.steeringWheel, size: 16, color: AppColors.workBlue),
+                const Icon(LucideIcons.car, size: 16, color: AppColors.workBlue),
                 const SizedBox(width: 6),
                 const Text('RECENT TRIPS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5)),
                 const Spacer(),
@@ -777,7 +870,7 @@ class TaxDashboardScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(color: t.isBusiness ? AppColors.workBlueLight : Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                        child: Icon(t.isBusiness ? PhosphorIconsBold.briefcase : PhosphorIconsBold.user, size: 16, color: t.isBusiness ? AppColors.workBlue : AppColors.muted),
+                        child: Icon(t.isBusiness ? LucideIcons.briefcase : LucideIcons.user, size: 16, color: t.isBusiness ? AppColors.workBlue : AppColors.muted),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -800,7 +893,7 @@ class TaxDashboardScreen extends StatelessWidget {
             // RECENT EXPENSES LEDGER (Layer 2 Feed)
             Row(
               children: [
-                const Icon(PhosphorIconsFill.receipt, size: 16, color: AppColors.emerald),
+                const Icon(LucideIcons.receipt, size: 16, color: AppColors.emerald),
                 const SizedBox(width: 6),
                 const Text('SUBSTANTIATED EXPENSES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.5)),
                 const Spacer(),
@@ -825,7 +918,7 @@ class TaxDashboardScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(color: AppColors.emeraldLight, borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(PhosphorIconsBold.gasPump, size: 16, color: AppColors.emerald),
+                        child: const Icon(LucideIcons.fuel, size: 16, color: AppColors.emerald),
                       ),
                       const SizedBox(width: 10),
                       Expanded(

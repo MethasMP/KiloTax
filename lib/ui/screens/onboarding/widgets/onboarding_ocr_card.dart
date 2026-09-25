@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/utils/formatters.dart';
 
 class OnboardingOcrHudCard extends StatelessWidget {
   final bool isScanningOcr;
@@ -43,7 +42,7 @@ class OnboardingOcrHudCard extends StatelessWidget {
                   color: AppColors.workBlueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(PhosphorIconsBold.camera, color: AppColors.workBlue, size: 20),
+                child: const Icon(LucideIcons.camera, color: AppColors.workBlue, size: 20),
               ),
               const SizedBox(width: 10),
               const Expanded(

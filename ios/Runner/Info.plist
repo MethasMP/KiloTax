@@ -24,8 +24,32 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kilotax</string>
+				<string>com.googleusercontent.apps.186185970853-lonc1tc0iokhucjd046che8gq3q8mqj1</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>kilotax</string>
+		<string>googlegmail</string>
+		<string>ms-outlook</string>
+		<string>readdle-spark</string>
+		<string>ymail</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>GIDClientID</key>
+	<string>186185970853-lonc1tc0iokhucjd046che8gq3q8mqj1.apps.googleusercontent.com</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -65,6 +89,8 @@
 	<string>KiloTax connects to paired vehicle Bluetooth systems to log business mileage.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>KiloTax uses your camera to scan and preserve vehicle expense receipts for ATO tax substantiation.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>KiloTax needs photo library access to attach fuel and expense receipts for ATO tax substantiation.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

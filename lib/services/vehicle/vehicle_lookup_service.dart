@@ -35,8 +35,6 @@ class VehicleLookupResult {
         return 'Light Truck';
       case VehicleType.suv:
         return 'SUV / 4WD';
-      case VehicleType.motorcycle:
-        return 'Motorcycle';
       case VehicleType.car:
         return 'Passenger Car (<1t)';
     }
@@ -44,13 +42,23 @@ class VehicleLookupResult {
 
   factory VehicleLookupResult.fromJson(Map<String, dynamic> json) {
     final typeStr = (json['type'] ?? 'ute').toString().toLowerCase();
-    final vehicleType = typeStr == 'van'
-        ? VehicleType.van
-        : (typeStr == 'ute' ? VehicleType.ute : VehicleType.car);
-
     final make = (json['make'] ?? '').toString();
     final model = (json['model'] ?? '').toString();
     final variant = (json['variant'] ?? '').toString();
+
+    final VehicleType vehicleType;
+    if (typeStr == 'van') {
+      vehicleType = VehicleType.van;
+    } else if (typeStr == 'ute') {
+      vehicleType = VehicleType.ute;
+    } else if (typeStr == 'suv' || model.toLowerCase().contains('model y') || variant.toLowerCase().contains('suv')) {
+      vehicleType = VehicleType.suv;
+    } else if (typeStr == 'truck') {
+      vehicleType = VehicleType.truck;
+    } else {
+      // 'passenger', 'ev', 'car'
+      vehicleType = VehicleType.car;
+    }
     final displayName = json['display_name'] ?? '$make $model $variant'.trim();
 
     return VehicleLookupResult(
@@ -192,29 +200,15 @@ class VehicleLookupService {
     }).toList();
   }
 
-  /// Lookup plate simulation / matcher against directory
+  /// Lookup plate against directory (Requires official state/national Transport API key).
+  /// In client without paid PlateAPI subscription, returns null gracefully so the user
+  /// selects their vehicle instantly via the Australian Vehicle Catalog.
   static Future<VehicleLookupResult?> lookup({
     required String state,
     required String plate,
   }) async {
-    final list = await getVehicleDirectory();
-    final p = plate.toUpperCase().trim();
-
-    if (p.contains('UTE') || p.contains('TRD') || p.contains('777')) {
-      return list.firstWhere(
-        (v) => v.id == 'toyota-hilux-sr5',
-        orElse: () => list.first,
-      );
-    }
-    if (p.contains('VAN') || p.contains('EXP')) {
-      return list.firstWhere(
-        (v) => v.vehicleType == VehicleType.van,
-        orElse: () => list.first,
-      );
-    }
-    return list.firstWhere(
-      (v) => v.id.startsWith('ford-ranger'),
-      orElse: () => list.first,
-    );
+    // Australia has no free national plate lookup API (requires paid state transport access).
+    // Gracefully return null to prompt 1-tap selection from Australian Vehicle Catalog.
+    return null;
   }
 }

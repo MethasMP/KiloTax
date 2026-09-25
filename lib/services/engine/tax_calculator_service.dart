@@ -5,13 +5,14 @@ import '../../data/models/tax_summary.dart';
 
 class TaxCalculatorService {
   /// CENTS / KM (Layer 4A):
-  /// Statutory formula: min(Business KM, 5,000) * $0.91
-  static double calculateCentsPerKm(double businessKm) {
+  /// Statutory formula: min(Business KM, Cap KM) * ATO Rate
+  static double calculateCentsPerKm(double businessKm, [AtoTaxRule? rule]) {
     if (businessKm <= 0) return 0.0;
-    final eligibleKm = businessKm > AppConstants.centsPerKmCapKm
-        ? AppConstants.centsPerKmCapKm
+    final activeRule = rule ?? AppConstants.activeTaxRule;
+    final eligibleKm = businessKm > activeRule.centsPerKmMaxKm
+        ? activeRule.centsPerKmMaxKm
         : businessKm;
-    return eligibleKm * AppConstants.centsPerKmRate2026;
+    return eligibleKm * activeRule.centsPerKmRate;
   }
 
   /// LOGBOOK BUSINESS-USE % (Layer 4B):
@@ -24,6 +25,7 @@ class TaxCalculatorService {
 
   /// LOGBOOK CLAIM AMOUNT:
   /// (Eligible Running Expenses * Business-Use %) + 100% Direct Tolls/Parking
+  /// Stored vault evidence (isVaultOnly == true) is strictly excluded from active claim.
   static double calculateLogbookClaim({
     required List<VehicleExpense> expenses,
     required double businessPercentage,
@@ -32,6 +34,8 @@ class TaxCalculatorService {
     double directTotal = 0.0;
 
     for (final exp in expenses) {
+      if (exp.isVaultOnly) continue; // Exclude prior-year / vault-only records
+
       if (exp.category == ExpenseCategory.tollsParking) {
         // Direct deduction: work parking/tolls are 100% claimable
         directTotal += exp.amount * (exp.businessPercentage / 100.0);
@@ -46,10 +50,12 @@ class TaxCalculatorService {
   }
 
   /// TAX SUMMARY (Layer 5):
-  /// Evaluates both methods and generates the comparison report
+  /// Evaluates both methods and generates the comparison report.
+  /// Ignores vault-only / prior-year archived receipts from current FY claim.
   static TaxSummary evaluateSummary({
     required List<Trip> trips,
     required List<VehicleExpense> expenses,
+    AtoTaxRule? taxRule,
   }) {
     double businessKm = 0.0;
     double personalKm = 0.0;
@@ -69,6 +75,8 @@ class TaxCalculatorService {
     double totalDirect = 0.0;
 
     for (final exp in expenses) {
+      if (exp.isVaultOnly) continue; // Exclude prior-year / vault-only records
+
       if (exp.category.isDirectlyDeductibleByDefault) {
         totalDirect += exp.amount * (exp.businessPercentage / 100.0);
       } else {
@@ -76,10 +84,10 @@ class TaxCalculatorService {
       }
     }
 
-    final centsClaim = calculateCentsPerKm(businessKm);
+    final centsClaim = calculateCentsPerKm(businessKm, taxRule);
     final logbookClaim = (totalRunning * (businessPct / 100.0)) + totalDirect;
 
-    final recommended = logbookClaim >= centsClaim
+    final recommended = logbookClaim > centsClaim
         ? RecommendedMethod.logbook
         : RecommendedMethod.centsPerKm;
 

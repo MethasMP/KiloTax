@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 
 class OnboardingBluetoothSelector extends StatelessWidget {
@@ -34,7 +34,7 @@ class OnboardingBluetoothSelector extends StatelessWidget {
                   color: AppColors.workBlueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(PhosphorIconsBold.bluetooth, color: AppColors.workBlue, size: 20),
+                child: const Icon(LucideIcons.bluetooth, color: AppColors.workBlue, size: 20),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -56,7 +56,7 @@ class OnboardingBluetoothSelector extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: selectedBluetooth.isNotEmpty ? selectedBluetooth : null,
+            initialValue: selectedBluetooth.isNotEmpty ? selectedBluetooth : null,
             hint: const Text('Select In-Car Bluetooth / CarPlay', style: TextStyle(fontSize: 13, color: AppColors.muted)),
             items: detectedDevices.map((d) {
               final name = d['name'] ?? 'Car Audio';
