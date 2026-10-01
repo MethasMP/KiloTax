@@ -48,13 +48,18 @@ class _MigrationScreenState extends State<MigrationScreen> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Import from $platformName',
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.ink),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                    color: AppColors.ink),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
@@ -69,10 +74,13 @@ class _MigrationScreenState extends State<MigrationScreen> {
                 maxLines: 6,
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                 decoration: InputDecoration(
-                  hintText: 'Date,DistanceKm,Purpose,Type,From,To\n2026-08-01,34.2,Site visit to client,Business,Home,Job Site',
+                  hintText:
+                      'Date,DistanceKm,Purpose,Type,From,To\n2026-08-01,34.2,Site visit to client,Business,Home,Job Site',
                   filled: true,
                   fillColor: AppColors.background,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -87,7 +95,9 @@ class _MigrationScreenState extends State<MigrationScreen> {
                       }
                     },
                     icon: const Icon(Icons.paste_rounded, size: 16),
-                    label: const Text('Paste Clipboard', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    label: const Text('Paste Clipboard',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 12)),
                   ),
                 ],
               ),
@@ -97,7 +107,8 @@ class _MigrationScreenState extends State<MigrationScreen> {
                   backgroundColor: AppColors.deepNavy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
                   final text = csvController.text.trim();
@@ -106,7 +117,9 @@ class _MigrationScreenState extends State<MigrationScreen> {
                     _processCsvContent(text);
                   }
                 },
-                child: const Text('Import & Substantiate Records', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                child: const Text('Import & Substantiate Records',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               ),
             ],
           ),
@@ -120,6 +133,7 @@ class _MigrationScreenState extends State<MigrationScreen> {
   }
 
   void _processCsvContent(String csvContent) async {
+    if (!mounted) return;
     setState(() => _isImporting = true);
     HapticFeedback.mediumImpact();
 
@@ -134,6 +148,7 @@ class _MigrationScreenState extends State<MigrationScreen> {
       widget.appState.recordTrip(trip);
     }
 
+    if (!mounted) return;
     setState(() {
       _isImporting = false;
       _result = result;
@@ -147,11 +162,16 @@ class _MigrationScreenState extends State<MigrationScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Import Past Records', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink)),
+        title: const Text('Import Past Records',
+            style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                color: AppColors.ink)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.ink, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -170,14 +190,22 @@ class _MigrationScreenState extends State<MigrationScreen> {
               ),
               child: const Row(
                 children: [
-                  Icon(LucideIcons.arrowLeftRight, color: AppColors.workBlue, size: 24),
+                  Icon(LucideIcons.arrowLeftRight,
+                      color: AppColors.workBlue, size: 24),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Zero-Friction Switcher', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.ink)),
-                        Text('Bring your historical trips over from Driversnote or accounting apps with 1 tap.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                        Text('Zero-Friction Switcher',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                color: AppColors.ink)),
+                        Text(
+                            'Bring your historical trips over from Driversnote or accounting apps with 1 tap.',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.muted)),
                       ],
                     ),
                   ),
@@ -187,9 +215,12 @@ class _MigrationScreenState extends State<MigrationScreen> {
             const SizedBox(height: 16),
 
             if (_result == null) ...[
-              const Text('Select Source Platform', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink)),
+              const Text('Select Source Platform',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      color: AppColors.ink)),
               const SizedBox(height: 12),
-
               _SourceOptionCard(
                 name: 'Driversnote Export',
                 description: 'Import CSV or trip history spreadsheet',
@@ -225,9 +256,13 @@ class _MigrationScreenState extends State<MigrationScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.emerald.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppColors.emerald.withValues(alpha: 0.3)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -238,17 +273,24 @@ class _MigrationScreenState extends State<MigrationScreen> {
                         color: AppColors.emeraldLight,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(LucideIcons.checkCircle, color: AppColors.emerald, size: 32),
+                      child: const Icon(LucideIcons.checkCircle,
+                          color: AppColors.emerald, size: 32),
                     ),
                     const SizedBox(height: 14),
                     Text(
                       '${_result!.totalParsed} Trips Imported',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: AppColors.ink),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                          color: AppColors.ink),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${_result!.matchRate.toStringAsFixed(0)}% matched automatically',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.emerald),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          color: AppColors.emerald),
                     ),
                     const Divider(height: 28, color: AppColors.border),
                     Row(
@@ -267,7 +309,9 @@ class _MigrationScreenState extends State<MigrationScreen> {
                         _ResultStat(
                           label: 'Need Attention',
                           value: '${_result!.needsAttention}',
-                          color: _result!.needsAttention > 0 ? AppColors.amber : AppColors.muted,
+                          color: _result!.needsAttention > 0
+                              ? AppColors.amber
+                              : AppColors.muted,
                         ),
                       ],
                     ),
@@ -280,11 +324,14 @@ class _MigrationScreenState extends State<MigrationScreen> {
                   backgroundColor: AppColors.workBlue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Go to Dashboard', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                child: const Text('Go to Dashboard',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
               ),
             ],
           ],
@@ -340,12 +387,19 @@ class _SourceOptionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.ink)),
-                      Text(description, style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
+                      Text(name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                              color: AppColors.ink)),
+                      Text(description,
+                          style: const TextStyle(
+                              fontSize: 11.5, color: AppColors.muted)),
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.muted),
               ],
             ),
           ),
@@ -360,15 +414,22 @@ class _ResultStat extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _ResultStat({required this.label, required this.value, required this.color});
+  const _ResultStat(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: color)),
+        Text(value,
+            style: TextStyle(
+                fontWeight: FontWeight.w900, fontSize: 20, color: color)),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.muted)),
       ],
     );
   }

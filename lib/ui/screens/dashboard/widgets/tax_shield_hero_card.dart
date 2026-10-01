@@ -24,7 +24,7 @@ class TaxShieldHeroCard extends StatelessWidget {
     final vehicle = appState.primaryVehicle;
     final summary = appState.taxSummary;
     final businessKm = summary.businessKm;
-    final maxKm = AppConstants.centsPerKmCapKm;
+    final maxKm = appState.activeTaxRule.centsPerKmMaxKm;
     final remainingKm = (maxKm - businessKm).clamp(0.0, maxKm);
     final percentage = (businessKm / maxKm).clamp(0.0, 1.0);
     final isAuditReady = appState.missingComplianceTrips.isEmpty;
@@ -58,7 +58,9 @@ class TaxShieldHeroCard extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: isAuditReady ? AppColors.emerald : AppColors.amberDark,
+                      color: isAuditReady
+                          ? AppColors.emerald
+                          : AppColors.amberDark,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -69,7 +71,9 @@ class TaxShieldHeroCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       fontSize: 11.5,
                       letterSpacing: 0.6,
-                      color: isAuditReady ? AppColors.emerald : AppColors.amberDark,
+                      color: isAuditReady
+                          ? AppColors.emerald
+                          : AppColors.amberDark,
                     ),
                   ),
                 ],
@@ -81,15 +85,19 @@ class TaxShieldHeroCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                  border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.car, size: 12, color: AppColors.muted),
+                    const Icon(LucideIcons.car,
+                        size: 12, color: AppColors.muted),
                     const SizedBox(width: 5),
                     Text(
-                      vehicle != null && vehicle.model.isNotEmpty ? vehicle.model : 'Vehicle',
+                      vehicle != null && vehicle.model.isNotEmpty
+                          ? vehicle.model
+                          : 'Vehicle',
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
@@ -187,7 +195,8 @@ class TaxShieldHeroCard extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
-                widthFactor: percentage == 0.0 && businessKm > 0 ? 0.01 : percentage,
+                widthFactor:
+                    percentage == 0.0 && businessKm > 0 ? 0.01 : percentage,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.emerald,
@@ -235,7 +244,8 @@ class TaxShieldHeroCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(LucideIcons.bookOpen, color: AppColors.emerald, size: 14),
+                const Icon(LucideIcons.bookOpen,
+                    color: AppColors.emerald, size: 14),
                 const SizedBox(width: 4),
                 Text(
                   'LOGBOOK • Week ${appState.currentLogbookWeek} of 12',
@@ -263,12 +273,16 @@ class TaxShieldHeroCard extends StatelessWidget {
                       value: businessUse / 100.0,
                       strokeWidth: 7,
                       backgroundColor: AppColors.background,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.emerald),
                     ),
                     Center(
                       child: Text(
                         '${businessUse.toStringAsFixed(1)}%',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: AppColors.ink),
                       ),
                     ),
                   ],
@@ -299,14 +313,16 @@ class TaxShieldHeroCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(Formatters.distance(businessKm), style: AppTextStyles.cardPrimary),
+                  Text(Formatters.distance(businessKm),
+                      style: AppTextStyles.cardPrimary),
                   const Text('Business', style: AppTextStyles.caption),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(Formatters.distance(totalKm), style: AppTextStyles.cardPrimary),
+                  Text(Formatters.distance(totalKm),
+                      style: AppTextStyles.cardPrimary),
                   const Text('Total', style: AppTextStyles.caption),
                 ],
               ),
@@ -318,11 +334,15 @@ class TaxShieldHeroCard extends StatelessWidget {
           // Logbook status row
           Row(
             children: [
-              const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.emerald),
+              const Icon(Icons.check_circle_rounded,
+                  size: 14, color: AppColors.emerald),
               const SizedBox(width: 6),
               Text(
                 'Active • ${Formatters.date(appState.primaryVehicle?.logbookStartDate ?? DateTime.now())} - ${Formatters.date((appState.primaryVehicle?.logbookStartDate ?? DateTime.now()).add(Duration(days: AppConstants.statutoryLogbookDays)))}',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.ink),
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.ink),
               ),
             ],
           ),

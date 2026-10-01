@@ -26,7 +26,9 @@ void main() {
   group('AtoTaxPeriodEngine - Receipt Routing Decisions', () {
     final systemDate = DateTime(2026, 9, 13); // Today
 
-    test('Receipt from Jan 2026 is rejected as Stale Prior Year when today is Sep 2026', () {
+    test(
+        'Receipt from Jan 2026 is rejected as Stale Prior Year when today is Sep 2026',
+        () {
       // Jan 2026 belongs to FY 2025-26, which closed on 30 June 2026
       // Today is 13 Sep 2026 (Tax Season for FY25-26!)
       // So this receipt can be claimed in the pending upcoming tax return (lodgment)!
@@ -43,7 +45,8 @@ void main() {
         receiptDate: DateTime(2026, 8, 10),
         systemDate: systemDate,
       );
-      expect(decision, equals(ReceiptRoutingDecision.saveToCurrentFinancialYear));
+      expect(
+          decision, equals(ReceiptRoutingDecision.saveToCurrentFinancialYear));
     });
 
     test('Future receipt is strictly rejected', () {

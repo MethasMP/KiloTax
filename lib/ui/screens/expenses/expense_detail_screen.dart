@@ -148,7 +148,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   }
 
   ReceiptValidationResult _evaluateValidation() {
-    final amt = double.tryParse(_amountController.text.replaceAll(',', '').trim()) ?? 0.0;
+    final amt =
+        double.tryParse(_amountController.text.replaceAll(',', '').trim()) ??
+            0.0;
     final gst = double.tryParse(_gstController.text.replaceAll(',', '').trim());
     final ocr = ReceiptOcrResult(
       merchant: _merchantController.text.trim(),
@@ -235,7 +237,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               },
               child: Text(
                 primaryLabel,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
               ),
             ),
             if (secondaryLabel != null) ...[
@@ -278,10 +281,13 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
     final vehicle = widget.appState.primaryVehicle;
     final vehicleName = vehicle != null
-        ? (vehicle.make.isNotEmpty ? vehicle.make : vehicle.vehicleType.displayName.toLowerCase())
+        ? (vehicle.make.isNotEmpty
+            ? vehicle.make
+            : vehicle.vehicleType.displayName.toLowerCase())
         : 'vehicle';
     final isCentsPerKm = vehicle?.taxMethod == TaxMethod.centsPerKm;
-    final rateCents = widget.appState.taxRuleService.getRateCentsForDate(_selectedDate);
+    final rateCents =
+        widget.appState.taxRuleService.getRateCentsForDate(_selectedDate);
 
     // 1. Check Cents-per-km method conflict
     final methodConflict = _preDbValidator.checkMethodConflict(
@@ -342,7 +348,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     await _commitSaveExpense(parsedAmount, _isVaultOnly, _vaultReason);
   }
 
-  Future<void> _commitSaveExpense(double parsedAmount, bool isVault, String? reason) async {
+  Future<void> _commitSaveExpense(
+      double parsedAmount, bool isVault, String? reason) async {
     HapticFeedback.mediumImpact();
     final merchantName = _merchantController.text.trim().isNotEmpty
         ? _merchantController.text.trim()
@@ -364,7 +371,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     );
     if (!mounted) return;
 
-    final parsedGst = double.tryParse(_gstController.text.replaceAll(',', '').trim());
+    final parsedGst =
+        double.tryParse(_gstController.text.replaceAll(',', '').trim());
 
     if (widget.existingExpense != null) {
       final updated = VehicleExpense(
@@ -460,10 +468,13 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   Widget build(BuildContext context) {
     final vehicle = widget.appState.primaryVehicle;
     final vehicleName = vehicle != null
-        ? (vehicle.make.isNotEmpty ? vehicle.make : vehicle.vehicleType.displayName.toLowerCase())
+        ? (vehicle.make.isNotEmpty
+            ? vehicle.make
+            : vehicle.vehicleType.displayName.toLowerCase())
         : 'vehicle';
     final isCentsPerKm = vehicle?.taxMethod == TaxMethod.centsPerKm;
-    final rateCents = widget.appState.taxRuleService.getRateCentsForDate(_selectedDate);
+    final rateCents =
+        widget.appState.taxRuleService.getRateCentsForDate(_selectedDate);
 
     final methodConflict = _preDbValidator.checkMethodConflict(
       isCentsPerKm: isCentsPerKm,
@@ -472,9 +483,14 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       vehicleName: vehicleName,
     );
     final valResult = _evaluateValidation();
-    final parsedAmount = double.tryParse(_amountController.text.replaceAll(',', '').trim()) ?? 0.0;
-    final parsedGst = double.tryParse(_gstController.text.replaceAll(',', '').trim());
-    final legalMaxGst = parsedAmount > 0 ? double.parse((parsedAmount / 11.0).toStringAsFixed(2)) : 0.0;
+    final parsedAmount =
+        double.tryParse(_amountController.text.replaceAll(',', '').trim()) ??
+            0.0;
+    final parsedGst =
+        double.tryParse(_gstController.text.replaceAll(',', '').trim());
+    final legalMaxGst = parsedAmount > 0
+        ? double.parse((parsedAmount / 11.0).toStringAsFixed(2))
+        : 0.0;
     final isGstExceeded = parsedGst != null && parsedGst > (legalMaxGst + 0.05);
 
     return Scaffold(
@@ -657,9 +673,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                                     _isVaultOnly = true;
                                     _vaultReason = 'cents_per_km_running_cost';
                                   });
-                                  _commitSaveExpense(parsedAmount, true, 'cents_per_km_running_cost');
+                                  _commitSaveExpense(parsedAmount, true,
+                                      'cents_per_km_running_cost');
                                 },
-                                secondaryLabel: methodConflict.secondaryActionLabel,
+                                secondaryLabel:
+                                    methodConflict.secondaryActionLabel,
                                 onSecondary: () {},
                               ),
                             )
@@ -689,7 +707,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                                           _vaultReason = 'prior_tax_year';
                                         });
                                       },
-                                      secondaryLabel: guidance.secondaryActionLabel,
+                                      secondaryLabel:
+                                          guidance.secondaryActionLabel,
                                       onSecondary: _pickDate,
                                     );
                                   },
@@ -705,19 +724,23 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                                         title: 'Check GST amount',
                                         explanation:
                                             'For a \$${parsedAmount.toStringAsFixed(2)} purchase, GST cannot exceed \$${legalMaxGst.toStringAsFixed(2)}. The camera may have misread the tax line.',
-                                        primaryLabel: 'Fix to \$${legalMaxGst.toStringAsFixed(2)}',
+                                        primaryLabel:
+                                            'Fix to \$${legalMaxGst.toStringAsFixed(2)}',
                                         onPrimary: () {
                                           setState(() {
-                                            _gstController.text = legalMaxGst.toStringAsFixed(2);
+                                            _gstController.text =
+                                                legalMaxGst.toStringAsFixed(2);
                                           });
                                         },
-                                        secondaryLabel: 'Keep \$${parsedGst.toStringAsFixed(2)}',
+                                        secondaryLabel:
+                                            'Keep \$${parsedGst.toStringAsFixed(2)}',
                                         onSecondary: () {},
                                       ),
                                     )
                                   : parsedAmount > 0
                                       ? _buildStatusPill(
-                                          backgroundColor: AppColors.emeraldLight,
+                                          backgroundColor:
+                                              AppColors.emeraldLight,
                                           textColor: AppColors.emerald,
                                           icon: LucideIcons.checkCircle2,
                                           label: 'Ready for tax',
@@ -735,7 +758,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.calendar, size: 14, color: AppColors.muted),
+                          const Icon(LucideIcons.calendar,
+                              size: 14, color: AppColors.muted),
                           const SizedBox(width: 6),
                           Text(
                             Formatters.date(_selectedDate),
@@ -763,17 +787,21 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
                   // Minimal GST Component Input Row
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isGstExceeded ? AppColors.crimson : AppColors.border,
+                        color: isGstExceeded
+                            ? AppColors.crimson
+                            : AppColors.border,
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.percent, size: 16, color: AppColors.muted),
+                        const Icon(LucideIcons.percent,
+                            size: 16, color: AppColors.muted),
                         const SizedBox(width: 8),
                         const Text(
                           'GST component',
@@ -788,12 +816,15 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                           width: 80,
                           child: TextField(
                             controller: _gstController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 14,
-                              color: isGstExceeded ? AppColors.crimson : AppColors.ink,
+                              color: isGstExceeded
+                                  ? AppColors.crimson
+                                  : AppColors.ink,
                             ),
                             decoration: const InputDecoration(
                               prefixText: '\$ ',
@@ -808,12 +839,14 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                             onTap: () {
                               HapticFeedback.selectionClick();
                               setState(() {
-                                _gstController.text = legalMaxGst.toStringAsFixed(2);
+                                _gstController.text =
+                                    legalMaxGst.toStringAsFixed(2);
                               });
                             },
                             borderRadius: BorderRadius.circular(6),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(6),

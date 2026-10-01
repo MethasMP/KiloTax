@@ -31,9 +31,8 @@ class ReceiptIntelligenceService {
   const ReceiptIntelligenceService();
 
   ReceiptOcrResult analyseText(String rawText, {DateTime? fallbackDate}) {
-    final sanitizedRaw = rawText
-        .replaceAll('¥', '%')
-        .replaceAll('PREMOBA', 'PREM98');
+    final sanitizedRaw =
+        rawText.replaceAll('¥', '%').replaceAll('PREMOBA', 'PREM98');
     final normalized = _normalize(sanitizedRaw);
     final categoryMatch = classify(normalized);
     final gstCandidate = _extractGstAmount(normalized);
@@ -53,7 +52,8 @@ class ReceiptIntelligenceService {
     DateTime date;
     if (parsedDate != null) {
       if (parsedDate.isAfter(now.add(const Duration(minutes: 5))) ||
-          parsedDate.isBefore(now.subtract(const Duration(days: 365 * 5 + 30)))) {
+          parsedDate
+              .isBefore(now.subtract(const Duration(days: 365 * 5 + 30)))) {
         date = fallbackDate ?? now;
       } else {
         date = parsedDate;
@@ -68,8 +68,7 @@ class ReceiptIntelligenceService {
       if (merchant.isNotEmpty) 'merchant:$merchant',
       if (gstCandidate != null && gstCandidate > 0)
         'gst:${gstCandidate.toStringAsFixed(2)}',
-      if (abnCandidate != null && abnCandidate.isNotEmpty)
-        'abn:$abnCandidate',
+      if (abnCandidate != null && abnCandidate.isNotEmpty) 'abn:$abnCandidate',
     ];
 
     final confidence = _bounded(
@@ -174,11 +173,14 @@ class ReceiptIntelligenceService {
   double? _extractGstAmount(String text) {
     final gstPatterns = [
       // 1. Explicit GST line with optional category letter: "10% gst a $ 4.95", "gst a $ 4.95" (not preceded by includes)
-      RegExp(r'(?<!includes\s+)\bgst(?:\s+[a-z])?\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
+      RegExp(
+          r'(?<!includes\s+)\bgst(?:\s+[a-z])?\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       // 2. GST amount / tax line
-      RegExp(r'(?:gst\s+amount|tax\s+amount)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
+      RegExp(
+          r'(?:gst\s+amount|tax\s+amount)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       // 3. Fallback: "includes gst $X" (only if NOT preceded by "total")
-      RegExp(r'(?<!total\s+)includes?\s+gst\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
+      RegExp(
+          r'(?<!total\s+)includes?\s+gst\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       RegExp(r'\b10%\s+tax\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
     ];
 
@@ -195,7 +197,8 @@ class ReceiptIntelligenceService {
   /// Extracts fuel supermarket discounts (e.g. "discount -$3.20", "4c discount $3.20")
   double? _extractDiscountAmount(String text) {
     final discPatterns = [
-      RegExp(r'(?:discount|fuel\s+discount|savings?|voucher)\s*[:$ ]+\s*-?\$?\s*(\d{1,3}(?:\.\d{2}))'),
+      RegExp(
+          r'(?:discount|fuel\s+discount|savings?|voucher)\s*[:$ ]+\s*-?\$?\s*(\d{1,3}(?:\.\d{2}))'),
       RegExp(r'-\s*\$\s*(\d{1,3}(?:\.\d{2}))'),
     ];
 
@@ -209,7 +212,7 @@ class ReceiptIntelligenceService {
     return null;
   }
 
-  /// NASA-grade Consensus Settlement Engine:
+  /// Multi-strategy Consensus Settlement Engine:
   /// Evaluates candidates with Bottom-up scanning, Levenshtein Fuzzy matching,
   /// Discount Reconciliation, and GST Invariant validation.
   _ConsensusResult _extractConsensusSettlement({
@@ -235,7 +238,8 @@ class ReceiptIntelligenceService {
 
       // Check for fuzzy match against settlement keywords
       final isSettlementLine = _isFuzzySettlementLine(normLine);
-      final match = RegExp(r'\$?\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2}))').firstMatch(line);
+      final match =
+          RegExp(r'\$?\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2}))').firstMatch(line);
 
       if (match != null) {
         final amount = double.tryParse(match.group(1)!.replaceAll(',', ''));
@@ -247,7 +251,8 @@ class ReceiptIntelligenceService {
             score += 5.0;
           }
 
-          if (line.contains(RegExp(r'\b(abn|acn|tel|phone|qty|litres|ltrs)\b', caseSensitive: false))) {
+          if (line.contains(RegExp(r'\b(abn|acn|tel|phone|qty|litres|ltrs)\b',
+              caseSensitive: false))) {
             score -= 4.0;
           }
 
@@ -257,7 +262,8 @@ class ReceiptIntelligenceService {
     }
 
     final totalPatterns = [
-      RegExp(r'(?:grand\s+total|amount\s+paid|total\s+paid|total\s+aud|total|balance\s+due)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)'),
+      RegExp(
+          r'(?:grand\s+total|amount\s+paid|total\s+paid|total\s+aud|total|balance\s+due)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)'),
       RegExp(r'\$\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)'),
     ];
 
@@ -265,13 +271,17 @@ class ReceiptIntelligenceService {
       for (final match in pattern.allMatches(normalized)) {
         final amount = double.tryParse(match.group(1)!.replaceAll(',', ''));
         if (amount == null || amount <= 0) continue;
-        final labelBoost = match.group(0)!.contains('total') || match.group(0)!.contains('paid') ? 3.0 : 0.5;
+        final labelBoost = match.group(0)!.contains('total') ||
+                match.group(0)!.contains('paid')
+            ? 3.0
+            : 0.5;
         candidates.add(_AmountCandidate(amount, labelBoost));
       }
     }
 
     if (candidates.isEmpty) {
-      return const _ConsensusResult(amount: 0.0, isCrossValidated: false, evidence: []);
+      return const _ConsensusResult(
+          amount: 0.0, isCrossValidated: false, evidence: []);
     }
 
     // 2. GST Invariant Cross-Validation (Total ≈ GST * 11 in Australia)
@@ -293,7 +303,8 @@ class ReceiptIntelligenceService {
       evidence.add('discount_detected:${discount.toStringAsFixed(2)}');
       for (final lower in candidates) {
         for (final higher in candidates) {
-          if ((higher.amount - lower.amount - discount).abs() <= 0.05 && higher.amount > lower.amount) {
+          if ((higher.amount - lower.amount - discount).abs() <= 0.05 &&
+              higher.amount > lower.amount) {
             lower.score += 6.0;
             evidence.add('discount_reconciled');
             break;
@@ -307,7 +318,8 @@ class ReceiptIntelligenceService {
 
     return _ConsensusResult(
       amount: bestAmount,
-      isCrossValidated: gstCrossValidated || evidence.contains('discount_reconciled'),
+      isCrossValidated:
+          gstCrossValidated || evidence.contains('discount_reconciled'),
       evidence: evidence,
     );
   }
@@ -356,7 +368,8 @@ class ReceiptIntelligenceService {
       v1[0] = i + 1;
       for (int j = 0; j < t.length; j++) {
         final cost = (s[i] == t[j]) ? 0 : 1;
-        v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost].reduce((a, b) => a < b ? a : b);
+        v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost]
+            .reduce((a, b) => a < b ? a : b);
       }
       for (int j = 0; j < t.length + 1; j++) {
         v0[j] = v1[j];
@@ -378,7 +391,10 @@ class ReceiptIntelligenceService {
     for (final line in lines) {
       final norm = line.toLowerCase();
       // Skip pure statutory labels, date/time timestamps, or pure numeric lines
-      if (RegExp(r'^(?:\d+[\s/:-]+\d+|tax\s+invoice|tax\s+receipt|customer\s+tax|receipt|a\.?b\.?n\.?|a\.?c\.?n\.?|ph:|tel:|welcome\s+to)', caseSensitive: false).hasMatch(norm)) {
+      if (RegExp(
+              r'^(?:\d+[\s/:-]+\d+|tax\s+invoice|tax\s+receipt|customer\s+tax|receipt|a\.?b\.?n\.?|a\.?c\.?n\.?|ph:|tel:|welcome\s+to)',
+              caseSensitive: false)
+          .hasMatch(norm)) {
         continue;
       }
       // If line is just a pure number or amount, skip
@@ -396,7 +412,10 @@ class ReceiptIntelligenceService {
   /// Cleans legal corporate designations (e.g. "Pty Ltd", "P/L", "Trading As") into clean trading names.
   String _cleanMerchantName(String raw) {
     var cleaned = raw
-        .replaceAll(RegExp(r'\s+(?:pty\.?\s+ltd\.?|pty\s+limited|p/l|ltd\.?|limited)\b', caseSensitive: false), '')
+        .replaceAll(
+            RegExp(r'\s+(?:pty\.?\s+ltd\.?|pty\s+limited|p/l|ltd\.?|limited)\b',
+                caseSensitive: false),
+            '')
         .replaceAll(RegExp(r'^(?:welcome\s+to\s+)', caseSensitive: false), '')
         .replaceAll(RegExp(r'[\*#_]+'), '')
         .trim();
@@ -421,8 +440,19 @@ class ReceiptIntelligenceService {
       final monthStr = textMatch.group(2)!.toLowerCase();
       var year = int.tryParse(textMatch.group(3)!);
       const months = {
-        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-        'jul': 7, 'aug': 8, 'sep': 9, 'sept': 9, 'oct': 10, 'nov': 11, 'dec': 12
+        'jan': 1,
+        'feb': 2,
+        'mar': 3,
+        'apr': 4,
+        'may': 5,
+        'jun': 6,
+        'jul': 7,
+        'aug': 8,
+        'sep': 9,
+        'sept': 9,
+        'oct': 10,
+        'nov': 11,
+        'dec': 12
       };
       final month = months[monthStr];
       if (day != null && month != null && year != null) {
@@ -477,16 +507,18 @@ class ReceiptIntelligenceService {
   double _bounded(double value) => value.clamp(0.0, 0.98).toDouble();
 
   String _titleCase(String value) {
-    return value
-        .split(' ')
-        .map((word) {
-          if (word.isEmpty) return word;
-          if (word.contains('-')) {
-            return word.split('-').map((sub) => sub.isEmpty ? sub : '${sub[0].toUpperCase()}${sub.substring(1).toLowerCase()}').join('-');
-          }
-          return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
-        })
-        .join(' ');
+    return value.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      if (word.contains('-')) {
+        return word
+            .split('-')
+            .map((sub) => sub.isEmpty
+                ? sub
+                : '${sub[0].toUpperCase()}${sub.substring(1).toLowerCase()}')
+            .join('-');
+      }
+      return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
+    }).join(' ');
   }
 }
 
@@ -534,12 +566,17 @@ class _ReceiptSignal {
 
 /// 100% Brand-Agnostic Signals: Pure Domain Actions & Physical Products
 final _fuelSignals = [
-  _ReceiptSignal('fuel product',
-      r'\b(fuel|petrol|diesel|unleaded|ulp|e10|u91|u95|u98|prem98|prem95)\b', 2.0),
-  _ReceiptSignal('premium fuel',
-      r'\b(premium 95|premium 98|prem 98|prem 95|v-power|vortex|ultimate)\b', 1.6),
+  _ReceiptSignal(
+      'fuel product',
+      r'\b(fuel|petrol|diesel|unleaded|ulp|e10|u91|u95|u98|prem98|prem95)\b',
+      2.0),
+  _ReceiptSignal(
+      'premium fuel',
+      r'\b(premium 95|premium 98|prem 98|prem 95|v-power|vortex|ultimate)\b',
+      1.6),
   _ReceiptSignal('pump/bowser', r'\b(pump|bowser)\b', 1.4),
-  _ReceiptSignal('litres', r'\b(\d+(?:\.\d+)?\s*(?:l|litres|liters|ltrs|ltr|qty l))\b', 1.2),
+  _ReceiptSignal('litres',
+      r'\b(\d+(?:\.\d+)?\s*(?:l|litres|liters|ltrs|ltr|qty l))\b', 1.2),
 ];
 
 final _gasSignals = [

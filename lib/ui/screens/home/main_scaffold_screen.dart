@@ -26,20 +26,25 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final taxMethod = appState.primaryVehicle?.taxMethod ?? TaxMethod.centsPerKm;
+    final taxMethod =
+        appState.primaryVehicle?.taxMethod ?? TaxMethod.centsPerKm;
     final isCpk = taxMethod == TaxMethod.centsPerKm;
+
+    void switchToTripsTab() {
+      setState(() => _currentIndex = 1);
+    }
 
     // Polymorphic screen lists:
     // CPK: 3 screens (Zero Expenses/Receipts confusion, 100% passive deduction ledger)
     // Logbook: 4 screens (Requires expenses & fuel substantiation)
     final screens = isCpk
         ? [
-            const EvidenceHomeScreen(),
+            EvidenceHomeScreen(onViewAll: switchToTripsTab),
             TripsLedgerTab(appState: appState),
             const TaxSummaryScreen(),
           ]
         : [
-            const EvidenceHomeScreen(),
+            EvidenceHomeScreen(onViewAll: switchToTripsTab),
             TripsLedgerTab(appState: appState),
             const EvidenceExpensesScreen(),
             const TaxSummaryScreen(),
@@ -58,7 +63,8 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
         currentIndex: safeIndex,
         taxMethod: taxMethod,
         onTabSelected: (index) => setState(() => _currentIndex = index),
-        onCenterActionTap: () => QuickCaptureBottomSheet.show(context, appState),
+        onCenterActionTap: () =>
+            QuickCaptureBottomSheet.show(context, appState),
       ),
     );
   }

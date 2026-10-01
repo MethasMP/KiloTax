@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../../data/models/audit_evidence.dart';
 import '../storage/receipt_image_optimization_service.dart';
 
@@ -40,7 +41,9 @@ class EvidenceVaultService {
       // Check specifically between start and end odometer photos
       if (evidenceType == EvidenceType.odometerEnd) {
         final startOdo = existingEvidence.where(
-          (e) => e.vehicleId == vehicleId && e.evidenceType == EvidenceType.odometerStart,
+          (e) =>
+              e.vehicleId == vehicleId &&
+              e.evidenceType == EvidenceType.odometerStart,
         );
         if (startOdo.isNotEmpty && startOdo.any((e) => e.imageSha256 == hash)) {
           return (
@@ -69,4 +72,26 @@ class EvidenceVaultService {
       return (null, 'Evidence processing failed: $e');
     }
   }
+
+  /// Purges all local cached images and documents in the evidence vault
+  Future<void> clearLocalVault() async {
+    try {
+      final vaultDir = await _optimizer.getEvidenceVaultDirectory();
+      if (await vaultDir.exists()) {
+        final entities = vaultDir.listSync(recursive: true);
+        for (final entity in entities) {
+          try {
+            if (entity is File) {
+              await entity.delete();
+            }
+          } catch (e) {
+            debugPrint('[EvidenceVaultService] Warning deleting file: ${entity.path}: $e');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[EvidenceVaultService] Warning clearing local vault: $e');
+    }
+  }
 }
+

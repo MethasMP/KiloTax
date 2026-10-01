@@ -170,8 +170,10 @@ class VehicleExpense {
       clientDedupId; // Idempotency Key (Prevents duplicate expense syncs)
   final DateTime? deletedAt; // Soft Delete support
   final ReceiptAuditTrail? receiptAudit;
-  final bool isVaultOnly; // When true: stored in Evidence Vault but excluded from active FY claim
-  final String? vaultReason; // e.g. 'prior_tax_year', 'cents_per_km_running_cost'
+  final bool
+      isVaultOnly; // When true: stored in Evidence Vault but excluded from active FY claim
+  final String?
+      vaultReason; // e.g. 'prior_tax_year', 'cents_per_km_running_cost'
 
   VehicleExpense({
     required this.id,
@@ -291,7 +293,9 @@ class VehicleExpense {
         orElse: () => ExpenseCategory.fuel,
       ),
       date: DateTime.parse(json['date'] as String),
-      receiptPath: (json['receiptPath'] ?? json['receipt_path']) as String?,
+      receiptPath: (json['receiptPath'] ??
+              json['receipt_path'] ??
+              json['receipt_storage_path']) as String?,
       businessPercentage: json['businessPercentage'] != null
           ? ((json['businessPercentage']) as num).toDouble()
           : (json['business_percentage'] != null
@@ -311,7 +315,8 @@ class VehicleExpense {
               json['receiptAudit'] as Map<String, dynamic>)
           : null,
       isVaultOnly: json['isVaultOnly'] == true || json['is_vault_only'] == true,
-      vaultReason: json['vaultReason'] as String? ?? json['vault_reason'] as String?,
+      vaultReason:
+          json['vaultReason'] as String? ?? json['vault_reason'] as String?,
     );
   }
 }

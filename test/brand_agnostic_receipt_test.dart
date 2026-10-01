@@ -8,7 +8,9 @@ void main() {
     const service = ReceiptIntelligenceService();
     const auditService = ReceiptAuditService();
 
-    test('1. Extracts independent Outback Roadhouse fuel bill without known brands', () {
+    test(
+        '1. Extracts independent Outback Roadhouse fuel bill without known brands',
+        () {
       final text = '''
 Nullarbor Roadhouse Petrol Pty Ltd
 Tax Invoice
@@ -31,7 +33,8 @@ EFTPOS \$237.58
       expect(result.isHighConfidence, isTrue);
     });
 
-    test('2. Extracts local independent mechanic invoice with repairs & tyres', () {
+    test('2. Extracts local independent mechanic invoice with repairs & tyres',
+        () {
       final text = '''
 Kev & Sons Mechanical Repairs
 Tax Invoice
@@ -54,7 +57,8 @@ PAID VISA \$1,450.00
       expect(result.isHighConfidence, isTrue);
     });
 
-    test('3. Statutory ABN extracted and mapped into ReceiptAuditTrail', () async {
+    test('3. Statutory ABN extracted and mapped into ReceiptAuditTrail',
+        () async {
       final ocrResult = service.analyseText('''
 Outback Tyre Service
 Tax Invoice ABN: 26 008 672 179

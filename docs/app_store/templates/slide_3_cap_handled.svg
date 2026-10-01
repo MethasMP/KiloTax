@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 2868" width="1320" height="2868">
+  
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="40%" stop-color="#0B132B" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Card Background Gradient -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <!-- Inner Card Highlight Gradient -->
+    <linearGradient id="innerCardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#26354A" />
+      <stop offset="100%" stop-color="#152033" />
+    </linearGradient>
+
+    <!-- High-Vis Amber Glow Gradient -->
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <!-- Mint Emerald Gradient -->
+    <linearGradient id="mintGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Amber Glow Filter -->
+    <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Card Drop Shadow -->
+    <filter id="cardShadow" x="-10%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="30" stdDeviation="35" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+    
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <rect width="1320" height="2868" fill="url(#bgGrad)" />
+  <circle cx="660" cy="1050" r="450" fill="#10B981" opacity="0.10" filter="url(#amberGlow)" />
+
+  <!-- Top Pill Badge -->
+  <g transform="translate(96, 150)">
+    <rect width="470" height="64" rx="32" fill="#ECFDF5" />
+    <circle cx="36" cy="32" r="10" fill="#10B981" />
+    <text x="58" y="42" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="26" font-weight="800" fill="#059669" letter-spacing="1.5">ATO CAP INTELLIGENCE</text>
+  </g>
+
+  <!-- Headline -->
+  <text x="96" y="295" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="82" font-weight="900" fill="#FFFFFF" letter-spacing="-1.5">5,000 km cap, handled.</text>
+  <text x="96" y="390" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="82" font-weight="900" fill="#10B981" letter-spacing="-1.5">Never leave money behind.</text>
+
+  <!-- Subheadline -->
+  <text x="96" y="465" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="36" font-weight="500" fill="#94A3B8" letter-spacing="-0.2">Real-time quota monitoring prevents unexpected tax office surprises.</text>
+
+  <!-- App Card -->
+  <g transform="translate(96, 550)" filter="url(#cardShadow)">
+    <rect width="1128" height="2060" rx="64" fill="url(#cardGrad)" stroke="#334155" stroke-width="2" />
+
+    <!-- Big Circular Cap Dial Card -->
+    <g transform="translate(48, 60)" filter="url(#softShadow)">
+      <rect width="1032" height="740" rx="40" fill="url(#innerCardGrad)" stroke="#475569" stroke-width="2" />
+      <text x="516" y="65" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="26" font-weight="800" fill="#94A3B8" letter-spacing="2">2026–27 ANNUAL QUOTA MONITOR</text>
+
+      <!-- Gauge Arc / Circle Center at (516, 280) -->
+      <!-- Background Track (Circumference ~ 942) -->
+      <circle cx="516" cy="280" r="160" fill="none" stroke="#0F172A" stroke-width="36" />
+      <!-- Active Gauge 83.6% filled (stroke-dasharray="840 1000") -->
+      <circle cx="516" cy="280" r="160" fill="none" stroke="url(#mintGrad)" stroke-width="36" stroke-linecap="round" stroke-dasharray="840 1005" transform="rotate(-90 516 280)" />
+
+      <!-- Center Big Metric -->
+      <text x="516" y="270" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="88" font-weight="900" fill="#FFFFFF" letter-spacing="-2">4,180</text>
+      <text x="516" y="325" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="700" fill="#94A3B8">/ 5,000 km</text>
+      <text x="516" y="375" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="26" font-weight="800" fill="#10B981">83.6% CLAIMED</text>
+
+      <!-- Bottom Status Pill -->
+      <g transform="translate(116, 490)">
+        <rect width="800" height="90" rx="30" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+        <text x="400" y="55" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F59E0B">🎯 820 km remaining before hitting cap</text>
+      </g>
+      
+      <!-- Two Pillar Telemetry Stats -->
+      <g transform="translate(70, 610)">
+        <rect width="420" height="90" rx="24" fill="#152033" />
+        <text x="30" y="40" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700" fill="#94A3B8">Claimed to Date</text>
+        <text x="30" y="75" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="32" font-weight="900" fill="#10B981">$3,803.80</text>
+      </g>
+      <g transform="translate(542, 610)">
+        <rect width="420" height="90" rx="24" fill="#152033" />
+        <text x="30" y="40" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700" fill="#94A3B8">Remaining Value</text>
+        <text x="30" y="75" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="32" font-weight="900" fill="#F59E0B">$746.20</text>
+      </g>
+    </g>
+
+    <!-- Multi-Vehicle Cap Allocation -->
+    <g transform="translate(48, 840)">
+      <text x="12" y="40" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="800" fill="#F8FAFC">Registered Vehicles (Separate Caps)</text>
+      
+      <!-- Vehicle 1: Ute -->
+      <g transform="translate(0, 70)">
+        <rect width="1032" height="170" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+        <text x="40" y="58" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F8FAFC">2024 Toyota HiLux (Primary Ute)</text>
+        <text x="40" y="100" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">4,180 / 5,000 km logged · 820 km left</text>
+        <g transform="translate(40, 120)">
+          <rect width="750" height="16" rx="8" fill="#0F172A" />
+          <rect width="627" height="16" rx="8" fill="url(#mintGrad)" />
+        </g>
+        <text x="980" y="95" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="900" fill="#10B981">$3,803</text>
+      </g>
+
+      <!-- Vehicle 2: Van -->
+      <g transform="translate(0, 265)">
+        <rect width="1032" height="170" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+        <text x="40" y="58" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F8FAFC">2023 Toyota HiAce (Work Van)</text>
+        <text x="40" y="100" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">1,420 / 5,000 km logged · 3,580 km left</text>
+        <g transform="translate(40, 120)">
+          <rect width="750" height="16" rx="8" fill="#0F172A" />
+          <rect width="213" height="16" rx="8" fill="url(#amberGrad)" />
+        </g>
+        <text x="980" y="95" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="900" fill="#F59E0B">$1,292</text>
+      </g>
+    </g>
+
+    <!-- Info Callout Banner -->
+    <g transform="translate(48, 1320)">
+      <rect width="1032" height="150" rx="30" fill="#1E293B" stroke="#10B981" stroke-width="2" />
+      <text x="40" y="60" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="30" font-weight="800" fill="#10B981">💡 ATO Rule Multiplier</text>
+      <text x="40" y="102" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#CBD5E1">Each car you own or lease gets its own separate 5,000 km cap ($4,550 each).</text>
+    </g>
+  </g>
+
+  <!-- Legal Disclaimer -->
+  <text x="660" y="2755" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="400" fill="#64748B">
+    The ATO Cents per Kilometre method allows up to 5,000 business km per vehicle, per income year. Multiple vehicles have separate 5,000 km caps if owned or leased by eligible taxpayers.
+  </text>
+</svg>

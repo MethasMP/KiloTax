@@ -136,7 +136,8 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                         if (widget.notificationService.unreadCount > 0) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF97316),
                               borderRadius: BorderRadius.circular(10),
@@ -165,7 +166,8 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                             },
                             style: TextButton.styleFrom(
                               visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
                             ),
                             child: const Text(
                               'Mark all read',
@@ -178,10 +180,12 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                           ),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(LucideIcons.x, size: 18, color: AppColors.muted),
+                          icon: const Icon(LucideIcons.x,
+                              size: 18, color: AppColors.muted),
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints:
+                              const BoxConstraints(minWidth: 32, minHeight: 32),
                         ),
                       ],
                     ),
@@ -193,7 +197,8 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
               // Notification List or Empty State
               if (list.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
                   child: Column(
                     children: [
                       Container(
@@ -203,7 +208,8 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                           color: AppColors.background,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(LucideIcons.bellOff, size: 22, color: AppColors.muted),
+                        child: const Icon(LucideIcons.bellOff,
+                            size: 22, color: AppColors.muted),
                       ),
                       const SizedBox(height: 12),
                       const Text(
@@ -218,7 +224,8 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                       const Text(
                         'Trip detections and tax reminders will appear here.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12.5, color: AppColors.muted),
+                        style:
+                            TextStyle(fontSize: 12.5, color: AppColors.muted),
                       ),
                     ],
                   ),
@@ -329,7 +336,8 @@ class _NotificationTile extends StatelessWidget {
               notification.title,
               style: TextStyle(
                 fontSize: 13.5,
-                fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w800,
+                fontWeight:
+                    notification.isRead ? FontWeight.w600 : FontWeight.w800,
                 color: AppColors.ink,
               ),
             ),
@@ -351,7 +359,9 @@ class _NotificationTile extends StatelessWidget {
           notification.body,
           style: TextStyle(
             fontSize: 12,
-            color: notification.isRead ? AppColors.muted : AppColors.ink.withValues(alpha: 0.8),
+            color: notification.isRead
+                ? AppColors.muted
+                : AppColors.ink.withValues(alpha: 0.8),
             height: 1.3,
           ),
         ),

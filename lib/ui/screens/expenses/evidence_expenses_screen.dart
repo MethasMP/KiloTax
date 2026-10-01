@@ -27,17 +27,115 @@ class EvidenceExpensesScreen extends StatefulWidget {
 
 class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
   int _selectedFilter = 0; // 0 = All, 1 = Vehicle, 2 = Business
+  bool _onlyWithReceipts = false;
+  bool _sortByAmount = false;
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Filter & Sort Expenses',
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.ink),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close,
+                            size: 20, color: AppColors.muted),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Receipt attached only',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
+                    subtitle: const Text(
+                        'Hide manual expenses without photo evidence',
+                        style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                    value: _onlyWithReceipts,
+                    activeThumbColor: AppColors.emerald,
+                    onChanged: (val) {
+                      setSheetState(() => _onlyWithReceipts = val);
+                      setState(() => _onlyWithReceipts = val);
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Sort by amount (Highest first)',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
+                    subtitle: const Text('Default is newest date first',
+                        style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                    value: _sortByAmount,
+                    activeThumbColor: AppColors.emerald,
+                    onChanged: (val) {
+                      setSheetState(() => _sortByAmount = val);
+                      setState(() => _sortByAmount = val);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.deepNavy,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Apply',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final expenses = appState.expenses;
 
-    final filtered = expenses.where((e) {
-      if (_selectedFilter == 1) return e.category.isCarExpense;
-      if (_selectedFilter == 2) return !e.category.isCarExpense;
+    var filtered = expenses.where((e) {
+      if (_selectedFilter == 1 && !e.category.isCarExpense) return false;
+      if (_selectedFilter == 2 && e.category.isCarExpense) return false;
+      if (_onlyWithReceipts &&
+          (e.receiptPath == null || e.receiptPath!.isEmpty)) {
+        return false;
+      }
       return true;
     }).toList();
+
+    if (_sortByAmount) {
+      filtered.sort((a, b) => b.amount.compareTo(a.amount));
+    } else {
+      filtered.sort((a, b) => b.date.compareTo(a.date));
+    }
 
     final activeExpenses = expenses.where((e) => !e.isVaultOnly).toList();
     final totalAmount = activeExpenses.fold(0.0, (sum, e) => sum + e.amount);
@@ -54,13 +152,16 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.camera, color: AppColors.deepNavy, size: 22),
+            icon: const Icon(LucideIcons.camera,
+                color: AppColors.deepNavy, size: 22),
             tooltip: 'Scan Receipt',
             onPressed: () => ScanReceiptScreen.show(context, appState),
           ),
           IconButton(
-            icon: const Icon(LucideIcons.sliders, color: AppColors.ink, size: 20),
-            onPressed: () {},
+            icon:
+                const Icon(LucideIcons.sliders, color: AppColors.ink, size: 20),
+            tooltip: 'Filter & Sort',
+            onPressed: () => _showFilterSheet(context),
           ),
         ],
       ),
@@ -115,7 +216,8 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final exp = filtered[index];
-                      final hasReceipt = exp.receiptPath != null && exp.receiptPath!.isNotEmpty;
+                      final hasReceipt = exp.receiptPath != null &&
+                          exp.receiptPath!.isNotEmpty;
                       return InkWell(
                         key: ValueKey(exp.id),
                         onTap: () => ExpenseDetailScreen.show(
@@ -128,8 +230,12 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                           merchant: exp.notes ?? exp.category.displayName,
                           category: exp.category.displayName,
                           amount: Formatters.currency(exp.amount),
-                          icon: exp.category.isCarExpense ? LucideIcons.fuel : LucideIcons.shoppingCart,
-                          iconColor: exp.category.isCarExpense ? AppColors.crimson : AppColors.emerald,
+                          icon: exp.category.isCarExpense
+                              ? LucideIcons.fuel
+                              : LucideIcons.shoppingCart,
+                          iconColor: exp.category.isCarExpense
+                              ? AppColors.crimson
+                              : AppColors.emerald,
                           hasReceipt: hasReceipt,
                           isVaultOnly: exp.isVaultOnly,
                         ),
@@ -157,12 +263,14 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.emeraldLight,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.emerald.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.emerald.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.camera, color: AppColors.emerald, size: 18),
+                        Icon(LucideIcons.camera,
+                            color: AppColors.emerald, size: 18),
                         SizedBox(width: 6),
                         Text(
                           'Scan',
@@ -186,13 +294,16 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.deepNavy,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      onPressed: () => _showAddExpenseOptions(context, appState),
+                      onPressed: () =>
+                          _showAddExpenseOptions(context, appState),
                       icon: const Icon(Icons.add_rounded, size: 20),
-                      label: const Text('Add Expense', style: AppTextStyles.button),
+                      label: const Text('Add Expense',
+                          style: AppTextStyles.button),
                     ),
                   ),
                 ),
@@ -261,7 +372,9 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                 child: Container(
                   width: 36,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -280,8 +393,11 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
 
               // 1. Scan Receipt
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppColors.border)),
                 leading: Container(
                   width: 40,
                   height: 40,
@@ -289,11 +405,16 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     color: AppColors.emeraldLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(LucideIcons.camera, color: AppColors.emerald, size: 20),
+                  child: const Icon(LucideIcons.camera,
+                      color: AppColors.emerald, size: 20),
                 ),
-                title: const Text('Scan Paper Receipt', style: AppTextStyles.cardPrimary),
-                subtitle: const Text('Instant OCR auto-extracts amount & merchant', style: AppTextStyles.caption),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
+                title: const Text('Scan Paper Receipt',
+                    style: AppTextStyles.cardPrimary),
+                subtitle: const Text(
+                    'Instant OCR auto-extracts amount & merchant',
+                    style: AppTextStyles.caption),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.muted),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   ScanReceiptScreen.show(context, appState);
@@ -303,8 +424,11 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
 
               // 2. Manual Entry Fallback
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppColors.border)),
                 leading: Container(
                   width: 40,
                   height: 40,
@@ -312,11 +436,16 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     color: AppColors.workBlueLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(LucideIcons.pencil, color: AppColors.deepNavy, size: 20),
+                  child: const Icon(LucideIcons.pencil,
+                      color: AppColors.deepNavy, size: 20),
                 ),
-                title: const Text('Manual Entry', style: AppTextStyles.cardPrimary),
-                subtitle: const Text('Enter amount, merchant & category directly', style: AppTextStyles.caption),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
+                title: const Text('Manual Entry',
+                    style: AppTextStyles.cardPrimary),
+                subtitle: const Text(
+                    'Enter amount, merchant & category directly',
+                    style: AppTextStyles.caption),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.muted),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   Navigator.of(context).push(
@@ -336,7 +465,8 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
 
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel', style: AppTextStyles.secondaryMedium),
+                child:
+                    const Text('Cancel', style: AppTextStyles.secondaryMedium),
               ),
             ],
           ),
@@ -356,7 +486,12 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: isSelected
-                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 1))]
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1))
+                  ]
                 : null,
           ),
           child: Text(
@@ -387,7 +522,10 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: !hasReceipt ? AppColors.amber.withValues(alpha: 0.5) : AppColors.border),
+        border: Border.all(
+            color: !hasReceipt
+                ? AppColors.amber.withValues(alpha: 0.5)
+                : AppColors.border),
       ),
       child: Row(
         children: [
@@ -429,7 +567,8 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     ),
                     if (isVaultOnly) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.background,
                           borderRadius: BorderRadius.circular(4),
@@ -448,18 +587,25 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                     ],
                     // Evidence Status Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: hasReceipt ? AppColors.emeraldLight : AppColors.amberLight,
+                        color: hasReceipt
+                            ? AppColors.emeraldLight
+                            : AppColors.amberLight,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            hasReceipt ? LucideIcons.checkCircle : LucideIcons.alertTriangle,
+                            hasReceipt
+                                ? LucideIcons.checkCircle
+                                : LucideIcons.alertTriangle,
                             size: 11,
-                            color: hasReceipt ? AppColors.emerald : AppColors.amberDark,
+                            color: hasReceipt
+                                ? AppColors.emerald
+                                : AppColors.amberDark,
                           ),
                           const SizedBox(width: 3),
                           Text(
@@ -467,7 +613,9 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: hasReceipt ? AppColors.emerald : AppColors.amberDark,
+                              color: hasReceipt
+                                  ? AppColors.emerald
+                                  : AppColors.amberDark,
                             ),
                           ),
                         ],
@@ -479,7 +627,8 @@ class _EvidenceExpensesScreenState extends State<EvidenceExpensesScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.muted),
+          const Icon(Icons.arrow_forward_ios_rounded,
+              size: 12, color: AppColors.muted),
         ],
       ),
     );

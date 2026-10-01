@@ -33,7 +33,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
 
     // Vault running expenses safely held during CPK mode
     final vaultCount = appState.expenses
-        .where((e) => e.isVaultOnly && e.vaultReason == 'cents_per_km_running_cost')
+        .where((e) =>
+            e.isVaultOnly && e.vaultReason == 'cents_per_km_running_cost')
         .length;
 
     // 1. Calculate lost dollars from missing purposes differentiated by tax method
@@ -48,7 +49,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
       if (summary.totalRunningExpenses > 0 && summary.totalKm > 0) {
         final currentPct = summary.businessPercentage;
         final potentialBizKm = summary.businessKm + unloggedTripKm;
-        final potentialPct = (potentialBizKm / summary.totalKm * 100.0).clamp(0.0, 100.0);
+        final potentialPct =
+            (potentialBizKm / summary.totalKm * 100.0).clamp(0.0, 100.0);
         final deltaPct = (potentialPct - currentPct) / 100.0;
         lostPurposeDollars = summary.totalRunningExpenses * deltaPct;
       } else {
@@ -100,7 +102,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB), // Warm amber background
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+        border:
+            Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
@@ -124,7 +127,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                       color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.alertCircle, color: Color(0xFFD97706), size: 16),
+                    child: const Icon(LucideIcons.alertCircle,
+                        color: Color(0xFFD97706), size: 16),
                   ),
                   const SizedBox(width: 8),
                   const Text(
@@ -140,7 +144,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
               ),
               if (lostPurposeDollars > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -179,13 +184,16 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                 backgroundColor: const Color(0xFFD97706),
                 foregroundColor: Colors.white,
                 visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
               onPressed: () {
                 if (missingTrips.isNotEmpty) {
-                  TripQuickResolveSheet.show(context, trip: missingTrips.first, appState: appState);
+                  TripQuickResolveSheet.show(context,
+                      trip: missingTrips.first, appState: appState);
                 } else {
                   TripReviewSheet.show(context, appState);
                 }
@@ -195,7 +203,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                 lostPurposeDollars > 0
                     ? 'Recover ${Formatters.currency(lostPurposeDollars)} in 1 Tap'
                     : 'Fix ${missingTrips.length} Drives',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
               ),
             ),
             const SizedBox(height: 10),
@@ -212,7 +221,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.trendingUp, color: AppColors.emerald, size: 20),
+                  const Icon(LucideIcons.trendingUp,
+                      color: AppColors.emerald, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -231,7 +241,10 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                           vaultCount > 0
                               ? 'Logbook claim is ${Formatters.currency(summary.logbookClaim)} vs ${Formatters.currency(summary.centsPerKmClaim)} under flat rate. Your $vaultCount saved receipts will be included.'
                               : 'Logbook claim is ${Formatters.currency(summary.logbookClaim)} vs ${Formatters.currency(summary.centsPerKmClaim)} under flat rate.',
-                          style: const TextStyle(fontSize: 11, color: AppColors.muted, height: 1.3),
+                          style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.muted,
+                              height: 1.3),
                         ),
                       ],
                     ),
@@ -240,16 +253,20 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                   TextButton(
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.workBlue,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                     ),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => LogbookSetupScreen(appState: appState),
+                          builder: (_) =>
+                              LogbookSetupScreen(appState: appState),
                         ),
                       );
                     },
-                    child: const Text('Switch', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                    child: const Text('Switch',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 12)),
                   ),
                 ],
               ),
@@ -276,7 +293,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                       color: const Color(0xFF2563EB).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(LucideIcons.calendarClock, size: 16, color: Color(0xFF2563EB)),
+                    child: const Icon(LucideIcons.calendarClock,
+                        size: 16, color: Color(0xFF2563EB)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -295,7 +313,10 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'You have ${Formatters.distance(remainingCapKm)} of your 5,000 km allowance remaining before 30 June. Unclaimed quota does not roll over to the next financial year.',
-                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF1D4ED8), height: 1.35),
+                          style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF1D4ED8),
+                              height: 1.35),
                         ),
                       ],
                     ),
@@ -309,7 +330,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
           if (capNearLimit) ...[
             Builder(
               builder: (context) {
-                final remainingKm = (5000 - summary.businessKm).clamp(0.0, 5000.0).round();
+                final remainingKm =
+                    (5000 - summary.businessKm).clamp(0.0, 5000.0).round();
                 final isOverCap = summary.businessKm >= 5000;
 
                 final headline = isOverCap
@@ -324,9 +346,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                         ? 'Past 5,000 km, the ATO pays \$0. Don\'t leave 8 fuel receipts in your glovebox.'
                         : 'The ATO stops paying at 5,000 km. Don\'t leave 8 fuel receipts in your glovebox.');
 
-                final buttonLabel = vaultCount > 0
-                    ? 'Claim My Fuel'
-                    : 'Protect My Claim';
+                final buttonLabel =
+                    vaultCount > 0 ? 'Claim My Fuel' : 'Protect My Claim';
 
                 return Container(
                   margin: const EdgeInsets.only(top: 6),
@@ -342,10 +363,12 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                          color:
+                              const Color(0xFFEF4444).withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(LucideIcons.shieldAlert, size: 16, color: Color(0xFFDC2626)),
+                        child: const Icon(LucideIcons.shieldAlert,
+                            size: 16, color: Color(0xFFDC2626)),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -364,7 +387,10 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                             const SizedBox(height: 5),
                             Text(
                               body,
-                              style: const TextStyle(fontSize: 11.5, color: Color(0xFFB91C1C), height: 1.4),
+                              style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFFB91C1C),
+                                  height: 1.4),
                             ),
                             const SizedBox(height: 12),
                             SizedBox(
@@ -373,14 +399,17 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFDC2626),
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
                                   elevation: 0,
                                 ),
                                 onPressed: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => LogbookSetupScreen(appState: appState),
+                                      builder: (_) => LogbookSetupScreen(
+                                          appState: appState),
                                     ),
                                   );
                                 },
@@ -389,10 +418,13 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       buttonLabel,
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12),
                                     ),
                                     const SizedBox(width: 6),
-                                    const Icon(LucideIcons.arrowRight, size: 14),
+                                    const Icon(LucideIcons.arrowRight,
+                                        size: 14),
                                   ],
                                 ),
                               ),

@@ -36,12 +36,15 @@ class Trip {
   final TripClassification classification;
   final String? originAddress;
   final String? destinationAddress;
-  final List<String> linkedExpenseIds; // Evidence Graph: Connected expenses (Fuel, Bunnings, Tolls)
+  final List<String>
+      linkedExpenseIds; // Evidence Graph: Connected expenses (Fuel, Bunnings, Tolls)
   final String? clientDedupId; // Idempotency Key (Prevents duplicate syncs)
   final DateTime? deletedAt; // Soft Delete support
   final TaxMethod taxMethod; // Isolated tax scheme: centsPerKm vs logbook
-  final String evidenceSource; // 'auto_telemetry', 'bluetooth_auto', 'manual_retroactive'
-  final String? jobReference; // Evidence Link: Client site, Job ID, or Invoice ref
+  final String
+      evidenceSource; // 'auto_telemetry', 'bluetooth_auto', 'manual_retroactive'
+  final String?
+      jobReference; // Evidence Link: Client site, Job ID, or Invoice ref
 
   Trip({
     required this.id,
@@ -62,7 +65,8 @@ class Trip {
     this.jobReference,
   })  : assert(distanceKm >= 0, 'Trip distance cannot be negative'),
         assert(
-          (startOdometer == 0.0 && endOdometer == 0.0) || endOdometer >= startOdometer,
+          (startOdometer == 0.0 && endOdometer == 0.0) ||
+              endOdometer >= startOdometer,
           'End odometer cannot be less than start odometer',
         ),
         linkedExpenseIds = linkedExpenseIds ?? [];
@@ -145,27 +149,39 @@ class Trip {
     return Trip(
       id: json['id'] as String,
       vehicleId: (json['vehicleId'] ?? json['vehicle_id']) as String,
-      distanceKm: ((json['distanceKm'] ?? json['distance_km']) as num).toDouble(),
+      distanceKm:
+          ((json['distanceKm'] ?? json['distance_km']) as num).toDouble(),
       date: DateTime.parse(json['date'] as String),
       purpose: json['purpose'] as String? ?? '',
-      startOdometer: ((json['startOdometer'] ?? json['start_odometer']) as num?)?.toDouble() ?? 0.0,
-      endOdometer: ((json['endOdometer'] ?? json['end_odometer']) as num?)?.toDouble() ?? 0.0,
+      startOdometer: ((json['startOdometer'] ?? json['start_odometer']) as num?)
+              ?.toDouble() ??
+          0.0,
+      endOdometer:
+          ((json['endOdometer'] ?? json['end_odometer']) as num?)?.toDouble() ??
+              0.0,
       classification: TripClassification.values.firstWhere(
         (c) => c.name == json['classification'],
         orElse: () => TripClassification.business,
       ),
-      originAddress: (json['originAddress'] ?? json['origin_address']) as String?,
-      destinationAddress: (json['destinationAddress'] ?? json['destination_address']) as String?,
+      originAddress:
+          (json['originAddress'] ?? json['origin_address']) as String?,
+      destinationAddress: (json['destinationAddress'] ??
+          json['destination_address']) as String?,
       linkedExpenseIds: (json['linkedExpenseIds'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      clientDedupId: (json['clientDedupId'] ?? json['client_dedup_id']) as String?,
+      clientDedupId:
+          (json['clientDedupId'] ?? json['client_dedup_id']) as String?,
       deletedAt: json['deletedAt'] != null
           ? DateTime.tryParse(json['deletedAt'] as String)
-          : (json['deleted_at'] != null ? DateTime.tryParse(json['deleted_at'] as String) : null),
+          : (json['deleted_at'] != null
+              ? DateTime.tryParse(json['deleted_at'] as String)
+              : null),
       taxMethod: resolvedTaxMethod,
-      evidenceSource: (json['evidenceSource'] ?? json['evidence_source'] ?? 'auto_telemetry') as String,
+      evidenceSource: (json['evidenceSource'] ??
+          json['evidence_source'] ??
+          'auto_telemetry') as String,
       jobReference: (json['jobReference'] ?? json['job_reference']) as String?,
     );
   }

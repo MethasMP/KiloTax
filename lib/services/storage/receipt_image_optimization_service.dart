@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -44,7 +45,7 @@ typedef ImageCompressorDelegate = Future<File?> Function(
   int quality,
 );
 
-/// Frontier WebP Receipt Optimization Engine.
+/// High-Efficiency WebP Receipt Optimization Engine.
 ///
 /// Implements the 5-pillar document compression pipeline:
 /// 1. Dimension clamping to max 1800px on long edge (~250-300 DPI for dockets)
@@ -126,7 +127,7 @@ class ReceiptImageOptimizationService {
         : rawFile;
 
     final finalBytes = await finalFile.readAsBytes();
-    final finalSha256 = computeSha256(finalBytes);
+    final finalSha256 = await computeSha256Async(finalBytes);
 
     return OptimizedReceiptResult(
       file: finalFile,
@@ -162,7 +163,8 @@ class ReceiptImageOptimizationService {
   String generateWebpOutputPath(String sourcePath) {
     final parent = File(sourcePath).parent.path;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final baseName = sourcePath.split(Platform.pathSeparator).last.split('.').first;
+    final baseName =
+        sourcePath.split(Platform.pathSeparator).last.split('.').first;
     return '$parent/${baseName}_opt_$timestamp.webp';
   }
 
@@ -180,5 +182,10 @@ class ReceiptImageOptimizationService {
   /// Computes a standard SHA-256 hex checksum for cryptographic audit trails.
   String computeSha256(Uint8List bytes) {
     return sha256.convert(bytes).toString();
+  }
+
+  /// Computes a standard SHA-256 hex checksum in a background isolate for UI smoothness.
+  Future<String> computeSha256Async(Uint8List bytes) {
+    return Isolate.run(() => sha256.convert(bytes).toString());
   }
 }

@@ -18,8 +18,9 @@ class RoadRouteResult {
 
   /// Winding factor (Detour Ratio): Real Road Distance / Straight Line Distance
   /// Typically 1.20 to 1.35 in Australian metropolitan road grids.
-  double get windingFactor =>
-      straightLineDistanceKm > 0 ? (roadDistanceKm / straightLineDistanceKm) : 1.0;
+  double get windingFactor => straightLineDistanceKm > 0
+      ? (roadDistanceKm / straightLineDistanceKm)
+      : 1.0;
 }
 
 /// Australian Road-Snap Routing Service (Graph-Theory Dijkstra / OSRM Backend)
@@ -28,7 +29,8 @@ class RoadRouteResult {
 class RoadSnapRoutingService {
   final http.Client _client;
 
-  RoadSnapRoutingService({http.Client? client}) : _client = client ?? http.Client();
+  RoadSnapRoutingService({http.Client? client})
+      : _client = client ?? http.Client();
 
   /// Calculates exact driving road distance between two coordinates.
   /// Falls back gracefully to WGS-84 Geodesic ellipsoidal straight-line if offline.
@@ -68,13 +70,16 @@ class RoadSnapRoutingService {
           if (routes.isNotEmpty) {
             final bestRoute = routes.first as Map<String, dynamic>;
             final roadMeters = (bestRoute['distance'] as num).toDouble();
-            final durationSec = (bestRoute['duration'] as num?)?.toDouble() ?? 0.0;
+            final durationSec =
+                (bestRoute['duration'] as num?)?.toDouble() ?? 0.0;
 
-            final roadKm = double.parse((roadMeters / 1000.0).toStringAsFixed(2));
+            final roadKm =
+                double.parse((roadMeters / 1000.0).toStringAsFixed(2));
 
             return RoadRouteResult(
               roadDistanceKm: roadKm,
-              straightLineDistanceKm: double.parse(straightKm.toStringAsFixed(2)),
+              straightLineDistanceKm:
+                  double.parse(straightKm.toStringAsFixed(2)),
               isRoadSnapped: true,
               durationSeconds: durationSec,
             );

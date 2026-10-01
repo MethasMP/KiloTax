@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
 
@@ -64,7 +65,8 @@ class ReceiptAuditService {
     if (imagePath == null || imagePath.isEmpty) return null;
     final file = File(imagePath);
     if (!await file.exists()) return null;
-    return sha256.convert(await file.readAsBytes()).toString();
+    final bytes = await file.readAsBytes();
+    return Isolate.run(() => sha256.convert(bytes).toString());
   }
 
   bool _sameText(String left, String right) =>

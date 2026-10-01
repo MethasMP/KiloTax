@@ -1,0 +1,8 @@
+# KiloTax Android Release Keystore Configuration Template
+# Copy this file to `android/key.properties` and populate with your production credentials.
+# IMPORTANT: Never commit `key.properties` or your keystore (.jks/.keystore) files to version control.
+
+keyAlias=kilotax-release-key
+keyPassword=YOUR_KEY_PASSWORD_HERE
+storeFile=../keystores/release.jks
+storePassword=YOUR_STORE_PASSWORD_HERE

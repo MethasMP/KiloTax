@@ -4,6 +4,7 @@ import '../../data/models/trip.dart';
 import '../../data/models/tax_config.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/export_file_name_helper.dart';
+import '../../core/utils/csv_security.dart';
 import 'evidence_engine.dart';
 import 'cpk_export_service.dart';
 import 'logbook_export_service.dart';
@@ -11,6 +12,10 @@ import 'logbook_export_service.dart';
 /// ATO-READY REPORT ORCHESTRATOR (Layer 6):
 /// Unified façade delegating to specialized CPK and Logbook Exporters.
 class AtoReportService {
+  /// Statutory disclaimer text mandated under ITAA 1997 Division 28-C / Subdivision 28-H
+  static const String statutoryDisclaimer =
+      'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
+
   /// Generates standardized cross-platform safe export filenames.
   /// Complies with KiloTax Dynamic File Naming Specification.
   static String generateExportFileName({
@@ -155,12 +160,15 @@ class AtoReportService {
       final trips = tripsByVehicleId[v.id] ?? const [];
       final workKm = summary != null
           ? summary.businessKm
-          : trips.where((t) => t.isBusiness).fold(0.0, (sum, t) => sum + t.distanceKm);
+          : trips
+              .where((t) => t.isBusiness)
+              .fold(0.0, (sum, t) => sum + t.distanceKm);
 
       totalAggregatedWorkKm += workKm;
 
       if (v.taxMethod == TaxMethod.centsPerKm) {
-        final cappedKm = workKm > taxRule.centsPerKmMaxKm ? taxRule.centsPerKmMaxKm : workKm;
+        final cappedKm =
+            workKm > taxRule.centsPerKmMaxKm ? taxRule.centsPerKmMaxKm : workKm;
         totalAggregatedClaim += (cappedKm * taxRule.centsPerKmRate);
       } else {
         final claim = summary?.logbookClaim ?? 0.0;
@@ -187,8 +195,7 @@ class AtoReportService {
     buffer.writeln(
         '====================================================================================================\n');
 
-    buffer.writeln(
-        '⚡ TAX AGENT FAST-FILL SUMMARY • ATO TAX RETURN BOX D1');
+    buffer.writeln('⚡ TAX AGENT FAST-FILL SUMMARY • ATO TAX RETURN BOX D1');
     buffer.writeln(
         '----------------------------------------------------------------------------------------------------');
     buffer.writeln(
@@ -212,7 +219,9 @@ class AtoReportService {
       final trips = tripsByVehicleId[v.id] ?? const [];
       final workKm = summary != null
           ? summary.businessKm
-          : trips.where((t) => t.isBusiness).fold(0.0, (sum, t) => sum + t.distanceKm);
+          : trips
+              .where((t) => t.isBusiness)
+              .fold(0.0, (sum, t) => sum + t.distanceKm);
 
       buffer.writeln('Vehicle #$idx: ${v.regoPlate} - ${v.displayName}');
       if (v.taxMethod == TaxMethod.centsPerKm) {
@@ -222,8 +231,10 @@ class AtoReportService {
         subtotalReconciliation.add(
             'Total Car $idx (${v.regoPlate}) Deduction:        \$${vClaim.toStringAsFixed(2)} AUD');
 
-        buffer.writeln('  • Method:              Box D1 Code S (Cents-per-kilometre)');
-        buffer.writeln('  • Work Distance:       ${workKm.toStringAsFixed(1)} km');
+        buffer.writeln(
+            '  • Method:              Box D1 Code S (Cents-per-kilometre)');
+        buffer.writeln(
+            '  • Work Distance:       ${workKm.toStringAsFixed(1)} km');
         buffer.writeln(
             '  • Allowable Cap:       ${cappedKm.toStringAsFixed(1)} km (Capped at 5,000 km per s 28-25)');
         buffer.writeln(
@@ -236,8 +247,10 @@ class AtoReportService {
         subtotalReconciliation.add(
             'Total Car $idx (${v.regoPlate}) Deduction:        \$${vClaim.toStringAsFixed(2)} AUD');
 
-        buffer.writeln('  • Method:              Box D1 Code B (Logbook Method)');
-        buffer.writeln('  • Work Distance:       ${workKm.toStringAsFixed(1)} km');
+        buffer
+            .writeln('  • Method:              Box D1 Code B (Logbook Method)');
+        buffer.writeln(
+            '  • Work Distance:       ${workKm.toStringAsFixed(1)} km');
         buffer.writeln(
             '  • Business Use %:      ${businessPct.toStringAsFixed(2)}% (TR 97/11 compliant)');
         buffer.writeln(
@@ -272,6 +285,14 @@ class AtoReportService {
     buffer.writeln(
         'Tax Agent Signature: __________________________        RAN:  ______________________');
     buffer.writeln(
+        '====================================================================================================\n');
+
+    buffer.writeln('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):');
+    buffer.writeln(
+        '$statutoryDisclaimer\n'
+        'KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected');
+    buffer.writeln(
+        'to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).\n'
         '====================================================================================================');
 
     return buffer.toString();
@@ -300,12 +321,16 @@ class AtoReportService {
       final trips = tripsByVehicleId[v.id] ?? const [];
       final workKm = summary != null
           ? summary.businessKm
-          : trips.where((t) => t.isBusiness).fold(0.0, (sum, t) => sum + t.distanceKm);
+          : trips
+              .where((t) => t.isBusiness)
+              .fold(0.0, (sum, t) => sum + t.distanceKm);
 
       final isCpk = v.taxMethod == TaxMethod.centsPerKm;
       final methodStr = isCpk ? 'CPK' : 'LOGBOOK';
       final cappedKm = isCpk
-          ? (workKm > taxRule.centsPerKmMaxKm ? taxRule.centsPerKmMaxKm : workKm)
+          ? (workKm > taxRule.centsPerKmMaxKm
+              ? taxRule.centsPerKmMaxKm
+              : workKm)
           : workKm;
       final rateOrPct = isCpk
           ? '\$${taxRule.centsPerKmRate.toStringAsFixed(2)}/km'
@@ -318,10 +343,10 @@ class AtoReportService {
       totalCappedKm += cappedKm;
       totalDeduction += claimAmount;
 
-      final sanitizedId = CpkExportService.sanitizeCsvCell(v.id);
-      final sanitizedRego = CpkExportService.sanitizeCsvCell(v.regoPlate);
+      final sanitizedId = CsvSecurity.sanitizeCsvCell(v.id);
+      final sanitizedRego = CsvSecurity.sanitizeCsvCell(v.regoPlate);
       final sanitizedModel =
-          CpkExportService.sanitizeCsvCell('${v.make} ${v.model}');
+          CsvSecurity.sanitizeCsvCell('${v.make} ${v.model}');
 
       buffer.writeln(
         '$sanitizedId,$sanitizedRego,$sanitizedModel,$methodStr,${workKm.toStringAsFixed(2)},${cappedKm.toStringAsFixed(2)},$rateOrPct,${claimAmount.toStringAsFixed(2)},${claimAmount.toStringAsFixed(2)}',
@@ -332,6 +357,9 @@ class AtoReportService {
     buffer.writeln(
       'TOTALS,${vehicles.length}_VEHICLES,COMBINED_FLEET,MULTI,${totalLoggedKm.toStringAsFixed(2)},${totalCappedKm.toStringAsFixed(2)},N/A,${totalDeduction.toStringAsFixed(2)},${totalDeduction.toStringAsFixed(2)}',
     );
+
+    // Statutory Compliance Footer (ITAA 1997 Division 28-C / Subdivision 28-H)
+    buffer.writeln('# DISCLAIMER: $statutoryDisclaimer');
 
     return buffer.toString();
   }

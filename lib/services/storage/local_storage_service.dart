@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/trip.dart';
 import '../../data/models/vehicle_expense.dart';
 import '../../data/models/audit_evidence.dart';
+import '../../data/models/in_flight_trip.dart';
 
 /// Production-ready local persistent storage service.
 /// Ensures all records (Vehicles, Trips, Expenses) survive app termination.
@@ -14,6 +16,7 @@ class LocalStorageService {
   static const String _keyExpenses = 'kilotax_expenses_v1';
   static const String _keyEvidence = 'kilotax_audit_evidence_v1';
   static const String _keyHasSeenOnboarding = 'kilotax_has_seen_onboarding_v1';
+  static const String _keyIsGuestMode = 'kilotax_is_guest_mode_v1';
 
   final SharedPreferences _prefs;
 
@@ -33,14 +36,26 @@ class LocalStorageService {
     return _prefs.setBool(_keyHasSeenOnboarding, seen);
   }
 
+  // --- GUEST / 100% LOCAL-FIRST MODE ---
+  bool isGuestMode() {
+    return _prefs.getBool(_keyIsGuestMode) ?? false;
+  }
+
+  Future<bool> setGuestMode(bool isGuest) {
+    return _prefs.setBool(_keyIsGuestMode, isGuest);
+  }
+
   // --- VEHICLES ---
   List<Vehicle> loadVehicles() {
     final raw = _prefs.getString(_keyVehicles);
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      return list.map((item) => Vehicle.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (_) {
+      return list
+          .map((item) => Vehicle.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      debugPrint('[LocalStorageService] Warning loading vehicles: $e\n$stack');
       return [];
     }
   }
@@ -67,8 +82,11 @@ class LocalStorageService {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      return list.map((item) => Trip.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (_) {
+      return list
+          .map((item) => Trip.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      debugPrint('[LocalStorageService] Warning loading trips: $e\n$stack');
       return [];
     }
   }
@@ -84,8 +102,11 @@ class LocalStorageService {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      return list.map((item) => VehicleExpense.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (_) {
+      return list
+          .map((item) => VehicleExpense.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      debugPrint('[LocalStorageService] Warning loading expenses: $e\n$stack');
       return [];
     }
   }
@@ -104,7 +125,9 @@ class LocalStorageService {
       return list
           .map((item) => AuditEvidence.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[LocalStorageService] Warning loading audit evidence: $e\n$stack');
       return [];
     }
   }
@@ -114,16 +137,32 @@ class LocalStorageService {
     return _prefs.setString(_keyEvidence, raw);
   }
 
+  // --- IN-FLIGHT TRIP (ANTI-CRASH & KILL RESURRECTION) ---
+  static const String _keyInFlightTrip = 'kilotax_in_flight_trip_v1';
+
+  InFlightTrip? loadInFlightTrip() {
+    final raw = _prefs.getString(_keyInFlightTrip);
+    return InFlightTrip.deserialize(raw);
+  }
+
+  Future<bool> saveInFlightTrip(InFlightTrip? trip) {
+    if (trip == null) {
+      return _prefs.remove(_keyInFlightTrip);
+    }
+    return _prefs.setString(_keyInFlightTrip, trip.serialize());
+  }
+
+  Future<bool> clearInFlightTrip() {
+    return _prefs.remove(_keyInFlightTrip);
+  }
+
   // --- RAW STRING HELPERS (For Tax Rules & Dynamic Caches) ---
   String? loadRawString(String key) => _prefs.getString(key);
-  Future<bool> saveRawString(String key, String value) => _prefs.setString(key, value);
+  Future<bool> saveRawString(String key, String value) =>
+      _prefs.setString(key, value);
 
   // --- RESET ALL DATA (For clean logout / account reset) ---
   Future<void> clearAll() async {
-    await _prefs.remove(_keyVehicles);
-    await _prefs.remove(_keyPrimaryVehicleId);
-    await _prefs.remove(_keyTrips);
-    await _prefs.remove(_keyExpenses);
-    await _prefs.remove(_keyEvidence);
+    await _prefs.clear();
   }
 }

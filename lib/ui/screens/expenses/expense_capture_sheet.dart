@@ -62,11 +62,15 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
           ),
         );
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[ExpenseCaptureSheet] Warning taking receipt photo: $e\n$stack');
+    }
   }
 
   void _saveExpense() {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '').trim());
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '').trim());
     if (amount == null || amount <= 0) {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,18 +89,24 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
 
     if (isCentsPerKm && isCarRunningCost) {
       final vehicleName = vehicle != null
-          ? (vehicle.make.isNotEmpty ? vehicle.make : vehicle.vehicleType.displayName.toLowerCase())
+          ? (vehicle.make.isNotEmpty
+              ? vehicle.make
+              : vehicle.vehicleType.displayName.toLowerCase())
           : 'vehicle';
-      final rateCents = widget.appState.taxRuleService.getRateCentsForDate(DateTime.now());
+      final rateCents =
+          widget.appState.taxRuleService.getRateCentsForDate(DateTime.now());
 
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Fuel already covered', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Fuel already covered',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
           content: Text(
             'Your $vehicleName is claiming ${rateCents}c/km, which already includes fuel and servicing.\n\nWe\'ll save the receipt for your records without claiming it twice.',
-            style: const TextStyle(fontSize: 13.5, height: 1.45, color: AppColors.ink),
+            style: const TextStyle(
+                fontSize: 13.5, height: 1.45, color: AppColors.ink),
           ),
           actions: [
             TextButton(
@@ -104,19 +114,25 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 Navigator.of(ctx).pop(); // Dismiss confirmation dialog
                 Navigator.of(context).pop(); // Close sheet without saving
               },
-              child: const Text('Cancel', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+              child: const Text('Cancel',
+                  style: TextStyle(
+                      color: AppColors.muted, fontWeight: FontWeight.w700)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.deepNavy,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                _commitSaveExpense(amount, isVaultOnly: true, vaultReason: 'cents_per_km_running_cost');
+                _commitSaveExpense(amount,
+                    isVaultOnly: true,
+                    vaultReason: 'cents_per_km_running_cost');
               },
-              child: const Text('Save Receipt', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Save Receipt',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ],
         ),
@@ -127,7 +143,8 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
     _commitSaveExpense(amount);
   }
 
-  void _commitSaveExpense(double amount, {bool isVaultOnly = false, String? vaultReason}) {
+  void _commitSaveExpense(double amount,
+      {bool isVaultOnly = false, String? vaultReason}) {
     HapticFeedback.heavyImpact();
     final statutoryGst = (_selectedCategory == ExpenseCategory.fuel ||
             _selectedCategory == ExpenseCategory.maintenanceTyres ||
@@ -144,7 +161,9 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
       category: _selectedCategory,
       date: DateTime.now(),
       receiptPath: _receiptPhotoPath,
-      notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      notes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
       linkedTripId: _selectedTripId,
       isVaultOnly: isVaultOnly,
       vaultReason: vaultReason,
@@ -186,7 +205,8 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                   color: AppColors.workBlueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.receipt, color: AppColors.workBlue, size: 20),
+                child: const Icon(LucideIcons.receipt,
+                    color: AppColors.workBlue, size: 20),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -209,11 +229,14 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
             style: AppTextStyles.pageTitle,
             decoration: InputDecoration(
               prefixText: '\$AUD ',
-              prefixStyle: AppTextStyles.cardPrimarySubtle.copyWith(color: AppColors.muted),
+              prefixStyle: AppTextStyles.cardPrimarySubtle
+                  .copyWith(color: AppColors.muted),
               labelText: 'Expense Total',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border)),
             ),
           ),
           const SizedBox(height: 12),
@@ -227,9 +250,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.fuel,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.fuel, size: 16, color: AppColors.emerald),
+                    const Icon(LucideIcons.fuel,
+                        size: 16, color: AppColors.emerald),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.fuel.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(ExpenseCategory.fuel.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -238,9 +263,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.maintenanceTyres,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.wrench, size: 16, color: AppColors.workBlue),
+                    const Icon(LucideIcons.wrench,
+                        size: 16, color: AppColors.workBlue),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.maintenanceTyres.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(ExpenseCategory.maintenanceTyres.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -248,9 +275,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.rego,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.fileText, size: 16, color: AppColors.workBlue),
+                    const Icon(LucideIcons.fileText,
+                        size: 16, color: AppColors.workBlue),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.rego.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(ExpenseCategory.rego.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -258,9 +287,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.insurance,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.workBlue),
+                    const Icon(LucideIcons.shieldCheck,
+                        size: 16, color: AppColors.workBlue),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.insurance.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(ExpenseCategory.insurance.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -269,9 +300,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.tollsParking,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.parkingSquare, size: 16, color: AppColors.amberDark),
+                    const Icon(LucideIcons.parkingSquare,
+                        size: 16, color: AppColors.amberDark),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.tollsParking.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(ExpenseCategory.tollsParking.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -280,9 +313,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.toolsMaterials,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.hammer, size: 16, color: AppColors.muted),
+                    const Icon(LucideIcons.hammer,
+                        size: 16, color: AppColors.muted),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.toolsMaterials.displayName, style: const TextStyle(color: AppColors.muted)),
+                    Text(ExpenseCategory.toolsMaterials.displayName,
+                        style: const TextStyle(color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -290,9 +325,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.interest,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.percent, size: 16, color: AppColors.muted),
+                    const Icon(LucideIcons.percent,
+                        size: 16, color: AppColors.muted),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.interest.displayName, style: const TextStyle(color: AppColors.muted)),
+                    Text(ExpenseCategory.interest.displayName,
+                        style: const TextStyle(color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -300,9 +337,11 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
                 value: ExpenseCategory.otherBusiness,
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.moreHorizontal, size: 16, color: AppColors.muted),
+                    const Icon(LucideIcons.moreHorizontal,
+                        size: 16, color: AppColors.muted),
                     const SizedBox(width: 8),
-                    Text(ExpenseCategory.otherBusiness.displayName, style: const TextStyle(color: AppColors.muted)),
+                    Text(ExpenseCategory.otherBusiness.displayName,
+                        style: const TextStyle(color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -314,7 +353,9 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
               labelText: 'ATO Statutory Category',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border)),
             ),
           ),
           const SizedBox(height: 12),
@@ -324,24 +365,36 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               side: BorderSide(
-                color: _receiptPhotoPath != null ? AppColors.emerald : AppColors.border,
+                color: _receiptPhotoPath != null
+                    ? AppColors.emerald
+                    : AppColors.border,
                 width: 1.5,
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: _receiptPhotoPath != null ? AppColors.emeraldLight : Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              backgroundColor: _receiptPhotoPath != null
+                  ? AppColors.emeraldLight
+                  : Colors.white,
             ),
             onPressed: _captureReceipt,
             icon: Icon(
-              _receiptPhotoPath != null ? LucideIcons.checkCircle2 : LucideIcons.camera,
-              color: _receiptPhotoPath != null ? AppColors.emerald : AppColors.ink,
+              _receiptPhotoPath != null
+                  ? LucideIcons.checkCircle2
+                  : LucideIcons.camera,
+              color:
+                  _receiptPhotoPath != null ? AppColors.emerald : AppColors.ink,
               size: 20,
             ),
             label: Text(
-              _receiptPhotoPath != null ? 'Receipt Attached (Audit Proof)' : 'Snap Receipt Photo (Optional)',
+              _receiptPhotoPath != null
+                  ? 'Receipt Attached (Audit Proof)'
+                  : 'Snap Receipt Photo (Optional)',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
-                color: _receiptPhotoPath != null ? AppColors.emerald : AppColors.ink,
+                color: _receiptPhotoPath != null
+                    ? AppColors.emerald
+                    : AppColors.ink,
               ),
             ),
           ),
@@ -353,10 +406,12 @@ class _ExpenseCaptureSheetState extends State<ExpenseCaptureSheet> {
               backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: _saveExpense,
-            child: const Text('Save Expense to Evidence Vault', style: AppTextStyles.button),
+            child: const Text('Save Expense to Evidence Vault',
+                style: AppTextStyles.button),
           ),
         ],
       ),

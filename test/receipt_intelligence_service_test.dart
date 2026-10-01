@@ -20,7 +20,8 @@ Total AUD \$142.50
 ''');
 
       expect(result.category, ExpenseCategory.fuel);
-      expect(result.merchant, anyOf(equals('Bp'), startsWith('Bp'), startsWith('BP')));
+      expect(result.merchant,
+          anyOf(equals('Bp'), startsWith('Bp'), startsWith('BP')));
       expect(result.amount, 142.50);
       expect(result.date, DateTime(2026, 9, 11));
       expect(result.isHighConfidence, isTrue);

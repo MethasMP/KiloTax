@@ -9,11 +9,11 @@ import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/services/engine/ato_report_service.dart';
 import 'package:kilotax/services/engine/cpk_export_service.dart';
 import 'package:kilotax/services/engine/logbook_export_service.dart';
-import 'package:kilotax/services/engine/multi_vehicle_export_service.dart';
 
 void main() {
   group('1. Dynamic File Naming & Sanitization Tests', () {
-    test('buildFileName formats standard CPK and Logbook deliverable filenames', () {
+    test('buildFileName formats standard CPK and Logbook deliverable filenames',
+        () {
       final cpkSlip = AtoReportService.generateExportFileName(
         method: 'CPK',
         financialYear: '2025-26',
@@ -22,7 +22,10 @@ void main() {
         documentType: ExportFileNameHelper.boxD1LodgementSlip,
         extension: 'pdf',
       );
-      expect(cpkSlip, equals('KiloTax_CPK_FY2025-26_John_Smith_1ABC234_BoxD1_Lodgement_Slip.pdf'));
+      expect(
+          cpkSlip,
+          equals(
+              'KiloTax_CPK_FY2025-26_John_Smith_1ABC234_BoxD1_Lodgement_Slip.pdf'));
 
       final logbookLedger = AtoReportService.generateExportFileName(
         method: 'Logbook',
@@ -32,7 +35,10 @@ void main() {
         documentType: ExportFileNameHelper.continuousOdometerLedger,
         extension: '.csv',
       );
-      expect(logbookLedger, equals('KiloTax_Logbook_FY2026-27_Acme_Plumbing__Gas_XYZ888_Continuous_Odometer_Ledger.csv'));
+      expect(
+          logbookLedger,
+          equals(
+              'KiloTax_Logbook_FY2026-27_Acme_Plumbing__Gas_XYZ888_Continuous_Odometer_Ledger.csv'));
 
       final xeroJournal = AtoReportService.generateExportFileName(
         method: 'Logbook',
@@ -42,11 +48,16 @@ void main() {
         documentType: ExportFileNameHelper.manualJournalXero,
         extension: 'csv',
       );
-      expect(xeroJournal, equals('KiloTax_Logbook_FY2026-27_Dave_123_Manual_Journal_Xero.csv'));
+      expect(xeroJournal,
+          equals('KiloTax_Logbook_FY2026-27_Dave_123_Manual_Journal_Xero.csv'));
     });
 
-    test('Sanitization handles edge cases, path traversal, empty input and excessive length', () {
-      final sanitizedName = ExportFileNameHelper.sanitizeAlphaNumeric('../../../evil<script>Bob O\'Connor', maxLength: 20);
+    test(
+        'Sanitization handles edge cases, path traversal, empty input and excessive length',
+        () {
+      final sanitizedName = ExportFileNameHelper.sanitizeAlphaNumeric(
+          '../../../evil<script>Bob O\'Connor',
+          maxLength: 20);
       expect(sanitizedName, isNot(contains('/')));
       expect(sanitizedName, isNot(contains('<')));
       expect(sanitizedName, isNot(contains('>')));
@@ -61,7 +72,8 @@ void main() {
         documentType: ExportFileNameHelper.cpkTripLedger,
         extension: 'csv',
       );
-      expect(emptyName, equals('KiloTax_CPK_FY2026-27_TradieClient_VEHICLE_Trip_Ledger.csv'));
+      expect(emptyName,
+          equals('KiloTax_CPK_FY2026-27_TradieClient_VEHICLE_Trip_Ledger.csv'));
     });
   });
 
@@ -118,7 +130,9 @@ void main() {
       );
     });
 
-    test('CPK Lodgement Slip prepends Fast-Fill box with Box D1 Code S and software field labels', () {
+    test(
+        'CPK Lodgement Slip prepends Fast-Fill box with Box D1 Code S and software field labels',
+        () {
       final text = CpkExportService.generateCpkLodgementSlipText(
         vehicle: cpkVehicle,
         trips: [],
@@ -136,7 +150,9 @@ void main() {
       expect(text, contains('HILUX-01 (Toyota Hilux (HILUX-01))'));
     });
 
-    test('Logbook Audit Dossier prepends Fast-Fill box with Box D1 Code B, depreciation, and 5-yr term', () {
+    test(
+        'Logbook Audit Dossier prepends Fast-Fill box with Box D1 Code B, depreciation, and 5-yr term',
+        () {
       final text = LogbookExportService.generateLogbookAuditDossierText(
         vehicle: logbookVehicle,
         trips: [],
@@ -205,7 +221,9 @@ void main() {
       ];
     });
 
-    test('Xero Manual Journal uses default COA accounts and accepts custom COA override', () {
+    test(
+        'Xero Manual Journal uses default COA accounts and accepts custom COA override',
+        () {
       // Default Xero accounts: Fuel 449, Rego 450, Drawings 880
       final defaultCsv = LogbookExportService.generateXeroManualJournalCsv(
         vehicle: vehicle,
@@ -216,7 +234,8 @@ void main() {
 
       expect(defaultCsv, contains('449,BAS Excluded,-2000.00,Vehicle,DMAX-77'));
       expect(defaultCsv, contains('450,BAS Excluded,-1000.00,Vehicle,DMAX-77'));
-      expect(defaultCsv, contains('449,GST on Expenses,1500.00,Vehicle,DMAX-77'));
+      expect(
+          defaultCsv, contains('449,GST on Expenses,1500.00,Vehicle,DMAX-77'));
       expect(defaultCsv, contains('450,BAS Excluded,750.00,Vehicle,DMAX-77'));
       expect(defaultCsv, contains('880,BAS Excluded,750.00,Vehicle,DMAX-77'));
 
@@ -239,12 +258,16 @@ void main() {
         coaConfig: customCoa,
       );
 
-      expect(customCsv, contains('5-1100,BAS Excluded,-2000.00,Vehicle,DMAX-77'));
-      expect(customCsv, contains('5-1130,BAS Excluded,-1000.00,Vehicle,DMAX-77'));
+      expect(
+          customCsv, contains('5-1100,BAS Excluded,-2000.00,Vehicle,DMAX-77'));
+      expect(
+          customCsv, contains('5-1130,BAS Excluded,-1000.00,Vehicle,DMAX-77'));
       expect(customCsv, contains('3-9999,BAS Excluded,750.00,Vehicle,DMAX-77'));
     });
 
-    test('MYOB General Journal CSV matches layout with debit/credit columns and MYOB account IDs', () {
+    test(
+        'MYOB General Journal CSV matches layout with debit/credit columns and MYOB account IDs',
+        () {
       final myobCsv = LogbookExportService.generateMyobGeneralJournalCsv(
         vehicle: vehicle,
         summary: summary,
@@ -254,7 +277,10 @@ void main() {
       );
 
       final lines = myobCsv.trim().split('\n');
-      expect(lines.first, equals('JournalNumber,Date,Memo,AccountSource,AccountID,DebitAmount,CreditAmount,TaxCode,Job'));
+      expect(
+          lines.first,
+          equals(
+              'JournalNumber,Date,Memo,AccountSource,AccountID,DebitAmount,CreditAmount,TaxCode,Job'));
 
       // Line 1: Credit fuel gross
       expect(lines[1], contains('JRN-2026-999'));
@@ -315,7 +341,9 @@ void main() {
       expect(csv, contains(',NO,'));
     });
 
-    test('Section 4 of CPK and Logbook text dossiers include statutory substantiation clause', () {
+    test(
+        'Section 4 of CPK and Logbook text dossiers include statutory substantiation clause',
+        () {
       final vehicle = Vehicle(
         id: 'v_dossier',
         make: 'Ford',
@@ -344,8 +372,14 @@ void main() {
         taxRule: AppConstants.activeTaxRule,
       );
 
-      expect(cpkText, contains('BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
-      expect(cpkText, contains('STATUTORY DEFENSE UNDER VOGT\'S CASE (75 ATC 4073) & ATO TR 95/34'));
+      expect(
+          cpkText,
+          contains(
+              'BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
+      expect(
+          cpkText,
+          contains(
+              'STATUTORY DEFENSE UNDER VOGT\'S CASE (75 ATC 4073) & ATO TR 95/34'));
       expect(cpkText, contains('Absence of Secure Storage'));
 
       final logbookText = LogbookExportService.generateLogbookAuditDossierText(
@@ -356,7 +390,10 @@ void main() {
         taxRule: AppConstants.activeTaxRule,
       );
 
-      expect(logbookText, contains('BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
+      expect(
+          logbookText,
+          contains(
+              'BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
       expect(logbookText, contains('Character of Travel'));
     });
   });
@@ -439,8 +476,10 @@ void main() {
       );
     });
 
-    test('Multi-vehicle summary text applies 5,000 km cap per car and aggregates Box D1 total', () {
-      final summaryText = MultiVehicleExportService.generateCombinedMultiVehicleSlipText(
+    test(
+        'Multi-vehicle summary text applies 5,000 km cap per car and aggregates Box D1 total',
+        () {
+      final summaryText = AtoReportService.generateMultiVehicleBoxD1SummaryText(
         vehicles: [car1, car2],
         tripsByVehicleId: {
           'veh_001': car1Trips,
@@ -459,19 +498,32 @@ void main() {
       // Car 2: 3,200 * 0.91 = $2,912.00
       // Combined: $7,462.00
       expect(summaryText, contains('\$7462.00 AUD'));
-      expect(summaryText, contains('TOTAL WORK KILOMETRES LOGGED:      8620.0 km'));
-      expect(summaryText, contains('TOTAL VEHICLES CLAIMED:            2 Vehicles'));
-      expect(summaryText, contains('Vehicle #1: 1ABC234 - Toyota Hilux (1ABC234)'));
-      expect(summaryText, contains('Allowable Cap:       5000.0 km (Capped at 5,000 km per s 28-25)'));
+      expect(summaryText,
+          contains('TOTAL WORK KILOMETRES LOGGED:      8620.0 km'));
+      expect(summaryText,
+          contains('TOTAL VEHICLES CLAIMED:            2 Vehicles'));
+      expect(summaryText,
+          contains('Vehicle #1: 1ABC234 - Toyota Hilux (1ABC234)'));
+      expect(
+          summaryText,
+          contains(
+              'Allowable Cap:       5000.0 km (Capped at 5,000 km per s 28-25)'));
       expect(summaryText, contains('\$4550.00 AUD'));
-      expect(summaryText, contains('Vehicle #2: 9XYZ890 - Ford Ranger (9XYZ890)'));
-      expect(summaryText, contains('Allowable Cap:       3200.0 km (Capped at 5,000 km per s 28-25)'));
+      expect(
+          summaryText, contains('Vehicle #2: 9XYZ890 - Ford Ranger (9XYZ890)'));
+      expect(
+          summaryText,
+          contains(
+              'Allowable Cap:       3200.0 km (Capped at 5,000 km per s 28-25)'));
       expect(summaryText, contains('\$2912.00 AUD'));
-      expect(summaryText, contains('FINAL INDIVIDUAL TAX RETURN BOX D1 ENTRY: \$7462.00 AUD'));
+      expect(summaryText,
+          contains('FINAL INDIVIDUAL TAX RETURN BOX D1 ENTRY: \$7462.00 AUD'));
     });
 
-    test('Multi-vehicle CSV produces fleet breakdown with TOTALS reconciliation row', () {
-      final csv = MultiVehicleExportService.generateCombinedMultiVehicleCsv(
+    test(
+        'Multi-vehicle CSV produces fleet breakdown with TOTALS reconciliation row',
+        () {
+      final csv = AtoReportService.generateMultiVehicleBoxD1SummaryCsv(
         vehicles: [car1, car2],
         tripsByVehicleId: {
           'veh_001': car1Trips,
@@ -485,10 +537,110 @@ void main() {
       );
 
       final lines = csv.trim().split('\n');
-      expect(lines.first, equals('Vehicle_ID,Vehicle_Rego,Vehicle_Model,Method,Logged_Work_KM,Statutory_Capped_KM,Rate_Or_Percent,Vehicle_Deduction_AUD,Box_D1_Contribution_AUD'));
-      expect(lines[1], equals('veh_001,1ABC234,Toyota Hilux,CPK,5420.00,5000.00,\$0.91/km,4550.00,4550.00'));
-      expect(lines[2], equals('veh_002,9XYZ890,Ford Ranger,CPK,3200.00,3200.00,\$0.91/km,2912.00,2912.00'));
-      expect(lines[3], equals('TOTALS,2_VEHICLES,COMBINED_FLEET,MULTI,8620.00,8200.00,N/A,7462.00,7462.00'));
+      expect(
+          lines.first,
+          equals(
+              'Vehicle_ID,Vehicle_Rego,Vehicle_Model,Method,Logged_Work_KM,Statutory_Capped_KM,Rate_Or_Percent,Vehicle_Deduction_AUD,Box_D1_Contribution_AUD'));
+      expect(
+          lines[1],
+          equals(
+              'veh_001,1ABC234,Toyota Hilux,CPK,5420.00,5000.00,\$0.91/km,4550.00,4550.00'));
+      expect(
+          lines[2],
+          equals(
+              'veh_002,9XYZ890,Ford Ranger,CPK,3200.00,3200.00,\$0.91/km,2912.00,2912.00'));
+      expect(
+          lines[3],
+          equals(
+              'TOTALS,2_VEHICLES,COMBINED_FLEET,MULTI,8620.00,8200.00,N/A,7462.00,7462.00'));
+      expect(
+          lines[4],
+          contains(
+              '# DISCLAIMER: Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.'));
+    });
+  });
+
+  group('6. Statutory Disclaimers & Non-Affiliation Compliance', () {
+    test('CPK and Logbook CSV exports contain explicit statutory disclaimer footer', () {
+      final vehicleCpk = Vehicle(
+        id: 'v_cpk_disc',
+        make: 'Toyota',
+        model: 'Hilux',
+        regoPlate: 'CPK-999',
+        initialOdometer: 10000.0,
+        taxMethod: TaxMethod.centsPerKm,
+      );
+      final cpkCsv = CpkExportService.generateCpkTripLedgerCsv(
+        vehicle: vehicleCpk,
+        trips: [],
+        taxRule: AppConstants.activeTaxRule,
+      );
+      expect(
+        cpkCsv,
+        contains(
+            '# DISCLAIMER: Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.'),
+      );
+
+      final vehicleLogbook = Vehicle(
+        id: 'v_lb_disc',
+        make: 'Ford',
+        model: 'Ranger',
+        regoPlate: 'LB-111',
+        initialOdometer: 50000.0,
+        taxMethod: TaxMethod.logbook,
+      );
+      final lbCsv = LogbookExportService.generateLogbookAuditLedgerCsv(
+        vehicle: vehicleLogbook,
+        trips: [],
+      );
+      expect(
+        lbCsv,
+        contains(
+            '# DISCLAIMER: Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.'),
+      );
+    });
+
+    test('CPK and Logbook dossiers contain TPB advice notice and ATO non-affiliation', () {
+      final vehicle = Vehicle(
+        id: 'v_dos_disc',
+        make: 'Isuzu',
+        model: 'D-Max',
+        regoPlate: 'DISC-00',
+        initialOdometer: 25000.0,
+      );
+      final summary = TaxSummary(
+        totalKm: 100.0,
+        businessKm: 80.0,
+        personalKm: 20.0,
+        businessPercentage: 80.0,
+        totalRunningExpenses: 200.0,
+        totalDirectDeductions: 0.0,
+        centsPerKmClaim: 80.0 * 0.91,
+        logbookClaim: 160.0,
+        recommendedMethod: RecommendedMethod.centsPerKm,
+        taxSavingsDiff: 0.0,
+      );
+
+      final cpkSlip = CpkExportService.generateCpkLodgementSlipText(
+        vehicle: vehicle,
+        trips: [],
+        summary: summary,
+        taxRule: AppConstants.activeTaxRule,
+      );
+      expect(cpkSlip, contains('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice)'));
+      expect(cpkSlip, contains('Retain for 5 years per Subdivision 28-H / Section 900-165.'));
+      expect(cpkSlip, contains('NOT affiliated with, endorsed by, or connected'));
+
+      final lbDossier = LogbookExportService.generateLogbookAuditDossierText(
+        vehicle: vehicle,
+        trips: [],
+        expenses: [],
+        summary: summary,
+        taxRule: AppConstants.activeTaxRule,
+      );
+      expect(lbDossier, contains('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Subdivision 28-F / TPB Notice)'));
+      expect(lbDossier, contains('Retain for 5 years per Subdivision 28-H / Section 900-165.'));
+      expect(lbDossier, contains('NOT affiliated with, endorsed by, or connected'));
     });
   });
 }

@@ -40,7 +40,8 @@ class CpkQuotaClaimBanner extends StatelessWidget {
                   color: AppColors.emerald,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(LucideIcons.check, size: 14, color: Colors.white),
+                child: const Icon(LucideIcons.check,
+                    size: 14, color: Colors.white),
               ),
               const SizedBox(width: 10),
               Expanded(

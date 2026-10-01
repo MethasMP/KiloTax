@@ -64,10 +64,14 @@ class PurposeSynthesizerService {
   /// Returns a clean, human-friendly 2-word label for the UI (Apple Human Interface Guidelines)
   static String getHumanLabel(String rawPurpose) {
     final lower = rawPurpose.toLowerCase();
-    if (lower.contains('tool') || lower.contains('heavy') || lower.contains('bulky')) {
+    if (lower.contains('tool') ||
+        lower.contains('heavy') ||
+        lower.contains('bulky')) {
       return 'Tool Transport';
     }
-    if (lower.contains('suppl') || lower.contains('bunning') || lower.contains('material')) {
+    if (lower.contains('suppl') ||
+        lower.contains('bunning') ||
+        lower.contains('material')) {
       return 'Supplies Run';
     }
     if (lower.contains('personal') || lower.contains('private')) {

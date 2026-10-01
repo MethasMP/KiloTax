@@ -4,11 +4,13 @@ import 'package:kilotax/services/ocr/receipt_audit_service.dart';
 import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
-  group('NASA-Grade Consensus Engine & Australian Fuel Receipts', () {
+  group('Deterministic Consensus Engine & Australian Fuel Receipts', () {
     const service = ReceiptIntelligenceService();
     const auditService = ReceiptAuditService();
 
-    test('1. Resolves fuel discounts (Subtotal - 4c Discount == Final Settlement)', () {
+    test(
+        '1. Resolves fuel discounts (Subtotal - 4c Discount == Final Settlement)',
+        () {
       final text = '''
 Coles Express Mascot
 Tax Invoice
@@ -31,7 +33,9 @@ EFTPOS DEBIT                  \$156.80
       expect(result.isHighConfidence, isTrue);
     });
 
-    test('2. Recovers from smudged OCR characters with Levenshtein fuzzy matching', () {
+    test(
+        '2. Recovers from smudged OCR characters with Levenshtein fuzzy matching',
+        () {
       // "T0TAL AUD" and "EFTP0S" smudged
       final text = '''
 BP Connect Kew
@@ -46,11 +50,14 @@ EFTP0S \$98.50
       final result = service.analyseText(text);
 
       expect(result.amount, equals(98.50));
-      expect(result.merchant, anyOf(equals('Bp'), startsWith('Bp'), startsWith('BP')));
+      expect(result.merchant,
+          anyOf(equals('Bp'), startsWith('Bp'), startsWith('BP')));
       expect(result.category, equals(ExpenseCategory.fuel));
     });
 
-    test('3. Cross-validates settlement using Australian GST Invariant (Total ≈ GST * 11)', () {
+    test(
+        '3. Cross-validates settlement using Australian GST Invariant (Total ≈ GST * 11)',
+        () {
       final text = '''
 Sydney Tools Alexandria
 Tax Invoice ABN 12 345 678 901
@@ -68,7 +75,9 @@ PAID VISA \$220.00
       expect(result.evidence, contains('gst_invariant_match'));
     });
 
-    test('4. Handles bundled in-store items (Pie + Fuel) prioritizing bottom-up settlement', () {
+    test(
+        '4. Handles bundled in-store items (Pie + Fuel) prioritizing bottom-up settlement',
+        () {
       final text = '''
 7-Eleven Richmond
 Tax Invoice
@@ -88,7 +97,8 @@ EFTPOS                \$105.00
       expect(result.merchant, startsWith('7-Eleven'));
     });
 
-    test('5. ReceiptAuditService tags gst_split_verified into audit trail', () async {
+    test('5. ReceiptAuditService tags gst_split_verified into audit trail',
+        () async {
       final ocrResult = ReceiptOcrResult(
         merchant: 'Ampol',
         amount: 110.00,

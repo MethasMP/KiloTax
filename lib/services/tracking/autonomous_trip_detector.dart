@@ -26,7 +26,7 @@ class GhostAnchor {
   });
 }
 
-/// Autonomous Trip Detector (Japanese Monozukuri & Root-Cause Engineering)
+/// Autonomous Trip Detector
 ///
 /// Features:
 /// 1. Circular Ring Buffer (O(1) Memory): Preserves pre-drive stationary fixes so departure km is never lost.
@@ -77,7 +77,8 @@ class AutonomousTripDetector {
   }
 
   /// Ingests a new continuous GPS fix from device hardware stream
-  Future<AutonomousDetectorState> processFix(Position fix, {DateTime? simulatedNow}) async {
+  Future<AutonomousDetectorState> processFix(Position fix,
+      {DateTime? simulatedNow}) async {
     final now = simulatedNow ?? DateTime.now();
     final speedKmh = fix.speed > 0.5 ? (fix.speed * 3.6) : 0.0;
 
@@ -97,7 +98,8 @@ class AutonomousTripDetector {
           _state = AutonomousDetectorState.idle;
           _firstSpeedExceededTime = null;
         } else if (_firstSpeedExceededTime != null &&
-            now.difference(_firstSpeedExceededTime!) >= sustainedSpeedThresholdDuration) {
+            now.difference(_firstSpeedExceededTime!) >=
+                sustainedSpeedThresholdDuration) {
           // Sustained acceleration confirmed!
           // Retroactively recover departure point from earliest fix in ring buffer
           _state = AutonomousDetectorState.activeDriving;
@@ -148,7 +150,8 @@ class AutonomousTripDetector {
 
           // Reject if 3 consecutive short bus stops detected
           if (_consecutiveShortHops >= 3) {
-            debugPrint('[AutonomousDetector] Public Bus Pattern Detected. Trip discarded.');
+            debugPrint(
+                '[AutonomousDetector] Public Bus Pattern Detected. Trip discarded.');
             reset();
             return _state;
           }
@@ -157,8 +160,11 @@ class AutonomousTripDetector {
           _state = AutonomousDetectorState.activeDriving;
         }
         // Scenario B: Vehicle remains stationary past Ghost Anchor timeout (True Destination Reached)
-        else if (_ghostAnchor != null && now.difference(_ghostAnchor!.stationarySince) >= ghostAnchorTimeout) {
-          await _sealTripRetroactively(_ghostAnchor!.position, _ghostAnchor!.stationarySince);
+        else if (_ghostAnchor != null &&
+            now.difference(_ghostAnchor!.stationarySince) >=
+                ghostAnchorTimeout) {
+          await _sealTripRetroactively(
+              _ghostAnchor!.position, _ghostAnchor!.stationarySince);
           _state = AutonomousDetectorState.finalized;
         }
         break;

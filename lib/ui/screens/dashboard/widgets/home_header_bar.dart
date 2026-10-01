@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../services/notifications/notification_service.dart';
@@ -62,9 +63,8 @@ class HomeHeaderBar extends StatelessWidget {
       vehicleBrandTitle = 'FY${appState.activeTaxRule.financialYear} Vehicle';
     }
 
-    final fullGreeting = greetingName.isNotEmpty
-        ? '$timeGreeting, $greetingName'
-        : timeGreeting;
+    final fullGreeting =
+        greetingName.isNotEmpty ? '$timeGreeting, $greetingName' : timeGreeting;
 
     return FutureBuilder<NotificationService>(
       future: NotificationService.getInstance(),
@@ -104,7 +104,8 @@ class HomeHeaderBar extends StatelessWidget {
                           width: 46,
                           height: 46,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildInitialAvatar(user, greetingName),
+                          errorBuilder: (_, __, ___) =>
+                              _buildInitialAvatar(user, greetingName),
                         )
                       : _buildInitialAvatar(user, greetingName),
                 ),
@@ -131,46 +132,89 @@ class HomeHeaderBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(LucideIcons.car, size: 13, color: AppColors.muted),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          vehicleBrandTitle,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.muted,
-                            letterSpacing: -0.1,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.border,
+                        width: 1,
                       ),
-                      if (streak > 0) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 3,
-                          height: 3,
-                          decoration: const BoxDecoration(
-                            color: AppColors.muted,
-                            shape: BoxShape.circle,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Custom crisp Australian Ute/Car Vector Asset instead of cheap generic icon
+                        SvgPicture.asset(
+                          vehicle?.effectiveVehicleType.svgAssetPath ??
+                              'assets/vehicles/ute.svg',
+                          width: 16,
+                          height: 12,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.ink,
+                            BlendMode.srcIn,
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          '🔥$streak',
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFC2410C),
+                        Flexible(
+                          child: Text(
+                            vehicleBrandTitle,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (vehicle != null && vehicle.hasRegoPlate) ...[
+                          const SizedBox(width: 5),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF94A3B8),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            vehicle.regoPlate.trim().toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.muted,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                        if (streak > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF94A3B8),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '🔥$streak',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFC2410C),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -224,7 +268,8 @@ class HomeHeaderBar extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppColors.amber,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.card, width: 1.5),
+                            border:
+                                Border.all(color: AppColors.card, width: 1.5),
                           ),
                         ),
                       ),
@@ -249,9 +294,13 @@ class HomeHeaderBar extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            user != null && user.displayName != null && user.displayName!.isNotEmpty
+            user != null &&
+                    user.displayName != null &&
+                    user.displayName!.isNotEmpty
                 ? user.displayName![0].toUpperCase()
-                : (greetingName.isNotEmpty ? greetingName[0].toUpperCase() : 'M'),
+                : (greetingName.isNotEmpty
+                    ? greetingName[0].toUpperCase()
+                    : 'M'),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,

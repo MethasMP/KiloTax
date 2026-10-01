@@ -9,7 +9,8 @@ import 'package:kilotax/ui/screens/trips/widgets/tax_savings_ticker_dialog.dart'
 
 void main() {
   group('KiloTax Strategic Differentiation & Moat Tests', () {
-    testWidgets('TaxSavingsTickerDialog renders added claim dopamine payoff and s 8-1 reference',
+    testWidgets(
+        'TaxSavingsTickerDialog renders added claim dopamine payoff and s 8-1 reference',
         (WidgetTester tester) async {
       final appState = AppState();
       final vehicle = Vehicle(
@@ -60,7 +61,8 @@ void main() {
       expect(find.text('TRIP RECORDED'), findsNothing);
     });
 
-    testWidgets('MoneyLeftOnTableCard detects unlogged trip gap and computes lost dollars',
+    testWidgets(
+        'MoneyLeftOnTableCard detects unlogged trip gap and computes lost dollars',
         (WidgetTester tester) async {
       final appState = AppState();
       final vehicle = Vehicle(
@@ -103,7 +105,8 @@ void main() {
       expect(find.textContaining('Recover \$45.50 in 1 Tap'), findsOneWidget);
     });
 
-    testWidgets('MoneyLeftOnTableCard shows method arbitrage opportunity and switches to Logbook',
+    testWidgets(
+        'MoneyLeftOnTableCard shows method arbitrage opportunity and switches to Logbook',
         (WidgetTester tester) async {
       final appState = AppState();
       final vehicle = Vehicle(
@@ -155,7 +158,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('MONEY LEFT ON THE TABLE'), findsOneWidget);
-      expect(find.textContaining('Switching to Logbook unlocks +\$5,270.00'), findsOneWidget);
+      expect(find.textContaining('Switching to Logbook unlocks +\$5,270.00'),
+          findsOneWidget);
 
       // Tap Switch -> Now properly routes to LogbookSetupScreen for user confirmation
       await tester.tap(find.text('Switch'));

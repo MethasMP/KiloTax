@@ -52,7 +52,9 @@ void main() {
       ];
     });
 
-    test('ATO CSV audit ledger masks personal trip addresses as [Private Journey]', () {
+    test(
+        'ATO CSV audit ledger masks personal trip addresses as [Private Journey]',
+        () {
       final csv = LogbookExportService.generateLogbookAuditLedgerCsv(
         vehicle: vehicle,
         trips: trips,
@@ -60,7 +62,7 @@ void main() {
       );
 
       final lines = csv.trim().split('\n');
-      expect(lines.length, 3); // Header + 2 trips
+      expect(lines.length, 4); // Header + 2 trips + Disclaimer footer
 
       // Line 2: Business trip retains actual addresses and purpose
       expect(lines[1], contains('BUSINESS'));
@@ -77,7 +79,9 @@ void main() {
       expect(lines[2], isNot(contains('Private doctor visit & groceries')));
     });
 
-    test('Audit Dossier contains Odometer Photo Verification status and masks private purpose', () {
+    test(
+        'Audit Dossier contains Odometer Photo Verification status and masks private purpose',
+        () {
       final summary = TaxSummary(
         totalKm: 40.0,
         businessKm: 25.0,

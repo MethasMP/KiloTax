@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Manual vehicle entry dialog renders Make (Brand), Model, and full-width Body Type without Year', (tester) async {
+  testWidgets(
+      'Manual vehicle entry dialog renders Make (Brand), Model, and full-width Body Type without Year',
+      (tester) async {
     final appState = AppState();
 
     await tester.pumpWidget(
@@ -48,7 +50,8 @@ void main() {
     expect(find.text('Year'), findsNothing);
 
     // Fill Make & Model
-    await tester.enterText(find.widgetWithText(TextField, 'Make (Brand)'), 'Isuzu');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Make (Brand)'), 'Isuzu');
     await tester.enterText(find.widgetWithText(TextField, 'Model'), 'D-Max');
     await tester.pumpAndSettle();
 

@@ -85,8 +85,10 @@ void main() {
 
       expect(appState.missingComplianceTrips.length, 0);
 
-      final approved1 = appState.trips.firstWhere((t) => t.id == 'trip_batch_1');
-      final approved2 = appState.trips.firstWhere((t) => t.id == 'trip_batch_2');
+      final approved1 =
+          appState.trips.firstWhere((t) => t.id == 'trip_batch_1');
+      final approved2 =
+          appState.trips.firstWhere((t) => t.id == 'trip_batch_2');
 
       expect(approved1.classification, TripClassification.business);
       expect(approved1.purpose, 'Supplies Run');
@@ -97,7 +99,9 @@ void main() {
       expect(approved2.jobReference, 'Site Project A');
     });
 
-    testWidgets('CpkBatchReviewSheet renders hero value and allows 1-tap approval', (tester) async {
+    testWidgets(
+        'CpkBatchReviewSheet renders hero value and allows 1-tap approval',
+        (tester) async {
       final t1 = Trip(
         id: 't_ui_1',
         vehicleId: vehicle.id,

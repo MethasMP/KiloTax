@@ -16,7 +16,8 @@ class TaxReadinessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     final missingTrips = appState.missingComplianceTrips;
-    final missingExpenses = isLogbook ? appState.unclassifiedExpenses : <VehicleExpense>[];
+    final missingExpenses =
+        isLogbook ? appState.unclassifiedExpenses : <VehicleExpense>[];
     final totalActionItems = missingTrips.length + missingExpenses.length;
     final score = appState.taxReadinessScore;
 
@@ -26,11 +27,14 @@ class TaxReadinessCard extends StatelessWidget {
 
     String headline;
     if (missingTrips.isNotEmpty && missingExpenses.isNotEmpty) {
-      headline = '${missingTrips.length} trips & ${missingExpenses.length} receipts need attention';
+      headline =
+          '${missingTrips.length} trips & ${missingExpenses.length} receipts need attention';
     } else if (missingTrips.isNotEmpty) {
-      headline = '${missingTrips.length} ${missingTrips.length == 1 ? "trip needs" : "trips need"} a purpose';
+      headline =
+          '${missingTrips.length} ${missingTrips.length == 1 ? "trip needs" : "trips need"} a purpose';
     } else {
-      headline = '${missingExpenses.length} ${missingExpenses.length == 1 ? "receipt needs" : "receipts need"} backup photo';
+      headline =
+          '${missingExpenses.length} ${missingExpenses.length == 1 ? "receipt needs" : "receipts need"} backup photo';
     }
 
     return Container(
@@ -48,7 +52,8 @@ class TaxReadinessCard extends StatelessWidget {
               color: AppColors.amber.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.alertTriangle, color: AppColors.amberDark, size: 18),
+            child: const Icon(LucideIcons.alertTriangle,
+                color: AppColors.amberDark, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -59,18 +64,26 @@ class TaxReadinessCard extends StatelessWidget {
                   children: [
                     const Text(
                       'NEEDS ATTENTION',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.amberDark, letterSpacing: 0.5),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                          color: AppColors.amberDark,
+                          letterSpacing: 0.5),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.amberDark,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '$score%',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: Colors.white),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                            color: Colors.white),
                       ),
                     ),
                   ],
@@ -78,7 +91,10 @@ class TaxReadinessCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   headline,
-                  style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: AppColors.ink),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      color: AppColors.ink),
                 ),
               ],
             ),
@@ -86,16 +102,22 @@ class TaxReadinessCard extends StatelessWidget {
           TextButton(
             onPressed: () {
               if (missingTrips.isNotEmpty) {
-                TripQuickResolveSheet.show(context, trip: missingTrips.first, appState: appState);
+                TripQuickResolveSheet.show(context,
+                    trip: missingTrips.first, appState: appState);
               } else {
                 TripReviewSheet.show(context, appState);
               }
             },
             child: const Row(
               children: [
-                Text('Fix now', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.deepNavy)),
+                Text('Fix now',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.deepNavy)),
                 SizedBox(width: 2),
-                Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.deepNavy),
+                Icon(Icons.arrow_forward_rounded,
+                    size: 14, color: AppColors.deepNavy),
               ],
             ),
           ),

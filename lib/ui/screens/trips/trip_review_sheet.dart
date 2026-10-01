@@ -58,15 +58,23 @@ class TripReviewSheet extends StatelessWidget {
                   color: AppColors.workBlueLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.car, color: AppColors.workBlue, size: 20),
+                child: const Icon(LucideIcons.car,
+                    color: AppColors.workBlue, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Trip Review & Audit Trail', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
-                    Text('${trips.length} total trips logged (${Formatters.distance(businessKm)} business)', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                    const Text('Trip Review & Audit Trail',
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.ink)),
+                    Text(
+                        '${trips.length} total trips logged (${Formatters.distance(businessKm)} business)',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -75,11 +83,15 @@ class TripReviewSheet extends StatelessWidget {
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.emeraldLight,
                     foregroundColor: AppColors.emerald,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   icon: const Icon(LucideIcons.sparkles, size: 14),
-                  label: const Text('Batch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                  label: const Text('Batch',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                   onPressed: () {
                     Navigator.of(context).pop();
                     CpkBatchReviewSheet.show(context, appState);
@@ -100,9 +112,13 @@ class TripReviewSheet extends StatelessWidget {
                   children: [
                     Icon(LucideIcons.mapPin, size: 48, color: AppColors.muted),
                     SizedBox(height: 12),
-                    Text('No trips recorded yet', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    Text('No trips recorded yet',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800, color: AppColors.ink)),
                     SizedBox(height: 4),
-                    Text('Use the + button on Dashboard to log your first drive.', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                    Text(
+                        'Use the + button on Dashboard to log your first drive.',
+                        style: TextStyle(fontSize: 12, color: AppColors.muted)),
                   ],
                 ),
               ),
@@ -114,7 +130,8 @@ class TripReviewSheet extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (ctx, index) {
                   final trip = trips[index];
-                  final isBusiness = trip.classification == TripClassification.business;
+                  final isBusiness =
+                      trip.classification == TripClassification.business;
 
                   return Container(
                     padding: const EdgeInsets.all(14),
@@ -129,12 +146,18 @@ class TripReviewSheet extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isBusiness ? AppColors.workBlueLight : AppColors.muted.withValues(alpha: 0.1),
+                            color: isBusiness
+                                ? AppColors.workBlueLight
+                                : AppColors.muted.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            isBusiness ? LucideIcons.briefcase : LucideIcons.home,
-                            color: isBusiness ? AppColors.workBlue : AppColors.muted,
+                            isBusiness
+                                ? LucideIcons.briefcase
+                                : LucideIcons.home,
+                            color: isBusiness
+                                ? AppColors.workBlue
+                                : AppColors.muted,
                             size: 18,
                           ),
                         ),
@@ -147,13 +170,21 @@ class TripReviewSheet extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      trip.purpose.isNotEmpty ? trip.purpose : 'Unknown Purpose',
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.ink),
+                                      trip.purpose.isNotEmpty
+                                          ? trip.purpose
+                                          : 'Unknown Purpose',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13.5,
+                                          color: AppColors.ink),
                                     ),
                                   ),
                                   Text(
                                     Formatters.distance(trip.distanceKm),
-                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.ink),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                        color: AppColors.ink),
                                   ),
                                 ],
                               ),
@@ -162,31 +193,41 @@ class TripReviewSheet extends StatelessWidget {
                                 children: [
                                   Text(
                                     Formatters.dateTime(trip.date),
-                                    style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                    style: const TextStyle(
+                                        fontSize: 11, color: AppColors.muted),
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: isBusiness ? AppColors.emeraldLight : AppColors.background,
+                                      color: isBusiness
+                                          ? AppColors.emeraldLight
+                                          : AppColors.background,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      isBusiness ? 'Business (\$${(trip.distanceKm * AppConstants.centsPerKmRate2026).toStringAsFixed(2)} claim)' : 'Personal',
+                                      isBusiness
+                                          ? 'Business (\$${(trip.distanceKm * appState.activeTaxRule.centsPerKmRate).toStringAsFixed(2)} claim)'
+                                          : 'Personal',
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
-                                        color: isBusiness ? AppColors.emerald : AppColors.muted,
+                                        color: isBusiness
+                                            ? AppColors.emerald
+                                            : AppColors.muted,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              if (trip.originAddress != null && trip.destinationAddress != null) ...[
+                              if (trip.originAddress != null &&
+                                  trip.destinationAddress != null) ...[
                                 const SizedBox(height: 4),
                                 Text(
                                   '${trip.originAddress} → ${trip.destinationAddress}',
-                                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.muted),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],

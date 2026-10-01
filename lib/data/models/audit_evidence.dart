@@ -99,20 +99,23 @@ class AuditEvidence {
       id: json['id'] as String,
       vehicleId: json['vehicleId'] as String?,
       evidenceType: EvidenceType.fromDbValue(
-        (json['evidenceType'] ?? json['evidence_type']) as String? ?? 'expense_receipt',
+        (json['evidenceType'] ?? json['evidence_type']) as String? ??
+            'expense_receipt',
       ),
       entityId: (json['entityId'] ?? json['entity_id']) as String?,
       storagePath: (json['storagePath'] ?? json['storage_path']) as String,
       imageSha256: (json['imageSha256'] ?? json['image_sha256']) as String,
       fileSizeBytes: (json['fileSizeBytes'] ?? json['file_size_bytes']) as int?,
-      mimeType: (json['mimeType'] ?? json['mime_type']) as String? ?? 'image/webp',
+      mimeType:
+          (json['mimeType'] ?? json['mime_type']) as String? ?? 'image/webp',
       capturedAt: DateTime.parse(
         (json['capturedAt'] ?? json['captured_at']) as String,
       ),
       captureSource:
-          (json['captureSource'] ?? json['capture_source']) as String? ?? 'camera_live',
-      watermarkMetadata:
-          Map<String, dynamic>.from(json['watermarkMetadata'] ?? json['watermark_metadata'] ?? {}),
+          (json['captureSource'] ?? json['capture_source']) as String? ??
+              'camera_live',
+      watermarkMetadata: Map<String, dynamic>.from(
+          json['watermarkMetadata'] ?? json['watermark_metadata'] ?? {}),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,

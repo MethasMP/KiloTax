@@ -14,8 +14,9 @@ import '../dashboard/widgets/home_telemetry_capsule.dart';
 /// Clean Architecture - 100% Focused on 12-Week Compliance, Gapless Odometer, and Expenses.
 class LogbookHomeBody extends StatelessWidget {
   final AppState appState;
+  final VoidCallback? onViewAll;
 
-  const LogbookHomeBody({super.key, required this.appState});
+  const LogbookHomeBody({super.key, required this.appState, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +26,17 @@ class LogbookHomeBody extends StatelessWidget {
     final businessKm = summary.businessKm;
     final totalKm = summary.totalKm;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return RefreshIndicator(
+      onRefresh: () async {
+        await appState.restoreFromCloud();
+      },
+      color: AppColors.brandPrimary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // 1. Header (Universal Greeting & Vehicle)
           HomeHeaderBar(
             appState: appState,
@@ -37,30 +44,39 @@ class LogbookHomeBody extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // 2. Frontier Ambient Telemetry & Dynamic Drive Capsule
-          HomeTelemetryCapsule(appState: appState),
-
           // Strategic Advisor: Money Left on the Table
           MoneyLeftOnTableCard(appState: appState),
 
           // 2. Action Required (Missing Purposes or Receipts)
-          if (appState.missingComplianceTrips.isNotEmpty || appState.unclassifiedExpenses.isNotEmpty) ...[
+          if (appState.missingComplianceTrips.isNotEmpty ||
+              appState.unclassifiedExpenses.isNotEmpty) ...[
             TaxReadinessCard(appState: appState),
             const SizedBox(height: 16),
           ],
 
-          // 3. Logbook Hero Masterpiece (12-Week Tracker & Business %)
+          // 3. Logbook Hero Masterpiece (Modern Deep Oceanic Card)
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0F1B3B), // Deep Oceanic Navy
+                  Color(0xFF0B132B), // Deep Obsidian Core
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFF1E2E5D),
+                width: 1.2,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.deepNavy.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: const Color(0xFF0B132B).withValues(alpha: 0.16),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                  spreadRadius: -2,
                 ),
               ],
             ),
@@ -71,22 +87,25 @@ class LogbookHomeBody extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.emeraldLight,
+                        color: const Color(0xFF10B981).withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.bookOpen, color: AppColors.emerald, size: 14),
+                          const Icon(LucideIcons.bookOpen,
+                              color: Color(0xFF34D399), size: 14),
                           const SizedBox(width: 5),
                           Text(
                             'LOGBOOK • Week ${appState.currentLogbookWeek} of 12',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 10.5,
-                              color: AppColors.emerald,
+                              color: Color(0xFF34D399),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -98,7 +117,7 @@ class LogbookHomeBody extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ],
@@ -117,13 +136,17 @@ class LogbookHomeBody extends StatelessWidget {
                           CircularProgressIndicator(
                             value: businessUse / 100.0,
                             strokeWidth: 7,
-                            backgroundColor: AppColors.background,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                            backgroundColor: Colors.white.withValues(alpha: 0.10),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF10B981)),
                           ),
                           Center(
                             child: Text(
                               '${businessUse.toStringAsFixed(1)}%',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.ink),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: Colors.white),
                             ),
                           ),
                         ],
@@ -136,17 +159,27 @@ class LogbookHomeBody extends StatelessWidget {
                         children: [
                           Text(
                             '${businessUse.toStringAsFixed(1)}% Business Use',
-                            style: AppTextStyles.pageTitle,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                           const SizedBox(height: 2),
-                          const Text('Valid for 5 consecutive tax years', style: AppTextStyles.caption),
+                          const Text('Valid for 5 consecutive tax years',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF94A3B8),
+                              )),
                         ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 18),
-                const Divider(height: 1, color: AppColors.border),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.12)),
                 const SizedBox(height: 14),
 
                 // Km stats row
@@ -156,15 +189,41 @@ class LogbookHomeBody extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(Formatters.distance(businessKm), style: AppTextStyles.cardPrimary),
-                        const Text('Business km', style: AppTextStyles.caption),
+                        Text(
+                          Formatters.distance(businessKm),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Text(
+                          'Business km',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
                       ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(Formatters.distance(totalKm), style: AppTextStyles.cardPrimary),
-                        const Text('Total km logged', style: AppTextStyles.caption),
+                        Text(
+                          Formatters.distance(totalKm),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Text(
+                          'Total km logged',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -176,12 +235,16 @@ class LogbookHomeBody extends StatelessWidget {
                 // Odometer Continuous Baseline Indicator
                 Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.emerald),
+                    const Icon(Icons.check_circle_rounded,
+                        size: 14, color: AppColors.emerald),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Odometer baseline: ${Formatters.odometer(appState.currentOdometer)} km (Continuous audit trail active)',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -190,21 +253,27 @@ class LogbookHomeBody extends StatelessWidget {
                 if (appState.logbookStraddlesFinancialYear) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.amberLight,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.amber.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(LucideIcons.calendarDays, size: 15, color: AppColors.amberDark),
+                        const Icon(LucideIcons.calendarDays,
+                            size: 15, color: AppColors.amberDark),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             appState.logbookFyApportionmentAdvisory,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.amberDark),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.amberDark),
                           ),
                         ),
                       ],
@@ -214,11 +283,16 @@ class LogbookHomeBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 14),
 
-          // 4. Evidence Activity Stream
-          HomeRecentActivity(appState: appState),
+          // 3. Ambient Telemetry & Dynamic Drive Capsule
+          HomeTelemetryCapsule(appState: appState),
+          const SizedBox(height: 14),
+
+          // 4. Evidence Activity Stream (Glanceable Latest Drive)
+          HomeRecentActivity(appState: appState, onViewAll: onViewAll),
         ],
+        ),
       ),
     );
   }

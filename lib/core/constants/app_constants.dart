@@ -1,32 +1,63 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Precision Utility Core Palette (60-30-10 High Contrast Slate Standard)
-  static const Color deepNavy = Color(0xFF0F172A); // Slate 900: Primary structural anchor, headers, primary buttons
-  static const Color ink = Color(0xFF0F172A); // Slate 900: High-contrast text
-  static const Color background = Color(0xFFF1F5F9); // Slate 100: Crisp neutral canvas (outdoor glare resistant)
+  // Precision Utility Core Palette (Pacific Cyber-Navy & Electric Ultramarine Standard)
+  static const Color deepNavy = Color(
+      0xFF0B132B); // Deep Cyber-Navy 950: Rich oceanic foundation, zero flat pitch black
+  static const Color ink = Color(
+      0xFF090E1A); // High-contrast crisp Obsidian Ink (WCAG AAA 15:1)
+  static const Color background = Color(
+      0xFFF4F6FB); // Ice Slate Canvas: Anti-glare outdoor resilience
   static const Color card = Color(0xFFFFFFFF); // Pure white card surface
-  static const Color border = Color(0xFFE2E8F0); // Slate 200: 1px hairline boundary
-  static const Color muted = Color(0xFF475569); // Slate 600: High-readability secondary labels (WCAG AAA)
+  static const Color border = Color(
+      0xFFE2E8F0); // Hairline boundary Slate 200
+  static const Color borderSubtle = Color(
+      0xFFEDF2F7); // Subtle 0.5px internal separator
+  static const Color muted = Color(
+      0xFF4B5565); // Slate 600: High-readability secondary labels (WCAG AAA)
 
-  // Status & Utility Accents (Controlled 10% Visual Weight)
-  static const Color amber = Color(0xFFD97706); // Amber 600: Action required, needs attention
+  // Primary Brand & Electric Accents (Linear / Stripe fintech luxury)
+  static const Color brandPrimary = Color(
+      0xFF1E40AF); // Ultramarine 800: Deep tactile primary CTA
+  static const Color brandElectric = Color(
+      0xFF2563EB); // Electric Blue 600: Dynamic active states, telemetry pulse
+  static const Color brandElectricLight = Color(
+      0xFFEFF6FF); // Electric Blue 50: Pill highlights
+  static final Color brandGlow = const Color(
+      0xFF2563EB).withValues(alpha: 0.28); // Ambient CTA drop aura
+  static final Color anchorGlow = const Color(
+      0xFF0B132B).withValues(alpha: 0.12); // Floating island drop aura
+
+  // Status & Utility Accents (Contextual Value Only)
+  static const Color amber = Color(
+      0xFFD97706); // Amber 600: Action required, needs attention
   static const Color amberLight = Color(0xFFFEF3C7); // Amber 100
-  static const Color amberDark = Color(0xFFB45309); // Amber 700: High-contrast progress bars
+  static const Color amberDark = Color(
+      0xFFB45309); // Amber 700: High-contrast progress bars
 
-  static const Color emerald = Color(0xFF059669); // Emerald 600: Tax-ready, audit verified
+  static const Color emerald = Color(
+      0xFF059669); // Emerald 600: Tax-ready, audit verified, cash savings
   static const Color emeraldLight = Color(0xFFECFDF5); // Emerald 50
 
-  static const Color crimson = Color(0xFFDC2626); // Red 600: Critical issues, duplicates
+  static const Color crimson = Color(
+      0xFFDC2626); // Red 600: Critical issues, duplicates
   static const Color crimsonLight = Color(0xFFFEF2F2); // Red 50
 
-  static const Color workBlue = Color(0xFF0F172A); // Points to primary Slate 900
-  static const Color workBlueLight = Color(0xFFF1F5F9);
+  static const Color workBlue = Color(
+      0xFF1E40AF); // Ultramarine Primary
+  static const Color workBlueLight = Color(0xFFEFF6FF);
+
+  // Dark Theme / HUD Surface Accents (Slate High-Contrast)
+  static const Color darkSurface = Color(0xFF1E293B); // Slate 800
+  static const Color darkBorder = Color(0xFF334155); // Slate 700
+  static const Color textSecondaryDark = Color(0xFF94A3B8); // Slate 400
 
   // Telemetry Ambient States
-  static const Color telemetryReady = Color(0xFF2563EB); // Blue 600: Armed and standing by
+  static const Color telemetryReady = Color(
+      0xFF2563EB); // Blue 600: Armed and standing by
   static const Color telemetryReadyLight = Color(0xFFEFF6FF); // Blue 50
-  static const Color telemetryLive = Color(0xFF059669); // Emerald 600: Live tracking
+  static const Color telemetryLive = Color(
+      0xFF059669); // Emerald 600: Live tracking
   static const Color telemetryLiveLight = Color(0xFFECFDF5);
 }
 
@@ -70,13 +101,29 @@ class AtoTaxRule {
 
   factory AtoTaxRule.fromJson(Map<String, dynamic> json) {
     return AtoTaxRule(
-      financialYear: (json['financialYear'] ?? json['financial_year'] ?? '2026-27') as String,
-      centsPerKmRate: ((json['centsPerKmRate'] ?? json['cents_per_km_rate'] ?? 0.91) as num).toDouble(),
-      centsPerKmMaxKm: ((json['centsPerKmMaxKm'] ?? json['cents_per_km_max_km'] ?? 5000.0) as num).toDouble(),
-      carDepreciationLimit: ((json['carDepreciationLimit'] ?? json['car_depreciation_limit'] ?? 69674.0) as num).toDouble(),
-      logbookMinWeeks: ((json['logbookMinWeeks'] ?? json['logbook_min_weeks'] ?? 12) as num).toInt(),
-      logbookValidityYears: ((json['logbookValidityYears'] ?? json['logbook_validity_years'] ?? 5) as num).toInt(),
-      legislativeRef: (json['legislativeRef'] ?? json['legislative_ref']) as String?,
+      financialYear: (json['financialYear'] ??
+          json['financial_year'] ??
+          '2026-27') as String,
+      centsPerKmRate:
+          ((json['centsPerKmRate'] ?? json['cents_per_km_rate'] ?? 0.91) as num)
+              .toDouble(),
+      centsPerKmMaxKm: ((json['centsPerKmMaxKm'] ??
+              json['cents_per_km_max_km'] ??
+              5000.0) as num)
+          .toDouble(),
+      carDepreciationLimit: ((json['carDepreciationLimit'] ??
+              json['car_depreciation_limit'] ??
+              69674.0) as num)
+          .toDouble(),
+      logbookMinWeeks:
+          ((json['logbookMinWeeks'] ?? json['logbook_min_weeks'] ?? 12) as num)
+              .toInt(),
+      logbookValidityYears: ((json['logbookValidityYears'] ??
+              json['logbook_validity_years'] ??
+              5) as num)
+          .toInt(),
+      legislativeRef:
+          (json['legislativeRef'] ?? json['legislative_ref']) as String?,
       sourceUrl: (json['sourceUrl'] ?? json['source_url']) as String?,
     );
   }
@@ -101,11 +148,20 @@ class AppConstants {
 
   // Supabase Cloud Vault Config (Project: KiloTax)
   static const String supabaseUrl = 'https://mwtxfdqcyalsohruzmps.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
-  static const String googleWebClientId = '186185970853-jfclnteqdk1isnbg6k7fhr1p8i638lf3.apps.googleusercontent.com';
-  static const String googleIosClientId = '186185970853-lonc1tc0iokhucjd046che8gq3q8mqj1.apps.googleusercontent.com';
-  static const String googleAndroidClientId = '186185970853-cg07rohjdv3jk14882pe8k0mu4cjbcpi.apps.googleusercontent.com';
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
+  static const String googleWebClientId =
+      '186185970853-jfclnteqdk1isnbg6k7fhr1p8i638lf3.apps.googleusercontent.com';
+  static const String googleIosClientId =
+      '186185970853-lonc1tc0iokhucjd046che8gq3q8mqj1.apps.googleusercontent.com';
+  static const String googleAndroidClientId =
+      '186185970853-cg07rohjdv3jk14882pe8k0mu4cjbcpi.apps.googleusercontent.com';
   static const String receiptStorageBucket = 'receipts';
+
+  // Legal & Compliance URLs (Public Hosted Portal)
+  static const String privacyPolicyUrl = 'https://methasmp.github.io/KiloTax/legal/#privacy';
+  static const String termsOfServiceUrl = 'https://methasmp.github.io/KiloTax/legal/#terms';
+  static const String supportUrl = 'https://methasmp.github.io/KiloTax/legal/#support';
 }
 
 /// Strict Typography Hierarchy locked from Product Architect & UX spec:
@@ -217,3 +273,45 @@ class AppTextStyles {
   );
 }
 
+class AppShadows {
+  // Layered Tactile Button Shadow with Ambient Glow
+  static List<BoxShadow> get buttonElevated => [
+    BoxShadow(
+      color: AppColors.brandGlow,
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+      spreadRadius: -2,
+    ),
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.05),
+      blurRadius: 4,
+      offset: const Offset(0, 2),
+    ),
+  ];
+
+  // Concentric Card Soft Elevation
+  static List<BoxShadow> get cardSoft => [
+    BoxShadow(
+      color: AppColors.deepNavy.withValues(alpha: 0.04),
+      blurRadius: 14,
+      offset: const Offset(0, 4),
+      spreadRadius: 0,
+    ),
+  ];
+
+  // Floating Island Tab Bar Shadow
+  static List<BoxShadow> get floatingNav => [
+    BoxShadow(
+      color: AppColors.anchorGlow,
+      blurRadius: 30,
+      offset: const Offset(0, 10),
+      spreadRadius: 0,
+    ),
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.04),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+      spreadRadius: -1,
+    ),
+  ];
+}

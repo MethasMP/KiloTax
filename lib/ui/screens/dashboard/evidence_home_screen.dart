@@ -10,7 +10,9 @@ import '../logbook/logbook_home_body.dart';
 /// Routes to dedicated [CpkHomeBody] or [LogbookHomeBody] based on vehicle tax strategy.
 /// Zero cross-contamination, 100% clean domain boundary.
 class EvidenceHomeScreen extends StatelessWidget {
-  const EvidenceHomeScreen({super.key});
+  final VoidCallback? onViewAll;
+
+  const EvidenceHomeScreen({super.key, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +23,8 @@ class EvidenceHomeScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: isLogbook
-            ? LogbookHomeBody(appState: appState)
-            : CpkHomeBody(appState: appState),
+            ? LogbookHomeBody(appState: appState, onViewAll: onViewAll)
+            : CpkHomeBody(appState: appState, onViewAll: onViewAll),
       ),
     );
   }

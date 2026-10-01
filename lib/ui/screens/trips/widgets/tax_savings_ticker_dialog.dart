@@ -45,8 +45,10 @@ class TaxSavingsTickerDialog extends StatelessWidget {
       final currentRunning = summary.totalRunningExpenses;
       final newTotalKm = summary.totalKm + tripDistanceKm;
       final newBusinessKm = summary.businessKm + tripDistanceKm;
-      final newPct = (newBusinessKm / (newTotalKm > 0 ? newTotalKm : 1.0)) * 100.0;
-      final newClaim = (currentRunning * (newPct / 100.0)) + summary.totalDirectDeductions;
+      final newPct =
+          (newBusinessKm / (newTotalKm > 0 ? newTotalKm : 1.0)) * 100.0;
+      final newClaim =
+          (currentRunning * (newPct / 100.0)) + summary.totalDirectDeductions;
       incremental = (newClaim - summary.logbookClaim).clamp(0.0, 9999.0);
       if (incremental <= 0.0) {
         // Baseline estimate if no expenses yet: default to statutory rate proxy
@@ -54,22 +56,30 @@ class TaxSavingsTickerDialog extends StatelessWidget {
       }
     } else {
       // CPK: min(dist, remaining cap) * rate
-      final remainingKm = (appState.activeTaxRule.centsPerKmMaxKm - summary.businessKm).clamp(0.0, appState.activeTaxRule.centsPerKmMaxKm);
-      final eligibleDist = tripDistanceKm > remainingKm ? remainingKm : tripDistanceKm;
+      final remainingKm =
+          (appState.activeTaxRule.centsPerKmMaxKm - summary.businessKm)
+              .clamp(0.0, appState.activeTaxRule.centsPerKmMaxKm);
+      final eligibleDist =
+          tripDistanceKm > remainingKm ? remainingKm : tripDistanceKm;
       incremental = eligibleDist * rate;
     }
 
-    final totalClaim = isLogbook ? summary.logbookClaim : summary.centsPerKmClaim;
+    final totalClaim =
+        isLogbook ? summary.logbookClaim : summary.centsPerKmClaim;
 
     String smartTip;
     if (bulkyToolsCarried) {
-      smartTip = 'Bulky tools exemption claimed (ITAA 1997 s 8-1). Home-to-work trip validated for ATO.';
+      smartTip =
+          'Bulky tools exemption claimed (ITAA 1997 s 8-1). Home-to-work trip validated for ATO.';
     } else if (!isLogbook && summary.businessKm + tripDistanceKm >= 4500) {
-      smartTip = 'You are nearing the 5,000 km statutory CPK cap. Consider switching to Logbook for unlimited claims.';
+      smartTip =
+          'You are nearing the 5,000 km statutory CPK cap. Consider switching to Logbook for unlimited claims.';
     } else if (isLogbook && summary.taxSavingsDiff > 200) {
-      smartTip = 'Logbook is currently saving you ${Formatters.currency(summary.taxSavingsDiff)} more than Cents-per-km.';
+      smartTip =
+          'Logbook is currently saving you ${Formatters.currency(summary.taxSavingsDiff)} more than Cents-per-km.';
     } else {
-      smartTip = 'Contemporaneous drive entry secured in your encrypted audit ledger.';
+      smartTip =
+          'Contemporaneous drive entry secured in your encrypted audit ledger.';
     }
 
     return showDialog(
@@ -108,7 +118,8 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                     color: AppColors.emeraldLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.check, color: AppColors.emerald, size: 22),
+                  child: const Icon(LucideIcons.check,
+                      color: AppColors.emerald, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -172,7 +183,8 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.emerald.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(12),
@@ -253,7 +265,8 @@ class TaxSavingsTickerDialog extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(LucideIcons.lightbulb, size: 16, color: AppColors.workBlue),
+                  const Icon(LucideIcons.lightbulb,
+                      size: 16, color: AppColors.workBlue),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -277,7 +290,8 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                 backgroundColor: AppColors.workBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
               onPressed: onDismiss ?? () => Navigator.of(context).pop(),

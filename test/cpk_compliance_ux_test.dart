@@ -40,7 +40,9 @@ void main() {
       );
     }
 
-    testWidgets('QuickCapture opens CpkTripEntryScreen for CPK vehicles on manual log', (tester) async {
+    testWidgets(
+        'QuickCapture opens CpkTripEntryScreen for CPK vehicles on manual log',
+        (tester) async {
       await tester.pumpWidget(wrap(
         Builder(
           builder: (context) => ElevatedButton(
@@ -69,7 +71,9 @@ void main() {
       expect(find.textContaining('Review Work Drive (CPK)'), findsOneWidget);
     });
 
-    testWidgets('QuickCapture opens LogbookTripEntryScreen for Logbook vehicles on manual log', (tester) async {
+    testWidgets(
+        'QuickCapture opens LogbookTripEntryScreen for Logbook vehicles on manual log',
+        (tester) async {
       appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
 
       await tester.pumpWidget(wrap(
@@ -100,7 +104,9 @@ void main() {
       expect(find.textContaining('Log Logbook Drive'), findsOneWidget);
     });
 
-    testWidgets('TripsLedgerTab renders exactly 1 clear CTA in Empty State and routes to CPK', (tester) async {
+    testWidgets(
+        'TripsLedgerTab renders exactly 1 clear CTA in Empty State and routes to CPK',
+        (tester) async {
       await tester.pumpWidget(wrap(TripsLedgerTab(appState: appState)));
 
       // In empty state: Clean view with elevated FloatingActionButton
@@ -113,11 +119,14 @@ void main() {
       expect(find.byType(CpkTripEntryScreen), findsOneWidget);
     });
 
-    testWidgets('TaxSummaryScreen displays CPK checklist items without penalising for no odometer', (tester) async {
+    testWidgets(
+        'TaxSummaryScreen displays CPK checklist items without penalising for no odometer',
+        (tester) async {
       await tester.pumpWidget(wrap(const TaxSummaryScreen()));
 
       // Should display CPK specific items
-      expect(find.text('Reasonable estimate basis established'), findsOneWidget);
+      expect(
+          find.text('Reasonable estimate basis established'), findsOneWidget);
       expect(find.text('Business trips substantiated'), findsOneWidget);
       expect(find.text('Odometer recorded'), findsNothing);
 
@@ -125,11 +134,13 @@ void main() {
       expect(find.text('Log Drive →'), findsOneWidget);
       expect(find.text('Awaiting Drives'), findsOneWidget);
 
-      // Readiness score should be exactly 50% (NASA Deterministic: 2 of 4 pillars complete - Vehicle 25% + Tax Method 25%)
+      // Readiness score should be exactly 50% (Deterministic: 2 of 4 pillars complete - Vehicle 25% + Tax Method 25%)
       expect(appState.taxReadinessScore, 50);
     });
 
-    testWidgets('ComplianceCenterScreen displays 50% Tax-Ready in setup phase with consistent status chips', (tester) async {
+    testWidgets(
+        'ComplianceCenterScreen displays 50% Tax-Ready in setup phase with consistent status chips',
+        (tester) async {
       await tester.pumpWidget(wrap(ComplianceCenterScreen(appState: appState)));
 
       expect(find.text('50% Tax-Ready'), findsOneWidget);
@@ -139,5 +150,3 @@ void main() {
     });
   });
 }
-
-

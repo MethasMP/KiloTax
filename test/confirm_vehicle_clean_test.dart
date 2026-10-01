@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Selecting popular vehicle renders clean card without year and without Model Year dropdown', (tester) async {
+  testWidgets(
+      'Selecting popular vehicle renders clean card without year and without Model Year dropdown',
+      (tester) async {
     final appState = AppState();
 
     await tester.pumpWidget(

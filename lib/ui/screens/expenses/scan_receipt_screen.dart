@@ -50,14 +50,15 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     setState(() => _isProcessing = true);
     ReceiptOcrResult? ocrResult;
     try {
-      final recognizer =
-          TextRecognizer(script: TextRecognitionScript.latin);
+      final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
       final recognized = await recognizer.processImage(
         InputImage.fromFilePath(imagePath),
       );
       await recognizer.close();
       ocrResult = _receiptIntelligence.analyseText(recognized.text);
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[ScanReceiptScreen] Warning analyzing receipt OCR: $e\n$stack');
       // Preserve the receipt image and require manual review if OCR extraction encounters errors.
     }
 
@@ -80,7 +81,8 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   Future<void> _scanReceipt() async {
     HapticFeedback.mediumImpact();
     try {
-      final imagePath = await _scanner.scanDocument(allowFallbackToCamera: true);
+      final imagePath =
+          await _scanner.scanDocument(allowFallbackToCamera: true);
 
       if (!mounted) return;
 
@@ -88,7 +90,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         HapticFeedback.heavyImpact();
         await _processScannedImage(imagePath);
       }
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[ScanReceiptScreen] Warning scanning receipt document: $e\n$stack');
       if (!mounted) return;
       _navigateToManual();
     }
@@ -104,7 +108,9 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         HapticFeedback.heavyImpact();
         await _processScannedImage(imagePath);
       }
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[ScanReceiptScreen] Warning picking receipt from gallery: $e\n$stack');
       if (!mounted) return;
       _navigateToManual();
     }

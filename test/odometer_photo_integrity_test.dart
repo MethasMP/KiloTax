@@ -19,7 +19,8 @@ void main() {
       appState.addVehicle(vehicle);
     });
 
-    test('Saves Day 1 start odometer photo with hash and verified timestamp', () async {
+    test('Saves Day 1 start odometer photo with hash and verified timestamp',
+        () async {
       final captureTime = DateTime(2026, 7, 1, 8, 30);
       final (success, error) = await appState.saveOdometerPhotoWithIntegrity(
         isStart: true,
@@ -30,12 +31,16 @@ void main() {
 
       expect(success, true);
       expect(error, isNull);
-      expect(appState.primaryVehicle?.startOdometerPhotoPath, '/photos/day1_odo.jpg');
-      expect(appState.primaryVehicle?.startOdometerImageHash, 'hash_day1_abc123');
+      expect(appState.primaryVehicle?.startOdometerPhotoPath,
+          '/photos/day1_odo.jpg');
+      expect(
+          appState.primaryVehicle?.startOdometerImageHash, 'hash_day1_abc123');
       expect(appState.primaryVehicle?.startOdometerVerifiedAt, captureTime);
     });
 
-    test('Rejects reusing identical photo hash for Day 84 (anti-fraud duplicate prevention)', () async {
+    test(
+        'Rejects reusing identical photo hash for Day 84 (anti-fraud duplicate prevention)',
+        () async {
       final day1Time = DateTime(2026, 7, 1, 8, 30);
       // Save Day 1
       await appState.saveOdometerPhotoWithIntegrity(
@@ -76,11 +81,14 @@ void main() {
 
       expect(success, true);
       expect(error, isNull);
-      expect(appState.primaryVehicle?.endOdometerPhotoPath, '/photos/day84_odo.jpg');
+      expect(appState.primaryVehicle?.endOdometerPhotoPath,
+          '/photos/day84_odo.jpg');
       expect(appState.primaryVehicle?.endOdometerImageHash, 'hash_day84_bbb');
     });
 
-    test('Home-to-work compliance validator produces unambiguous bulky equipment warning', () {
+    test(
+        'Home-to-work compliance validator produces unambiguous bulky equipment warning',
+        () {
       final (compliant, warning) = appState.validateHomeToWorkCompliance(
         origin: 'Home - 12 Elm Street',
         destination: 'Commercial Job Site',

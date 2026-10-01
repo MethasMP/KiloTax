@@ -9,6 +9,9 @@ class GeocodingService {
   static final http.Client _client = http.Client();
   static final Map<String, String> _cache = {};
 
+  /// Clears the in-memory geocoding cache (useful for testing and reset)
+  static void clearCache() => _cache.clear();
+
   /// Converts Latitude & Longitude to a concise, human-readable Australian address.
   /// Falls back gracefully to formatted coordinates if offline or unresolved.
   static Future<String> reverseGeocode(
@@ -16,7 +19,8 @@ class GeocodingService {
     double longitude, {
     http.Client? client,
   }) async {
-    final cacheKey = '${latitude.toStringAsFixed(3)},${longitude.toStringAsFixed(3)}';
+    final cacheKey =
+        '${latitude.toStringAsFixed(3)},${longitude.toStringAsFixed(3)}';
     if (_cache.containsKey(cacheKey)) {
       return _cache[cacheKey]!;
     }
@@ -74,7 +78,8 @@ class GeocodingService {
     }
 
     // Resilient fallback: Clean coordinate tag
-    final fallback = 'Location (${latitude.toStringAsFixed(3)}, ${longitude.toStringAsFixed(3)})';
+    final fallback =
+        'Location (${latitude.toStringAsFixed(3)}, ${longitude.toStringAsFixed(3)})';
     _cache[cacheKey] = fallback;
     return fallback;
   }
@@ -93,9 +98,13 @@ class GeocodingService {
     // QLD: North of 29°S, east of 138°E
     if (lat > -29.0 && lat < -9.0 && lng >= 138.0) return 'QLD';
     // TAS: South of 39.5°S
-    if (lat <= -39.5 && lat > -44.0 && lng >= 143.0 && lng <= 149.0) return 'TAS';
+    if (lat <= -39.5 && lat > -44.0 && lng >= 143.0 && lng <= 149.0) {
+      return 'TAS';
+    }
     // ACT: Pocket around Canberra (-35.1 to -35.9, 148.7 to 149.4)
-    if (lat <= -35.1 && lat >= -35.9 && lng >= 148.7 && lng <= 149.4) return 'ACT';
+    if (lat <= -35.1 && lat >= -35.9 && lng >= 148.7 && lng <= 149.4) {
+      return 'ACT';
+    }
     // VIC: South of Murray River (~-34.0 to -39.2, 140.9 to 150.0)
     if (lat <= -34.0 && lat > -39.5 && lng >= 140.9 && lng <= 150.0) {
       // Border differentiation between VIC and NSW

@@ -38,7 +38,8 @@ void main() {
       final assessment = TripConfidenceClassifier.assess(trip);
       expect(assessment.isHighConfidence, isFalse);
       expect(assessment.tier, ConfidenceTier.requiresUserDecision);
-      expect(assessment.decisionReason, contains('Weekend drive requires explicit trade confirmation'));
+      expect(assessment.decisionReason,
+          contains('Weekend drive requires explicit trade confirmation'));
     });
 
     test('Late night travel held for user confirmation', () {

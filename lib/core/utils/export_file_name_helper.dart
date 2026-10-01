@@ -18,7 +18,9 @@ class ExportFileNameHelper {
         .trim()
         .replaceAll(RegExp(r'[\s\-]+'), '_')
         .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
-    return cleaned.length > maxLength ? cleaned.substring(0, maxLength) : cleaned;
+    return cleaned.length > maxLength
+        ? cleaned.substring(0, maxLength)
+        : cleaned;
   }
 
   /// Sanitizes vehicle registration plate: uppercase alphanumeric only.
@@ -41,7 +43,8 @@ class ExportFileNameHelper {
         : 'TradieClient';
     final cleanRego =
         sanitizeRego(rego).isNotEmpty ? sanitizeRego(rego) : 'VEHICLE';
-    final cleanExt = extension.startsWith('.') ? extension.substring(1) : extension;
+    final cleanExt =
+        extension.startsWith('.') ? extension.substring(1) : extension;
     final cleanFy = fy.startsWith('FY') ? fy : 'FY$fy';
 
     return 'KiloTax_${method}_${cleanFy}_${cleanName}_${cleanRego}_$documentType.$cleanExt';

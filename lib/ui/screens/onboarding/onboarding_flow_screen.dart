@@ -5,10 +5,13 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
-import '../auth/sign_in_screen.dart';
+import '../../../services/tracking/location_permission_service.dart';
+import '../../widgets/location_escalation_dialog.dart';
 import '../home/main_scaffold_screen.dart';
 import '../vehicle/vehicle_setup_flow.dart';
 import 'onboarding_slides_screen.dart';
+import 'widgets/value_first_gate_screen.dart';
+import '../../widgets/tactile_primary_button.dart';
 
 /// Clean Lifecycle Onboarding Orchestrator:
 /// - Phase 0: 3 Value Proposition Slides (with Skip option) -> Educates on benefits
@@ -42,7 +45,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   void dispose() {
     try {
       context.read<AppState>().removeListener(_onAppStateChanged);
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[OnboardingFlow] Warning removing AppState listener: $e\n$stack');
+    }
     super.dispose();
   }
 
@@ -55,11 +61,15 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           setState(() => _step = 2);
         }
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[OnboardingFlow] Warning during AppState change handling: $e\n$stack');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // STEP 0: 3 Value Proposition Slides
     if (_step == 0) {
       return OnboardingSlidesScreen(
         onComplete: () {
@@ -69,35 +79,107 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         },
       );
     }
-    if (_step == 1) {
-      return SignInScreen(
-        onAuthSuccess: () {
-          final appState = context.read<AppState>();
-          if (appState.hasVehicle) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MainScaffoldScreen()),
-            );
-          } else {
-            setState(() => _step = 2);
-          }
-        },
-      );
-    }
 
-    // STEP 2: Vehicle Setup is fully decoupled into VehicleSetupFlow
-    if (_step == 2) {
+    // STEP 1: Value-First: Choose Vehicle & Claim Mode (Hilux, Ranger, etc.)
+    if (_step == 1) {
       return VehicleSetupFlow(
         onVehicleCreated: (vehicle) {
           final appState = context.read<AppState>();
           appState.addVehicle(vehicle);
-          setState(() => _step = 3);
+          // If already authenticated, proceed directly to GPS screen; otherwise present Value-First Soft Gate
+          if (appState.isAuthenticated) {
+            setState(() => _step = 3);
+          } else {
+            setState(() => _step = 2);
+          }
         },
-        onCancel: () => setState(() => _step = 1),
+        onCancel: () => setState(() => _step = 0),
       );
     }
 
-    // STEP 3: Explain Context & Enable Automatic Trip Tracking (Spec Items 10 & 11)
+    // STEP 2: Value-First Soft Gate (Presents $4,550 value & Apple/Google/Guest choice)
+    if (_step == 2) {
+      final appState = context.watch<AppState>();
+      final vehicle = appState.primaryVehicle;
+      if (vehicle == null) {
+        return VehicleSetupFlow(
+          onVehicleCreated: (v) {
+            appState.addVehicle(v);
+            setState(() => _step = 2);
+          },
+        );
+      }
+      return ValueFirstGateScreen(
+        vehicle: vehicle,
+        onContinue: () {
+          setState(() => _step = 3);
+        },
+      );
+    }
+
+    // STEP 3: Explain Context & Enable Automatic Trip Tracking
     return _buildGpsPermissionAndReadyScreen();
+  }
+
+  bool _isRequestingPermission = false;
+
+  Future<void> _handleEnableTracking() async {
+    HapticFeedback.heavyImpact();
+    setState(() => _isRequestingPermission = true);
+
+    final appState = context.read<AppState>();
+    final vehicle = appState.primaryVehicle;
+    final permissionService = LocationPermissionService();
+    final status = await permissionService.requestForegroundPermission();
+
+    if (!mounted) return;
+    setState(() => _isRequestingPermission = false);
+
+    if (status == AppLocationPermissionStatus.grantedForeground ||
+        status == AppLocationPermissionStatus.grantedBackground) {
+      if (status == AppLocationPermissionStatus.grantedForeground &&
+          vehicle?.bluetoothDeviceName != null &&
+          vehicle!.bluetoothDeviceName!.isNotEmpty &&
+          mounted) {
+        await LocationEscalationDialog.show(
+          context,
+          onDismissManualMode: () {
+            if (mounted) _goToMainScreen();
+          },
+          onGranted: () {
+            if (mounted) _goToMainScreen();
+          },
+        );
+      } else {
+        _goToMainScreen();
+      }
+    } else if (status == AppLocationPermissionStatus.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.deepNavy,
+            content: const Text(
+              'Location permission blocked. Enable in Settings for GPS tracking.',
+              style: TextStyle(color: Colors.white),
+            ),
+            action: SnackBarAction(
+              label: 'Settings',
+              textColor: AppColors.emerald,
+              onPressed: () => permissionService.openAppSettings(),
+            ),
+          ),
+        );
+        _goToMainScreen();
+      }
+    } else {
+      _goToMainScreen();
+    }
+  }
+
+  void _goToMainScreen() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainScaffoldScreen()),
+    );
   }
 
   Widget _buildGpsPermissionAndReadyScreen() {
@@ -108,37 +190,93 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
+              // Japanese Monozukuri: Animated Dual-Ring Radar Sensor Aura
               Center(
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.workBlueLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.workBlue.withValues(alpha: 0.3), width: 2),
-                  ),
-                  child: const Icon(LucideIcons.navigation, color: AppColors.workBlue, size: 44),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                      ),
+                    ),
+                    Container(
+                      width: 86,
+                      height: 86,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x102563EB),
+                            blurRadius: 18,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          LucideIcons.navigation,
+                          color: Color(0xFF2563EB),
+                          size: 38,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          LucideIcons.sparkles,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
               const Text(
                 'Automatically detect\nyour work trips',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.ink, height: 1.25),
+                style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink,
+                    letterSpacing: -0.6,
+                    height: 1.22),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               const Text(
-                'We use background location to automatically detect when you drive and log your trips for ATO tax substantiation.',
+                'We use smart background location to log drives automatically for ATO tax substantiation whenever you travel.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.muted, height: 1.45),
+                style: TextStyle(
+                    fontSize: 14, color: AppColors.muted, height: 1.45),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Summary card of the setup done
               Container(
@@ -147,34 +285,118 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x04000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        const Icon(LucideIcons.car, size: 18, color: AppColors.deepNavy),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(LucideIcons.car,
+                              size: 16, color: AppColors.deepNavy),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             vehicle?.displayName ?? 'Your Vehicle',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.ink),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5,
+                                color: AppColors.ink),
                           ),
                         ),
-                        const Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 18),
+                        const Icon(Icons.check_circle_rounded,
+                            color: AppColors.emerald, size: 18),
                       ],
                     ),
                     const Divider(height: 18, color: AppColors.border),
                     Row(
                       children: [
-                        Icon(isLogbook ? LucideIcons.bookOpen : LucideIcons.gauge, size: 18, color: AppColors.emerald),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                              isLogbook
+                                  ? LucideIcons.bookOpen
+                                  : LucideIcons.gauge,
+                              size: 16,
+                              color: AppColors.emerald),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            isLogbook ? 'Logbook Method (12-Week Active)' : 'Cents per kilometre (Up to 5,000 km)',
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
+                            isLogbook
+                                ? 'Logbook Method (12-Week Active)'
+                                : 'Cents per kilometre (Up to 5,000 km)',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: AppColors.ink),
                           ),
                         ),
-                        const Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 18),
+                        const Icon(Icons.check_circle_rounded,
+                            color: AppColors.emerald, size: 18),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Trust & Reassurance Badges (Battery + Privacy Kodawari Guarantee)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(LucideIcons.batteryCharging,
+                            size: 13, color: Color(0xFF059669)),
+                        SizedBox(width: 5),
+                        Text(
+                          'Battery-Friendly Sleep',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
+                    Row(
+                      children: [
+                        Icon(LucideIcons.lock,
+                            size: 13, color: Color(0xFF2563EB)),
+                        SizedBox(width: 5),
+                        Text(
+                          'Encrypted ATO Trail',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -182,36 +404,30 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               ),
               const Spacer(),
 
-              // Primary Action: Enable automatic tracking
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.deepNavy,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                icon: const Icon(LucideIcons.radio, size: 20),
-                label: const Text('Enable Automatic Tracking', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                onPressed: () {
-                  HapticFeedback.heavyImpact();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const MainScaffoldScreen()),
-                  );
-                },
+              // Primary Action: Enable automatic tracking (High-End Tactile Double-Bezel)
+              TactilePrimaryButton(
+                label: 'Enable Automatic Tracking',
+                leadingIcon: LucideIcons.radio,
+                isLoading: _isRequestingPermission,
+                onPressed: _handleEnableTracking,
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const MainScaffoldScreen()),
-                  );
-                },
-                child: const Text('Skip for now (Manual tracking)', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+                onPressed: _isRequestingPermission
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        _goToMainScreen();
+                      },
+                child: const Text('Skip for now (Manual tracking)',
+                    style: TextStyle(
+                        color: AppColors.muted, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 8),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

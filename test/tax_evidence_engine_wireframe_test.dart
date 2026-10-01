@@ -7,7 +7,8 @@ import 'package:kilotax/services/migration/csv_importer_service.dart';
 import 'package:kilotax/state/app_state.dart';
 
 void main() {
-  group('KiloTax Wireframe & Architecture Verification (21 Specifications)', () {
+  group('KiloTax Wireframe & Architecture Verification (21 Specifications)',
+      () {
     test('Spec #2: Cents-per-km 5,000 km statutory cap & 91c rate', () {
       expect(AppConstants.activeTaxRule.financialYear, equals('2026-27'));
       expect(AppConstants.activeTaxRule.centsPerKmRate, equals(0.91));
@@ -15,7 +16,9 @@ void main() {
       expect(AppConstants.activeTaxRule.maxCentsPerKmClaim, equals(4550.0));
     });
 
-    test('Spec #3 & #9: Car Running Costs are separated from General Business Costs', () {
+    test(
+        'Spec #3 & #9: Car Running Costs are separated from General Business Costs',
+        () {
       expect(ExpenseCategory.fuel.isCarExpense, isTrue);
       expect(ExpenseCategory.maintenanceTyres.isCarExpense, isTrue);
       expect(ExpenseCategory.insurance.isCarExpense, isTrue);
@@ -24,10 +27,13 @@ void main() {
       expect(ExpenseCategory.toolsMaterials.isCarExpense, isFalse);
       expect(ExpenseCategory.tollsParking.isCarExpense, isFalse);
       expect(ExpenseCategory.otherBusiness.isCarExpense, isFalse);
-      expect(ExpenseCategory.toolsMaterials.isDirectlyDeductibleByDefault, isTrue);
+      expect(
+          ExpenseCategory.toolsMaterials.isDirectlyDeductibleByDefault, isTrue);
     });
 
-    test('Spec #4 & #5: Logbook 12-week period activation & Odometer initialization', () {
+    test(
+        'Spec #4 & #5: Logbook 12-week period activation & Odometer initialization',
+        () {
       final appState = AppState();
       final vehicle = Vehicle(
         id: 'v1',
@@ -51,7 +57,9 @@ void main() {
       expect(appState.currentLogbookWeek, equals(1));
     });
 
-    test('Spec #6, #7, #8: 1-Tap Quick Trip Resolve updates missing compliance count', () {
+    test(
+        'Spec #6, #7, #8: 1-Tap Quick Trip Resolve updates missing compliance count',
+        () {
       final appState = AppState();
       final tripWithNoPurpose = Trip(
         id: 't_unresolved',
@@ -109,7 +117,9 @@ void main() {
       expect(appState.vehicles[1].taxMethod, equals(TaxMethod.centsPerKm));
     });
 
-    test('Spec #19: Migration Engine parses Driversnote/CSV & classifies records', () {
+    test(
+        'Spec #19: Migration Engine parses Driversnote/CSV & classifies records',
+        () {
       const csv = '''
 Date,DistanceKm,Purpose,Type,From,To
 2026-08-01,34.2,Site visit to client,Business,42 Victoria Rd,18 King St
@@ -127,7 +137,8 @@ Date,DistanceKm,Purpose,Type,From,To
       expect(result.autoMatched, equals(3));
       expect(result.needsAttention, equals(1));
       expect(result.matchRate, equals(75.0));
-      expect(result.importedTrips[2].classification, equals(TripClassification.personal));
+      expect(result.importedTrips[2].classification,
+          equals(TripClassification.personal));
       expect(result.importedTrips[0].distanceKm, equals(34.2));
     });
   });

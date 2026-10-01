@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../../data/models/vehicle.dart';
 
 /// Normalized Vehicle Lookup Model
@@ -51,7 +52,9 @@ class VehicleLookupResult {
       vehicleType = VehicleType.van;
     } else if (typeStr == 'ute') {
       vehicleType = VehicleType.ute;
-    } else if (typeStr == 'suv' || model.toLowerCase().contains('model y') || variant.toLowerCase().contains('suv')) {
+    } else if (typeStr == 'suv' ||
+        model.toLowerCase().contains('model y') ||
+        variant.toLowerCase().contains('suv')) {
       vehicleType = VehicleType.suv;
     } else if (typeStr == 'truck') {
       vehicleType = VehicleType.truck;
@@ -119,7 +122,8 @@ class VehicleLookupService {
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 4);
       final request = await client.getUrl(Uri.parse(primaryUrl));
-      request.headers.set('User-Agent', 'KiloTax-ATO/1.0 (Privacy-First Client)');
+      request.headers
+          .set('User-Agent', 'KiloTax-ATO/1.0 (Privacy-First Client)');
       final response = await request.close();
 
       if (response.statusCode == 200) {
@@ -128,13 +132,15 @@ class VehicleLookupService {
         final List list = jsonMap['vehicles'] as List? ?? [];
 
         _cachedVehicles = list
-            .map((item) => VehicleLookupResult.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                VehicleLookupResult.fromJson(item as Map<String, dynamic>))
             .toList();
 
         return _cachedVehicles!;
       }
-    } catch (_) {
-      // Graceful offline fallback
+    } catch (e, stack) {
+      debugPrint(
+          '[VehicleLookup] Warning querying remote vehicle catalog: $e\n$stack');
     } finally {
       _isLoading = false;
     }
@@ -194,7 +200,8 @@ class VehicleLookupService {
     final tokens = q.split(' ').where((t) => t.isNotEmpty).toList();
 
     return list.where((v) {
-      final target = '${v.make} ${v.model} ${v.variant} ${v.engineCapacity}'.toLowerCase();
+      final target =
+          '${v.make} ${v.model} ${v.variant} ${v.engineCapacity}'.toLowerCase();
       // All search tokens must match target string
       return tokens.every((token) => target.contains(token));
     }).toList();

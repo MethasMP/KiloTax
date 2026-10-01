@@ -9,7 +9,8 @@ import 'package:kilotax/state/app_state.dart';
 
 void main() {
   group('KiloTax Double-Claim Guard & 12-Week Compliance Tests', () {
-    test('AtoTaxRule versioning correctly provides FY2026-27 statutory limits', () {
+    test('AtoTaxRule versioning correctly provides FY2026-27 statutory limits',
+        () {
       expect(AppConstants.activeTaxRule.financialYear, equals('2026-27'));
       expect(AppConstants.activeTaxRule.centsPerKmRate, equals(0.91));
       expect(AppConstants.activeTaxRule.centsPerKmMaxKm, equals(5000.0));
@@ -17,7 +18,9 @@ void main() {
       expect(AppConstants.activeTaxRule.carDepreciationLimit, equals(69674.0));
     });
 
-    test('12-Week Logbook Compliance tracks weeks and identifies missing records', () {
+    test(
+        '12-Week Logbook Compliance tracks weeks and identifies missing records',
+        () {
       final appState = AppState();
       final vehicle = Vehicle(
         id: 'v1',
@@ -69,7 +72,9 @@ void main() {
       expect(appState.missingComplianceTrips.isEmpty, isTrue);
     });
 
-    test('Double-Claim Protection logic maintains clean distinction between Cents/KM and Logbook', () {
+    test(
+        'Double-Claim Protection logic maintains clean distinction between Cents/KM and Logbook',
+        () {
       final appState = AppState();
       final vehicle = Vehicle(
         id: 'v_cents',
@@ -88,7 +93,9 @@ void main() {
       expect(appState.primaryVehicle?.taxMethod, equals(TaxMethod.logbook));
     });
 
-    test('Section 9 Expense Architecture: Tools & Materials claim 100% directly regardless of Logbook %', () {
+    test(
+        'Section 9 Expense Architecture: Tools & Materials claim 100% directly regardless of Logbook %',
+        () {
       final trip = Trip(
         id: 'trip_1',
         vehicleId: 'v1',
@@ -139,7 +146,9 @@ void main() {
       expect(summary.logbookClaim, equals(350.0));
     });
 
-    test('SyncEngine Data Pipeline: Generates SHA-256 dedup keys and filters personal trips', () {
+    test(
+        'SyncEngine Data Pipeline: Generates SHA-256 dedup keys and filters personal trips',
+        () {
       final trip = Trip(
         id: 'trip_work',
         vehicleId: 'v1',

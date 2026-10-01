@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
-  test('Executes ReceiptIntelligenceService on actual user uploaded Ampol receipt', () {
+  test(
+      'Executes ReceiptIntelligenceService on actual user uploaded Ampol receipt',
+      () {
     const ocrText = '''
 Ampol Retail Pty Ltd
 T/As Ampol Foodary Sydney
@@ -59,12 +61,16 @@ ampol feedback@ampo | .com.au
     print('======================================================');
     print('Merchant Name   : ${result.merchant}');
     print('ABN Number      : ${result.abn}');
-    print('Date Incurred   : ${result.date.toIso8601String().split('T').first}');
+    print(
+        'Date Incurred   : ${result.date.toIso8601String().split('T').first}');
     print('Total Amount    : \$${result.amount.toStringAsFixed(2)}');
     print('GST Extracted   : \$${result.gstAmount?.toStringAsFixed(2)}');
-    print('Tax Category    : ${result.category.displayName} (${result.category.name})');
-    print('Claim Basket    : ${result.category.isDirectlyDeductibleByDefault ? "Direct Work Deduction (100%)" : "Car Running Cost (Logbook Scaled)"}');
-    print('Confidence Score: ${(result.confidence * 100).toStringAsFixed(1)}% (isHighConfidence: ${result.isHighConfidence})');
+    print(
+        'Tax Category    : ${result.category.displayName} (${result.category.name})');
+    print(
+        'Claim Basket    : ${result.category.isDirectlyDeductibleByDefault ? "Direct Work Deduction (100%)" : "Car Running Cost (Logbook Scaled)"}');
+    print(
+        'Confidence Score: ${(result.confidence * 100).toStringAsFixed(1)}% (isHighConfidence: ${result.isHighConfidence})');
     print('------------------------------------------------------');
     print('Settlement & Evidence Chain:');
     for (final ev in result.evidence) {

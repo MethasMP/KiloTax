@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../data/models/trip.dart';
+import '../../../../services/tracking/geocoding_service.dart';
 import '../../../../services/tracking/hardware_bluetooth_service.dart';
 import '../../../../state/app_state.dart';
 import '../../trips/trip_detection_screen.dart';
 import '../../trips/trip_live_tracking_screen.dart';
+import 'rescued_trip_banner.dart';
 
-/// Frontier Ambient Telemetry & Dynamic Drive Capsule
-/// Inspired by Apple Dynamic Island & Tesla in-car telemetry.
+/// Ambient Telemetry & Dynamic Drive Capsule
 /// Provides subconscious peace of mind to tradies:
 /// 1. Armed State: Shows Bluetooth link & Auto-Detect readiness with subtle glowing beacon.
 /// 2. Driving State: High-visibility live tracker showing real-time km and tax deduction ($) ticker.
@@ -36,40 +38,88 @@ class HomeTelemetryCapsule extends StatelessWidget {
         final isDriving = appState.isDriving;
         final vehicle = appState.primaryVehicle;
         final isBtLinked = appState.isBluetoothLinked;
+        final orphanedTrip = appState.orphanedInFlightTrip;
 
         final String? btName = vehicle?.bluetoothDeviceName?.isNotEmpty == true
             ? vehicle!.bluetoothDeviceName!
             : null;
 
+        Widget capsule;
         if (isDriving) {
-          return _buildDrivingState(context);
+          capsule = _buildDrivingState(context);
         } else {
-          return _buildArmedState(context, btName, isBtLinked);
+          capsule = _buildArmedState(context, btName, isBtLinked);
         }
+
+        if (orphanedTrip != null) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RescuedTripBanner(
+                appState: appState,
+                orphanedTrip: orphanedTrip,
+              ),
+              capsule,
+            ],
+          );
+        }
+
+        return capsule;
       },
     );
   }
 
-  void _onStopDrive(BuildContext context) {
+  void _onStopDrive(BuildContext context) async {
     HapticFeedback.heavyImpact();
-    final finalDistance = double.parse(appState.activeDriveDistanceKm.toStringAsFixed(2));
+    final finalDistance =
+        double.parse(appState.activeDriveDistanceKm.toStringAsFixed(2));
     final lastOdo = appState.currentOdometer;
+
+    String? origin = appState.activeDriveOriginAddress;
+    String? destination;
+
+    try {
+      if (origin == null && appState.activeDriveStartPosition != null) {
+        origin = await GeocodingService.reverseGeocode(
+          appState.activeDriveStartPosition!.latitude,
+          appState.activeDriveStartPosition!.longitude,
+        );
+      }
+      if (appState.activeDriveLastPosition != null) {
+        destination = await GeocodingService.reverseGeocode(
+          appState.activeDriveLastPosition!.latitude,
+          appState.activeDriveLastPosition!.longitude,
+        );
+      } else {
+        final pos = await Geolocator.getLastKnownPosition();
+        if (pos != null) {
+          destination = await GeocodingService.reverseGeocode(
+            pos.latitude,
+            pos.longitude,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[HomeTelemetryCapsule] Geocoding reverse resolution: $e');
+    }
 
     final detectedTrip = Trip(
       id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
       vehicleId: appState.primaryVehicle?.id ?? 'default_vehicle',
       distanceKm: finalDistance > 0 ? finalDistance : 0.1,
       date: DateTime.now(),
-      purpose: 'Client / Job',
+      purpose: '',
       startOdometer: lastOdo,
       endOdometer: lastOdo + (finalDistance > 0 ? finalDistance : 0.1),
-      originAddress: 'Current Location',
-      destinationAddress: 'Destination Site',
+      originAddress: origin,
+      destinationAddress: destination,
     );
 
     appState.endLiveDrive();
 
-    TripDetectionScreen.show(context, appState, trip: detectedTrip);
+    if (context.mounted) {
+      TripDetectionScreen.show(context, appState, trip: detectedTrip);
+    }
   }
 
   /// 1. Active Driving State: Spotify-Inspired Telemetry Mini-Player (降维打击)
@@ -125,7 +175,8 @@ class HomeTelemetryCapsule extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1.5),
                             decoration: BoxDecoration(
                               color: AppColors.emeraldLight,
                               borderRadius: BorderRadius.circular(6),
@@ -162,7 +213,8 @@ class HomeTelemetryCapsule extends StatelessWidget {
                   onTap: () => _onStopDrive(context),
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(8),
@@ -171,7 +223,8 @@ class HomeTelemetryCapsule extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.square, size: 11, color: AppColors.crimson),
+                        Icon(LucideIcons.square,
+                            size: 11, color: AppColors.crimson),
                         SizedBox(width: 4),
                         Text(
                           'Stop',
@@ -214,64 +267,78 @@ class HomeTelemetryCapsule extends StatelessWidget {
   }
 
   /// 2. Armed & Ready State: Sun Tzu Dynamic Ergonomics (Unconfigured Prompt vs Ambient Peace-of-Mind)
-  Widget _buildArmedState(BuildContext context, String? btName, bool isBtLinked) {
+  Widget _buildArmedState(
+      BuildContext context, String? btName, bool isBtLinked) {
     final hasBtConfigured = btName != null && btName.isNotEmpty;
 
-    // State A: Unconfigured Bluetooth (One-time Setup Prompt)
+    // State A: Unconfigured Bluetooth (One-time Setup Prompt - Sapphire Tint Cohesion)
     if (!hasBtConfigured) {
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFDBEAFE), // Soft Sapphire rim
+            width: 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _showBluetoothPickerSheet(context),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                      color: const Color(0xFFEFF6FF), // Ice Blue Tint
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFFBFDBFE),
+                        width: 0.8,
+                      ),
                     ),
                     child: const Icon(
                       LucideIcons.bluetooth,
-                      size: 16,
-                      color: Color(0xFF2563EB),
+                      size: 17,
+                      color: Color(0xFF2563EB), // Electric Blue
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
+                  const SizedBox(width: 12),
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Pair Vehicle Bluetooth',
+                        Text(
+                          'Auto-Track Trips',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.deepNavy,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'Auto-log drives in background',
+                        SizedBox(height: 1.5),
+                        Text(
+                          "Connect to your car's Bluetooth",
                           style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.muted,
                             letterSpacing: -0.1,
                           ),
@@ -282,21 +349,24 @@ class HomeTelemetryCapsule extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.deepNavy,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Pair Now',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.1,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'Set up',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E40AF), // Royal Navy CTA
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 2),
+                      Icon(
+                        LucideIcons.chevronRight,
+                        size: 14,
+                        color: Color(0xFF3B82F6), // Electric Sapphire Chevron
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -306,7 +376,7 @@ class HomeTelemetryCapsule extends StatelessWidget {
       );
     }
 
-    // State B: Configured & Armed (Ultra-clean, zero button clutter, pure ambient confidence)
+    // State B: Configured (Reflect real linked state vs standby/manual)
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -330,20 +400,22 @@ class HomeTelemetryCapsule extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                // Glowing Emerald Armed Beacon
+                // Status Beacon (Emerald glowing if linked, Amber if disconnected)
                 Container(
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.emerald,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.emerald.withValues(alpha: 0.5),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    color: isBtLinked ? AppColors.emerald : AppColors.amber,
+                    boxShadow: isBtLinked
+                        ? [
+                            BoxShadow(
+                              color: AppColors.emerald.withValues(alpha: 0.5),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -352,9 +424,11 @@ class HomeTelemetryCapsule extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      const Text(
-                        'Auto-Track Armed',
-                        style: TextStyle(
+                      Text(
+                        isBtLinked
+                            ? 'Auto-Track Armed'
+                            : 'Bluetooth Disconnected',
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: AppColors.deepNavy,
@@ -373,7 +447,9 @@ class HomeTelemetryCapsule extends StatelessWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Linked to $btName',
+                          isBtLinked
+                              ? 'Linked to $btName'
+                              : '$btName not in range • Tap to start',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -389,10 +465,10 @@ class HomeTelemetryCapsule extends StatelessWidget {
                 ),
 
                 const SizedBox(width: 8),
-                const Icon(
-                  LucideIcons.bluetooth,
+                Icon(
+                  isBtLinked ? LucideIcons.bluetooth : LucideIcons.bluetoothOff,
                   size: 13,
-                  color: AppColors.emerald,
+                  color: isBtLinked ? AppColors.emerald : AppColors.muted,
                 ),
               ],
             ),
@@ -424,10 +500,12 @@ class _HardwareBluetoothModalSheet extends StatefulWidget {
   const _HardwareBluetoothModalSheet({required this.appState});
 
   @override
-  State<_HardwareBluetoothModalSheet> createState() => _HardwareBluetoothModalSheetState();
+  State<_HardwareBluetoothModalSheet> createState() =>
+      _HardwareBluetoothModalSheetState();
 }
 
-class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalSheet> {
+class _HardwareBluetoothModalSheetState
+    extends State<_HardwareBluetoothModalSheet> {
   final HardwareBluetoothService _bluetoothService = HardwareBluetoothService();
 
   List<HardwareBluetoothDevice> _devices = [];
@@ -523,7 +601,8 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                       color: AppColors.workBlueLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(LucideIcons.bluetooth, color: AppColors.workBlue, size: 20),
+                    child: const Icon(LucideIcons.bluetooth,
+                        color: AppColors.workBlue, size: 20),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -532,11 +611,15 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                       children: [
                         Text(
                           'Hardware Bluetooth Link',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.deepNavy),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.deepNavy),
                         ),
                         Text(
                           'Detects in-car Bluetooth, CarPlay & BLE devices',
-                          style: TextStyle(fontSize: 12, color: AppColors.muted),
+                          style:
+                              TextStyle(fontSize: 12, color: AppColors.muted),
                         ),
                       ],
                     ),
@@ -546,9 +629,11 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.workBlue),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.workBlue),
                           )
-                        : const Icon(LucideIcons.refreshCw, size: 18, color: AppColors.workBlue),
+                        : const Icon(LucideIcons.refreshCw,
+                            size: 18, color: AppColors.workBlue),
                     onPressed: _isScanning ? null : _startScan,
                     tooltip: 'Rescan Bluetooth',
                   ),
@@ -573,37 +658,52 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.workBlueLight : const Color(0xFFF8FAFC),
+                      color: isSelected
+                          ? AppColors.workBlueLight
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.workBlue : AppColors.border,
+                        color:
+                            isSelected ? AppColors.workBlue : AppColors.border,
                       ),
                     ),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 2),
                       leading: Icon(
-                        d.isAudioRoute ? LucideIcons.speaker : LucideIcons.bluetooth,
+                        d.isAudioRoute
+                            ? LucideIcons.speaker
+                            : LucideIcons.bluetooth,
                         size: 18,
-                        color: isSelected ? AppColors.workBlue : AppColors.deepNavy,
+                        color: isSelected
+                            ? AppColors.workBlue
+                            : AppColors.deepNavy,
                       ),
                       title: Text(
                         d.name,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected ? AppColors.workBlue : AppColors.ink,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color:
+                              isSelected ? AppColors.workBlue : AppColors.ink,
                         ),
                       ),
                       subtitle: Text(
-                        d.isAudioRoute ? 'Active Connected Audio Route' : 'Bluetooth Low Energy Hardware',
+                        d.isAudioRoute
+                            ? 'Active Connected Audio Route'
+                            : 'Bluetooth Low Energy Hardware',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isSelected ? AppColors.workBlue : AppColors.muted,
+                          color:
+                              isSelected ? AppColors.workBlue : AppColors.muted,
                         ),
                       ),
                       trailing: isSelected
-                          ? const Icon(LucideIcons.checkCircle2, size: 18, color: AppColors.workBlue)
-                          : const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.muted),
+                          ? const Icon(LucideIcons.checkCircle2,
+                              size: 18, color: AppColors.workBlue)
+                          : const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 12, color: AppColors.muted),
                       onTap: () => _selectDevice(d.name),
                     ),
                   );
@@ -612,7 +712,8 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
               ] else ...[
                 // Empty state when scanning or no hardware in range
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
@@ -621,13 +722,18 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                   child: Column(
                     children: [
                       Icon(
-                        _isScanning ? LucideIcons.radar : LucideIcons.bluetoothOff,
+                        _isScanning
+                            ? LucideIcons.radar
+                            : LucideIcons.bluetoothOff,
                         size: 28,
-                        color: _isScanning ? AppColors.workBlue : AppColors.muted,
+                        color:
+                            _isScanning ? AppColors.workBlue : AppColors.muted,
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        _isScanning ? 'Scanning for Car Bluetooth & Audio...' : 'No Bluetooth Devices Found Nearby',
+                        _isScanning
+                            ? 'Scanning for Car Bluetooth & Audio...'
+                            : 'No Bluetooth Devices Found Nearby',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -640,7 +746,8 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                             ? 'Turn on your vehicle ignition or audio system'
                             : 'Ensure Bluetooth is enabled in your device Settings',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
+                        style: const TextStyle(
+                            fontSize: 11.5, color: AppColors.muted),
                       ),
                     ],
                   ),
@@ -656,10 +763,12 @@ class _HardwareBluetoothModalSheetState extends State<_HardwareBluetoothModalShe
                     widget.appState.updatePrimaryVehicleBluetoothDevice(null);
                     Navigator.of(context).pop();
                   },
-                  icon: const Icon(LucideIcons.unlink, size: 16, color: AppColors.crimson),
+                  icon: const Icon(LucideIcons.unlink,
+                      size: 16, color: AppColors.crimson),
                   label: const Text(
                     'Disconnect Bluetooth',
-                    style: TextStyle(color: AppColors.crimson, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: AppColors.crimson, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -680,7 +789,8 @@ class _EqualizerBars extends StatefulWidget {
   State<_EqualizerBars> createState() => _EqualizerBarsState();
 }
 
-class _EqualizerBarsState extends State<_EqualizerBars> with SingleTickerProviderStateMixin {
+class _EqualizerBarsState extends State<_EqualizerBars>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

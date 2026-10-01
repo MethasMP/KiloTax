@@ -1,22 +1,33 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
 import '../data/models/vehicle.dart';
 import '../data/models/trip.dart';
+import '../data/dev_seed.dart';
 import '../data/models/vehicle_expense.dart';
 import '../data/models/tax_summary.dart';
 import '../data/models/audit_evidence.dart';
+import '../data/models/in_flight_trip.dart';
 import '../services/engine/evidence_engine.dart';
 import '../services/engine/tax_calculator_service.dart';
 import '../services/evidence/evidence_vault_service.dart';
 import '../services/sync/sync_engine_service.dart';
 import '../services/storage/local_storage_service.dart';
+import '../services/storage/receipt_image_optimization_service.dart';
 import '../services/auth/supabase_auth_service.dart';
-
 import '../services/engine/tax_rule_service.dart';
+import '../services/tracking/location_permission_service.dart';
+import '../services/tracking/autonomous_trip_detector.dart';
+import '../services/tracking/hardware_bluetooth_service.dart';
+import '../services/tracking/native_hardware_telemetry_bridge.dart';
 import '../core/constants/app_constants.dart';
 
 enum SyncStatus { idle, syncing, success, error }
 
-/// Frontier Drive Telemetry & Vitality Status
+/// Drive Telemetry & Vitality Status
 enum DriveTelemetryStatus {
   armed, // Standby, background motion & Bluetooth link armed
   driving, // Live work drive actively recording
@@ -37,11 +48,33 @@ class AppState extends ChangeNotifier {
   DriveTelemetryStatus _telemetryStatus = DriveTelemetryStatus.armed;
   double _activeDriveDistanceKm = 0.0;
   DateTime? _activeDriveStartedAt;
-  bool _isBluetoothLinked = true;
+  Position? _activeDriveStartPosition;
+  Position? _activeDriveLastPosition;
+  String? _activeDriveOriginAddress;
+  String _activeDrivePurpose = 'Business';
+  bool _isBluetoothLinked = false;
+  final AutonomousTripDetector _autonomousTripDetector =
+      AutonomousTripDetector();
+  AppLocationPermissionStatus _locationPermissionStatus =
+      AppLocationPermissionStatus.denied;
+
+  // In-Flight Crash/Kill Recovery State
+  InFlightTrip? _orphanedInFlightTrip;
+  InFlightTrip? get orphanedInFlightTrip => _orphanedInFlightTrip;
+
+  AppLocationPermissionStatus get locationPermissionStatus =>
+      _locationPermissionStatus;
+
+  Future<void> refreshLocationPermission() async {
+    _locationPermissionStatus = await LocationPermissionService().checkStatus();
+    notifyListeners();
+  }
 
   // SUPABASE AUTH STATE
   final SupabaseAuthService _authService;
   AuthUser? _currentUser;
+  StreamSubscription<AuthState>? _authSubscription;
+  bool _isGuestMode = false;
 
   // SYNC ENGINE STATE
   final SyncEngineService _syncEngine;
@@ -69,6 +102,14 @@ class AppState extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   AuthUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get isGuestMode => _isGuestMode;
+
+  Future<void> setGuestMode(bool isGuest) async {
+    _isGuestMode = isGuest;
+    await _storageService?.setGuestMode(isGuest);
+    notifyListeners();
+  }
+
   SyncStatus get syncStatus => _syncStatus;
   DateTime? get lastSyncedAt => _lastSyncedAt;
   String? get syncErrorMessage => _syncErrorMessage;
@@ -88,25 +129,91 @@ class AppState extends ChangeNotifier {
   bool get isDriving => _telemetryStatus == DriveTelemetryStatus.driving;
   double get activeDriveDistanceKm => _activeDriveDistanceKm;
   DateTime? get activeDriveStartedAt => _activeDriveStartedAt;
+  Position? get activeDriveStartPosition => _activeDriveStartPosition;
+  Position? get activeDriveLastPosition => _activeDriveLastPosition;
+  String? get activeDriveOriginAddress => _activeDriveOriginAddress;
   bool get isBluetoothLinked => _isBluetoothLinked;
+  AutonomousTripDetector get autonomousTripDetector => _autonomousTripDetector;
 
   double get activeDriveTaxSavedAud {
     final rate = activeTaxRule.centsPerKmRate;
     return _activeDriveDistanceKm * rate;
   }
 
-  void startLiveDrive() {
+  void startLiveDrive({
+    Position? startPosition,
+    String? originAddress,
+    String purpose = 'Business',
+  }) {
     _telemetryStatus = DriveTelemetryStatus.driving;
     _activeDriveDistanceKm = 0.0;
     _activeDriveStartedAt = DateTime.now();
+    _activeDriveStartPosition = startPosition;
+    _activeDriveLastPosition = startPosition;
+    _activeDriveOriginAddress = originAddress;
+    _activeDrivePurpose = purpose;
+
+    // Immediately persist initial in-flight snapshot
+    if (startPosition != null) {
+      final tripId = 'inflight_${_activeDriveStartedAt!.millisecondsSinceEpoch}';
+      final inFlight = InFlightTrip(
+        id: tripId,
+        vehicleId: _primaryVehicle?.id ?? 'default_vehicle',
+        purpose: purpose,
+        startedAt: _activeDriveStartedAt!,
+        lastUpdatedAt: DateTime.now(),
+        distanceKm: 0.0,
+        startLatitude: startPosition.latitude,
+        startLongitude: startPosition.longitude,
+        lastLatitude: startPosition.latitude,
+        lastLongitude: startPosition.longitude,
+        originAddress: originAddress,
+        startOdometer: currentOdometer,
+      );
+      _storageService?.saveInFlightTrip(inFlight);
+    }
+
     notifyListeners();
   }
 
-  void updateLiveDriveDistance(double distanceKm) {
+  void updateLiveDriveDistance(double distanceKm, {Position? currentPosition}) {
     if (_telemetryStatus == DriveTelemetryStatus.driving) {
-      if ((distanceKm - _activeDriveDistanceKm).abs() >= 0.05 || _activeDriveDistanceKm == 0.0) {
+      if (currentPosition != null) {
+        _activeDriveLastPosition = currentPosition;
+      }
+      final bool distanceChanged =
+          (distanceKm - _activeDriveDistanceKm).abs() >= 0.05 ||
+              _activeDriveDistanceKm == 0.0;
+
+      if (distanceChanged) {
         _activeDriveDistanceKm = distanceKm;
         notifyListeners();
+
+        // Persist snapshot to disk (Survives sudden iOS force-kill/Jetsam)
+        if (_activeDriveStartPosition != null) {
+          final lat = currentPosition?.latitude ??
+              _activeDriveLastPosition?.latitude ??
+              _activeDriveStartPosition!.latitude;
+          final lng = currentPosition?.longitude ??
+              _activeDriveLastPosition?.longitude ??
+              _activeDriveStartPosition!.longitude;
+
+          final inFlight = InFlightTrip(
+            id: 'inflight_${_activeDriveStartedAt?.millisecondsSinceEpoch ?? 0}',
+            vehicleId: _primaryVehicle?.id ?? 'default_vehicle',
+            purpose: _activeDrivePurpose,
+            startedAt: _activeDriveStartedAt ?? DateTime.now(),
+            lastUpdatedAt: DateTime.now(),
+            distanceKm: distanceKm,
+            startLatitude: _activeDriveStartPosition!.latitude,
+            startLongitude: _activeDriveStartPosition!.longitude,
+            lastLatitude: lat,
+            lastLongitude: lng,
+            originAddress: _activeDriveOriginAddress,
+            startOdometer: currentOdometer,
+          );
+          _storageService?.saveInFlightTrip(inFlight);
+        }
       }
     }
   }
@@ -115,12 +222,128 @@ class AppState extends ChangeNotifier {
     _telemetryStatus = DriveTelemetryStatus.armed;
     _activeDriveDistanceKm = 0.0;
     _activeDriveStartedAt = null;
+    _activeDriveStartPosition = null;
+    _activeDriveLastPosition = null;
+    _activeDriveOriginAddress = null;
+    _storageService?.clearInFlightTrip();
+    notifyListeners();
+  }
+
+  /// Rescues an orphaned in-flight trip that was interrupted by an iOS process kill
+  Future<void> rescueOrphanedTrip({
+    required bool saveToLogbook,
+    String? resolvedOrigin,
+    String? resolvedDestination,
+  }) async {
+    final orphan = _orphanedInFlightTrip;
+    if (orphan == null) return;
+
+    if (saveToLogbook && orphan.distanceKm > 0.1) {
+      final trip = Trip(
+        id: 'rescued_${orphan.id}',
+        vehicleId: orphan.vehicleId,
+        distanceKm: double.parse(orphan.distanceKm.toStringAsFixed(2)),
+        date: orphan.startedAt,
+        purpose: orphan.purpose,
+        startOdometer: orphan.startOdometer,
+        endOdometer: orphan.startOdometer + orphan.distanceKm,
+        originAddress: resolvedOrigin ?? orphan.originAddress ?? 'Start Site',
+        destinationAddress:
+            resolvedDestination ?? orphan.lastAddress ?? 'Interrupted Site',
+        evidenceSource: 'rescued_crash_continuity',
+      );
+      recordTrip(trip);
+    }
+
+    _orphanedInFlightTrip = null;
+    await _storageService?.clearInFlightTrip();
+    notifyListeners();
+  }
+
+  /// Discards the orphaned trip snapshot
+  Future<void> discardOrphanedTrip() async {
+    _orphanedInFlightTrip = null;
+    await _storageService?.clearInFlightTrip();
     notifyListeners();
   }
 
   void toggleBluetoothLink(bool linked) {
     _isBluetoothLinked = linked;
     notifyListeners();
+  }
+
+  /// Verifies real-time hardware Bluetooth connectivity against the primary vehicle's paired device
+  Future<void> checkRealBluetoothConnection() async {
+    final vehicle = _primaryVehicle;
+    if (vehicle == null ||
+        vehicle.bluetoothDeviceName == null ||
+        vehicle.bluetoothDeviceName!.isEmpty) {
+      if (_isBluetoothLinked) {
+        _isBluetoothLinked = false;
+        notifyListeners();
+      }
+      return;
+    }
+
+    try {
+      final targetName = vehicle.bluetoothDeviceName!.toLowerCase().trim();
+
+      // 1. Check system audio bluetooth devices (CarPlay / Car A2DP)
+      final audioDevices =
+          await HardwareBluetoothService().getActiveAudioBluetoothDevices();
+      final hasAudio =
+          audioDevices.any((d) => d.name.toLowerCase().trim() == targetName);
+      if (hasAudio) {
+        if (!_isBluetoothLinked) {
+          _isBluetoothLinked = true;
+          notifyListeners();
+        }
+        return;
+      }
+
+      // 2. Check connected BLE system devices
+      final isSupported = await FlutterBluePlus.isSupported;
+      if (isSupported) {
+        final sysDevices = await FlutterBluePlus.systemDevices([]);
+        final hasBle = sysDevices.any((d) {
+          final n = (d.platformName.isNotEmpty ? d.platformName : d.advName)
+              .toLowerCase()
+              .trim();
+          return n == targetName;
+        });
+        if (hasBle) {
+          if (!_isBluetoothLinked) {
+            _isBluetoothLinked = true;
+            notifyListeners();
+          }
+          return;
+        }
+      }
+
+      // Neither is connected: reflect disconnected state
+      if (_isBluetoothLinked) {
+        _isBluetoothLinked = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      // In test / simulator / desktop environments where Bluetooth channels are not available,
+      // keep current status if configured so unit tests remain stable
+      debugPrint('[AppState] Bluetooth real check note: $e');
+    }
+  }
+
+  /// Ingests a new continuous GPS fix into the AutonomousTripDetector
+  void ingestAutonomousFix(Position fix) async {
+    final newState = await _autonomousTripDetector.processFix(fix);
+    if (newState == AutonomousDetectorState.activeDriving && !isDriving) {
+      startLiveDrive(startPosition: fix);
+    } else if (newState == AutonomousDetectorState.finalized) {
+      final trip = _autonomousTripDetector.finalizedTrip;
+      if (trip != null) {
+        recordTrip(trip);
+      }
+      endLiveDrive();
+    }
   }
 
   void updatePrimaryVehicleBluetoothDevice(String? deviceName) {
@@ -136,6 +359,11 @@ class AppState extends ChangeNotifier {
     _storageService?.saveVehicles(_vehicles);
     _storageService?.savePrimaryVehicleId(_primaryVehicle!.id);
     _isBluetoothLinked = deviceName != null && deviceName.isNotEmpty;
+    checkRealBluetoothConnection();
+
+    // Push down to iOS Native CoreBluetooth State Restoration
+    unawaited(NativeHardwareTelemetryBridge().syncTargetBluetoothName(deviceName));
+
     notifyListeners();
   }
 
@@ -155,6 +383,7 @@ class AppState extends ChangeNotifier {
     _storageService ??= await LocalStorageService.init();
 
     if (_storageService != null) {
+      _isGuestMode = _storageService!.isGuestMode();
       _vehicles.clear();
       _vehicles.addAll(_storageService!.loadVehicles());
 
@@ -177,11 +406,15 @@ class AppState extends ChangeNotifier {
 
       _evidenceList.clear();
       _evidenceList.addAll(_storageService!.loadEvidence());
+
+      // DEV ONLY — remove `DevSeed.inject(this)` + delete lib/data/dev_seed.dart to clean up
+      DevSeed.inject(this);
     }
 
     // Restore or listen to Supabase Auth state
     _currentUser = _authService.getCurrentUser();
-    _authService.onAuthStateChange?.listen((data) {
+    await _authSubscription?.cancel();
+    _authSubscription = _authService.onAuthStateChange?.listen((data) {
       final session = data.session;
       if (session != null) {
         final metadata = session.user.userMetadata ?? {};
@@ -198,6 +431,9 @@ class AppState extends ChangeNotifier {
           avatarUrl: avatarUrl,
           accessToken: session.accessToken,
         );
+        _isGuestMode = false;
+        unawaited(_storageService?.setGuestMode(false));
+        unawaited(restoreFromCloud());
       } else {
         _currentUser = null;
       }
@@ -214,7 +450,65 @@ class AppState extends ChangeNotifier {
       }
     });
 
+    // 6. Check location permission status silently
+    LocationPermissionService().checkStatus().then((status) {
+      _locationPermissionStatus = status;
+      notifyListeners();
+    }).catchError((e, stack) {
+      debugPrint(
+          '[AppState] Warning checking location permission status: $e\n$stack');
+    });
+
+    // 7. Update initial Bluetooth link state based on primary vehicle
+    if (_primaryVehicle != null) {
+      _isBluetoothLinked = _primaryVehicle!.bluetoothDeviceName != null &&
+          _primaryVehicle!.bluetoothDeviceName!.isNotEmpty;
+      checkRealBluetoothConnection();
+    } else {
+      _isBluetoothLinked = false;
+    }
+
+    // 8. In-Flight Crash / Force-Kill Recovery Check
+    if (_storageService != null) {
+      final savedInFlight = _storageService!.loadInFlightTrip();
+      if (savedInFlight != null && savedInFlight.distanceKm > 0.05) {
+        _orphanedInFlightTrip = savedInFlight;
+        debugPrint(
+            '[AppState] Resurrected orphaned in-flight trip: ${savedInFlight.distanceKm} km, started at ${savedInFlight.startedAt}');
+      }
+    }
+
+    // 9. Sync & Ingest Autonomously Logged Native Trips (Logged while Flutter was completely dead)
+    if (_primaryVehicle != null) {
+      unawaited(NativeHardwareTelemetryBridge().syncTargetBluetoothName(_primaryVehicle!.bluetoothDeviceName));
+      NativeHardwareTelemetryBridge().fetchCompletedNativeTrips().then((nativeTrips) {
+        for (final item in nativeTrips) {
+          final dist = (item['distanceKm'] as num?)?.toDouble() ?? 0.0;
+          if (dist > 0.1) {
+            final startMs = item['startedAt'] as num? ?? DateTime.now().millisecondsSinceEpoch;
+            final trip = Trip(
+              id: item['id'] as String? ?? 'native_${DateTime.now().millisecondsSinceEpoch}',
+              vehicleId: _primaryVehicle!.id,
+              distanceKm: dist,
+              date: DateTime.fromMillisecondsSinceEpoch(startMs.toInt()),
+              purpose: 'Business',
+              startOdometer: currentOdometer,
+              endOdometer: currentOdometer + dist,
+              evidenceSource: 'native_bluetooth_auto',
+            );
+            recordTrip(trip);
+            debugPrint('[AppState] Auto-ingested native trip: $dist km from iOS background daemon.');
+          }
+        }
+      }).catchError((e) {
+        debugPrint('[AppState] Note querying completed native trips: $e');
+      });
+    }
+
     _isInitialized = true;
+    if (_currentUser != null) {
+      unawaited(restoreFromCloud());
+    }
     notifyListeners();
   }
 
@@ -223,6 +517,9 @@ class AppState extends ChangeNotifier {
     if (vehicle.isPrimary || _primaryVehicle == null) {
       _primaryVehicle = vehicle;
       _storageService?.savePrimaryVehicleId(vehicle.id);
+      _isBluetoothLinked = vehicle.bluetoothDeviceName != null &&
+          vehicle.bluetoothDeviceName!.isNotEmpty;
+      checkRealBluetoothConnection();
     }
     _storageService?.saveVehicles(_vehicles);
     notifyListeners();
@@ -233,6 +530,9 @@ class AppState extends ChangeNotifier {
         orElse: () => _primaryVehicle!);
     _primaryVehicle = found;
     _storageService?.savePrimaryVehicleId(found.id);
+    _isBluetoothLinked = found.bluetoothDeviceName != null &&
+        found.bluetoothDeviceName!.isNotEmpty;
+    checkRealBluetoothConnection();
     notifyListeners();
   }
 
@@ -359,15 +659,14 @@ class AppState extends ChangeNotifier {
       vehicleId: _primaryVehicle?.id ?? 'default_vehicle',
       distanceKm: distance,
       date: DateTime.now(),
-      purpose: purpose ??
-          (isBusiness ? 'Work drive (Bridging)' : 'Personal travel'),
+      purpose:
+          purpose ?? (isBusiness ? 'Work drive (Bridging)' : 'Personal travel'),
       startOdometer: startOdo,
       endOdometer: gapEndOdometer,
       classification: isBusiness
           ? TripClassification.business
           : TripClassification.personal,
-      originAddress:
-          origin ?? (isBusiness ? 'Work Site' : '[Private Journey]'),
+      originAddress: origin ?? (isBusiness ? 'Work Site' : '[Private Journey]'),
       destinationAddress:
           destination ?? (isBusiness ? 'Client Site' : '[Private Journey]'),
     );
@@ -393,10 +692,7 @@ class AppState extends ChangeNotifier {
         destLower.contains('depot');
 
     if (isHomeOrigin && isWorkDest && !isBulkyToolsCarried) {
-      return (
-        false,
-        'Home trips require heavy or bulky equipment.'
-      );
+      return (false, 'Home trips require heavy or bulky equipment.');
     }
     return (true, null);
   }
@@ -434,7 +730,8 @@ class AppState extends ChangeNotifier {
     }
 
     // Vault-level cross-entity anti-fraud check
-    final isDuplicateInVault = _evidenceList.any((e) => e.imageSha256 == imageHash);
+    final isDuplicateInVault =
+        _evidenceList.any((e) => e.imageSha256 == imageHash);
     if (isDuplicateInVault) {
       return (
         false,
@@ -465,15 +762,17 @@ class AppState extends ChangeNotifier {
     final evidence = AuditEvidence(
       id: 'ev_${DateTime.now().millisecondsSinceEpoch}_${isStart ? "start" : "end"}',
       vehicleId: _primaryVehicle!.id,
-      evidenceType: isStart ? EvidenceType.odometerStart : EvidenceType.odometerEnd,
+      evidenceType:
+          isStart ? EvidenceType.odometerStart : EvidenceType.odometerEnd,
       storagePath: photoPath,
       imageSha256: imageHash,
       capturedAt: captureDate,
       captureSource: 'camera_live',
-      watermarkMetadata: watermarkMetadata ?? {
-        'regoPlate': _primaryVehicle!.regoPlate,
-        'timestamp': captureDate.toIso8601String(),
-      },
+      watermarkMetadata: watermarkMetadata ??
+          {
+            'regoPlate': _primaryVehicle!.regoPlate,
+            'timestamp': captureDate.toIso8601String(),
+          },
     );
     _evidenceList.add(evidence);
     _storageService?.saveEvidence(_evidenceList);
@@ -529,6 +828,14 @@ class AppState extends ChangeNotifier {
     return hasNewTrips || hasNewExpenses;
   }
 
+  // ODOMETER MONOTONICITY INTEGRITY (ATO Subdivision 28-F)
+  bool _hasOdometerMonotonicityViolation = false;
+  String? _lastOdometerAnomalyWarning;
+
+  bool get hasOdometerMonotonicityViolation =>
+      _hasOdometerMonotonicityViolation;
+  String? get lastOdometerAnomalyWarning => _lastOdometerAnomalyWarning;
+
   /// Record a new trip with offline-first persistence & invariant guards
   void recordTrip(Trip trip) {
     // Guard against corrupted 0-distance or inverted odometer writes
@@ -536,6 +843,40 @@ class AppState extends ChangeNotifier {
       debugPrint(
           '[KiloTax Integrity Guard] Ignored invalid zero/negative drive record.');
       return;
+    }
+
+    // Inter-Trip Odometer Monotonicity Invariant (ATO Subdivision 28-F):
+    // For Logbook method vehicles, trips must advance monotonically (trip.startOdometer >= previousTrip.endOdometer)
+    final vehicle = _vehicles.firstWhere(
+      (v) => v.id == trip.vehicleId,
+      orElse: () =>
+          _primaryVehicle ??
+          Vehicle(
+            id: trip.vehicleId,
+            make: '',
+            model: '',
+            regoPlate: '',
+            initialOdometer: 0.0,
+          ),
+    );
+
+    if (vehicle.taxMethod == TaxMethod.logbook) {
+      final existingVehicleTrips = _trips
+          .where((t) => t.vehicleId == trip.vehicleId && t.id != trip.id)
+          .toList();
+      if (existingVehicleTrips.isNotEmpty) {
+        final previousTrip = existingVehicleTrips.last;
+        if (trip.startOdometer < previousTrip.endOdometer) {
+          _hasOdometerMonotonicityViolation = true;
+          final warningMsg =
+              '[ATO Subdivision 28-F Monotonicity Warning] Odometer non-monotonicity detected for vehicle ${vehicle.regoPlate} (${vehicle.id}): '
+              'trip.startOdometer (${trip.startOdometer.toStringAsFixed(1)}) < '
+              'previousTrip.endOdometer (${previousTrip.endOdometer.toStringAsFixed(1)}). '
+              'Preserving drive record to prevent offline data loss.';
+          _lastOdometerAnomalyWarning = warningMsg;
+          debugPrint(warningMsg);
+        }
+      }
     }
 
     // Check if trip already exists by ID (Idempotent write)
@@ -670,6 +1011,7 @@ class AppState extends ChangeNotifier {
   }
 
   void _autoSyncInBackground() {
+    if (!isAuthenticated || currentUser == null) return;
     if (_primaryVehicle != null && _syncStatus != SyncStatus.syncing) {
       triggerSyncToCloud();
     }
@@ -766,9 +1108,12 @@ class AppState extends ChangeNotifier {
     for (int i = 0; i < _trips.length; i++) {
       final t = _trips[i];
       if (tripIds.contains(t.id)) {
-        final assignedPurpose = (defaultPurpose != null && defaultPurpose.isNotEmpty)
-            ? defaultPurpose
-            : (t.purpose.isNotEmpty && !t.purpose.contains('?') ? t.purpose : 'Client Site Visit');
+        final assignedPurpose =
+            (defaultPurpose != null && defaultPurpose.isNotEmpty)
+                ? defaultPurpose
+                : (t.purpose.isNotEmpty && !t.purpose.contains('?')
+                    ? t.purpose
+                    : 'Client Site Visit');
 
         _trips[i] = t.copyWith(
           classification: TripClassification.business,
@@ -869,7 +1214,7 @@ class AppState extends ChangeNotifier {
             e.receiptAudit?.reviewStatus == ReceiptReviewStatus.verified);
 
     // =========================================================================
-    // NASA-GRADE DETERMINISTIC AUDIT READINESS FORMULA (4 Pillars = 100% Exact)
+    // DETERMINISTIC AUDIT READINESS FORMULA (4 Pillars = 100% Exact)
     // Pillar 1: Vehicle Configuration (25%)
     // Pillar 2: ATO Strategy Selected (25%)
     // Pillar 3: Contemporary Travel Basis Established (25%)
@@ -953,8 +1298,26 @@ class AppState extends ChangeNotifier {
     return streak;
   }
 
+  /// Backward-compatible alias for triggerSyncToCloud
+  Future<SyncResult> syncToCloud() => triggerSyncToCloud();
+
   /// Trigger Zero-Knowledge Cloud Sync to Supabase
   Future<SyncResult> triggerSyncToCloud() async {
+    // Strictly gate on authentication to prevent unauthenticated hits to Supabase REST endpoints
+    if (!isAuthenticated || currentUser == null) {
+      final res = SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+        errorMessage: 'User is not authenticated. Sync aborted.',
+      );
+      _syncStatus = SyncStatus.idle;
+      _syncErrorMessage = null;
+      notifyListeners();
+      return res;
+    }
+
     if (_primaryVehicle == null) {
       final res = SyncResult(
         success: false,
@@ -980,6 +1343,7 @@ class AppState extends ChangeNotifier {
         expenses: _expenses,
         userToken: _currentUser?.accessToken,
         userId: _currentUser?.id,
+        requireAuth: true,
       );
 
       _lastSyncResult = res;
@@ -1011,14 +1375,40 @@ class AppState extends ChangeNotifier {
   /// RESTORE FROM CLOUD: Pulls vehicles, trips, and expenses back into state and local storage
   /// Essential for disaster recovery / app reinstall.
   Future<CloudRestoreResult> restoreFromCloud() async {
+    // Strictly gate on authentication to prevent unauthenticated hits to Supabase REST endpoints
+    if (!isAuthenticated || currentUser == null) {
+      final res = CloudRestoreResult(
+        success: false,
+        vehicles: [],
+        trips: [],
+        expenses: [],
+        corruptedRecordsCount: 0,
+        errorMessage: 'User is not authenticated. Restore aborted.',
+      );
+      _syncStatus = SyncStatus.idle;
+      _syncErrorMessage = null;
+      notifyListeners();
+      return res;
+    }
+
     _syncStatus = SyncStatus.syncing;
     _syncErrorMessage = null;
     notifyListeners();
 
     try {
+      Directory? cacheDir;
+      try {
+        cacheDir = await ReceiptImageOptimizationService()
+            .getEvidenceVaultDirectory();
+      } catch (e) {
+        debugPrint('[AppState] Could not access evidence vault directory: $e');
+      }
+
       final result = await _syncEngine.restoreFromCloud(
         userToken: _currentUser?.accessToken,
         userId: _currentUser?.id,
+        requireAuth: true,
+        localCacheDir: cacheDir,
       );
       if (result.success) {
         if (result.vehicles.isNotEmpty) {
@@ -1082,7 +1472,22 @@ class AppState extends ChangeNotifier {
     final result = await _authService.signInWithApple();
     if (result.success && result.user != null) {
       _currentUser = result.user;
+      _isGuestMode = false;
+      await _storageService?.setGuestMode(false);
       notifyListeners();
+      // Non-destructive adoption: immediately upload local guest data to cloud
+      if (_primaryVehicle != null) {
+        triggerSyncToCloud().catchError((e) {
+          debugPrint('[AppState] Auto-sync on Apple sign-in warning: $e');
+          return SyncResult(
+            success: false,
+            syncedTrips: 0,
+            syncedExpenses: 0,
+            rejectedOrIgnored: 0,
+            errorMessage: e.toString(),
+          );
+        });
+      }
     }
     return result;
   }
@@ -1092,7 +1497,22 @@ class AppState extends ChangeNotifier {
     final result = await _authService.signInWithGoogle();
     if (result.success && result.user != null) {
       _currentUser = result.user;
+      _isGuestMode = false;
+      await _storageService?.setGuestMode(false);
       notifyListeners();
+      // Non-destructive adoption: immediately upload local guest data to cloud
+      if (_primaryVehicle != null) {
+        triggerSyncToCloud().catchError((e) {
+          debugPrint('[AppState] Auto-sync on Google sign-in warning: $e');
+          return SyncResult(
+            success: false,
+            syncedTrips: 0,
+            syncedExpenses: 0,
+            rejectedOrIgnored: 0,
+            errorMessage: e.toString(),
+          );
+        });
+      }
     }
     return result;
   }
@@ -1103,7 +1523,7 @@ class AppState extends ChangeNotifier {
   /// 3. Resets vehicle, trips, and expenses to zero state
   /// 4. Purges local cache to protect privacy
   /// 5. Automatically directs the app back to Welcome/Onboarding
-  /// NASA-Grade Resilient Sign Out (Guaranteed Complete Teardown)
+  /// Resilient Sign Out (Guaranteed Complete Teardown)
   /// Adheres to OWASP ASVS v4.0.3 (Session Management) & Apple HIG Security:
   /// 1. Server-Side Token Revocation (Supabase Cloud + Google OAuth Disconnect)
   /// 2. Optional Hardware/Local Storage Purge (default: false preserves offline tax evidence on trusted device)
@@ -1146,6 +1566,13 @@ class AppState extends ChangeNotifier {
         _syncStatus = SyncStatus.idle;
         _syncErrorMessage = null;
         _lastSyncResult = null;
+        _hasOdometerMonotonicityViolation = false;
+        _lastOdometerAnomalyWarning = null;
+        _isGuestMode = false;
+      } else {
+        // If data kept on device, switch smoothly to local guest mode
+        _isGuestMode = true;
+        await _storageService?.setGuestMode(true);
       }
 
       // 3. In-Memory Auth Zeroization (Always de-authenticate)
@@ -1154,5 +1581,101 @@ class AppState extends ChangeNotifier {
       // 4. Instant Reactive Navigation Trigger
       notifyListeners();
     }
+  }
+
+  /// In-App Account Deletion per Apple Guideline 5.1.1(v) & Privacy Compliance:
+  /// 1. Calls Supabase RPC / REST to purge all remote taxpayer records & user account
+  /// 2. Clears all local storage, preferences, and cached evidence binaries
+  /// 3. Zeroes out all in-memory vehicles, trips, expenses, and evidence
+  /// 4. Resets app to pristine onboarding state and notifies UI listeners
+  Future<void> deleteAccount() async {
+    try {
+      await _authService.deleteAccount();
+    } catch (e) {
+      debugPrint('[KiloTax Security] Error deleting remote account: $e');
+    } finally {
+      try {
+        if (_storageService != null) {
+          await _storageService!.clearAll();
+        }
+      } catch (e) {
+        debugPrint(
+            '[KiloTax Security] Error clearing local storage during account deletion: $e');
+      }
+
+      try {
+        await _evidenceVaultService.clearLocalVault();
+      } catch (e) {
+        debugPrint(
+            '[KiloTax Security] Error clearing evidence vault during account deletion: $e');
+      }
+
+      // Zero out in-memory local data
+      _primaryVehicle = null;
+      _vehicles.clear();
+      _trips.clear();
+      _expenses.clear();
+      _evidenceList.clear();
+      _syncStatus = SyncStatus.idle;
+      _syncErrorMessage = null;
+      _lastSyncResult = null;
+      _hasOdometerMonotonicityViolation = false;
+      _lastOdometerAnomalyWarning = null;
+      _lastSyncedAt = null;
+      _isGuestMode = false;
+
+      // In-Memory Auth Zeroization
+      _currentUser = null;
+
+      // Instant Reactive Navigation Trigger to reset to clean onboarding state
+      notifyListeners();
+    }
+  }
+
+  /// Guest / Local Mode Data Purge:
+  /// Clears all local database records, cached evidence binaries, and preferences,
+  /// resetting the app to a fresh onboarding zero-state without contacting remote auth backend.
+  Future<void> resetLocalData() async {
+    try {
+      if (_storageService != null) {
+        await _storageService!.clearAll();
+      }
+    } catch (e) {
+      debugPrint(
+          '[KiloTax Security] Error clearing local storage during data reset: $e');
+    }
+
+    try {
+      await _evidenceVaultService.clearLocalVault();
+    } catch (e) {
+      debugPrint(
+          '[KiloTax Security] Error clearing evidence vault during data reset: $e');
+    }
+
+    // Zero out in-memory local data
+    _primaryVehicle = null;
+    _vehicles.clear();
+    _trips.clear();
+    _expenses.clear();
+    _evidenceList.clear();
+    _syncStatus = SyncStatus.idle;
+    _syncErrorMessage = null;
+    _lastSyncResult = null;
+    _hasOdometerMonotonicityViolation = false;
+    _lastOdometerAnomalyWarning = null;
+    _lastSyncedAt = null;
+
+    // In-Memory Auth Zeroization
+    _currentUser = null;
+
+    // Instant Reactive Navigation Trigger to reset to clean onboarding state
+    notifyListeners();
+  }
+
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 }

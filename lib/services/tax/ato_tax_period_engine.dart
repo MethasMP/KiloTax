@@ -34,12 +34,15 @@ enum ReceiptRoutingDecision {
 @immutable
 class AtoFinancialYear {
   final int startYear; // e.g. 2026 for FY 2026-27
-  final int endYear;   // e.g. 2027
+  final int endYear; // e.g. 2027
 
   const AtoFinancialYear(this.startYear) : endYear = startYear + 1;
 
   /// FY string format e.g. 'FY 2026–27'
   String get label => 'FY $startYear–${endYear.toString().substring(2)}';
+
+  /// Short FY string format e.g. '2026–27'
+  String get shortLabel => '$startYear–${endYear.toString().substring(2)}';
 
   /// 1 July 00:00:00
   DateTime get startDate => DateTime(startYear, 7, 1);
@@ -58,7 +61,8 @@ class AtoFinancialYear {
 
   bool containsExpenseDate(DateTime date) {
     return (date.isAfter(startDate) || date.isAtSameMomentAs(startDate)) &&
-        (date.isBefore(expenseCutoffDate) || date.isAtSameMomentAs(expenseCutoffDate));
+        (date.isBefore(expenseCutoffDate) ||
+            date.isAtSameMomentAs(expenseCutoffDate));
   }
 }
 
@@ -145,7 +149,8 @@ class AtoTaxPeriodEngine {
 
     switch (phase) {
       case TaxSeasonPhase.activeSpending:
-        final daysLeft = priorFy.expenseCutoffDate.difference(systemDate).inDays;
+        final daysLeft =
+            priorFy.expenseCutoffDate.difference(systemDate).inDays;
         return '$daysLeft days left in ${priorFy.label} expense cycle';
       case TaxSeasonPhase.selfLodgmentWindow:
         final days = priorFy.selfLodgeDeadline.difference(systemDate).inDays;

@@ -42,7 +42,9 @@ void main() {
       expect(trip.purpose, equals('Trade Supplies / Bunnings'));
     });
 
-    test('CpkExportService generates Box D1 Slip text with proper rate and legal citations', () {
+    test(
+        'CpkExportService generates Box D1 Slip text with proper rate and legal citations',
+        () {
       final vehicle = Vehicle(
         id: 'veh_01',
         make: 'Toyota',

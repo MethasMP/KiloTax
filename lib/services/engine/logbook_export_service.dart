@@ -5,6 +5,7 @@ import '../../data/models/trip.dart';
 import '../../data/models/vehicle_expense.dart';
 import '../../data/models/tax_config.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/csv_security.dart';
 
 /// Logbook Method (TR 97/11) Dedicated Exporter
 /// Aligned strictly with ITAA 1997 Subdivision 28-F & TR 97/11
@@ -15,16 +16,14 @@ import '../../core/constants/app_constants.dart';
 /// 4. Standard MYOB General Journal CSV (with custom or default COA)
 class LogbookExportService {
   /// Sanitize a CSV cell per CWE-1236 to prevent CSV formula injection
-  /// Escapes double quotes (" -> "") and prepends single quote (') if the text begins with formula triggers
-  static String sanitizeCsvCell(String input) {
-    if (input.isEmpty) return input;
-    String text = input;
-    const formulaTriggers = ['=', '+', '-', '@', '\t', '\r'];
-    if (formulaTriggers.contains(text[0])) {
-      text = "'$text";
-    }
-    return text.replaceAll('"', '""');
-  }
+  /// Routes to centralized [CsvSecurity.sanitizeCsvCell].
+  static String sanitizeCsvCell(String input) =>
+      CsvSecurity.sanitizeCsvCell(input);
+
+  /// Statutory disclaimer text mandated under ITAA 1997 Division 28-C / Subdivision 28-H
+  static const String statutoryDisclaimer =
+      'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
+
 
   /// Generates the standard 16-column ATO continuous odometer audit ledger CSV
   static String generateLogbookAuditLedgerCsv({
@@ -69,7 +68,8 @@ class LogbookExportService {
           ? (t.destinationAddress ?? 'Client Job').replaceAll(',', ' ')
           : '[Private Journey]');
       final purpose = sanitizeCsvCell(isBus
-          ? (t.purpose.isNotEmpty ? t.purpose : 'Client Job Site').replaceAll(',', ' ')
+          ? (t.purpose.isNotEmpty ? t.purpose : 'Client Job Site')
+              .replaceAll(',', ' ')
           : 'Personal Travel');
       final driver = sanitizeCsvCell(driverName);
 
@@ -85,6 +85,9 @@ class LogbookExportService {
       );
       index++;
     }
+
+    // Statutory Compliance Footer (Subdivision 28-H / Section 900-165)
+    buffer.writeln('# DISCLAIMER: $statutoryDisclaimer');
 
     return buffer.toString();
   }
@@ -130,22 +133,37 @@ class LogbookExportService {
         ((100.0 - businessPct) / 100.0);
 
     final rego = sanitizeCsvCell(vehicle.regoPlate);
+    final trackingName = sanitizeCsvCell('Vehicle');
+    final narration = sanitizeCsvCell('Year-End MV Apportionment');
+    final descFuelGross = sanitizeCsvCell(
+        'Motor Vehicle Gross Fuel & Repairs (Pre-apportionment)');
+    final descRegoGross = sanitizeCsvCell(
+        'Motor Vehicle Gross Rego & Insurance (Pre-apportionment)');
+    final descFuelAllowable = sanitizeCsvCell(
+        'Allowable MV Fuel & Servicing (${businessPct.toStringAsFixed(1)}% Logbook)');
+    final descRegoAllowable = sanitizeCsvCell(
+        'Allowable MV Rego & Insurance (${businessPct.toStringAsFixed(1)}% Logbook)');
+    final descDrawings = sanitizeCsvCell(
+        'Owner Drawings - Private Vehicle Use (${(100.0 - businessPct).toStringAsFixed(1)}% Non-deductible)');
+    final fuelAcc = sanitizeCsvCell(coa.fuelAccount);
+    final regoAcc = sanitizeCsvCell(coa.regoAccount);
+    final drawingsAcc = sanitizeCsvCell(coa.drawingsAccount);
 
     buffer.writeln(
         '*Narration,*Date,*Description,*AccountCode,*TaxType,*Amount,TrackingName1,TrackingOption1');
     // 1. Credit gross general ledger pool
     buffer.writeln(
-        'Year-End MV Apportionment,$dateStr,Motor Vehicle Gross Fuel & Repairs (Pre-apportionment),${coa.fuelAccount},BAS Excluded,-${actualGstRunning.toStringAsFixed(2)},Vehicle,$rego');
+        '$narration,$dateStr,$descFuelGross,$fuelAcc,BAS Excluded,-${actualGstRunning.toStringAsFixed(2)},$trackingName,$rego');
     buffer.writeln(
-        'Year-End MV Apportionment,$dateStr,Motor Vehicle Gross Rego & Insurance (Pre-apportionment),${coa.regoAccount},BAS Excluded,-${actualNonGstRunning.toStringAsFixed(2)},Vehicle,$rego');
+        '$narration,$dateStr,$descRegoGross,$regoAcc,BAS Excluded,-${actualNonGstRunning.toStringAsFixed(2)},$trackingName,$rego');
     // 2. Debit allowable business portion with correct TaxType
     buffer.writeln(
-        'Year-End MV Apportionment,$dateStr,Allowable MV Fuel & Servicing (${businessPct.toStringAsFixed(1)}% Logbook),${coa.fuelAccount},GST on Expenses,${deductibleGst.toStringAsFixed(2)},Vehicle,$rego');
+        '$narration,$dateStr,$descFuelAllowable,$fuelAcc,GST on Expenses,${deductibleGst.toStringAsFixed(2)},$trackingName,$rego');
     buffer.writeln(
-        'Year-End MV Apportionment,$dateStr,Allowable MV Rego & Insurance (${businessPct.toStringAsFixed(1)}% Logbook),${coa.regoAccount},BAS Excluded,${deductibleNonGst.toStringAsFixed(2)},Vehicle,$rego');
+        '$narration,$dateStr,$descRegoAllowable,$regoAcc,BAS Excluded,${deductibleNonGst.toStringAsFixed(2)},$trackingName,$rego');
     // 3. Debit owner drawings for private use
     buffer.writeln(
-        'Year-End MV Apportionment,$dateStr,Owner Drawings - Private Vehicle Use (${(100.0 - businessPct).toStringAsFixed(1)}% Non-deductible),${coa.drawingsAccount},BAS Excluded,${privatePortion.toStringAsFixed(2)},Vehicle,$rego');
+        '$narration,$dateStr,$descDrawings,$drawingsAcc,BAS Excluded,${privatePortion.toStringAsFixed(2)},$trackingName,$rego');
 
     return buffer.toString();
   }
@@ -191,24 +209,38 @@ class LogbookExportService {
         ((100.0 - businessPct) / 100.0);
 
     final rego = sanitizeCsvCell(vehicle.regoPlate);
+    final safeJrnNumber = sanitizeCsvCell(journalNumber);
+    final fuelAcc = sanitizeCsvCell(coa.fuelAccount);
+    final regoAcc = sanitizeCsvCell(coa.regoAccount);
+    final drawingsAcc = sanitizeCsvCell(coa.drawingsAccount);
+
+    final memoGross =
+        sanitizeCsvCell('Year-End MV Apportionment (Rego: $rego)');
+    final memoFuelAllowable = sanitizeCsvCell(
+        'Allowable MV Fuel (${businessPct.toStringAsFixed(1)}% Logbook)');
+    final memoRegoGross = sanitizeCsvCell('Year-End MV Apportionment Rego/CTP');
+    final memoRegoAllowable = sanitizeCsvCell(
+        'Allowable MV Rego (${businessPct.toStringAsFixed(1)}% Logbook)');
+    final memoDrawings =
+        sanitizeCsvCell('Owner Drawings - Private Motor Vehicle Use');
 
     buffer.writeln(
         'JournalNumber,Date,Memo,AccountSource,AccountID,DebitAmount,CreditAmount,TaxCode,Job');
     // Credit gross fuel & oil pool
     buffer.writeln(
-        '$journalNumber,$dateStr,"Year-End MV Apportionment (Rego: $rego)",MYOB,${coa.fuelAccount},0.00,${actualGstRunning.toStringAsFixed(2)},N-T,');
+        '$safeJrnNumber,$dateStr,"$memoGross",MYOB,$fuelAcc,0.00,${actualGstRunning.toStringAsFixed(2)},N-T,');
     // Debit allowable fuel (GST code)
     buffer.writeln(
-        '$journalNumber,$dateStr,"Allowable MV Fuel (${businessPct.toStringAsFixed(1)}% Logbook)",MYOB,${coa.fuelAccount},${deductibleGst.toStringAsFixed(2)},0.00,GST,');
+        '$safeJrnNumber,$dateStr,"$memoFuelAllowable",MYOB,$fuelAcc,${deductibleGst.toStringAsFixed(2)},0.00,GST,');
     // Credit gross rego/insurance pool
     buffer.writeln(
-        '$journalNumber,$dateStr,"Year-End MV Apportionment Rego/CTP",MYOB,${coa.regoAccount},0.00,${actualNonGstRunning.toStringAsFixed(2)},N-T,');
+        '$safeJrnNumber,$dateStr,"$memoRegoGross",MYOB,$regoAcc,0.00,${actualNonGstRunning.toStringAsFixed(2)},N-T,');
     // Debit allowable rego/insurance (N-T or FRE)
     buffer.writeln(
-        '$journalNumber,$dateStr,"Allowable MV Rego (${businessPct.toStringAsFixed(1)}% Logbook)",MYOB,${coa.regoAccount},${deductibleNonGst.toStringAsFixed(2)},0.00,N-T,');
+        '$safeJrnNumber,$dateStr,"$memoRegoAllowable",MYOB,$regoAcc,${deductibleNonGst.toStringAsFixed(2)},0.00,N-T,');
     // Debit owner drawings (N-T)
     buffer.writeln(
-        '$journalNumber,$dateStr,"Owner Drawings - Private Motor Vehicle Use",MYOB,${coa.drawingsAccount},${privatePortion.toStringAsFixed(2)},0.00,N-T,');
+        '$safeJrnNumber,$dateStr,"$memoDrawings",MYOB,$drawingsAcc,${privatePortion.toStringAsFixed(2)},0.00,N-T,');
 
     return buffer.toString();
   }
@@ -367,6 +399,14 @@ accurate, and unbroken record of motor vehicle usage pursuant to ATO Taxation Ru
 
 Taxpayer Signature: ___________________________        Date: ____ / ____ / ________
 Tax Agent Signature: __________________________        RAN:  ______________________
+
+====================================================================================================
+STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Subdivision 28-F / TPB Notice):
+Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F & TR 97/11). Not tax advice.
+Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.
+KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected
+to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).
+====================================================================================================
 ''';
   }
 

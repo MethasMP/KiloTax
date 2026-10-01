@@ -31,23 +31,37 @@ class LogbookProgressScreen extends StatelessWidget {
     final totalKm = summary.totalKm;
     final missingCount = appState.missingComplianceTrips.length;
 
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final weekStartMidnight =
+        DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+    final thisWeekWorkTrips = appState.trips
+        .where((t) =>
+            t.isBusiness &&
+            t.date.isAfter(weekStartMidnight) &&
+            !t.isDeleted)
+        .length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: AppColors.ink),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Logbook',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink),
+          style: TextStyle(
+              fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.settings, color: AppColors.ink, size: 20),
+            icon: const Icon(LucideIcons.settings,
+                color: AppColors.ink, size: 20),
             onPressed: () {},
           ),
         ],
@@ -69,7 +83,10 @@ class LogbookProgressScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Week ${appState.currentLogbookWeek} of 12',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: AppColors.ink),
                   ),
                   const SizedBox(height: 20),
                   // Circular Gauge
@@ -83,7 +100,8 @@ class LogbookProgressScreen extends StatelessWidget {
                           value: businessUse / 100.0,
                           strokeWidth: 12,
                           backgroundColor: AppColors.background,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.emerald),
                         ),
                         Center(
                           child: Column(
@@ -91,9 +109,16 @@ class LogbookProgressScreen extends StatelessWidget {
                             children: [
                               Text(
                                 '${businessUse.toStringAsFixed(1)}%',
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: AppColors.ink),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 24,
+                                    color: AppColors.ink),
                               ),
-                              const Text('Business use', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w700)),
+                              const Text('Business use',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.muted,
+                                      fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
@@ -108,17 +133,33 @@ class LogbookProgressScreen extends StatelessWidget {
                     children: [
                       Column(
                         children: [
-                          Text(Formatters.distance(businessKm), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink)),
+                          Text(Formatters.distance(businessKm),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  color: AppColors.ink)),
                           const SizedBox(height: 2),
-                          const Text('Business', style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600)),
+                          const Text('Business',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                       Container(width: 1, height: 32, color: AppColors.border),
                       Column(
                         children: [
-                          Text(Formatters.distance(totalKm), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink)),
+                          Text(Formatters.distance(totalKm),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  color: AppColors.ink)),
                           const SizedBox(height: 2),
-                          const Text('Total', style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600)),
+                          const Text('Total',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],
@@ -129,7 +170,11 @@ class LogbookProgressScreen extends StatelessWidget {
             const SizedBox(height: 18),
 
             // This Week Section Card
-            const Text('This week', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink)),
+            const Text('This week',
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: AppColors.ink)),
             const SizedBox(height: 10),
             Container(
               decoration: BoxDecoration(
@@ -142,29 +187,47 @@ class LogbookProgressScreen extends StatelessWidget {
                   Material(
                     color: Colors.transparent,
                     child: ListTile(
-                      leading: const Icon(LucideIcons.car, color: AppColors.deepNavy, size: 20),
-                      title: const Text('3 work trips', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
-                      onTap: () {},
+                      leading: const Icon(LucideIcons.car,
+                          color: AppColors.deepNavy, size: 20),
+                      title: Text(
+                          '$thisWeekWorkTrips ${thisWeekWorkTrips == 1 ? "work trip" : "work trips"}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 14)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                          size: 14, color: AppColors.muted),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
                     ),
                   ),
                   const Divider(height: 1, color: AppColors.border),
                   Material(
                     color: Colors.transparent,
                     child: ListTile(
-                      leading: const Icon(LucideIcons.alertCircle, color: AppColors.amberDark, size: 20),
-                      title: const Text('Missing purpose', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      leading: const Icon(LucideIcons.alertCircle,
+                          color: AppColors.amberDark, size: 20),
+                      title: const Text('Missing purpose',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 14)),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: AppColors.amberLight, borderRadius: BorderRadius.circular(6)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: AppColors.amberLight,
+                            borderRadius: BorderRadius.circular(6)),
                         child: Text(
-                          '${missingCount > 0 ? missingCount : 2}',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.amberDark),
+                          '$missingCount',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              color: AppColors.amberDark),
                         ),
                       ),
                       onTap: () {
                         if (appState.missingComplianceTrips.isNotEmpty) {
-                          TripQuickResolveSheet.show(context, trip: appState.missingComplianceTrips.first, appState: appState);
+                          TripQuickResolveSheet.show(context,
+                              trip: appState.missingComplianceTrips.first,
+                              appState: appState);
                         }
                       },
                     ),
@@ -175,7 +238,11 @@ class LogbookProgressScreen extends StatelessWidget {
             const SizedBox(height: 18),
 
             // Odometer Tracker Card
-            const Text('Odometer', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.ink)),
+            const Text('Odometer',
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: AppColors.ink)),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(16),
@@ -191,12 +258,18 @@ class LogbookProgressScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Text('Start', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: AppColors.muted)),
+                          const Text('Start',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                  color: AppColors.muted)),
                           const SizedBox(width: 6),
                           GestureDetector(
-                            onTap: () => _showEditStartingOdometerDialog(context, appState),
+                            onTap: () => _showEditStartingOdometerDialog(
+                                context, appState),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.workBlueLight,
                                 borderRadius: BorderRadius.circular(4),
@@ -204,9 +277,14 @@ class LogbookProgressScreen extends StatelessWidget {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(LucideIcons.pencil, size: 10, color: AppColors.workBlue),
+                                  Icon(LucideIcons.pencil,
+                                      size: 10, color: AppColors.workBlue),
                                   SizedBox(width: 2),
-                                  Text('Edit', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.workBlue)),
+                                  Text('Edit',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.workBlue)),
                                 ],
                               ),
                             ),
@@ -215,7 +293,10 @@ class LogbookProgressScreen extends StatelessWidget {
                       ),
                       Text(
                         '${Formatters.distance(appState.startingOdometer)} km',
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            color: AppColors.ink),
                       ),
                     ],
                   ),
@@ -223,10 +304,17 @@ class LogbookProgressScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Current / End', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: AppColors.muted)),
+                      const Text('Current / End',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                              color: AppColors.muted)),
                       Text(
                         '${Formatters.distance(appState.currentOdometer)} km',
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            color: AppColors.ink),
                       ),
                     ],
                   ),
@@ -237,17 +325,25 @@ class LogbookProgressScreen extends StatelessWidget {
                       Row(
                         children: [
                           Icon(
-                            appState.isOdometerChainGapless ? LucideIcons.checkCircle2 : LucideIcons.alertTriangle,
+                            appState.isOdometerChainGapless
+                                ? LucideIcons.checkCircle2
+                                : LucideIcons.alertTriangle,
                             size: 15,
-                            color: appState.isOdometerChainGapless ? AppColors.emerald : AppColors.amber,
+                            color: appState.isOdometerChainGapless
+                                ? AppColors.emerald
+                                : AppColors.amber,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            appState.isOdometerChainGapless ? 'Odometer complete' : 'Odometer gap',
+                            appState.isOdometerChainGapless
+                                ? 'Odometer complete'
+                                : 'Odometer gap',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
-                              color: appState.isOdometerChainGapless ? AppColors.emerald : AppColors.amber,
+                              color: appState.isOdometerChainGapless
+                                  ? AppColors.emerald
+                                  : AppColors.amber,
                             ),
                           ),
                         ],
@@ -255,7 +351,10 @@ class LogbookProgressScreen extends StatelessWidget {
                       if (!appState.isOdometerChainGapless)
                         const Text(
                           'Review',
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.amber),
+                          style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.amber),
                         ),
                     ],
                   ),
@@ -282,7 +381,10 @@ class LogbookProgressScreen extends StatelessWidget {
                       SizedBox(width: 8),
                       Text(
                         'Odometer Photo',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.ink),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                            color: AppColors.ink),
                       ),
                     ],
                   ),
@@ -291,14 +393,16 @@ class LogbookProgressScreen extends StatelessWidget {
                     context: context,
                     label: 'Day 1 Start',
                     photoPath: appState.primaryVehicle?.startOdometerPhotoPath,
-                    onTap: () => _handleCapturePhoto(context, appState, isStart: true),
+                    onTap: () =>
+                        _handleCapturePhoto(context, appState, isStart: true),
                   ),
                   const Divider(height: 16, color: AppColors.border),
                   _buildPhotoProofRow(
                     context: context,
                     label: 'Day 84 Finish',
                     photoPath: appState.primaryVehicle?.endOdometerPhotoPath,
-                    onTap: () => _handleCapturePhoto(context, appState, isStart: false),
+                    onTap: () =>
+                        _handleCapturePhoto(context, appState, isStart: false),
                   ),
                 ],
               ),
@@ -309,7 +413,8 @@ class LogbookProgressScreen extends StatelessWidget {
     );
   }
 
-  void _showEditStartingOdometerDialog(BuildContext context, AppState appState) {
+  void _showEditStartingOdometerDialog(
+      BuildContext context, AppState appState) {
     final controller = TextEditingController(
       text: appState.startingOdometer.toStringAsFixed(0),
     );
@@ -323,7 +428,8 @@ class LogbookProgressScreen extends StatelessWidget {
           children: [
             Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 22),
             SizedBox(width: 8),
-            Text('Edit Starting Odometer', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            Text('Edit Starting Odometer',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
           ],
         ),
         content: Column(
@@ -344,14 +450,18 @@ class LogbookProgressScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.info, size: 14, color: AppColors.workBlue),
+                  const Icon(LucideIcons.info,
+                      size: 14, color: AppColors.workBlue),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       maxAllowed != null
                           ? 'ATO Rule: Must not exceed first trip start (${maxAllowed.toStringAsFixed(0)} km).'
                           : 'No trips logged yet: Editable freely.',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink),
                     ),
                   ),
                 ],
@@ -362,12 +472,17 @@ class LogbookProgressScreen extends StatelessWidget {
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppColors.ink),
               decoration: InputDecoration(
                 suffixText: 'km',
                 filled: true,
                 fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -375,19 +490,23 @@ class LogbookProgressScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.muted)),
+            child:
+                const Text('Cancel', style: TextStyle(color: AppColors.muted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
-              final newOdo = double.tryParse(controller.text.replaceAll(',', '').trim());
+              final newOdo =
+                  double.tryParse(controller.text.replaceAll(',', '').trim());
               if (newOdo == null) return;
 
-              final (isValid, errorMsg) = appState.validateStartingOdometer(newOdo);
+              final (isValid, errorMsg) =
+                  appState.validateStartingOdometer(newOdo);
               if (!isValid) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -405,7 +524,8 @@ class LogbookProgressScreen extends StatelessWidget {
                 SnackBar(
                   behavior: SnackBarBehavior.floating,
                   backgroundColor: AppColors.emerald,
-                  content: Text('✓ Starting odometer updated to ${newOdo.toStringAsFixed(0)} km'),
+                  content: Text(
+                      '✓ Starting odometer updated to ${newOdo.toStringAsFixed(0)} km'),
                 ),
               );
             },
@@ -434,20 +554,29 @@ class LogbookProgressScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink)),
                 const SizedBox(height: 2),
                 Text(
                   isVerified ? 'Photo saved' : 'Take photo',
-                  style: TextStyle(fontSize: 11, color: isVerified ? AppColors.emerald : AppColors.muted),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: isVerified ? AppColors.emerald : AppColors.muted),
                 ),
               ],
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isVerified ? AppColors.emerald.withValues(alpha: 0.1) : AppColors.background,
+                color: isVerified
+                    ? AppColors.emerald.withValues(alpha: 0.1)
+                    : AppColors.background,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isVerified ? AppColors.emerald : AppColors.border),
+                border: Border.all(
+                    color: isVerified ? AppColors.emerald : AppColors.border),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -475,7 +604,8 @@ class LogbookProgressScreen extends StatelessWidget {
     );
   }
 
-  void _handleCapturePhoto(BuildContext context, AppState appState, {required bool isStart}) {
+  void _handleCapturePhoto(BuildContext context, AppState appState,
+      {required bool isStart}) {
     OdometerCameraCaptureSheet.show(
       context,
       appState: appState,

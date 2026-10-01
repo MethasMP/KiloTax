@@ -18,7 +18,8 @@ class TripDetectionScreen extends StatelessWidget {
     this.detectedTrip,
   });
 
-  static Future<void> show(BuildContext context, AppState appState, {Trip? trip}) {
+  static Future<void> show(BuildContext context, AppState appState,
+      {Trip? trip}) {
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     return Navigator.of(context).push(
       MaterialPageRoute(

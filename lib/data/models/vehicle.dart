@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
 enum VehicleType {
   car,
   ute,
@@ -38,21 +35,6 @@ enum VehicleType {
     }
   }
 
-  IconData get iconData {
-    switch (this) {
-      case VehicleType.ute:
-        return Icons.minor_crash_rounded; // Front-facing vehicle badge for Ute / Work rig
-      case VehicleType.van:
-        return Icons.airport_shuttle_rounded; // Commercial van
-      case VehicleType.suv:
-        return Icons.directions_car_filled_rounded; // SUV
-      case VehicleType.truck:
-        return Icons.local_shipping_rounded; // Truck
-      case VehicleType.car:
-        return Icons.directions_car_rounded; // Car / Sedan
-    }
-  }
-
   String get svgAssetPath {
     switch (this) {
       case VehicleType.ute:
@@ -81,63 +63,6 @@ enum VehicleType {
       case VehicleType.car:
         return 'assets/vehicles/car.png';
     }
-  }
-
-  /// Builds a Carsales / Tesla app grade 3D studio transparent cutout render
-  /// Resolves specific car model assets (e.g. Tesla Model Y, Corolla) when available
-  Widget build3dRender({
-    String? make,
-    String? model,
-    double? width,
-    double? height,
-    BoxFit fit = BoxFit.contain,
-  }) {
-    String resolvedPath = imageAssetPath;
-    final cleanModel = (model ?? '').toLowerCase();
-    final cleanMake = (make ?? '').toLowerCase();
-
-    if (cleanModel.contains('model y')) {
-      resolvedPath = 'assets/vehicles/tesla_model_y.png';
-    } else if (cleanModel.contains('corolla')) {
-      resolvedPath = 'assets/vehicles/toyota_corolla.png';
-    } else if (cleanMake.contains('tesla') && cleanModel.contains('model 3')) {
-      resolvedPath = 'assets/vehicles/car.png';
-    }
-
-    return Image.asset(
-      resolvedPath,
-      width: width,
-      height: height,
-      fit: fit,
-      errorBuilder: (_, __, ___) => Image.asset(
-        imageAssetPath,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) => buildSilhouette(
-          width: width ?? 24,
-          height: height ?? 24,
-          fit: fit,
-        ),
-      ),
-    );
-  }
-
-  /// Builds a high-precision vector silhouette icon with graceful Material icon fallback
-  Widget buildSilhouette({
-    double width = 24,
-    double height = 24,
-    Color color = const Color(0xFF0F172A),
-    BoxFit fit = BoxFit.contain,
-  }) {
-    return SvgPicture.asset(
-      svgAssetPath,
-      width: width,
-      height: height,
-      fit: fit,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-      placeholderBuilder: (_) => Icon(iconData, size: height, color: color),
-    );
   }
 }
 
@@ -194,9 +119,6 @@ class Vehicle {
   final String? endOdometerPhotoPath;
   final DateTime? endOdometerVerifiedAt;
   final String? endOdometerImageHash;
-  final String? toolSetupPhotoPath;
-  final DateTime? toolSetupVerifiedAt;
-  final String? toolSetupImageHash;
 
   Vehicle({
     required this.id,
@@ -218,14 +140,66 @@ class Vehicle {
     this.endOdometerPhotoPath,
     this.endOdometerVerifiedAt,
     this.endOdometerImageHash,
-    this.toolSetupPhotoPath,
-    this.toolSetupVerifiedAt,
-    this.toolSetupImageHash,
   });
 
-  String get displayName => (regoPlate.isEmpty || regoPlate == 'No Plate')
-      ? '$make $model'
-      : '$make $model ($regoPlate)';
+  bool get hasRegoPlate =>
+      regoPlate.trim().isNotEmpty &&
+      regoPlate.trim().toLowerCase() != 'no plate';
+
+  String get displayName => hasRegoPlate
+      ? '$make $model ($regoPlate)'
+      : '$make $model';
+
+  /// Body style resolver:
+  /// Infers vehicle archetype from make & model keywords (Hilux, Ranger, RAV4, HiAce, etc.)
+  VehicleType get effectiveVehicleType {
+    if (vehicleType != VehicleType.car) return vehicleType;
+    final m = model.toLowerCase();
+    if (m.contains('hilux') ||
+        m.contains('ranger') ||
+        m.contains('d-max') ||
+        m.contains('dmax') ||
+        m.contains('navara') ||
+        m.contains('triton') ||
+        m.contains('amarok') ||
+        m.contains('bt-50') ||
+        m.contains('ute') ||
+        m.contains('cab chassis')) {
+      return VehicleType.ute;
+    }
+    if (m.contains('rav4') ||
+        m.contains('cx-5') ||
+        m.contains('everest') ||
+        m.contains('prado') ||
+        m.contains('landcruiser') ||
+        m.contains('outback') ||
+        m.contains('forester') ||
+        m.contains('tucson') ||
+        m.contains('sportage') ||
+        m.contains('x-trail') ||
+        m.contains('model y') ||
+        m.contains('suv')) {
+      return VehicleType.suv;
+    }
+    if (m.contains('hiace') ||
+        m.contains('transit') ||
+        m.contains('iload') ||
+        m.contains('staria') ||
+        m.contains('transporter') ||
+        m.contains('caddy') ||
+        m.contains('trafic') ||
+        m.contains('van')) {
+      return VehicleType.van;
+    }
+    if (m.contains('n-series') ||
+        m.contains('isuzu') ||
+        m.contains('canter') ||
+        m.contains('hino') ||
+        m.contains('truck')) {
+      return VehicleType.truck;
+    }
+    return VehicleType.car;
+  }
 
   Vehicle copyWith({
     String? id,
@@ -247,9 +221,6 @@ class Vehicle {
     String? endOdometerPhotoPath,
     DateTime? endOdometerVerifiedAt,
     String? endOdometerImageHash,
-    String? toolSetupPhotoPath,
-    DateTime? toolSetupVerifiedAt,
-    String? toolSetupImageHash,
     bool clearBluetoothDevice = false,
   }) {
     return Vehicle(
@@ -268,15 +239,16 @@ class Vehicle {
       logbookStartDate: logbookStartDate ?? this.logbookStartDate,
       clientDedupId: clientDedupId ?? this.clientDedupId,
       deletedAt: deletedAt ?? this.deletedAt,
-      startOdometerPhotoPath: startOdometerPhotoPath ?? this.startOdometerPhotoPath,
-      startOdometerVerifiedAt: startOdometerVerifiedAt ?? this.startOdometerVerifiedAt,
-      startOdometerImageHash: startOdometerImageHash ?? this.startOdometerImageHash,
+      startOdometerPhotoPath:
+          startOdometerPhotoPath ?? this.startOdometerPhotoPath,
+      startOdometerVerifiedAt:
+          startOdometerVerifiedAt ?? this.startOdometerVerifiedAt,
+      startOdometerImageHash:
+          startOdometerImageHash ?? this.startOdometerImageHash,
       endOdometerPhotoPath: endOdometerPhotoPath ?? this.endOdometerPhotoPath,
-      endOdometerVerifiedAt: endOdometerVerifiedAt ?? this.endOdometerVerifiedAt,
+      endOdometerVerifiedAt:
+          endOdometerVerifiedAt ?? this.endOdometerVerifiedAt,
       endOdometerImageHash: endOdometerImageHash ?? this.endOdometerImageHash,
-      toolSetupPhotoPath: toolSetupPhotoPath ?? this.toolSetupPhotoPath,
-      toolSetupVerifiedAt: toolSetupVerifiedAt ?? this.toolSetupVerifiedAt,
-      toolSetupImageHash: toolSetupImageHash ?? this.toolSetupImageHash,
     );
   }
 
@@ -301,9 +273,6 @@ class Vehicle {
       'endOdometerPhotoPath': endOdometerPhotoPath,
       'endOdometerVerifiedAt': endOdometerVerifiedAt?.toIso8601String(),
       'endOdometerImageHash': endOdometerImageHash,
-      'toolSetupPhotoPath': toolSetupPhotoPath,
-      'toolSetupVerifiedAt': toolSetupVerifiedAt?.toIso8601String(),
-      'toolSetupImageHash': toolSetupImageHash,
     };
   }
 
@@ -313,40 +282,53 @@ class Vehicle {
       make: json['make'] as String,
       model: json['model'] as String,
       regoPlate: (json['regoPlate'] ?? json['rego_plate']) as String,
-      initialOdometer: ((json['initialOdometer'] ?? json['initial_odometer']) as num).toDouble(),
-      engineCapacity: (json['engineCapacity'] ?? json['engine_capacity']) as String?,
+      initialOdometer:
+          ((json['initialOdometer'] ?? json['initial_odometer']) as num)
+              .toDouble(),
+      engineCapacity:
+          (json['engineCapacity'] ?? json['engine_capacity']) as String?,
       vehicleType: VehicleType.values.firstWhere(
         (v) => v.name == (json['vehicleType'] ?? json['vehicle_type']),
         orElse: () => VehicleType.car,
       ),
-      bluetoothDeviceName: (json['bluetoothDeviceName'] ?? json['bluetooth_device_name']) as String?,
+      bluetoothDeviceName: (json['bluetoothDeviceName'] ??
+          json['bluetooth_device_name']) as String?,
       isPrimary: (json['isPrimary'] ?? json['is_primary']) as bool? ?? true,
       taxMethod: TaxMethod.values.firstWhere(
         (t) => t.name == (json['taxMethod'] ?? json['tax_method']),
         orElse: () => TaxMethod.centsPerKm,
       ),
-      logbookStartDate: (json['logbookStartDate'] ?? json['logbook_start_date']) != null
-          ? DateTime.tryParse((json['logbookStartDate'] ?? json['logbook_start_date']) as String)
-          : null,
-      clientDedupId: (json['clientDedupId'] ?? json['client_dedup_id']) as String?,
+      logbookStartDate:
+          (json['logbookStartDate'] ?? json['logbook_start_date']) != null
+              ? DateTime.tryParse((json['logbookStartDate'] ??
+                  json['logbook_start_date']) as String)
+              : null,
+      clientDedupId:
+          (json['clientDedupId'] ?? json['client_dedup_id']) as String?,
       deletedAt: (json['deletedAt'] ?? json['deleted_at']) != null
-          ? DateTime.tryParse((json['deletedAt'] ?? json['deleted_at']) as String)
+          ? DateTime.tryParse(
+              (json['deletedAt'] ?? json['deleted_at']) as String)
           : null,
-      startOdometerPhotoPath: json['startOdometerPhotoPath'] as String?,
-      startOdometerVerifiedAt: json['startOdometerVerifiedAt'] != null
-          ? DateTime.tryParse(json['startOdometerVerifiedAt'] as String)
+      startOdometerPhotoPath: (json['startOdometerPhotoPath'] ??
+              json['start_odometer_photo_path']) as String?,
+      startOdometerVerifiedAt: (json['startOdometerVerifiedAt'] ??
+                  json['start_odometer_verified_at']) !=
+              null
+          ? DateTime.tryParse((json['startOdometerVerifiedAt'] ??
+              json['start_odometer_verified_at']) as String)
           : null,
-      startOdometerImageHash: json['startOdometerImageHash'] as String?,
-      endOdometerPhotoPath: json['endOdometerPhotoPath'] as String?,
-      endOdometerVerifiedAt: json['endOdometerVerifiedAt'] != null
-          ? DateTime.tryParse(json['endOdometerVerifiedAt'] as String)
+      startOdometerImageHash: (json['startOdometerImageHash'] ??
+              json['start_odometer_image_hash']) as String?,
+      endOdometerPhotoPath: (json['endOdometerPhotoPath'] ??
+              json['end_odometer_photo_path']) as String?,
+      endOdometerVerifiedAt: (json['endOdometerVerifiedAt'] ??
+                  json['end_odometer_verified_at']) !=
+              null
+          ? DateTime.tryParse((json['endOdometerVerifiedAt'] ??
+              json['end_odometer_verified_at']) as String)
           : null,
-      endOdometerImageHash: json['endOdometerImageHash'] as String?,
-      toolSetupPhotoPath: json['toolSetupPhotoPath'] as String?,
-      toolSetupVerifiedAt: json['toolSetupVerifiedAt'] != null
-          ? DateTime.tryParse(json['toolSetupVerifiedAt'] as String)
-          : null,
-      toolSetupImageHash: json['toolSetupImageHash'] as String?,
+      endOdometerImageHash: (json['endOdometerImageHash'] ??
+              json['end_odometer_image_hash']) as String?,
     );
   }
 }

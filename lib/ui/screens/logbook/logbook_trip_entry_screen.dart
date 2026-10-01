@@ -45,7 +45,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     _destinationController = TextEditingController(
       text: widget.detectedTrip?.destinationAddress ?? '',
     );
-    _customStartOdo = widget.detectedTrip?.startOdometer ?? widget.appState.currentOdometer;
+    _customStartOdo =
+        widget.detectedTrip?.startOdometer ?? widget.appState.currentOdometer;
   }
 
   @override
@@ -58,7 +59,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
 
   void _saveTrip() {
     HapticFeedback.heavyImpact();
-    final parsedDist = double.tryParse(_distanceController.text.trim()) ?? _currentDistance;
+    final parsedDist =
+        double.tryParse(_distanceController.text.trim()) ?? _currentDistance;
     if (parsedDist <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -96,7 +98,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
         _selectedPurpose == 'Carrying Heavy Tools' ||
         _selectedPurpose == 'Work Site (Bulky Tools Carried)';
     if (!isPersonal) {
-      final (isCompliant, warning) = widget.appState.validateHomeToWorkCompliance(
+      final (isCompliant, warning) =
+          widget.appState.validateHomeToWorkCompliance(
         origin: origin,
         destination: dest,
         purpose: _selectedPurpose,
@@ -115,14 +118,17 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     }
 
     final trip = Trip(
-      id: widget.detectedTrip?.id ?? 'logbook_trip_${DateTime.now().millisecondsSinceEpoch}',
+      id: widget.detectedTrip?.id ??
+          'logbook_trip_${DateTime.now().millisecondsSinceEpoch}',
       vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
       distanceKm: parsedDist,
       date: widget.detectedTrip?.date ?? DateTime.now(),
       purpose: _selectedPurpose,
       startOdometer: startOdo,
       endOdometer: endOdo,
-      classification: isPersonal ? TripClassification.personal : TripClassification.business,
+      classification: isPersonal
+          ? TripClassification.personal
+          : TripClassification.business,
       originAddress: origin,
       destinationAddress: dest,
     );
@@ -142,7 +148,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.muted,
-          content: Text('Personal drive recorded: ${startOdo.toStringAsFixed(0)} → ${endOdo.toStringAsFixed(0)} km'),
+          content: Text(
+              'Personal drive recorded: ${startOdo.toStringAsFixed(0)} → ${endOdo.toStringAsFixed(0)} km'),
         ),
       );
     }
@@ -152,7 +159,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
   Widget build(BuildContext context) {
     final endOdo = _customStartOdo + _currentDistance;
     final tripDate = widget.detectedTrip?.date ?? DateTime.now();
-    final isWeekend = tripDate.weekday == DateTime.saturday || tripDate.weekday == DateTime.sunday;
+    final isWeekend = tripDate.weekday == DateTime.saturday ||
+        tripDate.weekday == DateTime.sunday;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -160,10 +168,12 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: AppColors.ink),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Log Logbook Drive (TR 97/11)', style: AppTextStyles.cardPrimary),
+        title: const Text('Log Logbook Drive (TR 97/11)',
+            style: AppTextStyles.cardPrimary),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -179,12 +189,14 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.amberLight,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.amberDark.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppColors.amberDark.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(LucideIcons.alertTriangle, size: 20, color: AppColors.amberDark),
+                    const Icon(LucideIcons.alertTriangle,
+                        size: 20, color: AppColors.amberDark),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -201,7 +213,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
                           SizedBox(height: 3),
                           Text(
                             'ATO audits scrutinize weekend drives. Ensure you select a distinct business purpose or mark as Personal if private.',
-                            style: TextStyle(fontSize: 11.5, color: AppColors.ink),
+                            style:
+                                TextStyle(fontSize: 11.5, color: AppColors.ink),
                           ),
                         ],
                       ),
@@ -222,20 +235,30 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Trip Distance (km)', style: AppTextStyles.caption),
+                  const Text('Trip Distance (km)',
+                      style: AppTextStyles.caption),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _distanceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     autofocus: widget.detectedTrip == null,
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.deepNavy),
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.deepNavy),
                     decoration: const InputDecoration(
                       isDense: true,
                       hintText: '0.0',
                       contentPadding: EdgeInsets.symmetric(vertical: 4),
-                      border: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.deepNavy, width: 2)),
+                      border: UnderlineInputBorder(
+                          borderSide:
+                              BorderSide(color: AppColors.deepNavy, width: 2)),
                       suffixText: 'km',
-                      suffixStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.muted),
+                      suffixStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted),
                     ),
                     onChanged: (val) {
                       setState(() {
@@ -250,15 +273,20 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
                   // Origin field
                   Row(
                     children: [
-                      const Icon(LucideIcons.mapPin, size: 15, color: AppColors.muted),
+                      const Icon(LucideIcons.mapPin,
+                          size: 15, color: AppColors.muted),
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: _originController,
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink),
                           decoration: const InputDecoration(
                             isDense: true,
-                            hintText: 'Start suburb / depot (TR 97/11 Required)',
+                            hintText:
+                                'Start suburb / depot (TR 97/11 Required)',
                             border: InputBorder.none,
                           ),
                         ),
@@ -270,15 +298,20 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
                   // Destination field
                   Row(
                     children: [
-                      const Icon(LucideIcons.navigation, size: 15, color: AppColors.emerald),
+                      const Icon(LucideIcons.navigation,
+                          size: 15, color: AppColors.emerald),
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: _destinationController,
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink),
                           decoration: const InputDecoration(
                             isDense: true,
-                            hintText: 'End suburb / destination (TR 97/11 Required)',
+                            hintText:
+                                'End suburb / destination (TR 97/11 Required)',
                             border: InputBorder.none,
                           ),
                         ),
@@ -303,7 +336,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
               appState: widget.appState,
               startOdometer: _customStartOdo,
               endOdometer: endOdo,
-              onStartOdometerChanged: (val) => setState(() => _customStartOdo = val),
+              onStartOdometerChanged: (val) =>
+                  setState(() => _customStartOdo = val),
             ),
             const SizedBox(height: 24),
 
@@ -313,11 +347,13 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
                 backgroundColor: AppColors.deepNavy,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
               ),
               onPressed: _saveTrip,
-              child: const Text('Save Audit Record', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              child: const Text('Save Audit Record',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             ),
           ],
         ),

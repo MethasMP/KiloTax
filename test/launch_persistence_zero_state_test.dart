@@ -10,12 +10,16 @@ import 'package:kilotax/state/app_state.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('KiloTax Production Launch - Zero-State & Local Persistence Verification', () {
+  group(
+      'KiloTax Production Launch - Zero-State & Local Persistence Verification',
+      () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test(r'Fresh install starts with genuine clean zero-state (0 trips, 0 expenses, $0.00 claim)', () async {
+    test(
+        r'Fresh install starts with genuine clean zero-state (0 trips, 0 expenses, $0.00 claim)',
+        () async {
       final storage = await LocalStorageService.init();
       final appState = AppState(storageService: storage);
       await appState.init();
@@ -33,7 +37,8 @@ void main() {
       expect(summary.highestClaim, equals(0.0));
     });
 
-    test('Adding real vehicle and trips persists across app restarts', () async {
+    test('Adding real vehicle and trips persists across app restarts',
+        () async {
       final storage = await LocalStorageService.init();
       final appState1 = AppState(storageService: storage);
       await appState1.init();
@@ -77,7 +82,8 @@ void main() {
 
       // Verify immediate live calculations in session 1
       expect(appState1.hasVehicle, isTrue);
-      expect(appState1.primaryVehicle?.displayName, equals('Toyota Hilux SR5 (TRADIE-99)'));
+      expect(appState1.primaryVehicle?.displayName,
+          equals('Toyota Hilux SR5 (TRADIE-99)'));
       expect(appState1.trips.length, equals(1));
       expect(appState1.expenses.length, equals(1));
       expect(appState1.taxSummary.businessKm, equals(32.5));
@@ -93,14 +99,17 @@ void main() {
       expect(appState2.primaryVehicle?.make, equals('Toyota'));
       expect(appState2.primaryVehicle?.model, equals('Hilux SR5'));
       expect(appState2.trips.length, equals(1));
-      expect(appState2.trips.first.destinationAddress, equals('Client Job Site, Alexandria'));
+      expect(appState2.trips.first.destinationAddress,
+          equals('Client Job Site, Alexandria'));
       expect(appState2.trips.first.distanceKm, equals(32.5));
       expect(appState2.expenses.length, equals(1));
       expect(appState2.expenses.first.amount, equals(215.40));
       expect(appState2.taxSummary.centsPerKmClaim, closeTo(32.5 * 0.91, 0.01));
     });
 
-    test('Zero mock/seed data policy: AppState contains no seedRealisticDemoData', () {
+    test(
+        'Zero mock/seed data policy: AppState contains no seedRealisticDemoData',
+        () {
       final appState = AppState();
       // Ensure there are no unexpected default pre-filled items
       expect(appState.trips, isEmpty);
@@ -108,15 +117,22 @@ void main() {
       expect(appState.vehicles, isEmpty);
     });
 
-    test('Australian Vehicle Catalog delivers instant search, top tradie chips, and optional plate', () {
+    test(
+        'Australian Vehicle Catalog delivers instant search, top tradie chips, and optional plate',
+        () {
       // 1. Popular Tradie quick chips
       final popular = AustralianVehicleCatalog.popularTradieVehicles;
       expect(popular.length, equals(5));
-      expect(popular.any((v) => v.model == 'Ranger' && v.make == 'Ford'), isTrue);
-      expect(popular.any((v) => v.model == 'HiLux' && v.make == 'Toyota'), isTrue);
-      expect(popular.any((v) => v.model == 'D-Max' && v.make == 'Isuzu'), isTrue);
-      expect(popular.any((v) => v.model == 'Triton' && v.make == 'Mitsubishi'), isTrue);
-      expect(popular.any((v) => v.model == 'HiAce' && v.make == 'Toyota'), isTrue);
+      expect(
+          popular.any((v) => v.model == 'Ranger' && v.make == 'Ford'), isTrue);
+      expect(
+          popular.any((v) => v.model == 'HiLux' && v.make == 'Toyota'), isTrue);
+      expect(
+          popular.any((v) => v.model == 'D-Max' && v.make == 'Isuzu'), isTrue);
+      expect(popular.any((v) => v.model == 'Triton' && v.make == 'Mitsubishi'),
+          isTrue);
+      expect(
+          popular.any((v) => v.model == 'HiAce' && v.make == 'Toyota'), isTrue);
 
       // 2. Search catalog
       final searchResults = AustralianVehicleCatalog.search('Hilux');

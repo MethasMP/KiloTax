@@ -6,7 +6,9 @@ import 'package:kilotax/services/engine/pdf_export_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('PdfExportService cleanly exports PDF with unicode bullet symbols without font fallback error', () async {
+  test(
+      'PdfExportService cleanly exports PDF with unicode bullet symbols without font fallback error',
+      () async {
     final vehicle = Vehicle(
       id: 'v1',
       make: 'Toyota',

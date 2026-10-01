@@ -39,7 +39,9 @@ void main() {
       expect(errorMsg, contains('negative'));
     });
 
-    test('Starting odometer is bounded by first trip startOdometer once trips exist', () {
+    test(
+        'Starting odometer is bounded by first trip startOdometer once trips exist',
+        () {
       appState.recordTrip(
         Trip(
           id: 'trip_1',
@@ -95,7 +97,9 @@ void main() {
   });
 
   group('Zero-Data-Loss Sign Out Guard Tests', () {
-    test('Sign out with wipeLocalData=false preserves vehicle and offline trips', () async {
+    test(
+        'Sign out with wipeLocalData=false preserves vehicle and offline trips',
+        () async {
       final appState = AppState();
       final vehicle = Vehicle(
         id: 'test_veh',
@@ -175,7 +179,9 @@ void main() {
       appState.addVehicle(vehicle);
     });
 
-    test('Gapless chaining across Work and Personal trips maintains continuous ledger', () {
+    test(
+        'Gapless chaining across Work and Personal trips maintains continuous ledger',
+        () {
       // 1. Work trip
       appState.recordTrip(
         Trip(
@@ -266,7 +272,9 @@ void main() {
       expect(appState.isOdometerChainGapless, true);
     });
 
-    test('Home-to-work travel compliance warns when commuting without bulky tools (TR 2021/1)', () {
+    test(
+        'Home-to-work travel compliance warns when commuting without bulky tools (TR 2021/1)',
+        () {
       // Home to site without bulky tools -> triggers warning
       final (isCompliant, warning) = appState.validateHomeToWorkCompliance(
         origin: 'Home - 12 Elm Street',
@@ -279,7 +287,8 @@ void main() {
       expect(warning, contains('heavy or bulky equipment'));
 
       // Home to site WITH bulky tools -> compliant
-      final (isCompliantWithTools, warningTools) = appState.validateHomeToWorkCompliance(
+      final (isCompliantWithTools, warningTools) =
+          appState.validateHomeToWorkCompliance(
         origin: 'Home - 12 Elm Street',
         destination: 'Commercial Job Site',
         purpose: 'Work Site (Bulky Tools Carried)',
@@ -290,7 +299,8 @@ void main() {
       expect(warningTools, isNull);
 
       // Non-home origin (e.g. Depot to Job Site) -> compliant without bulky tools
-      final (isCompliantDepot, warningDepot) = appState.validateHomeToWorkCompliance(
+      final (isCompliantDepot, warningDepot) =
+          appState.validateHomeToWorkCompliance(
         origin: 'Trade Depot',
         destination: 'Commercial Job Site',
         purpose: 'Client / Job',
@@ -308,7 +318,8 @@ void main() {
         startVerifiedAt: now,
       );
 
-      expect(appState.primaryVehicle?.startOdometerPhotoPath, '/photos/odo_start.jpg');
+      expect(appState.primaryVehicle?.startOdometerPhotoPath,
+          '/photos/odo_start.jpg');
       expect(appState.primaryVehicle?.startOdometerVerifiedAt, now);
 
       appState.setLogbookOdometerPhotos(
@@ -316,9 +327,9 @@ void main() {
         endVerifiedAt: now,
       );
 
-      expect(appState.primaryVehicle?.endOdometerPhotoPath, '/photos/odo_end.jpg');
+      expect(
+          appState.primaryVehicle?.endOdometerPhotoPath, '/photos/odo_end.jpg');
       expect(appState.primaryVehicle?.endOdometerVerifiedAt, now);
     });
   });
 }
-

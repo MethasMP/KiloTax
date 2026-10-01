@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KiloTax App Store Screenshots Inspector (6.9" Display)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #020617;
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+    }
+    header {
+      max-width: 1400px;
+      margin: 0 auto 30px;
+      padding: 24px;
+      background: #0F172A;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #F59E0B;
+    }
+    .specs-badge {
+      display: inline-flex;
+      gap: 8px;
+    }
+    .badge {
+      background: #1E293B;
+      color: #94A3B8;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #334155;
+    }
+    .badge-amber {
+      background: #FEF3C7;
+      color: #B45309;
+      border-color: #F59E0B;
+    }
+    .badge-mint {
+      background: #ECFDF5;
+      color: #059669;
+      border-color: #10B981;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    label {
+      font-size: 14px;
+      color: #94A3B8;
+    }
+    select {
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid #475569;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .gallery {
+      display: flex;
+      gap: 32px;
+      overflow-x: auto;
+      padding-bottom: 40px;
+      max-width: 100%;
+    }
+    .slide-wrapper {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slide-meta {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .slide-num {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F59E0B;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .slide-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #F8FAFC;
+    }
+    .slide-canvas {
+      width: 330px; /* 1320 * 0.25 */
+      height: 717px; /* 2868 * 0.25 */
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      border: 1px solid #334155;
+      background: #0F172A;
+      transition: transform 0.2s ease;
+    }
+    .slide-canvas img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .slide-canvas:hover {
+      transform: translateY(-4px);
+      border-color: #F59E0B;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>KiloTax App Store Screenshots (6.9" Display)</h1>
+      <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">iPhone 16 Pro Max / 17 Pro Max / 18 Pro Max • Native 1320 × 2868 px</p>
+    </div>
+    <div class="specs-badge">
+      <span class="badge badge-amber">Aussie Tradie High-Vis</span>
+      <span class="badge badge-mint">ATO 91¢/km Cap Handled</span>
+      <span class="badge">No Fake Hardware Bezels</span>
+      <span class="badge">Zero Alpha Channel</span>
+    </div>
+    <div class="controls">
+      <label for="scaleSelect">Zoom Scale:</label>
+      <select id="scaleSelect" onchange="updateScale(this.value)">
+        <option value="0.25" selected>25% (330 × 717 px)</option>
+        <option value="0.33">33% (435 × 946 px)</option>
+        <option value="0.50">50% (660 × 1434 px)</option>
+        <option value="1.00">100% (1320 × 2868 px)</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="gallery" id="gallery">
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 1 · The Hook</div>
+        <div class="slide-title">Track every work km ($4,550 Claim)</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_1_hero_km.svg" alt="Slide 1">
+      </div>
+    </div>
+
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 2 · 1-Tap Fast Toggle</div>
+        <div class="slide-title">Business or private? Sorted.</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_2_toggle.svg" alt="Slide 2">
+      </div>
+    </div>
+
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 3 · Live Cap Gauge</div>
+        <div class="slide-title">5,000 km cap, handled.</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_3_cap_handled.svg" alt="Slide 3">
+      </div>
+    </div>
+
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 4 · Method Arbitrage</div>
+        <div class="slide-title">Compare claim methods (+$7k)</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_4_compare_methods.svg" alt="Slide 4">
+      </div>
+    </div>
+
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 5 · EOFY Compliance</div>
+        <div class="slide-title">Accountant-ready export (5s)</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_5_export_taxpack.svg" alt="Slide 5">
+      </div>
+    </div>
+
+    <div class="slide-wrapper">
+      <div class="slide-meta">
+        <div class="slide-num">Slide 6 · Local First</div>
+        <div class="slide-title">Private by design (No sign-up)</div>
+      </div>
+      <div class="slide-canvas">
+        <img src="slide_6_private_local.svg" alt="Slide 6">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateScale(val) {
+      const scale = parseFloat(val);
+      const w = 1320 * scale;
+      const h = 2868 * scale;
+      document.querySelectorAll('.slide-canvas').forEach(canvas => {
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+      });
+    }
+  </script>
+</body>
+</html>

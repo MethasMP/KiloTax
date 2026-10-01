@@ -22,25 +22,37 @@ void main() {
       expect(suvResult.atoCategoryLabel, equals('SUV / 4WD'));
 
       final uteJson = {'type': 'ute', 'make': 'Ford', 'model': 'Ranger'};
-      expect(VehicleLookupResult.fromJson(uteJson).vehicleType, equals(VehicleType.ute));
+      expect(VehicleLookupResult.fromJson(uteJson).vehicleType,
+          equals(VehicleType.ute));
 
       final vanJson = {'type': 'van', 'make': 'Toyota', 'model': 'HiAce'};
-      expect(VehicleLookupResult.fromJson(vanJson).vehicleType, equals(VehicleType.van));
+      expect(VehicleLookupResult.fromJson(vanJson).vehicleType,
+          equals(VehicleType.van));
 
       final truckJson = {'type': 'truck', 'make': 'Isuzu', 'model': 'NPR'};
-      expect(VehicleLookupResult.fromJson(truckJson).vehicleType, equals(VehicleType.truck));
+      expect(VehicleLookupResult.fromJson(truckJson).vehicleType,
+          equals(VehicleType.truck));
 
-      final passengerJson = {'type': 'passenger', 'make': 'Toyota', 'model': 'Corolla'};
-      expect(VehicleLookupResult.fromJson(passengerJson).vehicleType, equals(VehicleType.car));
+      final passengerJson = {
+        'type': 'passenger',
+        'make': 'Toyota',
+        'model': 'Corolla'
+      };
+      expect(VehicleLookupResult.fromJson(passengerJson).vehicleType,
+          equals(VehicleType.car));
 
       final evJson = {'type': 'ev', 'make': 'Tesla', 'model': 'Model 3'};
-      expect(VehicleLookupResult.fromJson(evJson).vehicleType, equals(VehicleType.car));
+      expect(VehicleLookupResult.fromJson(evJson).vehicleType,
+          equals(VehicleType.car));
 
       final evSuvJson = {'type': 'ev', 'make': 'Tesla', 'model': 'Model Y'};
-      expect(VehicleLookupResult.fromJson(evSuvJson).vehicleType, equals(VehicleType.suv));
+      expect(VehicleLookupResult.fromJson(evSuvJson).vehicleType,
+          equals(VehicleType.suv));
     });
 
-    test('AustralianVehicleCatalogEntry.fromLookup preserves SUV vehicleType and silhouette asset', () {
+    test(
+        'AustralianVehicleCatalogEntry.fromLookup preserves SUV vehicleType and silhouette asset',
+        () {
       final lookup = VehicleLookupResult(
         id: 'isuzu-mux-lsu',
         make: 'Isuzu',

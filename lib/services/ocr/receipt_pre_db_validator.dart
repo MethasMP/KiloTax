@@ -89,10 +89,12 @@ class ReceiptPreDbValidator {
     // 1. DATE VALIDATION & LOGBOOK BOUNDARY
     // ==========================================
     if (receiptDate.isAfter(now.add(const Duration(minutes: 5)))) {
-      errors.add('Date in future: ${receiptDate.toIso8601String().split('T').first}');
+      errors.add(
+          'Date in future: ${receiptDate.toIso8601String().split('T').first}');
       humanGuidance = const HumanizedValidationError(
         title: 'Check receipt date',
-        explanation: 'The camera detected a future date on this receipt. Would you like to use today\'s date instead?',
+        explanation:
+            'The camera detected a future date on this receipt. Would you like to use today\'s date instead?',
         primaryActionLabel: 'Use Today\'s Date',
         secondaryActionLabel: 'Change Date',
       );
@@ -131,7 +133,8 @@ class ReceiptPreDbValidator {
       errors.add('Amount must be strictly greater than 0.00');
       humanGuidance ??= const HumanizedValidationError(
         title: 'Amount not detected',
-        explanation: 'We couldn\'t clearly read the total amount from this receipt. Please type the amount below.',
+        explanation:
+            'We couldn\'t clearly read the total amount from this receipt. Please type the amount below.',
         primaryActionLabel: 'Enter Amount',
         secondaryActionLabel: 'Retake Photo',
       );
@@ -147,10 +150,13 @@ class ReceiptPreDbValidator {
       if (cleanGst < 0.0) {
         errors.add('GST cannot be negative: \$${cleanGst.toStringAsFixed(2)}');
       } else if (cleanGst > cleanAmount) {
-        errors.add('GST (\$${cleanGst.toStringAsFixed(2)}) cannot exceed total amount (\$${cleanAmount.toStringAsFixed(2)})');
+        errors.add(
+            'GST (\$${cleanGst.toStringAsFixed(2)}) cannot exceed total amount (\$${cleanAmount.toStringAsFixed(2)})');
       } else {
-        final maxTheoreticalGst = double.parse(((cleanAmount / 11.0) + 0.05).toStringAsFixed(2));
-        final legalMaxGst = double.parse((cleanAmount / 11.0).toStringAsFixed(2));
+        final maxTheoreticalGst =
+            double.parse(((cleanAmount / 11.0) + 0.05).toStringAsFixed(2));
+        final legalMaxGst =
+            double.parse((cleanAmount / 11.0).toStringAsFixed(2));
         if (cleanGst > maxTheoreticalGst) {
           recommendedCappedGst = legalMaxGst;
           warnings.add(
@@ -174,9 +180,11 @@ class ReceiptPreDbValidator {
     if (ocrResult.abn != null && ocrResult.abn!.trim().isNotEmpty) {
       cleanAbn = ocrResult.abn!.replaceAll(RegExp(r'\D'), '');
       if (cleanAbn.length != 11) {
-        warnings.add('ABN must be exactly 11 digits (found: $cleanAbn, length: ${cleanAbn.length})');
+        warnings.add(
+            'ABN must be exactly 11 digits (found: $cleanAbn, length: ${cleanAbn.length})');
       } else if (!isValidAtoAbnChecksum(cleanAbn)) {
-        warnings.add('ABN $cleanAbn failed official ATO Modulus 89 checksum verification');
+        warnings.add(
+            'ABN $cleanAbn failed official ATO Modulus 89 checksum verification');
       }
     }
 

@@ -5,6 +5,7 @@ import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/state/app_state.dart';
 import 'package:kilotax/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
 import 'package:kilotax/ui/screens/trips/trip_live_tracking_screen.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 void main() {
   group('HomeTelemetryCapsule Tests', () {
@@ -35,7 +36,9 @@ void main() {
       );
     }
 
-    testWidgets('Renders Armed state with Bluetooth device name and Start Drive button', (tester) async {
+    testWidgets(
+        'Renders Armed state with Bluetooth device name and Start Drive button',
+        (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -43,16 +46,20 @@ void main() {
       expect(find.text('Linked to Tesla Model Y BT'), findsOneWidget);
     });
 
-    testWidgets('Renders Pair Bluetooth tactile button when no bluetooth device is paired', (tester) async {
+    testWidgets(
+        'Renders Pair Bluetooth tactile button when no bluetooth device is paired',
+        (tester) async {
       appState.updatePrimaryVehicleBluetoothDevice(null);
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Pair Vehicle Bluetooth'), findsOneWidget);
-      expect(find.text('Pair Now'), findsOneWidget);
+      expect(find.text('Auto-Track Trips'), findsOneWidget);
+      expect(find.text('Set up'), findsOneWidget);
     });
 
-    testWidgets('Transitions to Dynamic Island Driving state with live deduction counter', (tester) async {
+    testWidgets(
+        'Transitions to Dynamic Island Driving state with live deduction counter',
+        (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -66,7 +73,8 @@ void main() {
       expect(find.text('+\$4.55'), findsOneWidget);
     });
 
-    testWidgets('Tapping Start Drive navigates to TripLiveTrackingScreen', (tester) async {
+    testWidgets('Tapping Start Drive navigates to TripLiveTrackingScreen',
+        (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -81,17 +89,32 @@ void main() {
       expect(find.byType(TripLiveTrackingScreen), findsOneWidget);
     });
 
-    testWidgets('Tapping Pair Bluetooth opens Hardware Bluetooth modal sheet with scanner', (tester) async {
+    testWidgets(
+        'Tapping Pair Bluetooth opens Hardware Bluetooth modal sheet with scanner',
+        (tester) async {
       appState.updatePrimaryVehicleBluetoothDevice(null);
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      await tester.tap(find.text('Pair Now'));
+      await tester.tap(find.text('Set up'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Hardware Bluetooth Link'), findsOneWidget);
       expect(find.text('LINK BY BLUETOOTH NAME'), findsNothing);
+    });
+
+    testWidgets(
+        'Renders Bluetooth Disconnected honest state when bluetooth is unlinked',
+        (tester) async {
+      appState.toggleBluetoothLink(false);
+      await tester.pumpWidget(createTestWidget());
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Bluetooth Disconnected'), findsOneWidget);
+      expect(find.text('Tesla Model Y BT not in range • Tap to start'),
+          findsOneWidget);
+      expect(find.byIcon(LucideIcons.bluetoothOff), findsOneWidget);
     });
   });
 }

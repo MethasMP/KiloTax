@@ -54,7 +54,9 @@ class EvidenceEngine {
   /// Verifies receipt attachment substantiation rate
   double receiptPreservationRate() {
     if (_expenses.isEmpty) return 100.0;
-    final preserved = _expenses.where((e) => e.receiptPath != null && e.receiptPath!.isNotEmpty).length;
+    final preserved = _expenses
+        .where((e) => e.receiptPath != null && e.receiptPath!.isNotEmpty)
+        .length;
     return (preserved / _expenses.length) * 100.0;
   }
 }

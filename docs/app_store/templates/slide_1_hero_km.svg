@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 2868" width="1320" height="2868">
+  
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="40%" stop-color="#0B132B" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Card Background Gradient -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <!-- Inner Card Highlight Gradient -->
+    <linearGradient id="innerCardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#26354A" />
+      <stop offset="100%" stop-color="#152033" />
+    </linearGradient>
+
+    <!-- High-Vis Amber Glow Gradient -->
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <!-- Mint Emerald Gradient -->
+    <linearGradient id="mintGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Amber Glow Filter -->
+    <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Card Drop Shadow -->
+    <filter id="cardShadow" x="-10%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="30" stdDeviation="35" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+    
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Solid Background: 24-bit RGB strictly without alpha -->
+  <rect width="1320" height="2868" fill="url(#bgGrad)" />
+
+  <!-- Ambient Amber Glow behind Hero Card -->
+  <circle cx="660" cy="980" r="450" fill="#F59E0B" opacity="0.12" filter="url(#amberGlow)" />
+
+  <!-- Top Pill Badge -->
+  <g transform="translate(96, 150)">
+    <rect width="480" height="64" rx="32" fill="#FEF3C7" />
+    <circle cx="36" cy="32" r="10" fill="#F59E0B" />
+    <text x="58" y="42" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif" font-size="26" font-weight="800" fill="#B45309" letter-spacing="1.5">ATO 2026–27 · 91¢ PER KM</text>
+  </g>
+
+  <!-- Billboard Headline -->
+  <text x="96" y="295" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif" font-size="82" font-weight="900" fill="#FFFFFF" letter-spacing="-1.5">Track every work km.</text>
+  <text x="96" y="390" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif" font-size="82" font-weight="900" fill="#F59E0B" letter-spacing="-1.5">Claim up to $4,550.</text>
+
+  <!-- Subheadline -->
+  <text x="96" y="465" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif" font-size="36" font-weight="500" fill="#94A3B8" letter-spacing="-0.2">Official 91c/km ATO Cents-per-Kilometre method for your ute or work car.</text>
+
+  <!-- Main App Card (No Hardware Bezels) -->
+  <g transform="translate(96, 550)" filter="url(#cardShadow)">
+    <!-- Container -->
+    <rect width="1128" height="2060" rx="64" fill="url(#cardGrad)" stroke="#334155" stroke-width="2" />
+
+    <!-- Vehicle Selector Header -->
+    <g transform="translate(48, 56)">
+      <rect width="1032" height="110" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+      <!-- Ute Icon Pill -->
+      <rect x="24" y="23" width="64" height="64" rx="16" fill="#F59E0B" />
+      <path d="M42 58 L70 58 M46 58 C46 53 50 49 56 49 C62 49 66 53 66 58 M40 50 L50 38 L65 38 L72 50 Z" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      <text x="110" y="52" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="700" fill="#F8FAFC">2024 Toyota HiLux SR5</text>
+      <text x="110" y="90" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">VIC · 1TR-8DE • Cents per Km</text>
+      <rect x="850" y="32" width="158" height="46" rx="23" fill="#ECFDF5" />
+      <text x="880" y="63" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="700" fill="#059669">● ACTIVE</text>
+    </g>
+
+    <!-- Hero Deduction Gauge Box -->
+    <g transform="translate(48, 196)" filter="url(#softShadow)">
+      <rect width="1032" height="470" rx="40" fill="url(#innerCardGrad)" stroke="#475569" stroke-width="2" />
+      <text x="48" y="70" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="26" font-weight="800" fill="#94A3B8" letter-spacing="2">ESTIMATED TAX DEDUCTION (2026–27)</text>
+      
+      <!-- Big Value -->
+      <text x="48" y="195" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="124" font-weight="900" fill="#F59E0B" letter-spacing="-3">$4,550.00</text>
+      
+      <!-- Progress Bar -->
+      <g transform="translate(48, 245)">
+        <rect width="936" height="28" rx="14" fill="#0F172A" />
+        <rect width="936" height="28" rx="14" fill="url(#amberGrad)" />
+      </g>
+      
+      <text x="48" y="320" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="30" font-weight="700" fill="#F8FAFC">5,000 / 5,000 km Tracked (100% of Quota)</text>
+      <text x="48" y="360" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#94A3B8">Official ATO rate: 91¢ per business kilometre</text>
+      
+      <!-- Cash Refund Callout Pill -->
+      <g transform="translate(48, 390)">
+        <rect width="936" height="54" rx="20" fill="#ECFDF5" />
+        <text x="32" y="36" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="700" fill="#059669">💰 ~$1,456 estimated cash back at 32% marginal tax bracket</text>
+      </g>
+    </g>
+
+    <!-- Trip Ledger Section Header -->
+    <g transform="translate(48, 710)">
+      <text x="12" y="36" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="800" fill="#F8FAFC">Recent Work Trips</text>
+      <text x="890" y="36" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="26" font-weight="600" fill="#F59E0B">View All (142)</text>
+    </g>
+
+    <!-- Trip 1 -->
+    <g transform="translate(48, 770)">
+      <rect width="1032" height="190" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+      <rect x="32" y="32" width="60" height="60" rx="18" fill="#FEF3C7" />
+      <text x="45" y="72" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="30">🔨</text>
+      <text x="115" y="62" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="700" fill="#F8FAFC">Bunnings Warehouse ➔ Jobsite Bardon</text>
+      <text x="115" y="102" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#94A3B8">Today, 8:15 AM · Materials pickup &amp; transport</text>
+      <text x="115" y="145" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="700" fill="#10B981">✓ Verified Route</text>
+      
+      <!-- Right Amount -->
+      <text x="990" y="70" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="36" font-weight="800" fill="#F59E0B">+$31.12</text>
+      <text x="990" y="106" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">34.2 km</text>
+      <rect x="880" y="125" width="110" height="36" rx="18" fill="#1E293B" stroke="#334155" />
+      <text x="935" y="149" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="700" fill="#F8FAFC">WORK</text>
+    </g>
+
+    <!-- Trip 2 -->
+    <g transform="translate(48, 985)">
+      <rect width="1032" height="190" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+      <rect x="32" y="32" width="60" height="60" rx="18" fill="#FEF3C7" />
+      <text x="45" y="72" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="30">🔧</text>
+      <text x="115" y="62" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="700" fill="#F8FAFC">Reece Plumbing ➔ Client Site Indooroopilly</text>
+      <text x="115" y="102" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#94A3B8">Yesterday, 1:40 PM · Emergency pipe fitting</text>
+      <text x="115" y="145" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="700" fill="#10B981">✓ Verified Route</text>
+      
+      <!-- Right Amount -->
+      <text x="990" y="70" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="36" font-weight="800" fill="#F59E0B">+$16.84</text>
+      <text x="990" y="106" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">18.5 km</text>
+      <rect x="880" y="125" width="110" height="36" rx="18" fill="#1E293B" stroke="#334155" />
+      <text x="935" y="149" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="700" fill="#F8FAFC">WORK</text>
+    </g>
+
+    <!-- Trip 3 -->
+    <g transform="translate(48, 1200)">
+      <rect width="1032" height="190" rx="30" fill="#152033" stroke="#334155" stroke-width="1.5" />
+      <rect x="32" y="32" width="60" height="60" rx="18" fill="#FEF3C7" />
+      <text x="45" y="72" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="30">📐</text>
+      <text x="115" y="62" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="700" fill="#F8FAFC">Site Inspection ➔ Kedron Depot</text>
+      <text x="115" y="102" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#94A3B8">24 May, 10:10 AM · Electrical pre-wire inspection</text>
+      <text x="115" y="145" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="700" fill="#10B981">✓ Verified Route</text>
+      
+      <!-- Right Amount -->
+      <text x="990" y="70" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="36" font-weight="800" fill="#F59E0B">+$38.22</text>
+      <text x="990" y="106" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="600" fill="#94A3B8">42.0 km</text>
+      <rect x="880" y="125" width="110" height="36" rx="18" fill="#1E293B" stroke="#334155" />
+      <text x="935" y="149" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="700" fill="#F8FAFC">WORK</text>
+    </g>
+
+    <!-- Bottom Quick Action Banner -->
+    <g transform="translate(48, 1430)">
+      <rect width="1032" height="130" rx="30" fill="#1E293B" stroke="#F59E0B" stroke-width="2" />
+      <text x="48" y="60" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F8FAFC">⚡ Zero Setup Required</text>
+      <text x="48" y="98" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="24" font-weight="500" fill="#94A3B8">Start logging trips immediately. No email or password needed.</text>
+      <rect x="830" y="35" width="160" height="60" rx="20" fill="url(#amberGrad)" />
+      <text x="910" y="73" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="24" font-weight="800" fill="#0F172A">TRY NOW</text>
+    </g>
+  </g>
+
+  <!-- Legal Micro-Disclaimer -->
+  <text x="660" y="2755" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="400" fill="#64748B">
+    *Indicative deduction based on ATO 2026-27 rate of 91c/km up to 5,000 km cap per vehicle. Not financial or tax advice. Confirm claims with a registered tax agent. Source: ato.gov.au
+  </text>
+</svg>

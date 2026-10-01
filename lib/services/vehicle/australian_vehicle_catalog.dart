@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../data/models/vehicle.dart';
 import 'vehicle_lookup_service.dart';
 
@@ -20,13 +21,16 @@ class AustralianVehicleCatalogEntry {
     this.marketSharePercent,
   });
 
-  String get displayName => year != null ? '$make $model $year' : '$make $model';
+  String get displayName =>
+      year != null ? '$make $model $year' : '$make $model';
   String get subtitle => '${vehicleType.shortCategoryName} • $fuelType';
 
   factory AustralianVehicleCatalogEntry.fromLookup(VehicleLookupResult lookup) {
     return AustralianVehicleCatalogEntry(
       make: lookup.make,
-      model: lookup.variant.isNotEmpty ? '${lookup.model} ${lookup.variant}' : lookup.model,
+      model: lookup.variant.isNotEmpty
+          ? '${lookup.model} ${lookup.variant}'
+          : lookup.model,
       vehicleType: lookup.vehicleType,
       fuelType: lookup.fuelType,
       defaultEngine: lookup.engineCapacity,
@@ -37,7 +41,16 @@ class AustralianVehicleCatalogEntry {
 /// Australian Government Open Data Aligned Vehicle Catalog.
 /// Provides $0-cost, instant, offline-capable vehicle identification for Tradies.
 class AustralianVehicleCatalog {
-  static const List<String> states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+  static const List<String> states = [
+    'NSW',
+    'VIC',
+    'QLD',
+    'WA',
+    'SA',
+    'TAS',
+    'ACT',
+    'NT'
+  ];
 
   /// Top 5 Most Popular Tradie Work Vehicles in Australia (>80% of Market)
   /// Ordered strictly by validated VFACTS / Commercial registration market share
@@ -87,44 +100,117 @@ class AustralianVehicleCatalog {
   /// Comprehensive Australian Vehicle Dataset
   static final List<AustralianVehicleCatalogEntry> _masterCatalog = [
     // Ford Ranger
-    const AustralianVehicleCatalogEntry(make: 'Ford', model: 'Ranger', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Ford',
+        model: 'Ranger',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Toyota HiLux
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'HiLux', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'HiLux',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Isuzu D-Max
-    const AustralianVehicleCatalogEntry(make: 'Isuzu', model: 'D-Max', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Isuzu',
+        model: 'D-Max',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Mitsubishi Triton
-    const AustralianVehicleCatalogEntry(make: 'Mitsubishi', model: 'Triton', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Mitsubishi',
+        model: 'Triton',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Toyota HiAce
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'HiAce', vehicleType: VehicleType.van, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'HiAce',
+        vehicleType: VehicleType.van,
+        fuelType: 'Diesel'),
     // Toyota LandCruiser
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'LandCruiser 79', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'LandCruiser 300', vehicleType: VehicleType.suv, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'LandCruiser 79',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'LandCruiser 300',
+        vehicleType: VehicleType.suv,
+        fuelType: 'Diesel'),
     // Nissan Navara
-    const AustralianVehicleCatalogEntry(make: 'Nissan', model: 'Navara', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Nissan',
+        model: 'Navara',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Mazda BT-50
-    const AustralianVehicleCatalogEntry(make: 'Mazda', model: 'BT-50', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Mazda',
+        model: 'BT-50',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Volkswagen Amarok
-    const AustralianVehicleCatalogEntry(make: 'Volkswagen', model: 'Amarok', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Volkswagen',
+        model: 'Amarok',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Hyundai Staria Load
-    const AustralianVehicleCatalogEntry(make: 'Hyundai', model: 'Staria Load', vehicleType: VehicleType.van, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Hyundai',
+        model: 'Staria Load',
+        vehicleType: VehicleType.van,
+        fuelType: 'Diesel'),
     // Ford Transit Custom
-    const AustralianVehicleCatalogEntry(make: 'Ford', model: 'Transit Custom', vehicleType: VehicleType.van, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Ford',
+        model: 'Transit Custom',
+        vehicleType: VehicleType.van,
+        fuelType: 'Diesel'),
     // GWM Cannon
-    const AustralianVehicleCatalogEntry(make: 'GWM', model: 'Cannon', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'GWM',
+        model: 'Cannon',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // LDV T60
-    const AustralianVehicleCatalogEntry(make: 'LDV', model: 'T60', vehicleType: VehicleType.ute, fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'LDV',
+        model: 'T60',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
     // Toyota RAV4
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'RAV4', vehicleType: VehicleType.suv, fuelType: 'Hybrid'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'RAV4',
+        vehicleType: VehicleType.suv,
+        fuelType: 'Hybrid'),
     // Toyota Corolla
-    const AustralianVehicleCatalogEntry(make: 'Toyota', model: 'Corolla', vehicleType: VehicleType.car, fuelType: 'Hybrid'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Toyota',
+        model: 'Corolla',
+        vehicleType: VehicleType.car,
+        fuelType: 'Hybrid'),
     // Tesla Model 3 / Y
-    const AustralianVehicleCatalogEntry(make: 'Tesla', model: 'Model Y', vehicleType: VehicleType.suv, fuelType: 'Electric'),
-    const AustralianVehicleCatalogEntry(make: 'Tesla', model: 'Model 3', vehicleType: VehicleType.car, fuelType: 'Electric'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Tesla',
+        model: 'Model Y',
+        vehicleType: VehicleType.suv,
+        fuelType: 'Electric'),
+    const AustralianVehicleCatalogEntry(
+        make: 'Tesla',
+        model: 'Model 3',
+        vehicleType: VehicleType.car,
+        fuelType: 'Electric'),
   ];
 
   /// Dynamic search using Global CDN Vehicle Directory (BITRE / CC BY 3.0 AU)
   /// with graceful offline fallback to local catalog.
-  static Future<List<AustralianVehicleCatalogEntry>> searchAsync(String query) async {
+  static Future<List<AustralianVehicleCatalogEntry>> searchAsync(
+      String query) async {
     final clean = query.trim().toLowerCase();
     if (clean.isEmpty) return popularTradieVehicles;
 
@@ -136,7 +222,10 @@ class AustralianVehicleCatalog {
             .take(15)
             .toList();
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[AustralianVehicleCatalog] Warning during dynamic vehicle lookup: $e\n$stack');
+    }
 
     // Fallback to local catalog
     return search(query);
@@ -147,9 +236,12 @@ class AustralianVehicleCatalog {
     final clean = query.trim().toLowerCase();
     if (clean.isEmpty) return popularTradieVehicles;
 
-    return _masterCatalog.where((v) {
-      final text = '${v.make} ${v.model} ${v.year ?? ''}'.toLowerCase();
-      return text.contains(clean);
-    }).take(10).toList();
+    return _masterCatalog
+        .where((v) {
+          final text = '${v.make} ${v.model} ${v.year ?? ''}'.toLowerCase();
+          return text.contains(clean);
+        })
+        .take(10)
+        .toList();
   }
 }

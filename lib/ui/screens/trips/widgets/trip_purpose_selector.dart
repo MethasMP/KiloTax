@@ -29,7 +29,8 @@ class TripPurposeSelector extends StatelessWidget {
         _buildOption(
           label: 'Client Site',
           icon: LucideIcons.briefcase,
-          isSelected: selectedPurpose == 'Client Site' || selectedPurpose == 'Client / Job',
+          isSelected: selectedPurpose == 'Client Site' ||
+              selectedPurpose == 'Client / Job',
           onTap: () => onPurposeSelected('Client Site'),
         ),
         const SizedBox(height: 10),
@@ -37,7 +38,8 @@ class TripPurposeSelector extends StatelessWidget {
         _buildOption(
           label: 'Supplies Run',
           icon: LucideIcons.shoppingCart,
-          isSelected: selectedPurpose == 'Supplies Run' || selectedPurpose == 'Trade Supplies / Bunnings',
+          isSelected: selectedPurpose == 'Supplies Run' ||
+              selectedPurpose == 'Trade Supplies / Bunnings',
           onTap: () => onPurposeSelected('Supplies Run'),
         ),
         const SizedBox(height: 10),
@@ -86,7 +88,8 @@ class TripPurposeSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? activeColor.withValues(alpha: 0.08) : Colors.white,
+            color:
+                isSelected ? activeColor.withValues(alpha: 0.08) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected ? activeColor : AppColors.border,
@@ -95,7 +98,8 @@ class TripPurposeSelector extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: isSelected ? activeColor : AppColors.muted),
+              Icon(icon,
+                  size: 18, color: isSelected ? activeColor : AppColors.muted),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -110,7 +114,8 @@ class TripPurposeSelector extends StatelessWidget {
               if (isSelected)
                 Icon(Icons.check_circle_rounded, size: 18, color: activeColor)
               else
-                const Icon(Icons.circle_outlined, size: 18, color: AppColors.border),
+                const Icon(Icons.circle_outlined,
+                    size: 18, color: AppColors.border),
             ],
           ),
         ),

@@ -1,51 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/trip.dart';
-import '../../../../data/models/vehicle.dart';
-import '../../../../data/models/vehicle_expense.dart';
 import '../../../../state/app_state.dart';
+import '../../trips/trip_detail_screen.dart';
 
+/// 2026 Mobile UX Principle: Glanceable Live Heartbeat Widget
+/// Displays the single latest recorded trip with clear destination, route origin,
+/// and tax claim value, plus an intuitive 'View all →' shortcut to the full Trips Ledger.
 class HomeRecentActivity extends StatelessWidget {
   final AppState appState;
+  final VoidCallback? onViewAll;
 
-  const HomeRecentActivity({super.key, required this.appState});
+  const HomeRecentActivity({
+    super.key,
+    required this.appState,
+    this.onViewAll,
+  });
+
+  String _cleanPlaceName(String? raw, {String fallback = 'Destination'}) {
+    if (raw == null || raw.trim().isEmpty) return fallback;
+    final parts = raw.split(',');
+    final first = parts.first.trim();
+    return first.isNotEmpty ? first : fallback;
+  }
+
+  IconData _getTripIcon(Trip trip) {
+    if (trip.purpose.trim().isEmpty ||
+        trip.purpose.contains('?') ||
+        trip.classification == TripClassification.unclassified) {
+      return LucideIcons.sparkles;
+    }
+    if (trip.classification == TripClassification.personal) {
+      return LucideIcons.user;
+    }
+    final text =
+        '${trip.purpose} ${trip.destinationAddress ?? ""} ${trip.originAddress ?? ""}'
+            .toLowerCase();
+    if (text.contains('bunnings') ||
+        text.contains('supplier') ||
+        text.contains('materials') ||
+        text.contains('tools') ||
+        text.contains('timber') ||
+        text.contains('depot') ||
+        text.contains('trade')) {
+      return LucideIcons.shoppingBag;
+    }
+    if (text.contains('site') ||
+        text.contains('inspection') ||
+        text.contains('reno') ||
+        text.contains('fitout') ||
+        text.contains('build')) {
+      return LucideIcons.hardHat;
+    }
+    return LucideIcons.briefcase;
+  }
+
+  Color _getTripAccentColor(Trip trip, bool isNeedsReview, bool isBusiness) {
+    if (isNeedsReview) return AppColors.amberDark;
+    if (!isBusiness) return AppColors.muted;
+    final text =
+        '${trip.purpose} ${trip.destinationAddress ?? ""} ${trip.originAddress ?? ""}'
+            .toLowerCase();
+    if (text.contains('bunnings') ||
+        text.contains('supplier') ||
+        text.contains('materials') ||
+        text.contains('tools') ||
+        text.contains('timber')) {
+      return AppColors.emerald;
+    }
+    if (text.contains('site') ||
+        text.contains('reno') ||
+        text.contains('fitout')) {
+      return const Color(0xFFD97706);
+    }
+    return AppColors.deepNavy;
+  }
 
   @override
   Widget build(BuildContext context) {
     final primaryVehId = appState.primaryVehicle?.id;
-    // Vehicle-isolated streams to prevent cross-vehicle evidence bleeding
     final trips = primaryVehId != null
         ? appState.trips.where((t) => t.vehicleId == primaryVehId).toList()
         : appState.trips;
-    final expenses = primaryVehId != null
-        ? appState.expenses.where((e) => e.vehicleId == primaryVehId).toList()
-        : appState.expenses;
-    final hasActivity = trips.isNotEmpty || expenses.isNotEmpty;
-
-    final isCpk = appState.primaryVehicle?.taxMethod == TaxMethod.centsPerKm;
-    final countLabel = isCpk
-        ? '${trips.length} drives'
-        : '${trips.length} drives • ${expenses.length} receipts';
+    final hasActivity = trips.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Section Header with 'View all →' Navigation
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Recent Evidence',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.ink),
+              'Recent Activity',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: AppColors.ink,
+                letterSpacing: -0.3,
+              ),
             ),
-            Text(
-              countLabel,
-              style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 12, color: AppColors.muted),
-            ),
+            if (hasActivity && onViewAll != null)
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onViewAll!();
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View all (${trips.length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
+                          color: AppColors.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: AppColors.brandPrimary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
         if (!hasActivity)
           Container(
@@ -62,192 +152,217 @@ class HomeRecentActivity extends StatelessWidget {
                   SizedBox(height: 10),
                   Text(
                     'No drives recorded yet',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.ink,
+                    ),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Your work drives and tax evidence will appear here',
-                    style: TextStyle(fontWeight: FontWeight.w400, fontSize: 12, color: AppColors.muted),
+                    'Your work drives will appear here automatically',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
             ),
           )
-        else
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                // Show up to 3 trips
-                for (int i = 0; i < trips.take(3).length; i++) ...[
-                  if (i > 0) const Divider(height: 1, color: AppColors.border),
-                  _buildTripActivityRow(trips.elementAt(i)),
-                ],
-                // Show up to 2 latest expenses if any
-                for (int i = 0; i < expenses.take(2).length; i++) ...[
-                  if (trips.isNotEmpty || i > 0) const Divider(height: 1, color: AppColors.border),
-                  _buildExpenseActivityRow(expenses.elementAt(i)),
-                ],
-              ],
-            ),
-          ),
+        else ...[
+          // Glanceable Latest Drive Hero Card
+          _buildLatestTripHero(context, trips.first),
+        ],
       ],
     );
   }
 
-  Widget _buildTripActivityRow(Trip trip) {
+  Widget _buildLatestTripHero(BuildContext context, Trip trip) {
     final isBusiness = trip.classification == TripClassification.business;
-    final time = Formatters.date(trip.date);
-    final destination = '${trip.originAddress ?? "Origin"} → ${trip.destinationAddress ?? "Destination"}';
-    final type = trip.purpose.isNotEmpty ? trip.purpose : (isBusiness ? 'Work drive' : 'Personal');
-    final distance = '${trip.distanceKm.toStringAsFixed(1)} km';
-    final claimValue = Formatters.currency(trip.distanceKm * appState.activeTaxRule.centsPerKmRate);
+    final isNeedsReview = trip.purpose.trim().isEmpty ||
+        trip.purpose.contains('?') ||
+        trip.classification == TripClassification.unclassified;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(LucideIcons.navigation, size: 18, color: AppColors.deepNavy),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  destination,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    letterSpacing: -0.2,
-                    color: AppColors.ink,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Text(
-                      '$time · $type',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.emeraldLight,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'GPS ✓',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.emerald,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                distance,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  letterSpacing: -0.2,
-                  color: AppColors.ink,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                claimValue,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11.5,
-                  color: AppColors.emerald,
-                ),
-              ),
-            ],
+    final destName =
+        _cleanPlaceName(trip.destinationAddress, fallback: 'Destination');
+    final originName =
+        _cleanPlaceName(trip.originAddress, fallback: 'Origin');
+    final hasDistinctRoute = trip.originAddress != null &&
+        trip.originAddress != trip.destinationAddress &&
+        originName != destName;
+
+    final icon = _getTripIcon(trip);
+    final accentColor = _getTripAccentColor(trip, isNeedsReview, isBusiness);
+    final claimAmount =
+        trip.distanceKm * appState.activeTaxRule.centsPerKmRate;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isNeedsReview
+              ? AppColors.amber.withValues(alpha: 0.6)
+              : AppColors.border,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildExpenseActivityRow(VehicleExpense expense) {
-    final time = Formatters.date(expense.date);
-    final category = expense.category.displayName;
-    final hasReceipt = expense.receiptPath != null;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.emeraldLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(LucideIcons.receipt, size: 18, color: AppColors.emerald),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            TripDetailScreen.show(context, trip: trip, appState: appState);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        (expense.notes != null && expense.notes!.isNotEmpty) ? expense.notes! : category,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.ink),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (hasReceipt) ...[
-                      const SizedBox(width: 6),
-                      const Icon(LucideIcons.checkCircle2, size: 12, color: AppColors.emerald),
-                    ],
-                  ],
+                // Category Icon
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: accentColor, size: 19),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$time · $category',
-                  style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 12, color: AppColors.muted),
+                const SizedBox(width: 14),
+
+                // Main Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Destination + Claim
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isBusiness
+                                  ? destName
+                                  : (destName != 'Destination'
+                                      ? destName
+                                      : 'Personal Drive'),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (isBusiness)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                    color: const Color(0xFFA7F3D0)),
+                              ),
+                              child: Text(
+                                '+${Formatters.currency(claimAmount)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              '${trip.distanceKm.toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      // Origin Subtitle
+                      if (hasDistinctRoute) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'from $originName',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.muted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
+                      const SizedBox(height: 8),
+
+                      // Purpose + Date & Distance
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Text(
+                                trip.purpose.isNotEmpty
+                                    ? trip.purpose
+                                    : (isBusiness ? 'Work drive' : 'Personal drive'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isBusiness
+                                      ? AppColors.deepNavy
+                                      : AppColors.muted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Spacer(),
+                          Text(
+                            '${trip.distanceKm.toStringAsFixed(1)} km · ${Formatters.date(trip.date)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            Formatters.currency(expense.amount),
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.emerald),
-          ),
-        ],
+        ),
       ),
     );
   }

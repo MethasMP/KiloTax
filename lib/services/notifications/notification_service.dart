@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Type of Notification Event
@@ -67,7 +68,9 @@ class KiloTaxNotification {
       timestamp: DateTime.parse(json['timestamp'] as String),
       isRead: json['isRead'] as bool? ?? false,
       deepLinkRoute: json['deepLinkRoute'] as String?,
-      data: json['data'] != null ? Map<String, dynamic>.from(json['data'] as Map) : null,
+      data: json['data'] != null
+          ? Map<String, dynamic>.from(json['data'] as Map)
+          : null,
     );
   }
 }
@@ -99,7 +102,8 @@ class NotificationService {
     return instance;
   }
 
-  List<KiloTaxNotification> get notifications => List.unmodifiable(_notifications);
+  List<KiloTaxNotification> get notifications =>
+      List.unmodifiable(_notifications);
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
@@ -112,7 +116,10 @@ class NotificationService {
         try {
           final map = jsonDecode(raw) as Map<String, dynamic>;
           _notifications.add(KiloTaxNotification.fromJson(map));
-        } catch (_) {}
+        } catch (e, stack) {
+          debugPrint(
+              '[NotificationService] Warning decoding notification payload: $e\n$stack');
+        }
       }
     }
   }
@@ -132,7 +139,8 @@ class NotificationService {
     final notification = KiloTaxNotification(
       id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
       title: '🚗 Trip detected: ${distanceKm.toStringAsFixed(1)} km',
-      body: 'Claim \$${estimatedDeduction.toStringAsFixed(2)} tax deduction with 1 tap.',
+      body:
+          'Claim \$${estimatedDeduction.toStringAsFixed(2)} tax deduction with 1 tap.',
       type: KiloTaxNotificationType.tripDetected,
       timestamp: DateTime.now(),
       deepLinkRoute: '/trips',
@@ -150,7 +158,8 @@ class NotificationService {
     final notification = KiloTaxNotification(
       id: 'daily_${DateTime.now().millisecondsSinceEpoch}',
       title: '📋 5 PM Daily Tax Wrap',
-      body: 'You have $unclassifiedTripsCount unlogged trips today (\$$potentialTaxClaim deduction). Clear before smoko!',
+      body:
+          'You have $unclassifiedTripsCount unlogged trips today (\$$potentialTaxClaim deduction). Clear before smoko!',
       type: KiloTaxNotificationType.dailySummary,
       timestamp: DateTime.now(),
       deepLinkRoute: '/compliance',
@@ -168,7 +177,8 @@ class NotificationService {
     final notification = KiloTaxNotification(
       id: 'logbook_w${currentWeek}_${DateTime.now().millisecondsSinceEpoch}',
       title: '📅 Week $currentWeek of 12 Logbook Completed',
-      body: 'Logbook is ${(progressPercent * 100).toStringAsFixed(0)}% valid for ATO 5-year lock.',
+      body:
+          'Logbook is ${(progressPercent * 100).toStringAsFixed(0)}% valid for ATO 5-year lock.',
       type: KiloTaxNotificationType.logbookReminder,
       timestamp: DateTime.now(),
       deepLinkRoute: '/logbook',

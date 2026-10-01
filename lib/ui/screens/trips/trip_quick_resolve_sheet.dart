@@ -6,9 +6,8 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
 import '../../../state/app_state.dart';
 
-/// Spec #7 & #8: 1-Tap Automatic Capture -> Human Confirmation
-/// "Instead of 10 fields: What was this trip for?
-///  [ Client / Job ] [ Supplier ] [ Work site ] [ Other ] -> Done."
+/// Spec #7 & #8: Fast, Frictionless Trip Purpose Classification
+/// Ultra-clean thumb-first ergonomics for tradies & sole traders.
 class TripQuickResolveSheet extends StatelessWidget {
   final Trip trip;
   final AppState appState;
@@ -40,7 +39,8 @@ class TripQuickResolveSheet extends StatelessWidget {
     );
   }
 
-  void _resolveTrip(BuildContext context, String purpose, TripClassification classification) {
+  void _resolveTrip(
+      BuildContext context, String purpose, TripClassification classification) {
     HapticFeedback.mediumImpact();
     final updatedTrip = Trip(
       id: trip.id,
@@ -62,11 +62,17 @@ class TripQuickResolveSheet extends StatelessWidget {
     if (onTripResolved != null) {
       onTripResolved!(updatedTrip);
     } else {
+      final isBiz = classification == TripClassification.business;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.emerald,
-          content: Text('✓ Classified as "$purpose" — ATO claim audit-proof!'),
+          backgroundColor: isBiz ? AppColors.emerald : AppColors.deepNavy,
+          content: Text(
+            isBiz
+                ? '✓ Claim recorded — $purpose'
+                : '✓ Classified as Personal drive',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
         ),
       );
     }
@@ -74,10 +80,17 @@ class TripQuickResolveSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleDestination = trip.destinationAddress ?? 'Detected Trip Destination';
+    final rawDestination = trip.destinationAddress ?? 'Trip Destination';
+    final destinationParts = rawDestination.split(',');
+    final destTitle = destinationParts.first.trim();
+    final destSub = destinationParts.length > 1
+        ? destinationParts.sublist(1).join(',').trim()
+        : null;
+
+    final claimEst = trip.distanceKm * appState.activeTaxRule.centsPerKmRate;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -86,9 +99,10 @@ class TripQuickResolveSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Drag handle
           Center(
             child: Container(
-              width: 40,
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.border,
@@ -96,76 +110,122 @@ class TripQuickResolveSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.workBlueLight,
-                  borderRadius: BorderRadius.circular(10),
+          const SizedBox(height: 14),
+
+          // Trip Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Icon(
+                    LucideIcons.mapPin,
+                    color: AppColors.deepNavy,
+                    size: 18,
+                  ),
                 ),
-                child: const Icon(LucideIcons.mapPin, color: AppColors.workBlue, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        destTitle,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (destSub != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          destSub,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('Detected Trip Completed', style: AppTextStyles.captionMedium),
                     Text(
-                      titleDestination,
-                      style: AppTextStyles.cardPrimary,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      Formatters.distance(trip.distanceKm),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
                     ),
+                    if (claimEst > 0)
+                      Text(
+                        '~\$${claimEst.toStringAsFixed(0)} claim',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.emerald,
+                        ),
+                      ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Text(
-                  Formatters.distance(trip.distanceKm),
-                  style: AppTextStyles.cardPrimarySubtle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'What was this trip for? (1-Tap)',
-            style: AppTextStyles.cardPrimary,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'ATO requires an explicit business purpose to audit-proof your deduction.',
-            style: AppTextStyles.caption,
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
-          // 4 Big 1-Tap Buttons (Spec #7 & #8)
+          // Action prompt - clean & uncluttered
+          const Text(
+            'What was this trip for?',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 4 Purpose Buttons (Clean, ergonomic 2x2 grid)
           Row(
             children: [
               Expanded(
                 child: _QuickPurposeButton(
                   icon: LucideIcons.briefcase,
                   label: 'Client / Job',
-                  color: AppColors.workBlue,
-                  onTap: () => _resolveTrip(context, 'Client / Job', TripClassification.business),
+                  subtitle: 'Site work, client job',
+                  accentColor: AppColors.workBlue,
+                  onTap: () => _resolveTrip(
+                      context, 'Client / Job', TripClassification.business),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _QuickPurposeButton(
-                  icon: LucideIcons.shoppingCart,
+                  icon: LucideIcons.shoppingBag,
                   label: 'Supplier / Bunnings',
-                  color: AppColors.emerald,
-                  onTap: () => _resolveTrip(context, 'Supplier / Materials', TripClassification.business),
+                  subtitle: 'Materials, tools, parts',
+                  accentColor: AppColors.emerald,
+                  onTap: () => _resolveTrip(context, 'Supplier / Materials',
+                      TripClassification.business),
                 ),
               ),
             ],
@@ -177,17 +237,21 @@ class TripQuickResolveSheet extends StatelessWidget {
                 child: _QuickPurposeButton(
                   icon: LucideIcons.hardHat,
                   label: 'Work Site',
-                  color: AppColors.amber,
-                  onTap: () => _resolveTrip(context, 'Work Site Inspection', TripClassification.business),
+                  subtitle: 'Inspection, build site',
+                  accentColor: AppColors.amber,
+                  onTap: () => _resolveTrip(context, 'Work Site Inspection',
+                      TripClassification.business),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _QuickPurposeButton(
-                  icon: LucideIcons.home,
-                  label: 'Personal / Other',
-                  color: AppColors.muted,
-                  onTap: () => _resolveTrip(context, 'Personal Drive', TripClassification.personal),
+                  icon: LucideIcons.user,
+                  label: 'Personal Drive',
+                  subtitle: 'Private, non-tax trip',
+                  accentColor: AppColors.muted,
+                  onTap: () => _resolveTrip(
+                      context, 'Personal Drive', TripClassification.personal),
                 ),
               ),
             ],
@@ -201,13 +265,15 @@ class TripQuickResolveSheet extends StatelessWidget {
 class _QuickPurposeButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final String subtitle;
+  final Color accentColor;
   final VoidCallback onTap;
 
   const _QuickPurposeButton({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.subtitle,
+    required this.accentColor,
     required this.onTap,
   });
 
@@ -219,20 +285,43 @@ class _QuickPurposeButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
+            color: const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color, size: 24),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: accentColor, size: 18),
+              ),
               const SizedBox(height: 8),
               Text(
                 label,
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: color),
-                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: AppColors.ink,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.muted,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

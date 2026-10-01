@@ -48,7 +48,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
     super.dispose();
   }
 
-  void _signOffHighConfidenceBatch(List<ClassifiedTripAssessment> highConfidenceList) {
+  void _signOffHighConfidenceBatch(
+      List<ClassifiedTripAssessment> highConfidenceList) {
     HapticFeedback.heavyImpact();
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
     final totalKm = highConfidenceList
@@ -76,12 +77,14 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
         backgroundColor: AppColors.deepNavy,
         content: Row(
           children: [
-            const Icon(LucideIcons.checkCircle2, color: Color(0xFF34D399), size: 18),
+            const Icon(LucideIcons.checkCircle2,
+                color: Color(0xFF34D399), size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Signed off ${_selectedHighConfidenceIds.length} work drives (+${Formatters.currency(dollarClaimed)})',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ),
           ],
@@ -98,13 +101,16 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
     }
   }
 
-  void _resolveIndividualTrip(Trip trip, {required bool isBusiness, required String purpose}) {
+  void _resolveIndividualTrip(Trip trip,
+      {required bool isBusiness, required String purpose}) {
     HapticFeedback.mediumImpact();
     if (isBusiness) {
       widget.appState.batchApproveTrips(
         tripIds: [trip.id],
         defaultPurpose: purpose,
-        jobReference: _jobRefController.text.trim().isNotEmpty ? _jobRefController.text.trim() : null,
+        jobReference: _jobRefController.text.trim().isNotEmpty
+            ? _jobRefController.text.trim()
+            : null,
       );
     } else {
       // Mark as personal journey
@@ -128,9 +134,12 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
     final pendingTrips = widget.appState.missingComplianceTrips;
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
 
-    final assessments = pendingTrips.map(TripConfidenceClassifier.assess).toList();
-    final highConfidence = assessments.where((a) => a.isHighConfidence).toList();
-    final requiresDecision = assessments.where((a) => !a.isHighConfidence).toList();
+    final assessments =
+        pendingTrips.map(TripConfidenceClassifier.assess).toList();
+    final highConfidence =
+        assessments.where((a) => a.isHighConfidence).toList();
+    final requiresDecision =
+        assessments.where((a) => !a.isHighConfidence).toList();
 
     final selectedHighConfidenceKm = highConfidence
         .where((a) => _selectedHighConfidenceIds.contains(a.trip.id))
@@ -168,7 +177,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                   color: AppColors.emeraldLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.shieldCheck, color: AppColors.emerald, size: 20),
+                child: const Icon(LucideIcons.shieldCheck,
+                    color: AppColors.emerald, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -186,7 +196,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                     ),
                     Text(
                       '${pendingTrips.length} drives pending • Muse Safe-Approval',
-                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                      style:
+                          const TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
                   ],
                 ),
@@ -221,8 +232,10 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                     ),
                     decoration: const InputDecoration(
                       isDense: true,
-                      hintText: 'Job / Client Reference (Optional, e.g. Job #402)',
-                      hintStyle: TextStyle(color: AppColors.muted, fontSize: 12.5),
+                      hintText:
+                          'Job / Client Reference (Optional, e.g. Job #402)',
+                      hintStyle:
+                          TextStyle(color: AppColors.muted, fontSize: 12.5),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 8),
                     ),
@@ -244,7 +257,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                     children: [
                       Row(
                         children: const [
-                          Icon(LucideIcons.sparkles, size: 14, color: AppColors.emerald),
+                          Icon(LucideIcons.sparkles,
+                              size: 14, color: AppColors.emerald),
                           SizedBox(width: 6),
                           Text(
                             'CONFIRMED WORK DRIVES (READY)',
@@ -259,7 +273,10 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                       ),
                       Text(
                         '${highConfidence.length} trips',
-                        style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -312,17 +329,23 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.emerald,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
                                   elevation: 0,
                                 ),
                                 onPressed: _selectedHighConfidenceIds.isNotEmpty
-                                    ? () => _signOffHighConfidenceBatch(highConfidence)
+                                    ? () => _signOffHighConfidenceBatch(
+                                        highConfidence)
                                     : null,
-                                icon: const Icon(LucideIcons.checkCheck, size: 16),
+                                icon: const Icon(LucideIcons.checkCheck,
+                                    size: 16),
                                 label: Text(
                                   'Sign-Off (${_selectedHighConfidenceIds.length})',
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13),
                                 ),
                               ),
                             ),
@@ -335,7 +358,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
 
                   // High-confidence list items
                   ...highConfidence.map((assessment) {
-                    final isSelected = _selectedHighConfidenceIds.contains(assessment.trip.id);
+                    final isSelected =
+                        _selectedHighConfidenceIds.contains(assessment.trip.id);
                     final tripVal = assessment.trip.distanceKm * rate;
 
                     return Container(
@@ -345,7 +369,9 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isSelected ? AppColors.emerald.withValues(alpha: 0.5) : AppColors.border,
+                          color: isSelected
+                              ? AppColors.emerald.withValues(alpha: 0.5)
+                              : AppColors.border,
                         ),
                       ),
                       child: Row(
@@ -356,9 +382,11 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                             onChanged: (val) {
                               setState(() {
                                 if (val == true) {
-                                  _selectedHighConfidenceIds.add(assessment.trip.id);
+                                  _selectedHighConfidenceIds
+                                      .add(assessment.trip.id);
                                 } else {
-                                  _selectedHighConfidenceIds.remove(assessment.trip.id);
+                                  _selectedHighConfidenceIds
+                                      .remove(assessment.trip.id);
                                 }
                               });
                             },
@@ -369,29 +397,40 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       Formatters.dateTime(assessment.trip.date),
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted),
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.muted),
                                     ),
                                     Text(
                                       '+${Formatters.currency(tripVal)}',
-                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.emerald),
+                                      style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.emerald),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
                                   '${assessment.trip.originAddress ?? "Origin"} → ${assessment.trip.destinationAddress ?? "Destination"}',
-                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.deepNavy),
+                                  style: const TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.deepNavy),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${Formatters.distance(assessment.trip.distanceKm)} • ${assessment.decisionReason}',
-                                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.muted),
                                 ),
                               ],
                             ),
@@ -407,7 +446,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                 if (requiresDecision.isNotEmpty) ...[
                   Row(
                     children: const [
-                      Icon(LucideIcons.alertTriangle, size: 14, color: AppColors.amberDark),
+                      Icon(LucideIcons.alertTriangle,
+                          size: 14, color: AppColors.amberDark),
                       SizedBox(width: 6),
                       Text(
                         'NEEDS YOUR SIGN-OFF (SENTINEL GUARD)',
@@ -421,7 +461,6 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
                   ...requiresDecision.map((assessment) {
                     final tripVal = assessment.trip.distanceKm * rate;
 
@@ -447,7 +486,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: AppColors.amberLight,
                                   borderRadius: BorderRadius.circular(6),
@@ -474,12 +514,18 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                           const SizedBox(height: 6),
                           Text(
                             '${assessment.trip.originAddress ?? "Origin"} → ${assessment.trip.destinationAddress ?? "Destination"}',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.deepNavy),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.deepNavy),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             '${Formatters.distance(assessment.trip.distanceKm)} • ${assessment.decisionReason}',
-                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF92400E), height: 1.3),
+                            style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF92400E),
+                                height: 1.3),
                           ),
                           const SizedBox(height: 12),
 
@@ -492,16 +538,20 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                     backgroundColor: AppColors.emeraldLight,
                                     foregroundColor: AppColors.emerald,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      side: const BorderSide(color: AppColors.emerald),
+                                      side: const BorderSide(
+                                          color: AppColors.emerald),
                                     ),
                                   ),
                                   icon: const Icon(LucideIcons.check, size: 14),
                                   label: const Text(
                                     'Claim Work Trip',
-                                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 12),
                                   ),
                                   onPressed: () => _resolveIndividualTrip(
                                     assessment.trip,
@@ -515,14 +565,20 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.muted,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    side: const BorderSide(color: AppColors.border),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    side: const BorderSide(
+                                        color: AppColors.border),
                                   ),
                                   icon: const Icon(LucideIcons.home, size: 14),
                                   label: const Text(
                                     'Personal',
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12),
                                   ),
                                   onPressed: () => _resolveIndividualTrip(
                                     assessment.trip,

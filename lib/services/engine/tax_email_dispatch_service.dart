@@ -12,7 +12,7 @@ enum EmailDispatchResult {
 
 /// Dispatches ATO Tax Pack emails directly into the user's native email client
 /// (e.g. Apple Mail, Gmail, Outlook) with binary attachments attached.
-/// 
+///
 /// If native email dispatch is unsupported (e.g. iOS Simulator, or no mail account
 /// configured on device), it seamlessly and gracefully falls back to the system Share Sheet
 /// with iPad popover anchor protection.
@@ -53,14 +53,17 @@ class TaxEmailDispatchService {
       );
 
       await FlutterEmailSender.send(email);
-      debugPrint('[TaxEmailDispatchService] Dispatched via native email composer.');
+      debugPrint(
+          '[TaxEmailDispatchService] Dispatched via native email composer.');
       return EmailDispatchResult.sentViaMailApp;
     } on PlatformException catch (e) {
-      debugPrint('[TaxEmailDispatchService] Native mail unavailable: ${e.code} - ${e.message}. Triggering Tier 2 Fallback.');
+      debugPrint(
+          '[TaxEmailDispatchService] Native mail unavailable: ${e.code} - ${e.message}. Triggering Tier 2 Fallback.');
       // Common codes:
       // 'not_available' -> Mail client not set up / iOS Simulator
     } catch (e) {
-      debugPrint('[TaxEmailDispatchService] Unexpected error on native email sender: $e');
+      debugPrint(
+          '[TaxEmailDispatchService] Unexpected error on native email sender: $e');
     }
 
     // 3. Tier 2 Fallback: System Share Sheet via SharePlus (with iPad safe origin)
@@ -76,7 +79,8 @@ class TaxEmailDispatchService {
       );
       return EmailDispatchResult.fallbackToShareSheet;
     } catch (fallbackError) {
-      debugPrint('[TaxEmailDispatchService] Fallback Share Sheet failed: $fallbackError');
+      debugPrint(
+          '[TaxEmailDispatchService] Fallback Share Sheet failed: $fallbackError');
       return EmailDispatchResult.failed;
     }
   }

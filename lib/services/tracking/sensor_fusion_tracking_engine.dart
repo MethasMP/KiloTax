@@ -1,7 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'wgs84_geodesic_engine.dart';
 
-/// Sensor Fusion & Dead Reckoning Core Engine (Tesla Architecture Aligned)
+/// Sensor Fusion & Dead Reckoning Core Engine
 ///
 /// Principles:
 /// 1. WGS-84 Ellipsoidal Vincenty Geodesics (< 0.5mm geometric error).
@@ -26,10 +26,14 @@ class FilteredPositionUpdate {
 
 class SensorFusionTrackingEngine {
   // Physical constraints for passenger & commercial utes in Australia
-  static const double maxPlausibleSpeedKmh = 160.0; // Above 160 km/h is flagged/clamped for tradie vehicles
-  static const double maxPlausibleAccelerationMs2 = 7.0; // ~0-100 in 4s. Tradie utes do not exceed this.
-  static const double minMovementThresholdMeters = 3.5; // Discards satellite multipath jitter
-  static const double maxAcceptableAccuracyMeters = 30.0; // Discards degraded fixes
+  static const double maxPlausibleSpeedKmh =
+      160.0; // Above 160 km/h is flagged/clamped for tradie vehicles
+  static const double maxPlausibleAccelerationMs2 =
+      7.0; // ~0-100 in 4s. Tradie utes do not exceed this.
+  static const double minMovementThresholdMeters =
+      3.5; // Discards satellite multipath jitter
+  static const double maxAcceptableAccuracyMeters =
+      30.0; // Discards degraded fixes
 
   final Wgs84GeodesicEngine _geodesic = Wgs84GeodesicEngine();
   Position? _lastValidPosition;
@@ -64,7 +68,8 @@ class SensorFusionTrackingEngine {
     }
 
     // 2. Compute Physical Time Delta
-    final dtSeconds = (now.difference(_lastTimestamp!).inMilliseconds / 1000.0).clamp(0.001, 60.0);
+    final dtSeconds = (now.difference(_lastTimestamp!).inMilliseconds / 1000.0)
+        .clamp(0.001, 60.0);
 
     // 3. Compute WGS-84 Ellipsoidal Geodesic Distance (Vincenty's Inverse)
     final rawMeters = Wgs84GeodesicEngine.calculateDistanceMeters(
@@ -91,7 +96,7 @@ class SensorFusionTrackingEngine {
       );
     }
 
-    // Filter B: Unphysical Jump / Teleportation (Tesla Glitch Filter)
+    // Filter B: Unphysical Jump / Teleportation (GPS Glitch Filter)
     if (calculatedSpeedKmh > maxPlausibleSpeedKmh) {
       // Impossible velocity: satellite reflection bounced across town
       return FilteredPositionUpdate(
@@ -106,7 +111,8 @@ class SensorFusionTrackingEngine {
     // Filter C: Stationary Jitter / Dead Zone Filter
     // If phone is stationary or moving less than 3.5m with low speed
     final sensorSpeedKmh = newFix.speed > 0.8 ? (newFix.speed * 3.6) : 0.0;
-    final isStationary = sensorSpeedKmh < 3.0 && rawMeters < minMovementThresholdMeters;
+    final isStationary =
+        sensorSpeedKmh < 3.0 && rawMeters < minMovementThresholdMeters;
 
     if (isStationary) {
       _lastTimestamp = now;
@@ -123,7 +129,8 @@ class SensorFusionTrackingEngine {
     // 5. High-Fidelity Update Accepted
     _lastValidPosition = newFix;
     _lastTimestamp = now;
-    _lastValidSpeedKmh = sensorSpeedKmh > 0 ? sensorSpeedKmh : calculatedSpeedKmh;
+    _lastValidSpeedKmh =
+        sensorSpeedKmh > 0 ? sensorSpeedKmh : calculatedSpeedKmh;
 
     final acceptedDistanceKm = rawMeters / 1000.0;
 

@@ -9,7 +9,9 @@ void main() {
       service = ReceiptIntelligenceService();
     });
 
-    test('Sanitizes thermal printer OCR noise (¥ converted to %, PREMOBA to PREM98)', () {
+    test(
+        'Sanitizes thermal printer OCR noise (¥ converted to %, PREMOBA to PREM98)',
+        () {
       const noisyText = '''
 Ampol Retail Pty Ltd
 ABN 64 000 175 342
@@ -36,7 +38,9 @@ Date: 25/12/2099
       expect(result.date.year, equals(DateTime.now().year));
     });
 
-    test('Date Guardrail: Rejects dates older than ATO 5-year limit (e.g. year 2010)', () {
+    test(
+        'Date Guardrail: Rejects dates older than ATO 5-year limit (e.g. year 2010)',
+        () {
       const expiredText = '''
 Ampol Retail Pty Ltd
 ABN 64 000 175 342
@@ -61,7 +65,9 @@ Date: 19/10/2023
       expect(result.date.day, equals(19));
     });
 
-    test('ABN Guardrail: Must be 11 numeric digits formatted XX XXX XXX XXX without illegal symbols', () {
+    test(
+        'ABN Guardrail: Must be 11 numeric digits formatted XX XXX XXX XXX without illegal symbols',
+        () {
       const abnText = '''
 Ampol Retail Pty Ltd
 ABN: 64-000-175-342

@@ -71,8 +71,8 @@ class Wgs84GeodesicEngine {
 
       sinSigma = math.sqrt(
         (cosU2 * sinLambda) * (cosU2 * sinLambda) +
-        (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) *
-        (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda),
+            (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) *
+                (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda),
       );
 
       if (sinSigma == 0.0) return 0.0; // Coincident points
@@ -89,8 +89,17 @@ class Wgs84GeodesicEngine {
 
       final c = f / 16.0 * cosSqAlpha * (4.0 + f * (4.0 - 3.0 * cosSqAlpha));
       lambdaPrev = lambda;
-      lambda = l + (1.0 - c) * f * sinAlpha *
-          (sigma + c * sinSigma * (cos2SigmaM + c * cosSigma * (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM)));
+      lambda = l +
+          (1.0 - c) *
+              f *
+              sinAlpha *
+              (sigma +
+                  c *
+                      sinSigma *
+                      (cos2SigmaM +
+                          c *
+                              cosSigma *
+                              (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM)));
 
       iterations++;
     } while ((lambda - lambdaPrev).abs() > 1e-12 && iterations < 100);
@@ -101,12 +110,22 @@ class Wgs84GeodesicEngine {
     }
 
     final uSq = cosSqAlpha * (a * a - b * b) / (b * b);
-    final capitalA = 1.0 + uSq / 16384.0 * (4096.0 + uSq * (-768.0 + uSq * (320.0 - 175.0 * uSq)));
-    final capitalB = uSq / 1024.0 * (256.0 + uSq * (-128.0 + uSq * (74.0 - 47.0 * uSq)));
+    final capitalA = 1.0 +
+        uSq / 16384.0 * (4096.0 + uSq * (-768.0 + uSq * (320.0 - 175.0 * uSq)));
+    final capitalB =
+        uSq / 1024.0 * (256.0 + uSq * (-128.0 + uSq * (74.0 - 47.0 * uSq)));
 
-    final deltaSigma = capitalB * sinSigma * (cos2SigmaM + capitalB / 4.0 *
-        (cosSigma * (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM) -
-            capitalB / 6.0 * cos2SigmaM * (-3.0 + 4.0 * sinSigma * sinSigma) * (-3.0 + 4.0 * cos2SigmaM * cos2SigmaM)));
+    final deltaSigma = capitalB *
+        sinSigma *
+        (cos2SigmaM +
+            capitalB /
+                4.0 *
+                (cosSigma * (-1.0 + 2.0 * cos2SigmaM * cos2SigmaM) -
+                    capitalB /
+                        6.0 *
+                        cos2SigmaM *
+                        (-3.0 + 4.0 * sinSigma * sinSigma) *
+                        (-3.0 + 4.0 * cos2SigmaM * cos2SigmaM)));
 
     final s = b * capitalA * (sigma - deltaSigma);
     return s;
@@ -151,7 +170,8 @@ class Wgs84GeodesicEngine {
     return (_latFiltered!, _lonFiltered!);
   }
 
-  static double _haversineFallback(double lat1, double lon1, double lat2, double lon2) {
+  static double _haversineFallback(
+      double lat1, double lon1, double lat2, double lon2) {
     const r = 6371000.0;
     final dLat = (lat2 - lat1) * (math.pi / 180.0);
     final dLon = (lon2 - lon1) * (math.pi / 180.0);

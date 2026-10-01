@@ -7,7 +7,7 @@ import '../storage/receipt_image_optimization_service.dart';
 /// Mission-critical Document Scanner Service (Step 1: Hardware-accelerated scanning).
 /// Handles Apple VisionKit (iOS) and Native Document Scanner Intent (Android)
 /// with graceful zero-crash fallbacks for Simulators and older devices.
-/// Automatically applies Frontier WebP optimization to captured images.
+/// Automatically applies WebP optimization to captured images.
 class DocumentScannerService {
   final ImagePicker _picker;
   final ReceiptImageOptimizationService _optimizer;
@@ -76,13 +76,12 @@ class DocumentScannerService {
       );
       return await _optimizeIfValid(photo?.path);
     } catch (e) {
-      debugPrint(
-          '[DocumentScannerService] Gallery picker failed: $e');
+      debugPrint('[DocumentScannerService] Gallery picker failed: $e');
       return null;
     }
   }
 
-  /// Optimizes a receipt image with Frontier WebP if it exists on disk.
+  /// Optimizes a receipt image with WebP if it exists on disk.
   Future<String?> _optimizeIfValid(String? rawPath) async {
     if (rawPath == null || rawPath.isEmpty) return null;
     final file = File(rawPath);
@@ -94,7 +93,7 @@ class DocumentScannerService {
     try {
       final result = await _optimizer.optimizeReceipt(file);
       debugPrint(
-        '[DocumentScannerService] Frontier WebP: ${file.path} optimized '
+        '[DocumentScannerService] WebP optimization: ${file.path} optimized '
         '(${result.originalSizeBytes}B -> ${result.compressedSizeBytes}B, saved ${result.savedPercentage}%)',
       );
       return result.file.path;

@@ -19,9 +19,13 @@ class QuickCaptureBottomSheet {
     if (now.hour < 11) {
       contextHint = 'Morning drive? Log your work trip';
     } else if (now.hour >= 11 && now.hour < 15) {
-      contextHint = isLogbook ? 'Midday run? Scan receipts or log a trip' : 'On a job? Log your work trip';
+      contextHint = isLogbook
+          ? 'Midday run? Scan receipts or log a trip'
+          : 'On a job? Log your work trip';
     } else {
-      contextHint = isLogbook ? 'End of shift? Log final odometer or wrap up trips' : 'End of day? Log any trips you made';
+      contextHint = isLogbook
+          ? 'End of shift? Log final odometer or wrap up trips'
+          : 'End of day? Log any trips you made';
     }
 
     showModalBottomSheet(
@@ -42,13 +46,19 @@ class QuickCaptureBottomSheet {
                 child: Container(
                   width: 36,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Quick Capture',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.muted, letterSpacing: 0.5),
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                    color: AppColors.muted,
+                    letterSpacing: 0.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
@@ -117,7 +127,8 @@ class QuickCaptureBottomSheet {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel', style: AppTextStyles.secondaryMedium),
+                child:
+                    const Text('Cancel', style: AppTextStyles.secondaryMedium),
               ),
             ],
           ),
@@ -126,7 +137,8 @@ class QuickCaptureBottomSheet {
     );
   }
 
-  static void _showTripCaptureModeSheet(BuildContext context, AppState appState) {
+  static void _showTripCaptureModeSheet(
+      BuildContext context, AppState appState) {
     HapticFeedback.mediumImpact();
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
 
@@ -147,7 +159,9 @@ class QuickCaptureBottomSheet {
                 child: Container(
                   width: 36,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -174,7 +188,8 @@ class QuickCaptureBottomSheet {
                   Navigator.of(ctx).pop();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => TripLiveTrackingScreen(appState: appState),
+                      builder: (_) =>
+                          TripLiveTrackingScreen(appState: appState),
                     ),
                   );
                 },
@@ -206,9 +221,12 @@ class QuickCaptureBottomSheet {
     );
   }
 
-  static void _showOdometerCaptureDialog(BuildContext context, AppState appState) {
+  static void _showOdometerCaptureDialog(
+      BuildContext context, AppState appState) {
     final controller = TextEditingController(
-      text: appState.currentOdometer > 0 ? appState.currentOdometer.toStringAsFixed(0) : '',
+      text: appState.currentOdometer > 0
+          ? appState.currentOdometer.toStringAsFixed(0)
+          : '',
     );
 
     showDialog(
@@ -219,7 +237,8 @@ class QuickCaptureBottomSheet {
           children: [
             Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 22),
             SizedBox(width: 8),
-            Text('Record Odometer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+            Text('Record Odometer',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
           ],
         ),
         content: Column(
@@ -228,25 +247,36 @@ class QuickCaptureBottomSheet {
           children: [
             const Text(
               'Enter current dashboard odometer for ATO logbook substantiation:',
-              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, color: AppColors.muted),
+              style: TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 13,
+                  color: AppColors.muted),
             ),
             const SizedBox(height: 6),
             Text(
               'Minimum allowable: ${appState.currentOdometer.toStringAsFixed(0)} km',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.muted),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  color: AppColors.muted),
             ),
             const SizedBox(height: 14),
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.ink),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: AppColors.ink),
               decoration: InputDecoration(
                 suffixText: 'km',
                 hintText: 'e.g. 45,200',
                 filled: true,
                 fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -254,18 +284,23 @@ class QuickCaptureBottomSheet {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.muted)),
+            child: const Text('Cancel',
+                style: TextStyle(
+                    fontWeight: FontWeight.w500, color: AppColors.muted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
-              final val = double.tryParse(controller.text.replaceAll(',', '').trim());
+              final val =
+                  double.tryParse(controller.text.replaceAll(',', '').trim());
               if (val != null) {
-                final (isValid, errMsg) = appState.validateNewCurrentOdometer(val);
+                final (isValid, errMsg) =
+                    appState.validateNewCurrentOdometer(val);
                 if (!isValid) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -298,12 +333,14 @@ class QuickCaptureBottomSheet {
                   SnackBar(
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: AppColors.ink,
-                    content: Text('✓ Dashboard odometer recorded: ${val.toStringAsFixed(0)} km'),
+                    content: Text(
+                        '✓ Dashboard odometer recorded: ${val.toStringAsFixed(0)} km'),
                   ),
                 );
               }
             },
-            child: const Text('Save Reading', style: TextStyle(fontWeight: FontWeight.w600)),
+            child: const Text('Save Reading',
+                style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -371,7 +408,8 @@ class QuickCaptureOptionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: AppColors.muted),
             ],
           ),
         ),

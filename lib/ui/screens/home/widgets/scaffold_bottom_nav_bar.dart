@@ -55,47 +55,47 @@ class ScaffoldBottomNavBar extends StatelessWidget {
               ),
               child: Container(
                 height: 66,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(33),
-                boxShadow: [
-                  // Layer 1: Ambient soft aura
-                  BoxShadow(
-                    color: AppColors.deepNavy.withValues(alpha: 0.10),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                    spreadRadius: 0,
-                  ),
-                  // Layer 2: Tight ground contact shadow
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                    spreadRadius: -1,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(33),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(33),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        width: 1.2,
-                      ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(33),
+                  boxShadow: [
+                    // Layer 1: Ambient soft aura
+                    BoxShadow(
+                      color: AppColors.deepNavy.withValues(alpha: 0.10),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
+                      spreadRadius: 0,
                     ),
-                    child: isCpk ? _buildCpkNav() : _buildLogbookNav(),
+                    // Layer 2: Tight ground contact shadow
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                      spreadRadius: -1,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(33),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(33),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: isCpk ? _buildCpkNav() : _buildLogbookNav(),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -201,15 +201,26 @@ class CenterCaptureButton extends StatelessWidget {
           onTap();
         },
         child: Container(
-          width: 46,
-          height: 46,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: AppColors.deepNavy,
             shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF2563EB), // Electric Blue specular highlight
+                AppColors.brandPrimary, // Ultramarine foundation
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.deepNavy.withValues(alpha: 0.32),
-                blurRadius: 10,
+                color: AppColors.brandGlow,
+                blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -238,7 +249,8 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? AppColors.deepNavy : AppColors.muted;
+    final activeColor = AppColors.brandElectric;
+    final inactiveColor = AppColors.muted;
     final displayIcon = (isSelected && activeIcon != null) ? activeIcon! : icon;
 
     return Material(
@@ -249,41 +261,31 @@ class _NavBarItem extends StatelessWidget {
           onTap();
         },
         borderRadius: BorderRadius.circular(22),
-        splashColor: AppColors.deepNavy.withValues(alpha: 0.08),
+        splashColor: AppColors.brandElectric.withValues(alpha: 0.08),
         highlightColor: Colors.transparent,
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedScale(
-                  scale: isSelected ? 1.08 : 1.0,
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutBack,
-                  child: Icon(
-                    displayIcon,
-                    color: color,
-                    size: 22,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                displayIcon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: 22,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? activeColor : inactiveColor,
+                  letterSpacing: -0.2,
                 ),
-                const SizedBox(height: 2),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 180),
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                    color: color,
-                    letterSpacing: -0.2,
-                  ),
-                  child: Text(label),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 }
-

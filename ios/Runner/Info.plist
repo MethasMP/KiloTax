@@ -78,26 +78,29 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>KiloTax uses your location to accurately measure trip distances for ATO-compliant tax logbooks.</string>
+	<string>KiloTax records real-time GPS routes and odometer distances during your drives to generate ATO-compliant motor vehicle tax logbook records.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>KiloTax automatically tracks driving trips in the background to record your 12-week ATO logbook without opening the app.</string>
+	<string>KiloTax tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>KiloTax tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>KiloTax detects vehicle motion to start tracking drives automatically and preserve battery life.</string>
+	<string>KiloTax detects vehicle movement to automatically start and stop trip tracking, ensuring complete ATO logbook records while preserving your battery life.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>KiloTax automatically detects your vehicle's Bluetooth audio or CarPlay to start and stop trip tracking seamlessly.</string>
+	<string>KiloTax detects when you connect to your vehicle's Bluetooth or CarPlay to automatically start and stop trip logging for ATO tax compliance without manual intervention.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>KiloTax connects to paired vehicle Bluetooth systems to log business mileage.</string>
+	<string>KiloTax connects to your paired vehicle Bluetooth or CarPlay system to automatically detect driving sessions and record compliant ATO logbook trips.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>KiloTax uses your camera to scan and preserve vehicle expense receipts for ATO tax substantiation.</string>
+	<string>KiloTax uses the camera to photograph fuel, service, and vehicle expense receipts for Australian Taxation Office (ATO) motor vehicle tax deduction substantiation.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>KiloTax needs photo library access to attach fuel and expense receipts for ATO tax substantiation.</string>
+	<string>KiloTax accesses your photos to attach existing fuel, toll, and maintenance receipts to your vehicle expense records for ATO tax audit substantiation.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 		<string>processing</string>
 		<string>bluetooth-central</string>
-		<string>external-accessory</string>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

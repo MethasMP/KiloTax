@@ -6,6 +6,10 @@ import 'package:kilotax/services/tracking/geocoding_service.dart';
 
 void main() {
   group('GeocodingService Precision & Formatting Tests', () {
+    setUp(() {
+      GeocodingService.clearCache();
+    });
+
     test('Richmond VIC returns Road and Suburb formatted for ATO', () async {
       final mockClient = MockClient((request) async {
         return http.Response(
@@ -98,20 +102,33 @@ void main() {
       print('MOCK TEST RESULT [Fallback]: $result');
       expect(result, equals('Location (-37.825, 144.998)'));
     });
-    test('stateFromCoordinates resolves all Australian states via GPS geofencing and null for foreign coordinates', () {
-      expect(GeocodingService.stateFromCoordinates(-37.8136, 144.9631), equals('VIC')); // Melbourne
-      expect(GeocodingService.stateFromCoordinates(-33.8688, 151.2093), equals('NSW')); // Sydney
-      expect(GeocodingService.stateFromCoordinates(-27.4698, 153.0251), equals('QLD')); // Brisbane
-      expect(GeocodingService.stateFromCoordinates(-31.9505, 115.8605), equals('WA'));  // Perth
-      expect(GeocodingService.stateFromCoordinates(-34.9285, 138.6007), equals('SA'));  // Adelaide
-      expect(GeocodingService.stateFromCoordinates(-42.8821, 147.3272), equals('TAS')); // Hobart
-      expect(GeocodingService.stateFromCoordinates(-12.4634, 130.8456), equals('NT'));  // Darwin
-      expect(GeocodingService.stateFromCoordinates(-35.2809, 149.1300), equals('ACT')); // Canberra
+    test(
+        'stateFromCoordinates resolves all Australian states via GPS geofencing and null for foreign coordinates',
+        () {
+      expect(GeocodingService.stateFromCoordinates(-37.8136, 144.9631),
+          equals('VIC')); // Melbourne
+      expect(GeocodingService.stateFromCoordinates(-33.8688, 151.2093),
+          equals('NSW')); // Sydney
+      expect(GeocodingService.stateFromCoordinates(-27.4698, 153.0251),
+          equals('QLD')); // Brisbane
+      expect(GeocodingService.stateFromCoordinates(-31.9505, 115.8605),
+          equals('WA')); // Perth
+      expect(GeocodingService.stateFromCoordinates(-34.9285, 138.6007),
+          equals('SA')); // Adelaide
+      expect(GeocodingService.stateFromCoordinates(-42.8821, 147.3272),
+          equals('TAS')); // Hobart
+      expect(GeocodingService.stateFromCoordinates(-12.4634, 130.8456),
+          equals('NT')); // Darwin
+      expect(GeocodingService.stateFromCoordinates(-35.2809, 149.1300),
+          equals('ACT')); // Canberra
 
       // Coordinates outside Australia (e.g. Bangkok Thailand, London UK, Tokyo Japan)
-      expect(GeocodingService.stateFromCoordinates(13.7563, 100.5018), isNull); // Bangkok
-      expect(GeocodingService.stateFromCoordinates(51.5074, -0.1278), isNull);  // London
-      expect(GeocodingService.stateFromCoordinates(35.6762, 139.6503), isNull); // Tokyo
+      expect(GeocodingService.stateFromCoordinates(13.7563, 100.5018),
+          isNull); // Bangkok
+      expect(GeocodingService.stateFromCoordinates(51.5074, -0.1278),
+          isNull); // London
+      expect(GeocodingService.stateFromCoordinates(35.6762, 139.6503),
+          isNull); // Tokyo
     });
   });
 }

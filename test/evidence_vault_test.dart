@@ -43,7 +43,8 @@ void main() {
       }
     });
 
-    test('Registers odometerStart and saves into unified evidence list', () async {
+    test('Registers odometerStart and saves into unified evidence list',
+        () async {
       final sampleFile = File('${tempDir.path}/odo_start.jpg');
       await sampleFile.writeAsBytes([10, 20, 30, 40]);
 
@@ -65,7 +66,9 @@ void main() {
       expect(appState.evidenceList.first.id, evidence.id);
     });
 
-    test('Rejects duplicate image hash across different evidence types (Anti-Fraud)', () async {
+    test(
+        'Rejects duplicate image hash across different evidence types (Anti-Fraud)',
+        () async {
       final sampleFile = File('${tempDir.path}/sample.jpg');
       await sampleFile.writeAsBytes([50, 60, 70, 80]);
 
@@ -90,7 +93,9 @@ void main() {
       expect(error, contains('already been registered in your evidence vault'));
     });
 
-    test('Rejects odometerEnd if hash matches odometerStart for the same vehicle', () async {
+    test(
+        'Rejects odometerEnd if hash matches odometerStart for the same vehicle',
+        () async {
       final sampleFile = File('${tempDir.path}/odo_cluster.jpg');
       await sampleFile.writeAsBytes([11, 22, 33, 44]);
 

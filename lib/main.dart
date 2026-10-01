@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
 import 'state/app_state.dart';
-import 'ui/screens/auth/sign_in_screen.dart';
 import 'ui/screens/onboarding/onboarding_flow_screen.dart';
 import 'ui/screens/home/main_scaffold_screen.dart';
 
@@ -28,19 +28,19 @@ class KiloTaxApp extends StatelessWidget {
   const KiloTaxApp({super.key});
 
   Widget _resolveRootScreen(AppState appState) {
-    // 1. Authenticated with configured vehicle -> Main Dashboard
-    if (appState.isAuthenticated && appState.hasVehicle) {
+    // 1. Configured vehicle exists (Guest local mode or Authenticated) -> Main Dashboard
+    if (appState.hasVehicle) {
       return const MainScaffoldScreen();
     }
-    // 2. Authenticated but no vehicle configured -> Resume vehicle setup
-    if (appState.isAuthenticated && !appState.hasVehicle) {
+    // 2. Vehicle chosen, but still needs to complete Value-First Gate or GPS setup
+    if (appState.primaryVehicle != null && !appState.hasVehicle) {
       return const OnboardingFlowScreen(initialStep: 2);
     }
-    // 3. Not authenticated, but has already seen slides (e.g. after Sign Out) -> Pure Sign In Screen
+    // 3. Has already seen intro slides but no vehicle yet -> Value-First Vehicle Setup (Step 1)
     if (appState.hasSeenOnboarding) {
-      return const SignInScreen();
+      return const OnboardingFlowScreen(initialStep: 1);
     }
-    // 4. Fresh first-time launch -> Onboarding slides
+    // 4. Fresh first-time launch -> Onboarding slides (Step 0)
     return const OnboardingFlowScreen(initialStep: 0);
   }
 
@@ -49,6 +49,15 @@ class KiloTaxApp extends StatelessWidget {
     return MaterialApp(
       title: 'KiloTax',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('en', 'AU'),
+      supportedLocales: const [
+        Locale('en', 'AU'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         fontFamily: 'Inter',
         colorScheme: ColorScheme.fromSeed(

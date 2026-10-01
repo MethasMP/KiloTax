@@ -32,7 +32,8 @@ class LogbookOdometerCard extends StatelessWidget {
           children: [
             Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 20),
             SizedBox(width: 8),
-            Text('Adjust Start Odometer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            Text('Adjust Start Odometer',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           ],
         ),
         content: Column(
@@ -48,13 +49,18 @@ class LogbookOdometerCard extends StatelessWidget {
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: AppColors.ink),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: AppColors.ink),
               decoration: InputDecoration(
                 suffixText: 'km',
                 hintText: 'e.g. 45,200',
                 filled: true,
                 fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -62,16 +68,19 @@ class LogbookOdometerCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.muted)),
+            child:
+                const Text('Cancel', style: TextStyle(color: AppColors.muted)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
-              final val = double.tryParse(controller.text.replaceAll(',', '').trim());
+              final val =
+                  double.tryParse(controller.text.replaceAll(',', '').trim());
               if (val != null && val >= 0) {
                 onStartOdometerChanged(val);
                 Navigator.of(ctx).pop();
@@ -112,7 +121,10 @@ class LogbookOdometerCard extends StatelessWidget {
                   SizedBox(width: 8),
                   Text(
                     'ATO Logbook Evidence (Odometer Chain)',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: AppColors.ink),
                   ),
                 ],
               ),
@@ -123,7 +135,10 @@ class LogbookOdometerCard extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Text(
                     'Edit',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.workBlue),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: AppColors.workBlue),
                   ),
                 ),
               ),
@@ -142,23 +157,32 @@ class LogbookOdometerCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Start Odometer', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                    const Text('Start Odometer',
+                        style: TextStyle(fontSize: 11, color: AppColors.muted)),
                     const SizedBox(height: 2),
                     Text(
                       '${startOdometer.toStringAsFixed(0)} km',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.ink),
                     ),
                   ],
                 ),
-                const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.muted),
+                const Icon(Icons.arrow_forward_rounded,
+                    size: 16, color: AppColors.muted),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('End Odometer', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                    const Text('End Odometer',
+                        style: TextStyle(fontSize: 11, color: AppColors.muted)),
                     const SizedBox(height: 2),
                     Text(
                       '${endOdometer.toStringAsFixed(0)} km',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.deepNavy),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: AppColors.deepNavy),
                     ),
                   ],
                 ),
@@ -168,7 +192,10 @@ class LogbookOdometerCard extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             '✓ Auto-calculated continuous audit trail (ATO TR 97/11)',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.emerald),
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.emerald),
           ),
         ],
       ),

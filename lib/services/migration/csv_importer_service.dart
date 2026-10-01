@@ -16,7 +16,8 @@ class MigrationImportResult {
     required this.issues,
   });
 
-  double get matchRate => totalParsed > 0 ? (autoMatched / totalParsed) * 100 : 100.0;
+  double get matchRate =>
+      totalParsed > 0 ? (autoMatched / totalParsed) * 100 : 100.0;
 }
 
 /// Spec #19: Migration Engine (Driversnote, Xero, Generic CSV)
@@ -45,7 +46,9 @@ class CsvImporterService {
 
     // Detect header index
     final header = lines.first.toLowerCase();
-    final hasHeader = header.contains('date') || header.contains('distance') || header.contains('km');
+    final hasHeader = header.contains('date') ||
+        header.contains('distance') ||
+        header.contains('km');
     final startIndex = hasHeader ? 1 : 0;
 
     double runningOdometer = 10000.0;
@@ -70,7 +73,9 @@ class CsvImporterService {
           date = DateTime.tryParse(cols[0].trim()) ?? DateTime.now();
         }
         if (cols.length > 1) {
-          distance = double.tryParse(cols[1].replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+          distance =
+              double.tryParse(cols[1].replaceAll(RegExp(r'[^0-9.]'), '')) ??
+                  0.0;
         }
         if (cols.length > 2) {
           purpose = cols[2].trim();
@@ -88,7 +93,9 @@ class CsvImporterService {
         final endOdo = runningOdometer + distance;
         runningOdometer = endOdo;
 
-        final isUnclear = purpose.isEmpty || purpose.contains('?') || purpose.toLowerCase() == 'unknown';
+        final isUnclear = purpose.isEmpty ||
+            purpose.contains('?') ||
+            purpose.toLowerCase() == 'unknown';
         if (isUnclear) {
           needsAttention++;
           purpose = 'Needs Attention (Imported)';

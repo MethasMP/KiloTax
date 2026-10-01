@@ -43,16 +43,21 @@ post_install do |installer|
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = ''
     end
   end
-  installer.aggregate_targets.each do |target|
-    target.user_build_configurations.each_key do |config_name|
-      config_file_path = target.xcconfig_path(config_name)
-      if File.exist?(config_file_path)
-        content = File.read(config_file_path)
-        content.gsub!(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*arm64/, 'EXCLUDED_ARCHS[sdk=iphonesimulator*] = ')
-        File.write(config_file_path, content)
-      end
+  # Strip EXCLUDED_ARCHS=arm64 from all pod and aggregate xcconfig files
+  Dir.glob(File.join(__dir__, 'Pods', 'Target Support Files', '**', '*.xcconfig')).each do |config_file_path|
+    content = File.read(config_file_path)
+    if content.match?(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*arm64/)
+      content.gsub!(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*arm64/, 'EXCLUDED_ARCHS[sdk=iphonesimulator*] = ')
+      File.write(config_file_path, content)
     end
   end
-  system("python3 #{File.join(__dir__, 'patch_mlkit_sim.py')}")
+
+  # Patch MLKit Mach-O headers: default to simulator for local dev ergonomics,
+  # or device mode when explicitly building for release/device.
+  if ENV['BUILD_FOR_DEVICE'] == '1' || ENV['TARGET_DEVICE'] == 'device'
+    system("python3 #{File.join(__dir__, 'patch_mlkit_sim.py')} --device")
+  else
+    system("python3 #{File.join(__dir__, 'patch_mlkit_sim.py')} --simulator")
+  end
 end
 

@@ -3,6 +3,7 @@ import '../../data/models/vehicle.dart';
 import '../../data/models/tax_summary.dart';
 import '../../data/models/trip.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/csv_security.dart';
 
 /// Cents-per-kilometre (CPK) Dedicated Exporter
 /// Aligned strictly with ITAA 1997 Subdivision 28-C (§ 28-25 to § 28-35)
@@ -11,16 +12,9 @@ import '../../core/constants/app_constants.dart';
 /// 2. Detailed CPK Reasonable-Estimation Ledger CSV (14 Columns)
 class CpkExportService {
   /// Sanitize a CSV cell per CWE-1236 to prevent CSV formula injection
-  /// Escapes double quotes (" -> "") and prepends single quote (') if the text begins with formula triggers
-  static String sanitizeCsvCell(String input) {
-    if (input.isEmpty) return input;
-    String text = input;
-    const formulaTriggers = ['=', '+', '-', '@', '\t', '\r'];
-    if (formulaTriggers.contains(text[0])) {
-      text = "'$text";
-    }
-    return text.replaceAll('"', '""');
-  }
+  /// Routes to centralized [CsvSecurity.sanitizeCsvCell].
+  static String sanitizeCsvCell(String input) =>
+      CsvSecurity.sanitizeCsvCell(input);
 
   /// Generates the standard 14-column CPK trip ledger CSV
   static String generateCpkTripLedgerCsv({
@@ -48,8 +42,8 @@ class CpkExportService {
       final startTime =
           '${t.date.hour.toString().padLeft(2, "0")}:${t.date.minute.toString().padLeft(2, "0")}';
       final rego = sanitizeCsvCell(vehicle.regoPlate);
-      final origin =
-          sanitizeCsvCell((t.originAddress ?? 'Work Site').replaceAll(',', ' '));
+      final origin = sanitizeCsvCell(
+          (t.originAddress ?? 'Work Site').replaceAll(',', ' '));
       final dest = sanitizeCsvCell(
           (t.destinationAddress ?? 'Client Job').replaceAll(',', ' '));
       final dist = t.distanceKm.toStringAsFixed(2);
@@ -71,8 +65,16 @@ class CpkExportService {
       index++;
     }
 
+    // Statutory Compliance Footer (ITAA 1997 Division 28-C / Subdivision 28-H)
+    buffer.writeln('# DISCLAIMER: $statutoryDisclaimer');
+
     return buffer.toString();
   }
+
+  /// Statutory disclaimer text mandated under ITAA 1997 Division 28-C / Subdivision 28-H
+  static const String statutoryDisclaimer =
+      'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
+
 
   /// Generates the visual 1-Page Box D1 Lodgement Slip text layout
   static String generateCpkLodgementSlipText({
@@ -84,8 +86,9 @@ class CpkExportService {
     String abn = '',
   }) {
     final businessKm = summary.businessKm;
-    final cappedKm =
-        businessKm > taxRule.centsPerKmMaxKm ? taxRule.centsPerKmMaxKm : businessKm;
+    final cappedKm = businessKm > taxRule.centsPerKmMaxKm
+        ? taxRule.centsPerKmMaxKm
+        : businessKm;
     final claimAmount = cappedKm * taxRule.centsPerKmRate;
     final centsRate = (taxRule.centsPerKmRate * 100).toInt();
 
@@ -100,11 +103,14 @@ class CpkExportService {
             t.isBusiness &&
             (t.purpose.contains('Supplier') || t.purpose.contains('Materials')))
         .toList();
-    final bulkyToolTrips =
-        trips.where((t) => t.isBusiness && _isBulkyToolsTrip(t.purpose)).toList();
+    final bulkyToolTrips = trips
+        .where((t) => t.isBusiness && _isBulkyToolsTrip(t.purpose))
+        .toList();
     final otherVisits = trips
         .where((t) =>
-            t.isBusiness && !clientVisits.contains(t) && !supplyRuns.contains(t))
+            t.isBusiness &&
+            !clientVisits.contains(t) &&
+            !supplyRuns.contains(t))
         .toList();
 
     double distClient = clientVisits.fold(0.0, (sum, t) => sum + t.distanceKm);
@@ -189,6 +195,14 @@ travel for income-producing purposes, substantiated by contemporaneous electroni
 
 Taxpayer Signature: ___________________________        Date: ____ / ____ / ________
 Tax Agent Signature: __________________________        RAN:  ______________________
+
+====================================================================================================
+STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):
+Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm
+claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.
+KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected
+to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).
+====================================================================================================
 ''';
   }
 

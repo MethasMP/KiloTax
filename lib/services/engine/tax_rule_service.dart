@@ -61,8 +61,8 @@ class TaxRuleService {
   };
 
   /// Returns an unmodifiable map of all verified historical and active rates
-  Map<int, double> get allKnownRates =>
-      Map.unmodifiable({...statutoryRatesByStartYear, ..._syncedRatesByStartYear});
+  Map<int, double> get allKnownRates => Map.unmodifiable(
+      {...statutoryRatesByStartYear, ..._syncedRatesByStartYear});
 
   /// Initialize and load cached tax rules from persistent storage
   Future<void> init() async {
@@ -72,7 +72,9 @@ class TaxRuleService {
       try {
         final data = jsonDecode(cachedJson) as Map<String, dynamic>;
         _currentRule = AtoTaxRule.fromJson(data);
-      } catch (_) {
+      } catch (e, stack) {
+        debugPrint(
+            '[TaxRuleService] Warning parsing cached single rule: $e\n$stack');
         _currentRule = AppConstants.activeTaxRule;
       }
     }
@@ -89,8 +91,9 @@ class TaxRuleService {
             _syncedRatesByStartYear[year] = rate;
           }
         }
-      } catch (_) {
-        // Silently preserve statutory fallback
+      } catch (e, stack) {
+        debugPrint(
+            '[TaxRuleService] Warning parsing cached rate map: $e\n$stack');
       }
     }
   }
@@ -100,7 +103,8 @@ class TaxRuleService {
   Future<bool> syncLatestOfficialRates() async {
     // Tier 1: Query Global Supabase REST API
     try {
-      final supabaseUri = Uri.parse('$_supabaseUrl/rest/v1/ato_tax_rules?select=*&order=start_year.desc');
+      final supabaseUri = Uri.parse(
+          '$_supabaseUrl/rest/v1/ato_tax_rules?select=*&order=start_year.desc');
       final response = await _httpClient.get(
         supabaseUri,
         headers: {
@@ -120,7 +124,9 @@ class TaxRuleService {
               final startYear = (item['start_year'] as num?)?.toInt() ??
                   _extractStartYearFromFy(rule.financialYear);
 
-              if (startYear != null && rule.centsPerKmRate >= 0.50 && rule.centsPerKmRate <= 2.00) {
+              if (startYear != null &&
+                  rule.centsPerKmRate >= 0.50 &&
+                  rule.centsPerKmRate <= 2.00) {
                 _syncedRatesByStartYear[startYear] = rule.centsPerKmRate;
 
                 // Mark active rule or take newest verified rule
@@ -134,9 +140,12 @@ class TaxRuleService {
           }
 
           // Persist to local flash storage for instant offline access
-          await _storageService?.saveRawString(_cacheKey, jsonEncode(_currentRule.toJson()));
-          final stringKeyMap = _syncedRatesByStartYear.map((k, v) => MapEntry(k.toString(), v));
-          await _storageService?.saveRawString(_cachedRatesKey, jsonEncode(stringKeyMap));
+          await _storageService?.saveRawString(
+              _cacheKey, jsonEncode(_currentRule.toJson()));
+          final stringKeyMap =
+              _syncedRatesByStartYear.map((k, v) => MapEntry(k.toString(), v));
+          await _storageService?.saveRawString(
+              _cachedRatesKey, jsonEncode(stringKeyMap));
           return true;
         }
       }
@@ -154,7 +163,8 @@ class TaxRuleService {
         final dynamic decoded = jsonDecode(response.body);
         if (decoded is Map<String, dynamic>) {
           final newRule = AtoTaxRule.fromJson(decoded);
-          if (newRule.centsPerKmRate >= 0.50 && newRule.centsPerKmRate <= 2.00) {
+          if (newRule.centsPerKmRate >= 0.50 &&
+              newRule.centsPerKmRate <= 2.00) {
             _currentRule = newRule;
             final startYear = _extractStartYearFromFy(newRule.financialYear);
             if (startYear != null) {
@@ -162,8 +172,10 @@ class TaxRuleService {
             }
 
             await _storageService?.saveRawString(_cacheKey, response.body);
-            final stringKeyMap = _syncedRatesByStartYear.map((k, v) => MapEntry(k.toString(), v));
-            await _storageService?.saveRawString(_cachedRatesKey, jsonEncode(stringKeyMap));
+            final stringKeyMap = _syncedRatesByStartYear
+                .map((k, v) => MapEntry(k.toString(), v));
+            await _storageService?.saveRawString(
+                _cachedRatesKey, jsonEncode(stringKeyMap));
             return true;
           }
         }

@@ -54,7 +54,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('Tier 1: Successfully syncs canonical rules from Global Supabase REST API', () async {
+    test(
+        'Tier 1: Successfully syncs canonical rules from Global Supabase REST API',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       final storage = LocalStorageService(prefs);
 
@@ -108,7 +110,8 @@ void main() {
       expect(cachedJson, contains('2026-27'));
     });
 
-    test('Tier 2: Falls back to secondary CDN when Supabase is down or fails', () async {
+    test('Tier 2: Falls back to secondary CDN when Supabase is down or fails',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       final storage = LocalStorageService(prefs);
 
@@ -141,7 +144,9 @@ void main() {
       expect(service.currentRule.centsPerKmRate, equals(0.91));
     });
 
-    test('Tier 3 & 4: 100% Silent Offline Operation - Never crashes or throws exceptions', () async {
+    test(
+        'Tier 3 & 4: 100% Silent Offline Operation - Never crashes or throws exceptions',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       final storage = LocalStorageService(prefs);
 

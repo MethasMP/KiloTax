@@ -85,7 +85,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                       if (widget.notificationService.unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF97316),
                             borderRadius: BorderRadius.circular(10),
@@ -126,7 +127,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
             // Notification List
             if (list.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
                 child: Column(
                   children: [
                     Container(
@@ -136,7 +138,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                         color: AppColors.background,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(LucideIcons.bellOff, size: 24, color: AppColors.muted),
+                      child: const Icon(LucideIcons.bellOff,
+                          size: 24, color: AppColors.muted),
                     ),
                     const SizedBox(height: 14),
                     const Text(
@@ -162,7 +165,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: list.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.border, indent: 64),
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: AppColors.border, indent: 64),
                   itemBuilder: (ctx, idx) {
                     final item = list[idx];
                     return _NotificationTile(
@@ -244,7 +248,8 @@ class _NotificationTile extends StatelessWidget {
               notification.title,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w800,
+                fontWeight:
+                    notification.isRead ? FontWeight.w600 : FontWeight.w800,
                 color: AppColors.ink,
               ),
             ),
@@ -266,7 +271,9 @@ class _NotificationTile extends StatelessWidget {
           notification.body,
           style: TextStyle(
             fontSize: 12.5,
-            color: notification.isRead ? AppColors.muted : AppColors.ink.withValues(alpha: 0.8),
+            color: notification.isRead
+                ? AppColors.muted
+                : AppColors.ink.withValues(alpha: 0.8),
             height: 1.3,
           ),
         ),

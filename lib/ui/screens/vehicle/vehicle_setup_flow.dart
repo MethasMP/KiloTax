@@ -6,11 +6,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/tracking/geocoding_service.dart';
 import '../../../services/vehicle/australian_vehicle_catalog.dart';
+import '../../widgets/vehicle_render_widget.dart';
 
 enum VehicleSetupStage {
   searchAndSelect, // Step 1: Smart Search & Popular List
-  confirmVehicle,  // Step 2: Confirmation card & Optional Rego / Odo
-  taxMethod,       // Step 3: Choose Tax Method
+  confirmVehicle, // Step 2: Confirmation card & Optional Rego / Odo
+  taxMethod, // Step 3: Choose Tax Method
 }
 
 /// Standalone & Reusable Vehicle Setup Flow
@@ -40,7 +41,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
   final _regoController = TextEditingController();
   final _odometerController = TextEditingController();
   String? _selectedState;
-  AustralianVehicleCatalogEntry _selectedVehicle = AustralianVehicleCatalog.popularTradieVehicles.first;
+  AustralianVehicleCatalogEntry _selectedVehicle =
+      AustralianVehicleCatalog.popularTradieVehicles.first;
   bool _isSearching = false;
   List<AustralianVehicleCatalogEntry> _searchResults = [];
 
@@ -60,12 +62,15 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
     if (_selectedState != null) return;
     try {
       final perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+      if (perm == LocationPermission.always ||
+          perm == LocationPermission.whileInUse) {
         final pos = await Geolocator.getLastKnownPosition() ??
             await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(timeLimit: Duration(seconds: 2)),
+              locationSettings:
+                  const LocationSettings(timeLimit: Duration(seconds: 2)),
             );
-        final detected = GeocodingService.stateFromCoordinates(pos.latitude, pos.longitude);
+        final detected =
+            GeocodingService.stateFromCoordinates(pos.latitude, pos.longitude);
         if (mounted && _selectedState == null) {
           setState(() {
             _selectedState = detected;
@@ -73,8 +78,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
           return;
         }
       }
-    } catch (_) {
-      // Graceful offline fallback
+    } catch (e, stack) {
+      debugPrint(
+          '[VehicleSetupFlow] Warning detecting state from GPS location: $e\n$stack');
     }
   }
 
@@ -107,11 +113,15 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
   void _finishVehicleCreation() {
     HapticFeedback.heavyImpact();
 
-    final odo = double.tryParse(_odometerController.text.replaceAll(',', '').trim()) ?? 0.0;
+    final odo =
+        double.tryParse(_odometerController.text.replaceAll(',', '').trim()) ??
+            0.0;
     final cleanPlateText = _regoController.text.trim().toUpperCase();
     final rego = cleanPlateText.isNotEmpty
-        ? (_selectedState != null ? '$cleanPlateText ($_selectedState)' : cleanPlateText)
-        : 'No Plate';
+        ? (_selectedState != null
+            ? '$cleanPlateText ($_selectedState)'
+            : cleanPlateText)
+        : '';
 
     final modelName = _selectedVehicle.model;
 
@@ -123,7 +133,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       initialOdometer: odo,
       vehicleType: _selectedVehicle.vehicleType,
       taxMethod: _selectedTaxMethod,
-      logbookStartDate: _selectedTaxMethod == TaxMethod.logbook ? DateTime.now() : null,
+      logbookStartDate:
+          _selectedTaxMethod == TaxMethod.logbook ? DateTime.now() : null,
     );
 
     widget.onVehicleCreated(created);
@@ -178,7 +189,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.muted),
+                      icon: const Icon(Icons.close_rounded,
+                          size: 20, color: AppColors.muted),
                       onPressed: () => Navigator.of(ctx).pop(),
                       visualDensity: VisualDensity.compact,
                       splashRadius: 18,
@@ -195,16 +207,26 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       child: TextField(
                         controller: makeController,
                         textCapitalization: TextCapitalization.words,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14.5,
+                            color: AppColors.ink),
                         decoration: InputDecoration(
                           labelText: 'Make (Brand)',
-                          labelStyle: const TextStyle(fontSize: 13, color: AppColors.muted),
+                          labelStyle: const TextStyle(
+                              fontSize: 13, color: AppColors.muted),
                           hintText: 'Toyota, Ford',
-                          hintStyle: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400, fontSize: 13),
+                          hintStyle: const TextStyle(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 13),
                           filled: true,
                           fillColor: AppColors.background,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none),
                         ),
                       ),
                     ),
@@ -214,16 +236,26 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       child: TextField(
                         controller: modelController,
                         textCapitalization: TextCapitalization.words,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: AppColors.ink),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14.5,
+                            color: AppColors.ink),
                         decoration: InputDecoration(
                           labelText: 'Model',
-                          labelStyle: const TextStyle(fontSize: 13, color: AppColors.muted),
+                          labelStyle: const TextStyle(
+                              fontSize: 13, color: AppColors.muted),
                           hintText: 'HiLux, Ranger',
-                          hintStyle: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400, fontSize: 13),
+                          hintStyle: const TextStyle(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 13),
                           filled: true,
                           fillColor: AppColors.background,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none),
                         ),
                       ),
                     ),
@@ -239,11 +271,15 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       padding: EdgeInsets.only(left: 4, bottom: 6),
                       child: Text(
                         'Body Type (for ATO Tax Classification)',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.background,
                         borderRadius: BorderRadius.circular(12),
@@ -257,18 +293,27 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                               value: type,
                               child: Row(
                                 children: [
-                                  type.buildSilhouette(width: 24, height: 18, color: AppColors.deepNavy),
+                                  VehicleRenderWidget.silhouette(
+                                    vehicleType: type,
+                                    width: 24,
+                                    height: 18,
+                                    color: AppColors.deepNavy,
+                                  ),
                                   const SizedBox(width: 10),
                                   Text(
                                     type.displayName,
-                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14),
                                   ),
                                 ],
                               ),
                             );
                           }).toList(),
                           onChanged: (val) {
-                            if (val != null) setDialogState(() => manualType = val);
+                            if (val != null) {
+                              setDialogState(() => manualType = val);
+                            }
                           },
                         ),
                       ),
@@ -284,11 +329,16 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       backgroundColor: AppColors.deepNavy,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
-                      final make = makeController.text.trim().isNotEmpty ? makeController.text.trim() : 'Work';
-                      final model = modelController.text.trim().isNotEmpty ? modelController.text.trim() : 'Vehicle';
+                      final make = makeController.text.trim().isNotEmpty
+                          ? makeController.text.trim()
+                          : 'Work';
+                      final model = modelController.text.trim().isNotEmpty
+                          ? modelController.text.trim()
+                          : 'Vehicle';
 
                       setState(() {
                         _selectedVehicle = AustralianVehicleCatalogEntry(
@@ -302,7 +352,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       });
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    child: const Text('Continue',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
                   ),
                 ),
               ],
@@ -312,8 +364,6 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       ),
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +392,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 onPressed: widget.onCancel,
               )
             : null,
-        title: const Text('Add your vehicle', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        title: const Text('Add your vehicle',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -353,7 +404,10 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
             children: [
               const Text(
                 'What do you drive?',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.ink),
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -367,11 +421,16 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search make or model',
-                  hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14.5, fontWeight: FontWeight.w400),
-                  prefixIcon: const Icon(LucideIcons.search, size: 18, color: AppColors.muted),
+                  hintStyle: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w400),
+                  prefixIcon: const Icon(LucideIcons.search,
+                      size: 18, color: AppColors.muted),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 16, color: AppColors.muted),
+                          icon: const Icon(Icons.clear,
+                              size: 16, color: AppColors.muted),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _isSearching = false);
@@ -380,9 +439,14 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       : null,
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -390,7 +454,10 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
               if (_isSearching) ...[
                 const Text(
                   'Search Results',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.ink),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink),
                 ),
                 const SizedBox(height: 8),
                 Material(
@@ -405,7 +472,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _searchResults.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (ctx, idx) {
                       final item = _searchResults[idx];
                       return ListTile(
@@ -418,7 +486,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Center(
-                            child: item.vehicleType.build3dRender(
+                            child: VehicleRenderWidget.studio3d(
+                              vehicleType: item.vehicleType,
                               make: item.make,
                               model: item.model,
                               width: 50,
@@ -429,13 +498,18 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                         ),
                         title: Text(
                           '${item.make} ${item.model}',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: AppColors.ink),
                         ),
                         subtitle: Text(
                           '${item.vehicleType.shortCategoryName} · ${item.fuelType}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.muted),
                         ),
-                        trailing: const Icon(LucideIcons.chevronRight, size: 16, color: AppColors.muted),
+                        trailing: const Icon(LucideIcons.chevronRight,
+                            size: 16, color: AppColors.muted),
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           setState(() {
@@ -453,11 +527,17 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   children: [
                     const Text(
                       'Popular Tradie Vehicles',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink),
                     ),
                     Text(
                       'Instant select',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.muted.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.muted.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -473,10 +553,13 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: AustralianVehicleCatalog.popularTradieVehicles.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                    itemCount:
+                        AustralianVehicleCatalog.popularTradieVehicles.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (ctx, idx) {
-                      final item = AustralianVehicleCatalog.popularTradieVehicles[idx];
+                      final item =
+                          AustralianVehicleCatalog.popularTradieVehicles[idx];
                       return ListTile(
                         leading: Container(
                           width: 54,
@@ -487,7 +570,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Center(
-                            child: item.vehicleType.build3dRender(
+                            child: VehicleRenderWidget.studio3d(
+                              vehicleType: item.vehicleType,
                               make: item.make,
                               model: item.model,
                               width: 50,
@@ -498,13 +582,18 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                         ),
                         title: Text(
                           '${item.make} ${item.model}',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: AppColors.ink),
                         ),
                         subtitle: Text(
                           '${item.vehicleType.shortCategoryName} · ${item.fuelType}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.muted),
                         ),
-                        trailing: const Icon(LucideIcons.chevronRight, size: 16, color: AppColors.muted),
+                        trailing: const Icon(LucideIcons.chevronRight,
+                            size: 16, color: AppColors.muted),
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           setState(() {
@@ -526,11 +615,14 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                     onTap: _showManualVehicleEntryDialog,
                     borderRadius: BorderRadius.circular(20),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_circle_outline_rounded, size: 15, color: AppColors.muted.withValues(alpha: 0.8)),
+                          Icon(Icons.add_circle_outline_rounded,
+                              size: 15,
+                              color: AppColors.muted.withValues(alpha: 0.8)),
                           const SizedBox(width: 6),
                           Text(
                             "Can't find your vehicle? Enter manually",
@@ -564,10 +656,13 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
-          onPressed: () => setState(() => _stage = VehicleSetupStage.searchAndSelect),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: AppColors.ink),
+          onPressed: () =>
+              setState(() => _stage = VehicleSetupStage.searchAndSelect),
         ),
-        title: const Text('Your Vehicle', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        title: const Text('Your Vehicle',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -583,7 +678,10 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.workBlue, width: 1.5),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3)),
                   ],
                 ),
                 child: Row(
@@ -591,13 +689,15 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                     Container(
                       width: 80,
                       height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.workBlueLight.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Center(
-                        child: _selectedVehicle.vehicleType.build3dRender(
+                        child: VehicleRenderWidget.studio3d(
+                          vehicleType: _selectedVehicle.vehicleType,
                           make: _selectedVehicle.make,
                           model: _selectedVehicle.model,
                           width: 72,
@@ -613,19 +713,28 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                         children: [
                           Text(
                             '${_selectedVehicle.make} ${_selectedVehicle.model}',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.ink),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 17,
+                                color: AppColors.ink),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${_selectedVehicle.vehicleType.displayName} • ${_selectedVehicle.fuelType}',
-                            style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                     TextButton(
-                      onPressed: () => setState(() => _stage = VehicleSetupStage.searchAndSelect),
-                      child: const Text('Change', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      onPressed: () => setState(
+                          () => _stage = VehicleSetupStage.searchAndSelect),
+                      child: const Text('Change',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -636,11 +745,22 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Rego Plate', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                  const Text('Rego Plate',
+                      style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('Optional', style: TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w700)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(4)),
+                    child: const Text('Optional',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
@@ -651,7 +771,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _regoController.text.isNotEmpty ? AppColors.deepNavy : AppColors.border,
+                    color: _regoController.text.isNotEmpty
+                        ? AppColors.deepNavy
+                        : AppColors.border,
                     width: _regoController.text.isNotEmpty ? 1.5 : 1.0,
                   ),
                 ),
@@ -665,20 +787,30 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                               setState(() => _selectedState = null);
                             }
                           : null,
-                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(13)),
+                      borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(13)),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
                         decoration: BoxDecoration(
-                          color: _selectedState != null ? AppColors.workBlueLight : AppColors.background,
-                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(13)),
-                          border: Border(right: BorderSide(color: AppColors.border.withValues(alpha: 0.6))),
+                          color: _selectedState != null
+                              ? AppColors.workBlueLight
+                              : AppColors.background,
+                          borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(13)),
+                          border: Border(
+                              right: BorderSide(
+                                  color:
+                                      AppColors.border.withValues(alpha: 0.6))),
                         ),
                         child: Text(
                           _selectedState ?? 'STATE',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w900,
-                            color: _selectedState != null ? AppColors.deepNavy : AppColors.muted,
+                            color: _selectedState != null
+                                ? AppColors.deepNavy
+                                : AppColors.muted,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -689,19 +821,29 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       child: TextField(
                         controller: _regoController,
                         textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink, letterSpacing: 1.2),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: AppColors.ink,
+                            letterSpacing: 1.2),
                         decoration: const InputDecoration(
                           hintText: '1AB 2CD',
-                          hintStyle: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400, fontSize: 14.5, letterSpacing: 1.0),
+                          hintStyle: TextStyle(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14.5,
+                              letterSpacing: 1.0),
                           filled: false,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 14),
                           border: InputBorder.none,
                         ),
                       ),
                     ),
                     if (_regoController.text.isNotEmpty)
                       IconButton(
-                        icon: const Icon(Icons.clear, size: 16, color: AppColors.muted),
+                        icon: const Icon(Icons.clear,
+                            size: 16, color: AppColors.muted),
                         onPressed: () {
                           _regoController.clear();
                           setState(() {});
@@ -717,7 +859,10 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 children: [
                   Text(
                     _selectedState == null ? 'Select State:' : 'State:',
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.muted),
+                    style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.muted),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -742,12 +887,17 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                               borderRadius: BorderRadius.circular(8),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.deepNavy : Colors.white,
+                                  color: isSelected
+                                      ? AppColors.deepNavy
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: isSelected ? AppColors.deepNavy : AppColors.border,
+                                    color: isSelected
+                                        ? AppColors.deepNavy
+                                        : AppColors.border,
                                     width: 1,
                                   ),
                                 ),
@@ -755,8 +905,12 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                                   state,
                                   style: TextStyle(
                                     fontSize: 11.5,
-                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                    color: isSelected ? Colors.white : AppColors.ink,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.ink,
                                   ),
                                 ),
                               ),
@@ -779,14 +933,17 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   backgroundColor: AppColors.deepNavy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
                 onPressed: () {
                   HapticFeedback.mediumImpact();
                   setState(() => _stage = VehicleSetupStage.taxMethod);
                 },
-                child: const Text('Next: Choose Tax Method', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                child: const Text('Next: Choose Tax Method',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
               ),
             ],
           ),
@@ -805,10 +962,13 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
-          onPressed: () => setState(() => _stage = VehicleSetupStage.confirmVehicle),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: AppColors.ink),
+          onPressed: () =>
+              setState(() => _stage = VehicleSetupStage.confirmVehicle),
         ),
-        title: const Text('Tax Method', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        title: const Text('Tax Method',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -819,7 +979,11 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
             children: [
               const Text(
                 'How do you want to track\nyour vehicle deduction?',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.ink, height: 1.25),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink,
+                    height: 1.25),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -836,7 +1000,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 badgeColor: AppColors.emerald,
                 badgeBg: AppColors.emeraldLight,
                 valueHeadline: 'Claim up to \$4,550 / year',
-                valueSubtext: 'Statutory 91¢/km rate (up to 5,000 km per vehicle)',
+                valueSubtext:
+                    'Statutory 91¢/km rate (up to 5,000 km per vehicle)',
                 bulletPoints: const [
                   'No logbook or odometer readings required',
                   'No fuel, service, or repair receipts needed',
@@ -854,7 +1019,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 badgeColor: AppColors.muted,
                 badgeBg: const Color(0xFFF3F4F6),
                 valueHeadline: 'Claim actual car expenses',
-                valueSubtext: 'Best for heavy drivers exceeding 5,000 work km/yr',
+                valueSubtext:
+                    'Best for heavy drivers exceeding 5,000 work km/yr',
                 bulletPoints: const [
                   'No \$4,550 deduction ceiling (% business use)',
                   'Requires continuous 12-week trip logbook',
@@ -870,11 +1036,14 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   backgroundColor: AppColors.deepNavy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
                 onPressed: _finishVehicleCreation,
-                child: const Text('Save Vehicle & Finish', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                child: const Text('Save Vehicle & Finish',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
               ),
             ],
           ),
@@ -905,7 +1074,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   behavior: SnackBarBehavior.floating,
                   duration: Duration(seconds: 2),
                   backgroundColor: AppColors.deepNavy,
-                  content: Text('Logbook method is coming soon. Starting with Cents-per-km.'),
+                  content: Text(
+                      'Logbook method is coming soon. Starting with Cents-per-km.'),
                 ),
               );
             }
@@ -945,14 +1115,18 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.deepNavy.withValues(alpha: 0.08)
-                        : (isComingSoon ? AppColors.border.withValues(alpha: 0.5) : AppColors.background),
+                        : (isComingSoon
+                            ? AppColors.border.withValues(alpha: 0.5)
+                            : AppColors.background),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
                     color: isSelected
                         ? AppColors.deepNavy
-                        : (isComingSoon ? AppColors.muted.withValues(alpha: 0.5) : AppColors.muted),
+                        : (isComingSoon
+                            ? AppColors.muted.withValues(alpha: 0.5)
+                            : AppColors.muted),
                     size: 20,
                   ),
                 ),
@@ -969,13 +1143,16 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 15,
-                                color: isComingSoon ? AppColors.ink.withValues(alpha: 0.7) : AppColors.ink,
+                                color: isComingSoon
+                                    ? AppColors.ink.withValues(alpha: 0.7)
+                                    : AppColors.ink,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
                               color: badgeBg,
                               borderRadius: BorderRadius.circular(5),
@@ -998,10 +1175,14 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                 Icon(
                   isComingSoon
                       ? Icons.lock_outline_rounded
-                      : (isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded),
+                      : (isSelected
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_off_rounded),
                   color: isSelected
                       ? AppColors.deepNavy
-                      : (isComingSoon ? AppColors.muted.withValues(alpha: 0.4) : AppColors.border),
+                      : (isComingSoon
+                          ? AppColors.muted.withValues(alpha: 0.4)
+                          : AppColors.border),
                   size: 22,
                 ),
               ],
@@ -1042,11 +1223,15 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       Padding(
                         padding: const EdgeInsets.only(top: 2.5),
                         child: Icon(
-                          isComingSoon ? Icons.circle : Icons.check_circle_rounded,
+                          isComingSoon
+                              ? Icons.circle
+                              : Icons.check_circle_rounded,
                           size: 13,
                           color: isComingSoon
                               ? AppColors.muted.withValues(alpha: 0.4)
-                              : (isSelected ? AppColors.emerald : AppColors.muted),
+                              : (isSelected
+                                  ? AppColors.emerald
+                                  : AppColors.muted),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1055,7 +1240,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                           bullet,
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: isComingSoon ? AppColors.muted.withValues(alpha: 0.8) : const Color(0xFF344054),
+                            color: isComingSoon
+                                ? AppColors.muted.withValues(alpha: 0.8)
+                                : const Color(0xFF344054),
                             fontWeight: FontWeight.w500,
                             height: 1.3,
                           ),

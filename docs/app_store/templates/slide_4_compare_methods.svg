@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 2868" width="1320" height="2868">
+  
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="40%" stop-color="#0B132B" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Card Background Gradient -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <!-- Inner Card Highlight Gradient -->
+    <linearGradient id="innerCardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#26354A" />
+      <stop offset="100%" stop-color="#152033" />
+    </linearGradient>
+
+    <!-- High-Vis Amber Glow Gradient -->
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <!-- Mint Emerald Gradient -->
+    <linearGradient id="mintGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Amber Glow Filter -->
+    <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Card Drop Shadow -->
+    <filter id="cardShadow" x="-10%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="30" stdDeviation="35" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+    
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <rect width="1320" height="2868" fill="url(#bgGrad)" />
+  <circle cx="660" cy="1150" r="450" fill="#F59E0B" opacity="0.10" filter="url(#amberGlow)" />
+
+  <!-- Top Pill Badge -->
+  <g transform="translate(96, 150)">
+    <rect width="520" height="64" rx="32" fill="#FEF3C7" />
+    <circle cx="36" cy="32" r="10" fill="#D97706" />
+    <text x="58" y="42" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="26" font-weight="800" fill="#B45309" letter-spacing="1.5">CLAIM ARBITRAGE · MAXIMISE REFUND</text>
+  </g>
+
+  <!-- Headline -->
+  <text x="96" y="295" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="82" font-weight="900" fill="#FFFFFF" letter-spacing="-1.5">Compare claim methods.</text>
+  <text x="96" y="390" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="82" font-weight="900" fill="#F59E0B" letter-spacing="-1.5">See what pays you more.</text>
+
+  <!-- Subheadline -->
+  <text x="96" y="465" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="36" font-weight="500" fill="#94A3B8" letter-spacing="-0.2">Side-by-side comparison of Cents-per-Km vs Actual Logbook expenses.</text>
+
+  <!-- App Card -->
+  <g transform="translate(96, 550)" filter="url(#cardShadow)">
+    <rect width="1128" height="2060" rx="64" fill="url(#cardGrad)" stroke="#334155" stroke-width="2" />
+
+    <!-- Arbitrage Winner Banner -->
+    <g transform="translate(48, 60)" filter="url(#softShadow)">
+      <rect width="1032" height="150" rx="32" fill="#FEF3C7" stroke="#F59E0B" stroke-width="3" />
+      <text x="48" y="65" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="38" font-weight="900" fill="#92400E">💰 +$7,387.28 Extra Deduction Found!</text>
+      <text x="48" y="108" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="25" font-weight="600" fill="#B45309">Switching from Cents-per-Km to a 12-week Logbook more than doubles your claim.</text>
+    </g>
+
+    <!-- Side-by-Side Comparison Columns -->
+    <g transform="translate(48, 245)">
+      <!-- Left Column: Cents per Km -->
+      <g transform="translate(0, 0)">
+        <rect width="500" height="740" rx="36" fill="#152033" stroke="#334155" stroke-width="2" />
+        <rect x="36" y="36" width="160" height="44" rx="22" fill="#0F172A" />
+        <text x="116" y="66" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="700" fill="#94A3B8">STANDARD</text>
+        <text x="36" y="130" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F8FAFC">Cents per Km</text>
+        
+        <!-- Big Number -->
+        <text x="36" y="215" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="64" font-weight="900" fill="#F59E0B">$4,550</text>
+        <text x="36" y="255" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="600" fill="#94A3B8">Maximum statutory cap</text>
+
+        <!-- Feature List -->
+        <line x1="36" y1="285" x2="464" y2="285" stroke="#334155" stroke-width="1.5" />
+        <text x="36" y="340" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ 5,000 km quota max</text>
+        <text x="36" y="400" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ No receipts needed</text>
+        <text x="36" y="460" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ Simple diary record</text>
+        <text x="36" y="520" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#EF4444">✕ Leaves excess km unclaimed</text>
+        <text x="36" y="580" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#EF4444">✕ No vehicle depreciation</text>
+      </g>
+
+      <!-- Right Column: Logbook Method (WINNER) -->
+      <g transform="translate(532, 0)" filter="url(#softShadow)">
+        <rect width="500" height="740" rx="36" fill="#1E293B" stroke="#10B981" stroke-width="3" />
+        <rect x="36" y="36" width="160" height="44" rx="22" fill="#ECFDF5" />
+        <text x="116" y="66" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="800" fill="#059669">HIGHER RETURN</text>
+        <text x="36" y="130" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="800" fill="#F8FAFC">Logbook Method</text>
+        
+        <!-- Big Number -->
+        <text x="36" y="215" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="64" font-weight="900" fill="#10B981">$11,937</text>
+        <text x="36" y="255" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="600" fill="#10B981">78.4% Business Use</text>
+
+        <!-- Feature List -->
+        <line x1="36" y1="285" x2="464" y2="285" stroke="#334155" stroke-width="1.5" />
+        <text x="36" y="340" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ 18,400 total km tracked</text>
+        <text x="36" y="400" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ Fuel &amp; servicing: $8,420</text>
+        <text x="36" y="460" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#CBD5E1">✓ Ute depreciation: $6,800</text>
+        <text x="36" y="520" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#10B981">✓ Valid for 5 full tax years</text>
+        <text x="36" y="580" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#10B981">✓ ATO compliant 12 weeks</text>
+      </g>
+    </g>
+
+    <!-- Detailed Expense Breakdown Card -->
+    <g transform="translate(48, 1020)">
+      <rect width="1032" height="260" rx="32" fill="#152033" stroke="#334155" stroke-width="1.5" />
+      <text x="40" y="50" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="28" font-weight="800" fill="#F8FAFC">Actual Work Expense Breakdown (Logbook)</text>
+      
+      <g transform="translate(40, 80)">
+        <text x="0" y="30" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#94A3B8">Diesel &amp; AdBlue</text>
+        <text x="450" y="30" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#F8FAFC">$4,620</text>
+        <text x="520" y="30" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#94A3B8">Registration &amp; CTP</text>
+        <text x="940" y="30" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#F8FAFC">$1,150</text>
+        
+        <text x="0" y="80" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#94A3B8">Commercial Insurance</text>
+        <text x="450" y="80" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#F8FAFC">$1,850</text>
+        <text x="520" y="80" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#94A3B8">Servicing &amp; Tyres</text>
+        <text x="940" y="80" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700" fill="#F8FAFC">$800</text>
+
+        <text x="0" y="130" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#94A3B8">Decline in Value (Depreciation)</text>
+        <text x="940" y="130" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="800" fill="#10B981">$6,800</text>
+      </g>
+    </g>
+
+    <!-- Action CTA Button -->
+    <g transform="translate(48, 1320)">
+      <rect width="1032" height="120" rx="36" fill="url(#mintGrad)" />
+      <text x="516" y="73" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="34" font-weight="800" fill="#FFFFFF">Start 12-Week Logbook Mode ➔</text>
+    </g>
+  </g>
+
+  <!-- Legal Disclaimer -->
+  <text x="660" y="2755" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="400" fill="#64748B">
+    *Logbook comparison is illustrative. Actual claims depend on real vehicle operating expenses, genuine business percentage, and valid tax receipts. Consult your registered accountant.
+  </text>
+</svg>

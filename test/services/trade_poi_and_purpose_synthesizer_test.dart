@@ -3,14 +3,15 @@ import 'package:kilotax/services/tracking/trade_poi_resolver.dart';
 import 'package:kilotax/services/engine/purpose_synthesizer_service.dart';
 
 void main() {
-  group('TradePoiResolver Tests (Monozukuri Validation)', () {
+  group('TradePoiResolver Tests (Domain Validation)', () {
     test('Correctly identifies Bunnings Warehouse across variations', () {
       final match1 = TradePoiResolver.resolve('Bunnings Box Hill, VIC');
       expect(match1, isNotNull);
       expect(match1!.merchantName, 'Bunnings Warehouse');
       expect(match1.suggestedPurpose, 'Supplies Run');
 
-      final match2 = TradePoiResolver.resolve('123 Victoria St, Bunnings Warehouse');
+      final match2 =
+          TradePoiResolver.resolve('123 Victoria St, Bunnings Warehouse');
       expect(match2, isNotNull);
       expect(match2!.merchantName, 'Bunnings Warehouse');
     });
@@ -34,7 +35,8 @@ void main() {
     });
 
     test('Gracefully returns null for generic residential addresses', () {
-      final residential = TradePoiResolver.resolve('42 Wallaby Way, Sydney NSW');
+      final residential =
+          TradePoiResolver.resolve('42 Wallaby Way, Sydney NSW');
       expect(residential, isNull);
 
       final empty = TradePoiResolver.resolve('');
@@ -56,7 +58,8 @@ void main() {
       expect(text, contains('TR 95/34'));
     });
 
-    test('Synthesizes specific trade supplies procurement when POI is matched', () {
+    test('Synthesizes specific trade supplies procurement when POI is matched',
+        () {
       final text = PurposeSynthesizerService.synthesize(
         selectedPurpose: 'Supplies Run',
         destination: 'Bunnings Warehouse, Box Hill VIC',
@@ -71,16 +74,26 @@ void main() {
         destination: 'Commercial Site, Parramatta',
         bulkyToolsCarried: true,
       );
-      expect(text, contains('Transit with essential heavy trade equipment (>20kg)'));
+      expect(text,
+          contains('Transit with essential heavy trade equipment (>20kg)'));
       expect(text, contains('Commercial Site, Parramatta'));
       expect(text, contains('ITAA 1997 s 8-1'));
     });
 
-    test('Maps human UI labels cleanly according to Apple design principles', () {
-      expect(PurposeSynthesizerService.getHumanLabel('Client / Job Site Visit'), 'Client Site');
-      expect(PurposeSynthesizerService.getHumanLabel('Trade Supplies / Bunnings Run'), 'Supplies Run');
-      expect(PurposeSynthesizerService.getHumanLabel('Work Site (Bulky Tools Carried)'), 'Tool Transport');
-      expect(PurposeSynthesizerService.getHumanLabel('Personal Drive'), 'Personal');
+    test('Maps human UI labels cleanly according to Apple design principles',
+        () {
+      expect(PurposeSynthesizerService.getHumanLabel('Client / Job Site Visit'),
+          'Client Site');
+      expect(
+          PurposeSynthesizerService.getHumanLabel(
+              'Trade Supplies / Bunnings Run'),
+          'Supplies Run');
+      expect(
+          PurposeSynthesizerService.getHumanLabel(
+              'Work Site (Bulky Tools Carried)'),
+          'Tool Transport');
+      expect(PurposeSynthesizerService.getHumanLabel('Personal Drive'),
+          'Personal');
     });
   });
 }

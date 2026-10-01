@@ -12,8 +12,8 @@ import '../compliance/compliance_center_screen.dart';
 import '../trips/trip_detection_screen.dart';
 import '../trips/trip_quick_resolve_sheet.dart';
 
-/// Frontier World-Class "ATO Tax Agent Desk"
-/// Designed with the discipline of Steve Jobs & Senior Tax Agent compliance:
+/// Professional ATO Tax Summary Desk
+/// Designed for compliant record-keeping and senior tax agent review:
 /// 1. Single Source of Truth: Total claimable deduction prominently featured without duplicate zeroes.
 /// 2. Contextual Arbitrage: Intelligent analysis that stays subtle and truthful when data is still emerging.
 /// 3. Genuine Audit-Readiness: Real legal substantiation steps with zero false 100% inflation.
@@ -26,20 +26,25 @@ class TaxSummaryScreen extends StatelessWidget {
     final appState = context.watch<AppState>();
     final summary = appState.taxSummary;
     final primaryVehicle = appState.primaryVehicle;
-    final isCpk = (primaryVehicle?.taxMethod ?? TaxMethod.centsPerKm) == TaxMethod.centsPerKm;
+    final isCpk = (primaryVehicle?.taxMethod ?? TaxMethod.centsPerKm) ==
+        TaxMethod.centsPerKm;
 
     final vehicleClaim = isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
     final otherExpenses = summary.totalDirectDeductions;
-    final totalClaim = isCpk ? summary.centsPerKmClaim : (vehicleClaim + otherExpenses);
+    final totalClaim =
+        isCpk ? summary.centsPerKmClaim : (vehicleClaim + otherExpenses);
 
     final score = appState.taxReadinessScore;
     final missingTrips = appState.missingComplianceTrips;
     final unclassifiedExpenses = appState.unclassifiedExpenses;
-    final totalIssues = missingTrips.length + (isCpk ? 0 : unclassifiedExpenses.length);
+    final totalIssues =
+        missingTrips.length + (isCpk ? 0 : unclassifiedExpenses.length);
 
     // Contextual Arbitrage Status
     final hasActivity = summary.totalKm > 0 || summary.totalRunningExpenses > 0;
-    final logbookHasAdvantage = summary.recommendedMethod == RecommendedMethod.logbook && summary.taxSavingsDiff > 0;
+    final logbookHasAdvantage =
+        summary.recommendedMethod == RecommendedMethod.logbook &&
+            summary.taxSavingsDiff > 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -49,7 +54,8 @@ class TaxSummaryScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         leading: Navigator.of(context).canPop()
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.ink),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    size: 18, color: AppColors.ink),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
@@ -66,7 +72,7 @@ class TaxSummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: 1),
             Text(
-              'FY ${AppConstants.activeTaxRule.financialYear} • ATO Schedule D1',
+              'FY ${appState.activeTaxRule.financialYear} • ATO Schedule D1',
               style: const TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
@@ -79,7 +85,8 @@ class TaxSummaryScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Share Tax Pack (PDF + CSV)',
-            icon: const Icon(LucideIcons.share2, size: 19, color: AppColors.deepNavy),
+            icon: const Icon(LucideIcons.share2,
+                size: 19, color: AppColors.deepNavy),
             onPressed: () => TaxPackShareHelper.shareTaxPack(context, appState),
           ),
           const SizedBox(width: 4),
@@ -91,29 +98,16 @@ class TaxSummaryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. HERO STATEMENT: Single Source of Truth for Deductions
-            _buildHeroStatementCard(
-              context: context,
+            // 1. COMPACT ATO CLAIM & FILING CONTEXT STRIP
+            _buildCompactTaxClaimStrip(
+              appState: appState,
               totalClaim: totalClaim,
-              vehicleClaim: vehicleClaim,
-              otherExpenses: otherExpenses,
               isCpk: isCpk,
               primaryVehicle: primaryVehicle,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // 2. INTELLIGENT METHOD ARBITRAGE CARD (Steve Jobs context-aware intelligence)
-            _buildArbitrageAdvisorCard(
-              context: context,
-              appState: appState,
-              summary: summary,
-              isCpk: isCpk,
-              hasActivity: hasActivity,
-              logbookHasAdvantage: logbookHasAdvantage,
-            ),
-            const SizedBox(height: 16),
-
-            // 3. ATO AUDIT-READINESS INTEGRITY CARD
+            // 2. PRIMARY FOCUS: ATO AUDIT-READINESS INTEGRITY CARD
             _buildAuditReadinessCard(
               context: context,
               appState: appState,
@@ -125,159 +119,116 @@ class TaxSummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // 3. INTELLIGENT METHOD ARBITRAGE CARD (Shows only when user has activity data)
+            if (hasActivity) ...[
+              _buildArbitrageAdvisorCard(
+                context: context,
+                appState: appState,
+                summary: summary,
+                isCpk: isCpk,
+                hasActivity: hasActivity,
+                logbookHasAdvantage: logbookHasAdvantage,
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // 4. THE ACCOUNTANT HAND-OFF FLYWHEEL
-            _buildAccountantHandoffCard(context, appState, isCpk, totalClaim, score),
+            _buildAccountantHandoffCard(
+                context, appState, isCpk, totalClaim, score),
           ],
         ),
       ),
     );
   }
 
-  /// 1. Hero Statement: Single, Authoritative, Clear
-  Widget _buildHeroStatementCard({
-    required BuildContext context,
+  /// 1. Compact ATO Tax Claim & Filing Context Strip
+  Widget _buildCompactTaxClaimStrip({
+    required AppState appState,
     required double totalClaim,
-    required double vehicleClaim,
-    required double otherExpenses,
     required bool isCpk,
     required Vehicle? primaryVehicle,
   }) {
+    final rateCents = (appState.activeTaxRule.centsPerKmRate * 100).toStringAsFixed(0);
+
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'ESTIMATED DEDUCTION',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                  color: AppColors.muted,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                decoration: BoxDecoration(
-                  color: isCpk ? AppColors.workBlueLight : AppColors.emeraldLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: AppColors.emeraldLight,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(LucideIcons.shieldCheck,
+                size: 16, color: AppColors.emerald),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Icon(
-                      isCpk ? LucideIcons.gauge : LucideIcons.bookOpen,
-                      size: 11.5,
-                      color: isCpk ? AppColors.deepNavy : AppColors.emerald,
-                    ),
-                    const SizedBox(width: 5),
                     Text(
-                      isCpk ? 'Cents / KM (${(AppConstants.activeTaxRule.centsPerKmRate * 100).toStringAsFixed(0)}¢)' : 'Logbook Method',
-                      style: TextStyle(
+                      isCpk ? 'ATO Cents/KM ($rateCents¢)' : 'ATO Logbook Claim',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isCpk ? AppColors.deepNavy : AppColors.emerald,
+                        color: AppColors.muted,
+                        letterSpacing: 0.3,
                       ),
                     ),
+                    if (primaryVehicle?.regoPlate != null &&
+                        primaryVehicle!.regoPlate.isNotEmpty &&
+                        primaryVehicle.regoPlate != 'No Plate') ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '• ${primaryVehicle.regoPlate}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Hero Number with subtle currency symbol
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                Formatters.currency(totalClaim),
-                style: const TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.ink,
-                  letterSpacing: -1.2,
+                const SizedBox(height: 2),
+                const Text(
+                  'Tax Deduction Subtotal',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'AUD',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.muted,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          // ATO Compliance Subtitle: Clean Apple Minimalist Standard
-          Row(
-            children: [
-              const Icon(LucideIcons.shieldCheck, size: 14, color: AppColors.emerald),
-              const SizedBox(width: 5),
-              Text(
-                primaryVehicle != null && primaryVehicle.regoPlate.isNotEmpty && primaryVehicle.regoPlate != 'No Plate'
-                    ? 'ATO Work Deductions • ${primaryVehicle.regoPlate}'
-                    : 'ATO Work-Related Car Deductions',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.emerald,
-                ),
-              ),
-            ],
-          ),
-
-          if (!isCpk && (vehicleClaim > 0 || otherExpenses > 0)) ...[
-            const SizedBox(height: 18),
-            const Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSplitMetric('Vehicle Running Costs', Formatters.currency(vehicleClaim)),
-                _buildSplitMetric('Direct Tolls & Parking', Formatters.currency(otherExpenses)),
               ],
             ),
-          ],
+          ),
+          Text(
+            Formatters.currency(totalClaim),
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+              color: AppColors.ink,
+              letterSpacing: -0.4,
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSplitMetric(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: AppColors.muted),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink),
-        ),
-      ],
     );
   }
 
@@ -291,45 +242,7 @@ class TaxSummaryScreen extends StatelessWidget {
     required bool logbookHasAdvantage,
   }) {
     if (!hasActivity) {
-      // Quiet Luxury State: No activity yet -> Ambient guidance
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(LucideIcons.scale, size: 18, color: AppColors.deepNavy),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ATO Method Arbitrage Standing By',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Drive or log expenses. KiloTax will calculate whether CPK or Logbook gives you more tax cash back.',
-                    style: TextStyle(fontSize: 11.5, color: AppColors.muted, height: 1.35),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     if (logbookHasAdvantage && isCpk) {
@@ -357,16 +270,19 @@ class TaxSummaryScreen extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                    border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.4)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.sparkles, size: 11, color: Color(0xFF34D399)),
+                      Icon(LucideIcons.sparkles,
+                          size: 11, color: Color(0xFF34D399)),
                       SizedBox(width: 5),
                       Text(
                         'LOGBOOK ADVANTAGE DETECTED',
@@ -442,7 +358,8 @@ class TaxSummaryScreen extends StatelessWidget {
               color: AppColors.emeraldLight,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(LucideIcons.check, size: 16, color: AppColors.emerald),
+            child: const Icon(LucideIcons.check,
+                size: 16, color: AppColors.emerald),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -450,15 +367,21 @@ class TaxSummaryScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isCpk ? 'Cents per KM is currently optimal' : 'Logbook method active',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                  isCpk
+                      ? 'Cents per KM is currently optimal'
+                      : 'Logbook method active',
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   isCpk
                       ? 'Maximum deduction with zero fuel receipt substantiation required.'
                       : 'Tracking actual running expenses multiplied by your business use %.',
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.muted, height: 1.3),
+                  style: const TextStyle(
+                      fontSize: 11.5, color: AppColors.muted, height: 1.3),
                 ),
               ],
             ),
@@ -468,7 +391,8 @@ class TaxSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildComparisonPill({required String label, required String amount, required bool isActive}) {
+  Widget _buildComparisonPill(
+      {required String label, required String amount, required bool isActive}) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -483,7 +407,10 @@ class TaxSummaryScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                fontSize: 10,
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 2),
           Text(
@@ -587,12 +514,15 @@ class TaxSummaryScreen extends StatelessWidget {
             children: [
               Text(
                 totalIssues == 0
-                    ? (hasNoTrips ? 'Awaiting initial drive logs' : 'All logged records substantiated')
+                    ? (hasNoTrips
+                        ? 'Awaiting initial drive logs'
+                        : 'All logged records substantiated')
                     : '$totalIssues ${totalIssues == 1 ? "item needs" : "items need"} attention',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: totalIssues == 0 ? AppColors.muted : AppColors.amberDark,
+                  color:
+                      totalIssues == 0 ? AppColors.muted : AppColors.amberDark,
                 ),
               ),
               if (totalIssues > 0)
@@ -601,7 +531,8 @@ class TaxSummaryScreen extends StatelessWidget {
                     HapticFeedback.lightImpact();
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => ComplianceCenterScreen(appState: appState),
+                        builder: (_) =>
+                            ComplianceCenterScreen(appState: appState),
                       ),
                     );
                   },
@@ -621,8 +552,11 @@ class TaxSummaryScreen extends StatelessWidget {
           // Interactive ATO Audit Ledger (Kidlin's Law: Zero Ambiguity, 100% Actionable)
           _buildInteractiveAuditRow(
             context: context,
-            icon: appState.hasVehicle ? LucideIcons.checkCircle2 : LucideIcons.circle,
-            statusColor: appState.hasVehicle ? AppColors.emerald : AppColors.muted,
+            icon: appState.hasVehicle
+                ? LucideIcons.checkCircle2
+                : LucideIcons.circle,
+            statusColor:
+                appState.hasVehicle ? AppColors.emerald : AppColors.muted,
             title: 'Vehicle Profile',
             subtitle: appState.primaryVehicle?.displayName ?? 'Not configured',
             actionLabel: appState.hasVehicle ? 'Edit →' : 'Setup →',
@@ -635,10 +569,16 @@ class TaxSummaryScreen extends StatelessWidget {
 
           _buildInteractiveAuditRow(
             context: context,
-            icon: appState.primaryVehicle != null ? LucideIcons.checkCircle2 : LucideIcons.circle,
-            statusColor: appState.primaryVehicle != null ? AppColors.emerald : AppColors.muted,
+            icon: appState.primaryVehicle != null
+                ? LucideIcons.checkCircle2
+                : LucideIcons.circle,
+            statusColor: appState.primaryVehicle != null
+                ? AppColors.emerald
+                : AppColors.muted,
             title: 'ATO Tax Method',
-            subtitle: isCpk ? 'Cents per KM (91¢/km)' : 'Logbook Method (Actual Expenses)',
+            subtitle: isCpk
+                ? 'Cents per KM (91¢/km)'
+                : 'Logbook Method (Actual Expenses)',
             actionLabel: 'Active',
             isActionEnabled: false,
             onTap: () {},
@@ -648,8 +588,12 @@ class TaxSummaryScreen extends StatelessWidget {
           if (isCpk) ...[
             _buildInteractiveAuditRow(
               context: context,
-              icon: appState.trips.isNotEmpty ? LucideIcons.checkCircle2 : LucideIcons.circle,
-              statusColor: appState.trips.isNotEmpty ? AppColors.emerald : AppColors.muted,
+              icon: appState.trips.isNotEmpty
+                  ? LucideIcons.checkCircle2
+                  : LucideIcons.circle,
+              statusColor: appState.trips.isNotEmpty
+                  ? AppColors.emerald
+                  : AppColors.muted,
               title: 'Reasonable estimate basis established',
               subtitle: appState.trips.isNotEmpty
                   ? '${appState.trips.length} drives recorded'
@@ -661,7 +605,6 @@ class TaxSummaryScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 10),
-
             if (appState.trips.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
@@ -679,13 +622,15 @@ class TaxSummaryScreen extends StatelessWidget {
                 icon: LucideIcons.checkCircle2,
                 statusColor: AppColors.emerald,
                 title: 'Business trips substantiated',
-                subtitle: '${appState.trips.length} drives verified & ATO compliant',
+                subtitle:
+                    '${appState.trips.length} drives verified & ATO compliant',
                 actionLabel: 'Details →',
                 onTap: () {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ComplianceCenterScreen(appState: appState),
+                      builder: (_) =>
+                          ComplianceCenterScreen(appState: appState),
                     ),
                   );
                 },
@@ -701,19 +646,26 @@ class TaxSummaryScreen extends StatelessWidget {
                 isAlert: true,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  TripQuickResolveSheet.show(context, trip: missingTrips.first, appState: appState);
+                  TripQuickResolveSheet.show(context,
+                      trip: missingTrips.first, appState: appState);
                 },
               ),
           ] else ...[
             _buildInteractiveAuditRow(
               context: context,
-              icon: (appState.primaryVehicle?.initialOdometer ?? 0) > 0 ? LucideIcons.checkCircle2 : LucideIcons.circle,
-              statusColor: (appState.primaryVehicle?.initialOdometer ?? 0) > 0 ? AppColors.emerald : AppColors.muted,
+              icon: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
+                  ? LucideIcons.checkCircle2
+                  : LucideIcons.circle,
+              statusColor: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
+                  ? AppColors.emerald
+                  : AppColors.muted,
               title: 'Starting Odometer',
               subtitle: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
                   ? '${appState.primaryVehicle!.initialOdometer.toStringAsFixed(0)} km recorded'
                   : 'Opening reading required by ATO',
-              actionLabel: (appState.primaryVehicle?.initialOdometer ?? 0) > 0 ? 'Edit →' : 'Record →',
+              actionLabel: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
+                  ? 'Edit →'
+                  : 'Record →',
               onTap: () {
                 HapticFeedback.lightImpact();
                 Navigator.of(context).push(
@@ -724,7 +676,6 @@ class TaxSummaryScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 10),
-
             if (missingTrips.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
@@ -737,7 +688,8 @@ class TaxSummaryScreen extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ComplianceCenterScreen(appState: appState),
+                      builder: (_) =>
+                          ComplianceCenterScreen(appState: appState),
                     ),
                   );
                 },
@@ -753,11 +705,11 @@ class TaxSummaryScreen extends StatelessWidget {
                 isAlert: true,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  TripQuickResolveSheet.show(context, trip: missingTrips.first, appState: appState);
+                  TripQuickResolveSheet.show(context,
+                      trip: missingTrips.first, appState: appState);
                 },
               ),
             const SizedBox(height: 10),
-
             if (unclassifiedExpenses.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
@@ -770,7 +722,8 @@ class TaxSummaryScreen extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ComplianceCenterScreen(appState: appState),
+                      builder: (_) =>
+                          ComplianceCenterScreen(appState: appState),
                     ),
                   );
                 },
@@ -788,7 +741,8 @@ class TaxSummaryScreen extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ComplianceCenterScreen(appState: appState),
+                      builder: (_) =>
+                          ComplianceCenterScreen(appState: appState),
                     ),
                   );
                 },
@@ -856,7 +810,9 @@ class TaxSummaryScreen extends StatelessWidget {
                   border: Border.all(
                     color: !isActionEnabled
                         ? AppColors.border
-                        : (isAlert ? AppColors.amberDark.withValues(alpha: 0.3) : AppColors.border),
+                        : (isAlert
+                            ? AppColors.amberDark.withValues(alpha: 0.3)
+                            : AppColors.border),
                   ),
                 ),
                 child: Text(
@@ -911,7 +867,8 @@ class TaxSummaryScreen extends StatelessWidget {
                       color: AppColors.emeraldLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(LucideIcons.car, color: AppColors.emerald, size: 22),
+                    child: const Icon(LucideIcons.car,
+                        color: AppColors.emerald, size: 22),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -920,11 +877,17 @@ class TaxSummaryScreen extends StatelessWidget {
                       children: [
                         Text(
                           vehicle?.displayName ?? 'Vehicle Profile',
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink),
                         ),
                         Text(
-                          vehicle != null ? 'Rego: ${vehicle.regoPlate} • Active Rig' : 'No vehicle configured',
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                          vehicle != null
+                              ? 'Rego: ${vehicle.regoPlate} • Active Rig'
+                              : 'No vehicle configured',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.muted),
                         ),
                       ],
                     ),
@@ -944,10 +907,17 @@ class TaxSummaryScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Tax Strategy', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                        const Text('Tax Strategy',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted)),
                         Text(
                           vehicle?.taxMethod.title ?? 'Cents per KM',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink),
                         ),
                       ],
                     ),
@@ -955,10 +925,17 @@ class TaxSummaryScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('ATO Logged Drives', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
+                        const Text('ATO Logged Drives',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted)),
                         Text(
                           '${appState.trips.length} Trips',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink),
                         ),
                       ],
                     ),
@@ -971,17 +948,20 @@ class TaxSummaryScreen extends StatelessWidget {
                   Navigator.of(ctx).pop();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ComplianceCenterScreen(appState: appState),
+                      builder: (_) =>
+                          ComplianceCenterScreen(appState: appState),
                     ),
                   );
                 },
                 icon: const Icon(LucideIcons.shieldCheck, size: 16),
-                label: const Text('View Full Compliance Audit', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: const Text('View Full Compliance Audit',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.deepNavy,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
               ),
@@ -1018,7 +998,8 @@ class TaxSummaryScreen extends StatelessWidget {
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(LucideIcons.userCheck, color: AppColors.deepNavy, size: 18),
+                child: const Icon(LucideIcons.userCheck,
+                    color: AppColors.deepNavy, size: 18),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -1027,7 +1008,10 @@ class TaxSummaryScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Accountant Hand-off',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink),
                     ),
                     SizedBox(height: 1),
                     Text(
@@ -1050,7 +1034,8 @@ class TaxSummaryScreen extends StatelessWidget {
               backgroundColor: AppColors.deepNavy,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
             onPressed: () => TaxPackShareHelper.shareTaxPack(context, appState),
@@ -1060,4 +1045,3 @@ class TaxSummaryScreen extends StatelessWidget {
     );
   }
 }
-

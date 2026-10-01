@@ -44,7 +44,12 @@ void main() {
     );
 
     test('calculateLogbookClaim excludes vault-only expenses from claim', () {
-      final expenses = [activeExpense1, priorYearVaultExpense, directTollsActive, directTollsVault];
+      final expenses = [
+        activeExpense1,
+        priorYearVaultExpense,
+        directTollsActive,
+        directTollsVault
+      ];
       final claim = TaxCalculatorService.calculateLogbookClaim(
         expenses: expenses,
         businessPercentage: 80.0,
@@ -53,7 +58,9 @@ void main() {
       expect(claim, equals(130.0));
     });
 
-    test('evaluateSummary excludes vault-only expenses from totalRunning and totalDirect', () {
+    test(
+        'evaluateSummary excludes vault-only expenses from totalRunning and totalDirect',
+        () {
       final trip1 = Trip(
         id: 't1',
         vehicleId: 'veh_1',
@@ -75,15 +82,22 @@ void main() {
         date: DateTime(2024, 8, 2),
       );
 
-      final expenses = [activeExpense1, priorYearVaultExpense, directTollsActive, directTollsVault];
+      final expenses = [
+        activeExpense1,
+        priorYearVaultExpense,
+        directTollsActive,
+        directTollsVault
+      ];
 
       final summary = TaxCalculatorService.evaluateSummary(
         trips: [trip1, trip2],
         expenses: expenses,
       );
 
-      expect(summary.totalRunningExpenses, equals(100.0)); // $250 prior year is excluded
-      expect(summary.totalDirectDeductions, equals(50.0)); // $40 prior year is excluded
+      expect(summary.totalRunningExpenses,
+          equals(100.0)); // $250 prior year is excluded
+      expect(summary.totalDirectDeductions,
+          equals(50.0)); // $40 prior year is excluded
       expect(summary.businessPercentage, equals(80.0));
       expect(summary.logbookClaim, equals(130.0));
     });

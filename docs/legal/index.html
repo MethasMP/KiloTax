@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KiloTax — Legal Documentation & Support</title>
+  <meta name="description" content="Official Legal Terms, Privacy Policy, and Support for KiloTax.">
+  <style>
+    :root {
+      --text-main: #111827;
+      --text-muted: #4B5563;
+      --text-light: #6B7280;
+      --border-color: #E5E7EB;
+      --border-dark: #D1D5DB;
+      --bg-page: #FFFFFF;
+      --bg-subtle: #F9FAFB;
+      --link: #1D4ED8;
+      --link-hover: #1E40AF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px 80px 20px;
+    }
+
+    .document-container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    /* Document Header */
+    header {
+      border-bottom: 2px solid var(--text-main);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+
+    .app-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .doc-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Formal Tab Navigation (Underline Document Style) */
+    .document-nav {
+      display: flex;
+      gap: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 32px;
+    }
+
+    .nav-link {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 2px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: none;
+      margin-bottom: -1px;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-main);
+    }
+
+    .nav-link.active {
+      color: var(--text-main);
+      font-weight: 600;
+      border-bottom: 2px solid var(--text-main);
+    }
+
+    /* Document Sections */
+    .doc-content {
+      display: none;
+    }
+
+    .doc-content.active {
+      display: block;
+    }
+
+    h1.doc-heading {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .doc-meta {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: #1F2937;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      color: #1F2937;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* Formal Legal Notice Box (Monochrome / High Contrast) */
+    .legal-notice {
+      border: 1px solid var(--border-dark);
+      background-color: var(--bg-subtle);
+      padding: 16px 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .legal-notice strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-main);
+    }
+
+    /* Support Details Table */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    .info-table th, .info-table td {
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    .info-table th {
+      background-color: var(--bg-subtle);
+      font-weight: 600;
+      width: 25%;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    a:hover {
+      color: var(--link-hover);
+    }
+
+    /* Document Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      margin-top: 60px;
+      padding-top: 24px;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <div class="document-container">
+    <header>
+      <div class="app-title">KiloTax</div>
+      <div class="doc-subtitle">Statutory Compliance, Terms of Service & Technical Support</div>
+    </header>
+
+    <nav class="document-nav" role="tablist">
+      <button id="tab-btn-support" class="nav-link active" onclick="openTab('support')">Technical Support & FAQ</button>
+      <button id="tab-btn-privacy" class="nav-link" onclick="openTab('privacy')">Privacy Policy</button>
+      <button id="tab-btn-terms" class="nav-link" onclick="openTab('terms')">Terms of Service</button>
+    </nav>
+
+    <!-- SUPPORT / HELP TAB (Tradie-Proof Plain English) -->
+    <section id="support" class="doc-content active">
+      <h1 class="doc-heading">KiloTax Help & ATO Record-Keeping Guide</h1>
+      <div class="doc-meta">Application: KiloTax (iOS) &middot; Australia FY 2026&ndash;27</div>
+
+      <div class="legal-notice">
+        <strong>THE BOTTOM LINE FOR TRADIES &amp; SOLE TRADERS:</strong>
+        KiloTax tracks your work kilometres on your phone so you can claim up to <strong>$4,550</strong> off your taxable income at tax time. No sign-up required. Your records stay on your device.
+      </div>
+
+      <h2>Direct Help &amp; Support</h2>
+      <table class="info-table">
+        <tr>
+          <th>Help Email</th>
+          <td><a href="mailto:methaspak@gmail.com">methaspak@gmail.com</a></td>
+        </tr>
+        <tr>
+          <th>Contact Person</th>
+          <td>Methas Pak</td>
+        </tr>
+        <tr>
+          <th>Response Time</th>
+          <td>Within 24&ndash;48 business hours (Sydney / AEST)</td>
+        </tr>
+        <tr>
+          <th>Location</th>
+          <td>Sydney, New South Wales, Australia</td>
+        </tr>
+      </table>
+
+      <h2>Frequently Asked Questions</h2>
+      
+      <h3>1. How much money can I claim on my tax?</h3>
+      <p>For the 2026&ndash;27 tax year, the official ATO rate is <strong>91 cents per business kilometre</strong>. You can claim up to <strong>5,000 work kilometres</strong> per car per year without keeping a full 12-week logbook. That is a tax deduction of up to <strong>$4,550</strong> per vehicle. KiloTax automatically tracks this 5,000 km cap for you.</p>
+
+      <h3>2. Is the app free, and do I have to create an account?</h3>
+      <p><strong>Yes, tracking trips and exporting your records is 100% free.</strong> You do not need to create an account, enter a password, or sign up with your email. All your drives stay saved safely on your own phone.</p>
+
+      <h3>3. How do I get my records to my accountant?</h3>
+      <p>Whenever tax time comes around: go to the <strong>Tax Summary</strong> screen, tap <strong>Export Records</strong>, and send the clean CSV spreadsheet or PDF report straight to your accountant or bookkeeper via email or Apple Files.</p>
+
+      <h3>4. Do I need to keep these records?</h3>
+      <p>Under Australian tax law (ITAA 1997 Subdivision 28-H, Section 28-150 and Section 900-165), the ATO requires you to keep proof of how you calculated your kilometres for <strong>5 years</strong> after lodging your tax return. We suggest saving a copy of your exported PDF or CSV to your iCloud Drive or email archive.</p>
+    </section>
+
+    <!-- PRIVACY POLICY TAB (Apple 5.1.1, 5.1.2 & Privacy Act 1988 Rigor) -->
+    <section id="privacy" class="doc-content">
+      <h1 class="doc-heading">Privacy Policy</h1>
+      <div class="doc-meta">Effective Date: 1 October 2026 &middot; Compliant with Australian Privacy Principles (APPs) &amp; Apple Guidelines 5.1.1 / 5.1.2</div>
+
+      <p>KiloTax (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is committed to handling personal and telemetry information in strict compliance with the Australian Privacy Principles (APPs) set out in the <em>Privacy Act 1988</em> (Cth) and Sections 5.1.1 and 5.1.2 of the Apple App Store Review Guidelines.</p>
+
+      <h2>1. Local-First Processing &amp; Data Minimisation</h2>
+      <p>In standard operation, KiloTax operates on a local-first basis. Travel records, odometer logs, vehicle details, and deduction calculations remain within the application sandbox on the user's device. We do not sell, rent, commercialise, or harvest personal travel records.</p>
+
+      <h2>2. Location Data, Hardware Telemetry &amp; Apple ATT Compliance</h2>
+      <p>When automated trip tracking is activated by the user, the application requests access to location hardware strictly to measure distance and generate verifiable travel records.</p>
+      <p><strong>Zero Cross-App Tracking Warranty (Apple Guideline 5.1.2):</strong> KiloTax does not use third-party advertising identifiers (IDFA), data brokers, or cross-app behavioural trackers. KiloTax does not track users across third-party apps or websites under the Apple App Tracking Transparency (ATT) framework. Telemetry data is never shared with advertising networks or motor insurance underwriters.</p>
+
+      <h2>3. Camera &amp; Receipt Processing</h2>
+      <p>Where the user chooses to attach expense receipts or photograph odometer values, the application accesses device camera sensors solely to capture substantiated records. Receipt text recognition occurs on-device or within encrypted transient processing sandboxes.</p>
+
+      <h2>4. User Rights &amp; Permanent Account Deletion (Apple Guideline 5.1.1(v))</h2>
+      <p>Users maintain complete ownership over their data. Device-stored data can be purged by clearing local application data or uninstalling the software. Where optional cloud sync is enabled, users may request permanent account deletion directly in the app via <strong>Settings &rarr; Account &rarr; Delete Account &amp; All Data</strong>, which permanently purges all records from servers within 30 days. Users may also email <a href="mailto:methaspak@gmail.com">methaspak@gmail.com</a> for manual deletion assistance.</p>
+
+      <h2>5. Privacy Contacts</h2>
+      <p>For inquiries regarding data protection or the Australian Privacy Principles, contact our designated privacy representative at <a href="mailto:methaspak@gmail.com">methaspak@gmail.com</a>.</p>
+    </section>
+
+    <!-- TERMS OF SERVICE TAB (Statutory TASA 2009 & ACL Section 64A Precision) -->
+    <section id="terms" class="doc-content">
+      <h1 class="doc-heading">Terms of Service</h1>
+      <div class="doc-meta">Effective Date: 1 October 2026 &middot; Governed by the Laws of New South Wales, Australia</div>
+
+      <div class="legal-notice">
+        <strong>STATUTORY DISCLAIMER &amp; TAX AGENT SERVICES ACT (TASA 2009) NOTICE</strong>
+        KiloTax is an administrative record-keeping calculation software tool. KiloTax is <strong>NOT a Registered Tax Agent</strong> under the <em>Tax Agent Services Act 2009</em> (Cth) and does not ascertain tax liabilities, give tax advice, or lodge tax returns (pursuant to Section 90-10 of TASA 2009). KiloTax is <strong>NOT affiliated with, authorised by, endorsed by, or connected to the Australian Taxation Office (ATO)</strong>, the Tax Practitioners Board (TPB), or the Commonwealth of Australia. Users must verify all calculations and consult a licensed Registered Tax Agent.
+      </div>
+
+      <h2>1. User Responsibility for Record Substantiation</h2>
+      <p>Under the <em>Income Tax Assessment Act 1997</em> (Cth), the taxpayer bears primary legal accountability for the accuracy, business classification, and declared purpose of all motor vehicle travel claims. Users must review all logged trips before submitting claims on annual tax returns.</p>
+
+      <h2>2. Licensing &amp; Usage Rights</h2>
+      <p>Users are granted a personal, revocable, non-exclusive, non-transferable license to use KiloTax for personal or sole trader motor vehicle record-keeping in accordance with these Terms.</p>
+
+      <h2>3. Subscriptions &amp; In-App Billing (Apple Guideline 3.1.2)</h2>
+      <p>Basic manual Cents per Kilometre tracking is free of charge. Optional premium features (such as automated hardware tracking, receipt scanning, and cloud backup) may be subject to in-app subscriptions billed directly to the user's Apple ID account. Subscriptions auto-renew unless cancelled at least 24 hours prior to the end of the current billing cycle via Apple ID Account Settings. Refunds and cancellations are governed by Apple Media Services Terms.</p>
+
+      <h2>4. Australian Consumer Law &amp; Limitation of Remedy (Section 64A ACL)</h2>
+      <p>Our goods and services come with guarantees that cannot be excluded under Schedule 2 of the <em>Competition and Consumer Act 2010</em> (Cth). To the extent permitted by law, where our services are not of a kind ordinarily acquired for personal, domestic or household use, our liability for failure to comply with a consumer guarantee (other than under section 51, 52 or 53 of the ACL) is limited, at our discretion, to the resupply of the services or the payment of the cost of having the services supplied again (pursuant to Section 64A of the Australian Consumer Law).</p>
+
+      <h2>5. Governing Law &amp; Jurisdiction</h2>
+      <p>These Terms are governed by the laws in force in the State of New South Wales, Australia. Disputes shall be subject to the exclusive jurisdiction of the courts of New South Wales.</p>
+
+      <h2>6. Inquiries</h2>
+      <p>Legal inquiries and statutory notices may be directed to <a href="mailto:methaspak@gmail.com">methaspak@gmail.com</a>.</p>
+    </section>
+
+    <footer>
+      &copy; 2026 KiloTax. All rights reserved. Commonwealth of Australia and ATO statutory rates referenced for factual calculation under CC BY 4.0 Open Government framework.
+    </footer>
+  </div>
+
+  <script>
+    function openTab(tabId, updateHash = true) {
+      if (!tabId) tabId = 'support';
+      tabId = tabId.replace('#', '');
+      if (!['support', 'privacy', 'terms'].includes(tabId)) {
+        tabId = 'support';
+      }
+
+      document.querySelectorAll('.doc-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+      const targetContent = document.getElementById(tabId);
+      const targetBtn = document.getElementById('tab-btn-' + tabId);
+
+      if (targetContent) targetContent.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+
+      if (updateHash && window.location.hash !== '#' + tabId) {
+        history.replaceState(null, '', '#' + tabId);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash || '#support';
+      openTab(hash, false);
+    });
+
+    window.addEventListener('hashchange', () => {
+      openTab(window.location.hash, false);
+    });
+  </script>
+</body>
+</html>

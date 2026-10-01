@@ -6,7 +6,8 @@ import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
 
 void main() {
   group('Expense Auto-Classify & 3-Pillar UX Tests', () {
-    testWidgets('ExpenseDetailScreen requires review when no OCR evidence is supplied',
+    testWidgets(
+        'ExpenseDetailScreen requires review when no OCR evidence is supplied',
         (WidgetTester tester) async {
       final appState = AppState();
       final vehicle = Vehicle(
@@ -42,7 +43,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('SELECT STATUTORY CATEGORY'), findsOneWidget);
-      expect(find.text('Core 3 Pillars (97% of Tradie Vehicle Claims)'), findsOneWidget);
+      expect(find.text('Core 3 Pillars (97% of Tradie Vehicle Claims)'),
+          findsOneWidget);
       expect(find.text('Other Secondary Business Costs'), findsOneWidget);
 
       // 3. User can manually tap another category if needed

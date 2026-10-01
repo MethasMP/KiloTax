@@ -131,11 +131,14 @@ class _OdometerCameraCaptureSheetState
   }
 
   Future<void> _savePhoto() async {
-    if (_capturedFile == null || _imageHash == null || _capturedAt == null) return;
+    if (_capturedFile == null || _imageHash == null || _capturedAt == null) {
+      return;
+    }
     setState(() => _isSaving = true);
     HapticFeedback.heavyImpact();
 
-    final (success, error) = await widget.appState.saveOdometerPhotoWithIntegrity(
+    final (success, error) =
+        await widget.appState.saveOdometerPhotoWithIntegrity(
       isStart: widget.isStart,
       photoPath: _capturedFile!.path,
       imageHash: _imageHash!,
@@ -225,7 +228,8 @@ class _OdometerCameraCaptureSheetState
                 ],
               ),
               IconButton(
-                icon: const Icon(LucideIcons.x, color: Colors.white70, size: 20),
+                icon:
+                    const Icon(LucideIcons.x, color: Colors.white70, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -380,9 +384,8 @@ class _OdometerCameraCaptureSheetState
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: (_capturedFile == null || _isSaving)
-                      ? null
-                      : _savePhoto,
+                  onPressed:
+                      (_capturedFile == null || _isSaving) ? null : _savePhoto,
                   child: _isSaving
                       ? const SizedBox(
                           width: 18,

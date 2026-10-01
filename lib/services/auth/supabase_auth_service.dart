@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+export 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../../core/constants/app_constants.dart';
 
 class AuthUser {
@@ -24,22 +25,22 @@ class AuthUser {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'email': email,
-    'provider': provider,
-    'display_name': displayName,
-    'avatar_url': avatarUrl,
-    'access_token': accessToken,
-  };
+        'id': id,
+        'email': email,
+        'provider': provider,
+        'display_name': displayName,
+        'avatar_url': avatarUrl,
+        'access_token': accessToken,
+      };
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-    id: json['id'] as String,
-    email: json['email'] as String? ?? '',
-    provider: json['provider'] as String? ?? 'apple',
-    displayName: json['display_name'] as String?,
-    avatarUrl: json['avatar_url'] as String?,
-    accessToken: json['access_token'] as String?,
-  );
+        id: json['id'] as String,
+        email: json['email'] as String? ?? '',
+        provider: json['provider'] as String? ?? 'apple',
+        displayName: json['display_name'] as String?,
+        avatarUrl: json['avatar_url'] as String?,
+        accessToken: json['access_token'] as String?,
+      );
 }
 
 class AuthResult {
@@ -60,13 +61,23 @@ class SupabaseAuthService {
   SupabaseClient? get _client {
     try {
       return Supabase.instance.client;
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[SupabaseAuth] Warning obtaining Supabase client instance: $e\n$stack');
       return null;
     }
   }
 
   /// Native iOS Sign in with Apple (Uses Apple Sheet with Face ID, no Safari)
   Future<AuthResult> signInWithApple() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS &&
+        defaultTargetPlatform != TargetPlatform.macOS) {
+      return const AuthResult(
+        success: false,
+        errorMessage: 'Apple Sign In is only supported on Apple devices.',
+      );
+    }
+
     final client = _client;
     if (client == null) {
       return const AuthResult(
@@ -91,7 +102,9 @@ class SupabaseAuthService {
 
       final idToken = appleCredential.identityToken;
       if (idToken == null) {
-        return const AuthResult(success: false, errorMessage: 'Could not obtain Apple Identity Token.');
+        return const AuthResult(
+            success: false,
+            errorMessage: 'Could not obtain Apple Identity Token.');
       }
 
       // 3. Exchange Token directly with Supabase
@@ -149,7 +162,8 @@ class SupabaseAuthService {
       // 1. Trigger Google Native Authentication Sheet
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        return const AuthResult(success: false, errorMessage: 'Google sign in was cancelled.');
+        return const AuthResult(
+            success: false, errorMessage: 'Google sign in was cancelled.');
       }
 
       // 2. Fetch ID Token directly (Skip unnecessary accessToken round-trip)
@@ -157,7 +171,8 @@ class SupabaseAuthService {
       final idToken = googleAuth.idToken;
 
       if (idToken == null) {
-        return const AuthResult(success: false, errorMessage: 'No ID token returned from Google.');
+        return const AuthResult(
+            success: false, errorMessage: 'No ID token returned from Google.');
       }
 
       // 3. Fast-exchange Google ID Token with Supabase
@@ -171,8 +186,12 @@ class SupabaseAuthService {
 
       if (supaUser != null) {
         final metadata = supaUser.userMetadata ?? {};
-        final displayName = (metadata['full_name'] ?? metadata['name'] ?? googleUser.displayName) as String?;
-        final avatarUrl = (metadata['avatar_url'] ?? metadata['picture'] ?? googleUser.photoUrl) as String?;
+        final displayName = (metadata['full_name'] ??
+            metadata['name'] ??
+            googleUser.displayName) as String?;
+        final avatarUrl = (metadata['avatar_url'] ??
+            metadata['picture'] ??
+            googleUser.photoUrl) as String?;
 
         return AuthResult(
           success: true,
@@ -202,7 +221,8 @@ class SupabaseAuthService {
     if (supaUser == null) return null;
     final metadata = supaUser.userMetadata ?? {};
     final displayName = (metadata['full_name'] ?? metadata['name']) as String?;
-    final avatarUrl = (metadata['avatar_url'] ?? metadata['picture']) as String?;
+    final avatarUrl =
+        (metadata['avatar_url'] ?? metadata['picture']) as String?;
 
     return AuthUser(
       id: supaUser.id,
@@ -221,7 +241,47 @@ class SupabaseAuthService {
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[SupabaseAuth] Warning signing out of Google Sign-In: $e\n$stack');
+    }
     await _client?.auth.signOut();
+  }
+
+  /// In-App Account Deletion per Apple Guideline 5.1.1(v)
+  /// Purges remote database records via Supabase RPC / REST and revokes auth session.
+  Future<bool> deleteAccount() async {
+    final client = _client;
+    if (client == null) return false;
+    try {
+      // 1. Invoke Supabase RPC to purge user records from database
+      try {
+        await client.rpc('delete_user_account');
+      } catch (e, stack) {
+        debugPrint(
+            '[SupabaseAuth] Warning invoking delete_user_account RPC: $e\n$stack');
+        // Fallback: direct deletion of user rows
+        final uid = client.auth.currentUser?.id;
+        if (uid != null) {
+          try {
+            await client.from('audit_evidence').delete().eq('user_id', uid);
+            await client.from('expenses').delete().eq('user_id', uid);
+            await client.from('trips').delete().eq('user_id', uid);
+            await client.from('vehicles').delete().eq('user_id', uid);
+          } catch (fallbackErr) {
+            debugPrint(
+                '[SupabaseAuth] Direct deletion fallback warning: $fallbackErr');
+          }
+        }
+      }
+
+      // 2. Disconnect Google Sign In & Supabase Auth Session
+      await signOut();
+      return true;
+    } catch (e, stack) {
+      debugPrint('[SupabaseAuth] Error in deleteAccount: $e\n$stack');
+      await signOut();
+      return false;
+    }
   }
 }

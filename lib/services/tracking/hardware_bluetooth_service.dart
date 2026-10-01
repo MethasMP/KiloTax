@@ -33,7 +33,8 @@ class HardwareBluetoothDevice {
 /// 1. AVAudioSession / Android Audio Route inspection (detects connected Car Audio / CarPlay / Handsfree)
 /// 2. Hardware Bluetooth Low Energy (BLE) scanning with flutter_blue_plus
 class HardwareBluetoothService {
-  static final HardwareBluetoothService _instance = HardwareBluetoothService._internal();
+  static final HardwareBluetoothService _instance =
+      HardwareBluetoothService._internal();
   factory HardwareBluetoothService() => _instance;
   HardwareBluetoothService._internal();
 
@@ -70,7 +71,8 @@ class HardwareBluetoothService {
   }
 
   /// Start hardware BLE scan and emit discovered devices
-  Stream<List<HardwareBluetoothDevice>> scanNearbyDevices({Duration timeout = const Duration(seconds: 4)}) async* {
+  Stream<List<HardwareBluetoothDevice>> scanNearbyDevices(
+      {Duration timeout = const Duration(seconds: 4)}) async* {
     final Map<String, HardwareBluetoothDevice> discovered = {};
 
     // 1. Immediately inject currently connected system audio bluetooth devices
@@ -84,9 +86,8 @@ class HardwareBluetoothService {
     try {
       final systemDevices = await FlutterBluePlus.systemDevices([]);
       for (final dev in systemDevices) {
-        final name = dev.platformName.isNotEmpty
-            ? dev.platformName
-            : dev.advName;
+        final name =
+            dev.platformName.isNotEmpty ? dev.platformName : dev.advName;
         if (name.trim().isNotEmpty) {
           discovered[name] = HardwareBluetoothDevice(
             id: dev.remoteId.str,
@@ -136,13 +137,17 @@ class HardwareBluetoothService {
         yield discovered.values.toList();
       }
     } catch (e) {
-      debugPrint('[KiloTax Bluetooth] Live scan error or simulator fallback: $e');
+      debugPrint(
+          '[KiloTax Bluetooth] Live scan error or simulator fallback: $e');
     } finally {
       try {
         if (FlutterBluePlus.isScanningNow) {
           await FlutterBluePlus.stopScan();
         }
-      } catch (_) {}
+      } catch (e, stack) {
+        debugPrint(
+            '[HardwareBluetoothService] Warning stopping scan in finally block: $e\n$stack');
+      }
     }
 
     // 4. Obsidian-Grade Developer & Simulator Emulation:
@@ -150,7 +155,8 @@ class HardwareBluetoothService {
     // inject a real-time responsive Simulated Car Beacon so the entire 1-tap pairing
     // and live tracking lifecycle can be verified end-to-end without touching a keyboard.
     if (kDebugMode && discovered.isEmpty) {
-      discovered['Tesla Model Y (Simulated BT)'] = const HardwareBluetoothDevice(
+      discovered['Tesla Model Y (Simulated BT)'] =
+          const HardwareBluetoothDevice(
         id: 'sim_ble_tesla_modely',
         name: 'Tesla Model Y (Simulated BT)',
         isAudioRoute: false,
@@ -166,6 +172,9 @@ class HardwareBluetoothService {
       if (FlutterBluePlus.isScanningNow) {
         await FlutterBluePlus.stopScan();
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint(
+          '[HardwareBluetoothService] Warning stopping scan: $e\n$stack');
+    }
   }
 }

@@ -10,7 +10,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Smart Pivot Monitor (5,000 km Cap & Vault Realization)', () {
-    testWidgets('Displays strategic pivot card when approaching 5,000 km cap with Vault evidence',
+    testWidgets(
+        'Displays strategic pivot card when approaching 5,000 km cap with Vault evidence',
         (WidgetTester tester) async {
       final appState = AppState();
       final vehicle = Vehicle(
@@ -72,12 +73,16 @@ void main() {
 
       // Check Smart Pivot Card renders with humanized concise mobile copy (Chris Voss loss aversion + glovebox)
       expect(find.text('MONEY LEFT ON THE TABLE'), findsOneWidget);
-      expect(find.textContaining('800 km until trips earn \$0'), findsOneWidget);
-      expect(find.textContaining('fuel receipts in the glovebox'), findsOneWidget);
+      expect(
+          find.textContaining('800 km until trips earn \$0'), findsOneWidget);
+      expect(
+          find.textContaining('fuel receipts in the glovebox'), findsOneWidget);
       expect(find.text('Claim My Fuel'), findsOneWidget);
     });
 
-    test('Unvaults CPK fuel expenses when user switches to Logbook, but keeps prior-year receipts in vault', () async {
+    test(
+        'Unvaults CPK fuel expenses when user switches to Logbook, but keeps prior-year receipts in vault',
+        () async {
       final appState = AppState();
       final vehicle = Vehicle(
         id: 'v_pivot_2',
@@ -126,12 +131,14 @@ void main() {
 
       // Verify after switch:
       // 1. CPK fuel expense is unvaulted and now 100% active in logbook claim!
-      final cpkExp = appState.expenses.firstWhere((e) => e.id == 'exp_cpk_fuel');
+      final cpkExp =
+          appState.expenses.firstWhere((e) => e.id == 'exp_cpk_fuel');
       expect(cpkExp.isVaultOnly, isFalse);
       expect(cpkExp.vaultReason, isNull);
 
       // 2. Prior tax year receipt stays safely held in Vault for accountant
-      final priorExp = appState.expenses.firstWhere((e) => e.id == 'exp_prior_year');
+      final priorExp =
+          appState.expenses.firstWhere((e) => e.id == 'exp_prior_year');
       expect(priorExp.isVaultOnly, isTrue);
       expect(priorExp.vaultReason, equals('prior_tax_year'));
     });

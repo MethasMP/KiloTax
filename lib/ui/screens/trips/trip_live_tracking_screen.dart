@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,9 +10,10 @@ import '../../../data/models/trip.dart';
 import '../../../state/app_state.dart';
 import '../../../services/tracking/sensor_fusion_tracking_engine.dart';
 import '../../../services/tracking/geocoding_service.dart';
+import '../../../services/tracking/location_permission_service.dart';
 import 'trip_detection_screen.dart';
 
-/// Screen: Genuine Hardware GPS Live Tracking HUD with Tesla Sensor Fusion & Dead Reckoning
+/// Screen: Genuine Hardware GPS Live Tracking HUD with Sensor Fusion & Dead Reckoning
 /// Connects directly to device CoreLocation/Android Location sensor.
 /// Zero fake simulation math: speed is 0 km/h and distance is 0.00 km when stationary.
 class TripLiveTrackingScreen extends StatefulWidget {
@@ -30,7 +32,8 @@ class TripLiveTrackingScreen extends StatefulWidget {
   State<TripLiveTrackingScreen> createState() => _TripLiveTrackingScreenState();
 }
 
-class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with SingleTickerProviderStateMixin {
+class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final SensorFusionTrackingEngine _fusionEngine = SensorFusionTrackingEngine();
   Timer? _driveTimer;
   StreamSubscription<Position>? _positionStreamSub;
@@ -50,6 +53,7 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -58,37 +62,79 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
     _initRealGpsTracking();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // Emergency flush of in-flight trip state before iOS suspends or kills process
+      widget.appState.updateLiveDriveDistance(
+        _distanceKm,
+        currentPosition: _lastPosition,
+      );
+    }
+  }
+
   Future<void> _initRealGpsTracking() async {
-    // 1. Check Location Service enabled
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
+    final permissionService = LocationPermissionService();
+    final status = await permissionService.requestForegroundPermission();
+
+    if (status == AppLocationPermissionStatus.serviceDisabled) {
       if (mounted) {
         setState(() {
           _gpsStatusMessage = 'LOCATION SERVICES DISABLED';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Location services are turned off. Please turn on GPS.'),
+            action: SnackBarAction(
+              label: 'Enable',
+              onPressed: () => permissionService.openLocationSettings(),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
       return;
     }
 
-    // 2. Check & Request Permissions
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          setState(() {
-            _gpsStatusMessage = 'GPS PERMISSION DENIED';
-          });
-        }
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
+    if (status == AppLocationPermissionStatus.denied) {
       if (mounted) {
         setState(() {
-          _gpsStatusMessage = 'LOCATION BLOCKED IN SETTINGS';
+          _gpsStatusMessage = 'GPS PERMISSION DENIED';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Location permission is required for live trip tracking.'),
+            action: SnackBarAction(
+              label: 'Grant',
+              onPressed: _initRealGpsTracking,
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (status == AppLocationPermissionStatus.deniedForever) {
+      if (mounted) {
+        setState(() {
+          _gpsStatusMessage = 'LOCATION BLOCKED (TAP SETTINGS)';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Location access is blocked. Please enable it in Settings.'),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => permissionService.openAppSettings(),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
       return;
     }
@@ -108,12 +154,18 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
           _gpsStatusMessage = 'GPS LOCKED • HARDWARE ACCURATE';
         });
       }
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+          '[TripLiveTracking] Warning acquiring initial GPS position: $e\n$stack');
       // Stream will attempt to pick up
     }
 
     // 4. Notify appState that live drive is underway
-    widget.appState.startLiveDrive();
+    widget.appState.startLiveDrive(
+      startPosition: _startPosition,
+      originAddress: widget.originAddress,
+      purpose: widget.initialPurpose,
+    );
 
     // 5. Start drive timer
     _driveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -124,17 +176,46 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
       }
     });
 
-    // 6. Hardware GPS Location Stream with Anti-Drift Filtering
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 3, // Only trigger update if moved at least 3 meters
-    );
+    // 6. Hardware GPS Location Stream with Anti-Drift Filtering & Telemetry Continuity
+    final LocationSettings locationSettings;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 3, // Only trigger update if moved at least 3 meters
+        intervalDuration: const Duration(seconds: 1),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'KiloTax Live Tracking Active',
+          notificationText:
+              'Accurately recording your business trip for ATO tax compliance...',
+          notificationIcon:
+              AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+          enableWakeLock: true,
+          setOngoing: true,
+        ),
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 3,
+        activityType: ActivityType.automotiveNavigation,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+        allowBackgroundLocationUpdates: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 3,
+      );
+    }
 
-    _positionStreamSub = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+    _positionStreamSub =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
       (Position position) {
         if (!mounted || _isPaused) return;
 
-        // Apply Tesla-grade Sensor Fusion & Dead Reckoning filter pipeline
+        // Apply Sensor Fusion & Dead Reckoning filter pipeline
         final update = _fusionEngine.processFix(position);
 
         setState(() {
@@ -148,8 +229,11 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
           _lastPosition = update.currentPosition;
         });
 
-        // Sync with dashboard telemetry capsule
-        widget.appState.updateLiveDriveDistance(_distanceKm);
+        // Sync with dashboard telemetry capsule & persist snapshot
+        widget.appState.updateLiveDriveDistance(
+          _distanceKm,
+          currentPosition: _lastPosition,
+        );
       },
       onError: (err) {
         if (mounted) {
@@ -162,8 +246,29 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
     );
   }
 
+  Future<void> _handleGpsDiagnosticTap() async {
+    if (_isGpsLocked) return;
+    HapticFeedback.lightImpact();
+
+    final permissionService = LocationPermissionService();
+    final status = await permissionService.checkStatus();
+
+    switch (status) {
+      case AppLocationPermissionStatus.serviceDisabled:
+        await permissionService.openLocationSettings();
+        break;
+      case AppLocationPermissionStatus.deniedForever:
+        await permissionService.openAppSettings();
+        break;
+      default:
+        _initRealGpsTracking();
+        break;
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _driveTimer?.cancel();
     _positionStreamSub?.cancel();
     _pulseController.dispose();
@@ -229,7 +334,8 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    final claimValue = _distanceKm * AppConstants.activeTaxRule.centsPerKmRate;
+    final claimValue =
+        _distanceKm * widget.appState.activeTaxRule.centsPerKmRate;
 
     return Scaffold(
       backgroundColor: AppColors.deepNavy,
@@ -246,7 +352,8 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
         ),
         title: const Text(
           'Live Hardware GPS Tracking',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -256,45 +363,51 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Real GPS Satellite Status Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isGpsLocked
-                        ? AppColors.emerald.withValues(alpha: 0.5)
-                        : const Color(0xFFF97316).withValues(alpha: 0.5),
+              // Real GPS Satellite Status Pill (Interactive on error)
+              GestureDetector(
+                onTap: _handleGpsDiagnosticTap,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _isGpsLocked
+                          ? AppColors.emerald.withValues(alpha: 0.5)
+                          : const Color(0xFFF97316).withValues(alpha: 0.5),
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RepaintBoundary(
-                      child: FadeTransition(
-                        opacity: _pulseController,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _isGpsLocked ? AppColors.emerald : const Color(0xFFF97316),
-                            shape: BoxShape.circle,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RepaintBoundary(
+                        child: FadeTransition(
+                          opacity: _pulseController,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _isGpsLocked
+                                  ? AppColors.emerald
+                                  : const Color(0xFFF97316),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _gpsStatusMessage,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        letterSpacing: 0.8,
+                      const SizedBox(width: 8),
+                      Text(
+                        _gpsStatusMessage,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                          letterSpacing: 0.8,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -326,16 +439,19 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
 
               // Real Estimated Tax Claim Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.emerald.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.emerald.withValues(alpha: 0.5)),
+                  border: Border.all(
+                      color: AppColors.emerald.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.trendingUp, color: AppColors.emerald, size: 16),
+                    const Icon(LucideIcons.trendingUp,
+                        color: AppColors.emerald, size: 16),
                     const SizedBox(width: 8),
                     Text(
                       'Claim Accumulating: ${Formatters.currency(claimValue)}',
@@ -353,11 +469,13 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
 
               // Metrics Row (Duration & Real Hardware Speed)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -375,11 +493,15 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
                         const SizedBox(height: 2),
                         const Text(
                           'Duration',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                          style:
+                              TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                         ),
                       ],
                     ),
-                    Container(height: 30, width: 1, color: Colors.white.withValues(alpha: 0.15)),
+                    Container(
+                        height: 30,
+                        width: 1,
+                        color: Colors.white.withValues(alpha: 0.15)),
                     Column(
                       children: [
                         Text(
@@ -393,7 +515,8 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
                         const SizedBox(height: 2),
                         const Text(
                           'Hardware Speed',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                          style:
+                              TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                         ),
                       ],
                     ),
@@ -410,17 +533,26 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         setState(() => _isPaused = !_isPaused);
                       },
-                      icon: Icon(_isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.white),
+                      icon: Icon(
+                          _isPaused
+                              ? Icons.play_arrow_rounded
+                              : Icons.pause_rounded,
+                          color: Colors.white),
                       label: Text(
                         _isPaused ? 'Resume' : 'Pause',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15),
                       ),
                     ),
                   ),
@@ -432,14 +564,16 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen> with Si
                         backgroundColor: AppColors.emerald,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                       onPressed: _finishDrive,
                       icon: const Icon(LucideIcons.flag, size: 18),
                       label: const Text(
                         'Finish Drive',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 16),
                       ),
                     ),
                   ),

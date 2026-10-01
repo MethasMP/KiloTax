@@ -32,9 +32,11 @@ class ClassifiedTripAssessment {
 class TripConfidenceClassifier {
   static ClassifiedTripAssessment assess(Trip trip) {
     final tripDate = trip.date;
-    final isWeekend = tripDate.weekday == DateTime.saturday || tripDate.weekday == DateTime.sunday;
+    final isWeekend = tripDate.weekday == DateTime.saturday ||
+        tripDate.weekday == DateTime.sunday;
     final hour = tripDate.hour;
-    final isAfterHours = hour < 6 || hour >= 19; // Typical Australian tradie hours 6:00 AM - 7:00 PM
+    final isAfterHours = hour < 6 ||
+        hour >= 19; // Typical Australian tradie hours 6:00 AM - 7:00 PM
 
     final dest = trip.destinationAddress ?? '';
     final orig = trip.originAddress ?? '';
@@ -43,8 +45,11 @@ class TripConfidenceClassifier {
 
     final poiMatch = TradePoiResolver.resolve(dest);
     final isTradeMerchant = poiMatch != null;
-    final isSiteVisit = destLower.contains('site') || destLower.contains('job') || destLower.contains('client');
-    final isHomeDeparture = origLower.contains('home') || origLower.contains('residence');
+    final isSiteVisit = destLower.contains('site') ||
+        destLower.contains('job') ||
+        destLower.contains('client');
+    final isHomeDeparture =
+        origLower.contains('home') || origLower.contains('residence');
 
     // 1. Weekend Travel Sentinel Guard
     if (isWeekend) {
@@ -53,7 +58,8 @@ class TripConfidenceClassifier {
         tier: ConfidenceTier.requiresUserDecision,
         suggestedPurpose: isTradeMerchant ? 'Supplies Run' : 'Client Site',
         suggestedBulkyTools: true,
-        decisionReason: 'Weekend drive requires explicit trade confirmation to avoid ATO audit penalties.',
+        decisionReason:
+            'Weekend drive requires explicit trade confirmation to avoid ATO audit penalties.',
       );
     }
 
@@ -64,7 +70,8 @@ class TripConfidenceClassifier {
         tier: ConfidenceTier.requiresUserDecision,
         suggestedPurpose: 'Emergency Trade Callout',
         suggestedBulkyTools: true,
-        decisionReason: 'After-hours drive. Please confirm if this was an emergency job or personal journey.',
+        decisionReason:
+            'After-hours drive. Please confirm if this was an emergency job or personal journey.',
       );
     }
 
@@ -75,7 +82,8 @@ class TripConfidenceClassifier {
         tier: ConfidenceTier.highConfidenceWork,
         suggestedPurpose: 'Supplies Run',
         suggestedBulkyTools: false,
-        decisionReason: 'Trade supplies procurement at ${poiMatch.merchantName}.',
+        decisionReason:
+            'Trade supplies procurement at ${poiMatch.merchantName}.',
       );
     }
 
@@ -98,7 +106,8 @@ class TripConfidenceClassifier {
       tier: ConfidenceTier.requiresUserDecision,
       suggestedPurpose: 'Client Site',
       suggestedBulkyTools: isHomeDeparture,
-      decisionReason: 'Destination not yet cataloged. Quick tap to confirm work vs private.',
+      decisionReason:
+          'Destination not yet cataloged. Quick tap to confirm work vs private.',
     );
   }
 }

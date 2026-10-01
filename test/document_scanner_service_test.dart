@@ -28,7 +28,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('DocumentScannerService Resilience & Failsafe Tests', () {
-    test('Falls back cleanly to ImagePicker camera when native scanner throws', () async {
+    test('Falls back cleanly to ImagePicker camera when native scanner throws',
+        () async {
       final mockPicker = MockImagePicker(
         returnedFile: XFile('/mock/path/receipt.jpg'),
       );

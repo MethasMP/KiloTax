@@ -23,7 +23,9 @@ void main() {
       );
     }
 
-    testWidgets('CPK Mode: Renders 3-Tab Lean Navigation without Expenses/Receipts', (tester) async {
+    testWidgets(
+        'CPK Mode: Renders 3-Tab Lean Navigation without Expenses/Receipts',
+        (tester) async {
       // 1. Setup vehicle with Cents-per-km tax method
       final cpkVehicle = Vehicle(
         id: 'veh_cpk_1',
@@ -50,7 +52,8 @@ void main() {
       expect(find.text('Receipts'), findsNothing);
     });
 
-    testWidgets('Logbook Mode: Renders 4-Tab Navigation + Expenses Tab', (tester) async {
+    testWidgets('Logbook Mode: Renders 4-Tab Navigation + Expenses Tab',
+        (tester) async {
       // 1. Setup vehicle with Logbook tax method
       final logbookVehicle = Vehicle(
         id: 'veh_logbook_1',
@@ -74,7 +77,9 @@ void main() {
       expect(find.text('Tax'), findsOneWidget);
     });
 
-    test('Trip Database Schema Isolation: Correctly persists taxMethod and evidenceSource', () {
+    test(
+        'Trip Database Schema Isolation: Correctly persists taxMethod and evidenceSource',
+        () {
       final trip = Trip(
         id: 'trip_cpk_test',
         vehicleId: 'veh_cpk_1',

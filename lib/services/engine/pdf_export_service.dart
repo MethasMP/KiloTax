@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -45,8 +46,8 @@ class PdfExportService {
         base: baseFont,
         bold: boldFont,
       );
-    } catch (_) {
-      // Fallback if offline
+    } catch (e, stack) {
+      debugPrint('[PdfExportService] Warning loading Google Fonts: $e\n$stack');
     }
 
     final pdf = pw.Document(theme: theme);
@@ -60,9 +61,11 @@ class PdfExportService {
         : summary.businessKm;
 
     final claimAmount = isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
-    final methodLabel = isCpk ? 'Code S - Cents-per-kilometre' : 'Code B - Logbook';
+    final methodLabel =
+        isCpk ? 'Code S - Cents-per-kilometre' : 'Code B - Logbook';
     final fyLabel = _sanitizeForPdf('FY${taxRule.financialYear}');
-    final rawRego = vehicle.regoPlate.isNotEmpty ? vehicle.regoPlate : 'Not Set';
+    final rawRego =
+        vehicle.regoPlate.isNotEmpty ? vehicle.regoPlate : 'Not Set';
     final regoLabel = _sanitizeForPdf(rawRego);
     final rate = '${(taxRule.centsPerKmRate * 100).toInt()}c per km';
 
@@ -77,10 +80,12 @@ class PdfExportService {
             children: [
               // ── Header bar ───────────────────────────────────────────────
               pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: pw.BoxDecoration(
                   color: _navy,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -99,15 +104,18 @@ class PdfExportService {
                         pw.SizedBox(height: 3),
                         pw.Text(
                           'Individual Tax Return - Schedule D1 - Work-Related Car Expenses',
-                          style: pw.TextStyle(color: const PdfColor(1, 1, 1, 0.7), fontSize: 9),
+                          style: pw.TextStyle(
+                              color: const PdfColor(1, 1, 1, 0.7), fontSize: 9),
                         ),
                       ],
                     ),
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: pw.BoxDecoration(
                         color: _emerald,
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                        borderRadius:
+                            const pw.BorderRadius.all(pw.Radius.circular(6)),
                       ),
                       child: pw.Text(
                         fyLabel,
@@ -128,10 +136,12 @@ class PdfExportService {
               pw.Row(
                 children: [
                   pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: pw.BoxDecoration(
                       color: _navy,
-                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                      borderRadius:
+                          const pw.BorderRadius.all(pw.Radius.circular(4)),
                     ),
                     child: pw.Text(
                       'ATO BOX D1',
@@ -160,7 +170,8 @@ class PdfExportService {
               pw.Container(
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: _border),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
                 child: pw.Column(
                   children: [
@@ -168,7 +179,8 @@ class PdfExportService {
                     _buildDivider(),
                     _buildRow('Vehicle Registration', regoLabel),
                     _buildDivider(),
-                    _buildRow('Total Work Travel', '${summary.businessKm.toStringAsFixed(1)} km  (${businessTrips.length} trips)'),
+                    _buildRow('Total Work Travel',
+                        '${summary.businessKm.toStringAsFixed(1)} km  (${businessTrips.length} trips)'),
                     _buildDivider(),
                     _buildRow(
                       isCpk ? 'Statutory Capped KM' : 'Business Use KM',
@@ -187,7 +199,8 @@ class PdfExportService {
                     ],
                     // Highlight row — total claimable
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       decoration: const pw.BoxDecoration(
                         color: _emeraldLight,
                         borderRadius: pw.BorderRadius.only(
@@ -228,14 +241,31 @@ class PdfExportService {
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
                   color: _background,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
                   border: pw.Border.all(color: _border),
                 ),
-                child: pw.Text(
-                  _sanitizeForPdf(isCpk
-                      ? 'Compliant with ITAA 1997 s 28-25 (Cents-per-kilometre method). Statutory rate of $rate covers all vehicle operating costs - no further receipts required. Maximum claim: 5,000 km x $rate = ${Formatters.currency(taxRule.centsPerKmMaxKm * taxRule.centsPerKmRate)}. Contemporaneous diary records are maintained within the KiloTax app.'
-                      : 'Compliant with ITAA 1997 s 28-13 (Logbook method) and Taxation Ruling TR 97/11. A 12-week continuous odometer logbook has been maintained. Business-use percentage of ${summary.businessPercentage.toStringAsFixed(1)}% applies to all vehicle expenses. Full expense receipts are attached in the 14-column audit ledger CSV.'),
-                  style: pw.TextStyle(fontSize: 8, color: _muted, lineSpacing: 1.4),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      _sanitizeForPdf(isCpk
+                          ? 'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C / s 28-25). Statutory rate of $rate covers all vehicle operating costs - no separate expense receipts claimed. Maximum claim: 5,000 km x $rate = ${Formatters.currency(taxRule.centsPerKmMaxKm * taxRule.centsPerKmRate)}. Contemporaneous diary records are maintained within KiloTax. Retain all tax records for 5 years per Subdivision 28-H / Section 900-165.'
+                          : 'Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F) and Taxation Ruling TR 97/11. A 12-week continuous odometer logbook has been maintained. Business-use percentage of ${summary.businessPercentage.toStringAsFixed(1)}% applies to vehicle expenses. Retain logbook and records for 5 years per Subdivision 28-H / Section 900-165.'),
+                      style: pw.TextStyle(
+                          fontSize: 8, color: _muted, lineSpacing: 1.4),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      _sanitizeForPdf(
+                          'STATUTORY DISCLAIMER & TPB NOTICE: Not tax advice. Confirm claims with a registered tax agent. KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).'),
+                      style: pw.TextStyle(
+                          fontSize: 7.5,
+                          color: _muted,
+                          fontWeight: pw.FontWeight.bold,
+                          lineSpacing: 1.3),
+                    ),
+                  ],
                 ),
               ),
 
@@ -243,7 +273,7 @@ class PdfExportService {
 
               // ── Footer ─────────────────────────────────────────────────
               pw.Divider(color: _border, height: 1),
-              pw.SizedBox(height: 8),
+              pw.SizedBox(height: 6),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
@@ -256,6 +286,11 @@ class PdfExportService {
                     style: pw.TextStyle(fontSize: 8, color: _muted),
                   ),
                 ],
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'ITAA 1997 Div 28-C / Subdiv 28-H / s 900-165 compliant. Not tax advice. Non-affiliated with the ATO.',
+                style: pw.TextStyle(fontSize: 6.5, color: _muted),
               ),
             ],
           );
@@ -278,7 +313,8 @@ class PdfExportService {
           ),
           pw.Text(
             _sanitizeForPdf(value),
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: _navy),
+            style: pw.TextStyle(
+                fontSize: 10, fontWeight: pw.FontWeight.bold, color: _navy),
           ),
         ],
       ),
