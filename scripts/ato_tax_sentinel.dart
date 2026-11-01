@@ -8,8 +8,16 @@ import 'package:http/http.dart' as http;
 /// 2. If new FY rate detected (e.g. FY 2027-28), automatically upsert to Supabase
 /// 3. Update local assets/data/ato_rates_baseline.json to keep offline baseline in sync
 Future<void> main(List<String> args) async {
-  final supabaseUrl = Platform.environment['SUPABASE_URL'] ??
-      'https://mwtxfdqcyalsohruzmps.supabase.co';
+  final envUrl = Platform.environment['SUPABASE_URL'];
+  final supabaseUrl = (envUrl != null && envUrl.trim().isNotEmpty)
+      ? envUrl.trim()
+      : 'https://mwtxfdqcyalsohruzmps.supabase.co';
+
+  final envAnonKey = Platform.environment['SUPABASE_ANON_KEY'];
+  final anonKey = (envAnonKey != null && envAnonKey.trim().isNotEmpty)
+      ? envAnonKey.trim()
+      : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
+
   final serviceRoleKey = Platform.environment['SUPABASE_SERVICE_ROLE_KEY'];
 
   print('🔍 [ATO Sentinel] Starting ATO Annual Rate Inspection...');
@@ -26,9 +34,6 @@ Future<void> main(List<String> args) async {
   // Query existing database state
   final dbCheckUri = Uri.parse(
       '$supabaseUrl/rest/v1/ato_tax_rules?start_year=eq.$nextStartYear&select=*');
-  
-  final anonKey = Platform.environment['SUPABASE_ANON_KEY'] ??
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
 
   final checkRes = await http.get(dbCheckUri, headers: {
     'apikey': anonKey,
