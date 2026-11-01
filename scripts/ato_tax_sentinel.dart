@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 
 /// True Autonomous ATO Tax Rate Crawler & Gazette Parser
 ///
-/// 1. Queries the Australian Federal Register of Legislation REST API (https://api.prod.legislation.gov.au)
-/// 2. Discovers official Determinations made under ITAA 1997 s.28-25
+/// 1. Queries Australian Federal Register of Legislation OData API (https://api.prod.legislation.gov.au/v1/titles)
+/// 2. Discovers official Determinations dynamically without hardcoded IDs (e.g. F2026L00785)
 /// 3. Downloads the official Gazette document binary directly from the Government vault
 /// 4. Decodes the DOCX XML structure and extracts the statutory rate using exact legal text semantics
 /// 5. Automatically updates assets/data/ato_rates_baseline.json and syncs to Supabase Cloud Vault
@@ -25,18 +25,52 @@ Future<void> main(List<String> args) async {
       ? envAnonKey.trim()
       : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
 
-  // 1. Fetch current rates from Government Gazette API for current year (2026)
-  final detected = await extractStatutoryDetermination(2026, 'F2026L00785');
+  // Calculate current and upcoming financial year base
+  final now = DateTime.now();
+  final currentStartYear = now.month >= 7 ? now.year : now.year - 1;
+  final nextStartYear = currentStartYear + 1;
+
+  print('📅 Current active tax period: $currentStartYear');
+  print('🔎 Auto-discovering registered Gazette instruments for $currentStartYear and $nextStartYear...');
+
+  // 1. DYNAMIC DISCOVERY: Search government register for matching determination by year
+  String? targetRegisterId;
+  int resolvedYear = currentStartYear;
+
+  // First check if upcoming year (e.g. 2027) is already gazetted
+  final nextYearMatch = await findGazetteIdByYear(nextStartYear);
+  if (nextYearMatch != null) {
+    print('🚨 [BREAKING] ATO has published the new determination for $nextStartYear: ${nextYearMatch['id']} - ${nextYearMatch['name']}');
+    targetRegisterId = nextYearMatch['id'];
+    resolvedYear = nextStartYear;
+  } else {
+    print('ℹ️ Year $nextStartYear is not yet gazetted. Inspecting active statutory instrument for $currentStartYear...');
+    final currentYearMatch = await findGazetteIdByYear(currentStartYear);
+    if (currentYearMatch != null) {
+      targetRegisterId = currentYearMatch['id'];
+      resolvedYear = currentStartYear;
+      print('🎯 Discovered Government Register ID for $currentStartYear: $targetRegisterId (${currentYearMatch['name']})');
+    }
+  }
+
+  if (targetRegisterId == null) {
+    print('❌ Could not auto-discover any registered instrument from Government API.');
+    exit(1);
+  }
+
+  // 2. Fetch and extract statutory rate directly from the official document
+  final detected = await extractStatutoryDetermination(resolvedYear, targetRegisterId);
 
   if (detected != null) {
     print('\n✅ SUCCESS: Successfully fetched & decoded from Official Gazette!');
+    print('   - Register ID: $targetRegisterId');
     print('   - Legislative Title: ${detected.title}');
     print('   - Statutory Year: ${detected.year}');
     print('   - Statutory Rate: ${(detected.rate * 100).toInt()} cents per kilometre');
     print('   - Effective Date: ${detected.commencement}');
     print('   - Authority: ITAA 1997 s.28-25');
 
-    // 2. Automatically update local assets/data/ato_rates_baseline.json if needed
+    // 3. Automatically update local assets/data/ato_rates_baseline.json if needed
     final baselineFile = File('assets/data/ato_rates_baseline.json');
     if (baselineFile.existsSync()) {
       try {
@@ -62,7 +96,7 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
-  // 3. Print full verified database state
+  // 4. Print full verified database state
   final allRulesUri = Uri.parse('$supabaseUrl/rest/v1/ato_tax_rules?select=*&order=start_year.desc');
   try {
     final allRulesRes = await http.get(allRulesUri, headers: {
@@ -88,6 +122,27 @@ Future<void> main(List<String> args) async {
   print('======================================================');
 }
 
+/// Dynamic Government Register Discovery
+/// Queries the official Australian Legislation OData endpoint with filter:
+/// contains(name, 'Cents per Kilometre') and contains(name, '<year>')
+Future<Map<String, dynamic>?> findGazetteIdByYear(int year) async {
+  try {
+    final searchUri = Uri.parse(
+        'https://api.prod.legislation.gov.au/v1/titles?\$filter=contains(name,\'Cents%20per%20Kilometre\')%20and%20contains(name,\'$year\')&\$select=id,name,makingDate');
+    final response = await http.get(searchUri);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> items = json['value'] as List<dynamic>? ?? [];
+      if (items.isNotEmpty) {
+        return items.first as Map<String, dynamic>;
+      }
+    }
+  } catch (e) {
+    print('⚠️ Search error for year $year: $e');
+  }
+  return null;
+}
+
 class DetectedStatutoryRule {
   final String title;
   final int year;
@@ -105,7 +160,6 @@ class DetectedStatutoryRule {
 Future<DetectedStatutoryRule?> extractStatutoryDetermination(int targetYear, String registerId) async {
   try {
     final metadataUri = Uri.parse('https://api.prod.legislation.gov.au/v1/titles(\'$registerId\')');
-    print('📡 Fetching Metadata from Australian Legislation API: $metadataUri');
     final metaRes = await http.get(metadataUri);
     if (metaRes.statusCode != 200) {
       print('❌ Metadata response failed: ${metaRes.statusCode}');
@@ -119,7 +173,7 @@ Future<DetectedStatutoryRule?> extractStatutoryDetermination(int targetYear, Str
     final docUri = Uri.parse(
         'https://api.prod.legislation.gov.au/v1/documents(titleid=\'$registerId\',start=2026-06-23,retrospectivestart=2026-06-23,rectificationversionnumber=0,type=\'Primary\',uniqueTypeNumber=0,volumeNumber=0,format=\'Word\')');
 
-    print('📥 Downloading official Gazette legal package directly from Government Vault...');
+    print('📥 Downloading official Gazette legal package directly from Government Vault ($registerId)...');
     final docRes = await http.get(docUri);
     if (docRes.statusCode != 200 || docRes.bodyBytes.isEmpty) {
       print('❌ Document download failed: ${docRes.statusCode}');
