@@ -21,7 +21,7 @@ import '../../services/storage/local_storage_service.dart';
 ///    gracefully without popping error dialogs or technical banners.
 class TaxRuleService {
   static const String _remoteEndpoint =
-      'https://raw.githubusercontent.com/kilotax/compliance-rules/main/ato_tax_rules.json';
+      'https://raw.githubusercontent.com/MethasMP/KiloTax/main/assets/data/ato_rates_baseline.json';
 
   static const String _cacheKey = 'kilotax_cached_tax_rule_v1';
   static const String _cachedRatesKey = 'kilotax_cached_rates_map_v1';
