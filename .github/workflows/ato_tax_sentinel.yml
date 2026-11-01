@@ -1,32 +1,54 @@
-name: ATO Tax Rate Sentinel
+name: ATO Tax Rate Sentinel (Autonomous Gazette Crawler)
 
 on:
   schedule:
-    # Runs at 02:00 UTC on the 1st, 15th, 20th, 25th, and 28th of June
-    - cron: '0 2 1,15,20,25,28 6 *'
-    # Fallback run on 1st of July (New Australian FY start)
-    - cron: '0 2 1 7 *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+    # Run every Monday at 02:00 UTC (12:00 PM AEST)
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+permissions:
+  contents: write
 
 jobs:
-  inspect-and-sync:
+  crawl-and-sync:
+    name: Crawl Federal Register of Legislation & Sync Supabase
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          channel: 'stable'
-          cache: true
+          python-version: '3.11'
 
       - name: Install Dependencies
-        run: flutter pub get
+        run: |
+          pip install pypdf
 
-      - name: Run ATO Tax Sentinel
+      - name: Run ATO Sentinel Pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: dart run scripts/ato_tax_sentinel.dart
+        run: |
+          python3 scripts/ato_sentinel.py
+
+      - name: Check for Changes in Baseline
+        id: git_status
+        run: |
+          git status --porcelain assets/data/ato_rates_baseline.json
+          if [ -n "$(git status --porcelain assets/data/ato_rates_baseline.json)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit & Push New Statutory Baseline
+        if: steps.git_status.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "KiloTax Statutory Sentinel Bot"
+          git config --global user.email "bot@kilotax.com.au"
+          git add assets/data/ato_rates_baseline.json
+          git commit -m "chore(compliance): auto-update statutory ATO rates from Federal Register [skip ci]"
+          git push origin main

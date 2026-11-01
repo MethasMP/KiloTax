@@ -5,15 +5,8 @@
     "centsPerKmRate": 0.91,
     "centsPerKmMaxKm": 5000.0,
     "carDepreciationLimit": 69674.0,
-    "isActive": true
-  },
-  {
-    "financialYear": "2025-26",
-    "startYear": 2025,
-    "centsPerKmRate": 0.88,
-    "centsPerKmMaxKm": 5000.0,
-    "carDepreciationLimit": 69674.0,
-    "isActive": false
+    "isActive": true,
+    "source": "Australian Government Gazette (F2026L00785)"
   },
   {
     "financialYear": "2024-25",
@@ -21,38 +14,34 @@
     "centsPerKmRate": 0.88,
     "centsPerKmMaxKm": 5000.0,
     "carDepreciationLimit": 69674.0,
-    "isActive": false
+    "isActive": false,
+    "source": "Australian Government Gazette (F2024L00697)"
   },
   {
     "financialYear": "2023-24",
     "startYear": 2023,
     "centsPerKmRate": 0.85,
     "centsPerKmMaxKm": 5000.0,
-    "carDepreciationLimit": 68108.0,
-    "isActive": false
+    "carDepreciationLimit": 69674.0,
+    "isActive": false,
+    "source": "Australian Government Gazette (F2023L00767)"
   },
   {
     "financialYear": "2022-23",
     "startYear": 2022,
     "centsPerKmRate": 0.78,
     "centsPerKmMaxKm": 5000.0,
-    "carDepreciationLimit": 64741.0,
-    "isActive": false
-  },
-  {
-    "financialYear": "2021-22",
-    "startYear": 2021,
-    "centsPerKmRate": 0.72,
-    "centsPerKmMaxKm": 5000.0,
-    "carDepreciationLimit": 60733.0,
-    "isActive": false
+    "carDepreciationLimit": 69674.0,
+    "isActive": false,
+    "source": "Australian Government Gazette (F2022L00813)"
   },
   {
     "financialYear": "2020-21",
     "startYear": 2020,
     "centsPerKmRate": 0.72,
     "centsPerKmMaxKm": 5000.0,
-    "carDepreciationLimit": 59136.0,
-    "isActive": false
+    "carDepreciationLimit": 69674.0,
+    "isActive": false,
+    "source": "Australian Government Gazette (F2020L00676)"
   }
 ]
