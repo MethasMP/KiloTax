@@ -1,0 +1,29 @@
+name: ATO Tax Rate Sentinel
+
+on:
+  schedule:
+    # Runs at 02:00 UTC on the 1st, 15th, 20th, 25th, and 28th of June
+    - cron: '0 2 1,15,20,25,28 6 *'
+    # Fallback run on 1st of July (New Australian FY start)
+    - cron: '0 2 1 7 *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  inspect-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install Dependencies
+        run: dart pub get
+
+      - name: Run ATO Tax Sentinel
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: dart run scripts/ato_tax_sentinel.dart

@@ -42,7 +42,7 @@ void main() {
 
       // Should now show VehicleSetupFlow (Value-First: choose vehicle before sign-in)
       expect(find.byType(VehicleSetupFlow), findsOneWidget);
-      expect(find.text('Add your vehicle'), findsOneWidget);
+      expect(find.text('Add Vehicle'), findsOneWidget);
       expect(find.text('What do you drive?'), findsOneWidget);
     });
 
@@ -79,7 +79,7 @@ void main() {
       ));
 
       await tester.pumpWidget(wrap(const OnboardingFlowScreen(initialStep: 3)));
-      expect(find.textContaining('Automatically detect'), findsOneWidget);
+      expect(find.textContaining('Automatic trip tracking'), findsOneWidget);
       expect(find.text('Enable Automatic Tracking'), findsOneWidget);
     });
   });

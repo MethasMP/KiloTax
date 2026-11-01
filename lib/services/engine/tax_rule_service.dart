@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import '../../core/constants/app_constants.dart';
 import '../../services/storage/local_storage_service.dart';
@@ -42,31 +43,20 @@ class TaxRuleService {
         _httpClient = httpClient ?? http.Client(),
         _supabaseUrl = supabaseUrl ?? AppConstants.supabaseUrl,
         _anonKey = anonKey ?? AppConstants.supabaseAnonKey,
-        _currentRule = AppConstants.activeTaxRule {
-    // Seed initial statutory rates into lookup table
-    _syncedRatesByStartYear.addAll(statutoryRatesByStartYear);
-  }
+        _currentRule = AppConstants.activeTaxRule;
 
   AtoTaxRule get currentRule => _currentRule;
 
-  /// Statutory ATO Cents-per-km rates indexed by Financial Year start year (e.g. 2024 for FY 2024–25).
-  /// Hardened in app binary as ultimate offline guarantee.
-  static const Map<int, double> statutoryRatesByStartYear = {
-    2020: 0.72,
-    2021: 0.72,
-    2022: 0.78,
-    2023: 0.85,
-    2024: 0.88,
-    2025: 0.88,
-  };
-
   /// Returns an unmodifiable map of all verified historical and active rates
-  Map<int, double> get allKnownRates => Map.unmodifiable(
-      {...statutoryRatesByStartYear, ..._syncedRatesByStartYear});
+  Map<int, double> get allKnownRates =>
+      Map.unmodifiable(_syncedRatesByStartYear);
 
-  /// Initialize and load cached tax rules from persistent storage
+  /// Initialize and load cached tax rules from persistent storage or bundled JSON asset
   Future<void> init() async {
-    // 1. Load cached single rule
+    // 1. Seed baseline rates from bundled JSON asset (No Dart code hardcoding)
+    await _loadBaselineFromAsset();
+
+    // 2. Load cached single active rule from flash storage
     final cachedJson = _storageService?.loadRawString(_cacheKey);
     if (cachedJson != null && cachedJson.isNotEmpty) {
       try {
@@ -79,7 +69,7 @@ class TaxRuleService {
       }
     }
 
-    // 2. Load cached multi-year rate map if available
+    // 3. Load cached synced rate map from flash storage
     final cachedRatesJson = _storageService?.loadRawString(_cachedRatesKey);
     if (cachedRatesJson != null && cachedRatesJson.isNotEmpty) {
       try {
@@ -95,6 +85,26 @@ class TaxRuleService {
         debugPrint(
             '[TaxRuleService] Warning parsing cached rate map: $e\n$stack');
       }
+    }
+  }
+
+  Future<void> _loadBaselineFromAsset() async {
+    try {
+      final jsonString = await rootBundle.loadString('assets/data/ato_rates_baseline.json');
+      final dynamic decoded = jsonDecode(jsonString);
+      if (decoded is List) {
+        for (final item in decoded) {
+          if (item is Map<String, dynamic>) {
+            final startYear = (item['startYear'] as num?)?.toInt();
+            final rate = (item['centsPerKmRate'] as num?)?.toDouble();
+            if (startYear != null && rate != null) {
+              _syncedRatesByStartYear.putIfAbsent(startYear, () => rate);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[TaxRuleService] Note: rootBundle baseline bypassed or unavailable in environment: $e');
     }
   }
 
@@ -189,14 +199,11 @@ class TaxRuleService {
   }
 
   /// Returns the exact statutory ATO rate for any given expense or trip date.
-  /// Dynamically resolves against synced rates, falling back to statutory baseline.
+  /// Dynamically resolves against synced rates, falling back to active rule.
   double getRateForDate(DateTime date) {
     final startYear = date.month >= 7 ? date.year : date.year - 1;
     if (_syncedRatesByStartYear.containsKey(startYear)) {
       return _syncedRatesByStartYear[startYear]!;
-    }
-    if (statutoryRatesByStartYear.containsKey(startYear)) {
-      return statutoryRatesByStartYear[startYear]!;
     }
     // Fallback to active rule
     return _currentRule.centsPerKmRate;

@@ -12,8 +12,9 @@ void main() {
   group('TaxRuleService - Dynamic Statutory Rate Lookup by Financial Year', () {
     late TaxRuleService service;
 
-    setUp(() {
+    setUp(() async {
       service = TaxRuleService();
+      await service.init();
     });
 
     test('Returns 85c for FY 2023-24 dates (1 Jul 2023 - 30 Jun 2024)', () {
@@ -159,6 +160,7 @@ void main() {
         storageService: storage,
         httpClient: client,
       );
+      await service.init();
 
       // Must complete safely without throwing any uncaught exception
       final success = await service.syncLatestOfficialRates();
