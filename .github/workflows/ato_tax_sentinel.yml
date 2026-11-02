@@ -2,8 +2,10 @@ name: ATO Tax Rate Sentinel (Autonomous Gazette Crawler)
 
 on:
   schedule:
-    # Run every Monday at 02:00 UTC (12:00 PM AEST)
-    - cron: '0 2 * * 1'
+    # 1. Peak Gazette Season (May - July): Check weekly every Monday at 02:00 UTC (12:00 PM AEST)
+    - cron: '0 2 * 5-7 1'
+    # 2. Regular Off-Peak Season (Aug - April): Check once a month on the 1st at 02:00 UTC
+    - cron: '0 2 1 1-4,8-12 *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 permissions:
