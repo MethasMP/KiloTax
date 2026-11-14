@@ -3,7 +3,7 @@
   "standard": "Fully-Disaggregated Flat Australian Vehicle Directory",
   "source": "BITRE Road Vehicles Australia / NEVDIS extract (CC BY 3.0 AU)",
   "updated_at": "2026-09-06",
-  "total": 143,
+  "total": 147,
   "vehicles": [
     {
       "id": "toyota-hilux-workmate-petrol-single-cab",
@@ -1434,6 +1434,46 @@
       "engine": "2.0L TSI Petrol",
       "fuel": "Petrol",
       "display_name": "Volkswagen Golf Golf R 2.0L TSI 4Motion AWD"
+    },
+    {
+      "id": "kia-tasman-dual-cab",
+      "make": "Kia",
+      "model": "Tasman",
+      "variant": "Dual Cab 4x4",
+      "type": "ute",
+      "engine": "2.2L Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "Kia Tasman Dual Cab 4x4"
+    },
+    {
+      "id": "ford-ranger-phev-dual-cab",
+      "make": "Ford",
+      "model": "Ranger PHEV",
+      "variant": "Dual Cab 4x4 Plug-in Hybrid",
+      "type": "ute",
+      "engine": "2.3L Turbo PHEV",
+      "fuel": "Hybrid",
+      "display_name": "Ford Ranger PHEV Dual Cab 4x4"
+    },
+    {
+      "id": "gwm-cannon-alpha-hybrid",
+      "make": "GWM",
+      "model": "Cannon Alpha",
+      "variant": "Ultra Hybrid Dual Cab 4x4",
+      "type": "ute",
+      "engine": "2.0T Hybrid",
+      "fuel": "Hybrid",
+      "display_name": "GWM Cannon Alpha Ultra Hybrid 4x4"
+    },
+    {
+      "id": "ldv-t60-max-dual-cab",
+      "make": "LDV",
+      "model": "T60 Max",
+      "variant": "Pro Dual Cab 4x4",
+      "type": "ute",
+      "engine": "2.0L Bi-Turbo Diesel",
+      "fuel": "Diesel",
+      "display_name": "LDV T60 Max Pro Dual Cab 4x4"
     }
   ]
 }

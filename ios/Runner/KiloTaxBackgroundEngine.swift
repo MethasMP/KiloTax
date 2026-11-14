@@ -93,21 +93,48 @@ import UserNotifications
         scanOrInspectConnectedDevices()
     }
 
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT)
-        guard let target = target, let peripheralName = peripheral.name?.lowercased() else { return }
+    private func matchesTarget(peripheral: CBPeripheral, advertisementData: [String : Any]? = nil) -> Bool {
+        guard let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT), !target.isEmpty else { return false }
+        let targetLower = target.lowercased()
 
-        if peripheralName.contains(target) {
-            NSLog("[KiloTax Native] Paired vehicle connected: \(peripheralName). Triggering autonomous trip start.")
+        // 1. Check peripheral hardware identifier (UUID)
+        let peripheralUuid = peripheral.identifier.uuidString.lowercased()
+        if peripheralUuid == targetLower || peripheralUuid.contains(targetLower) {
+            return true
+        }
+
+        // 2. Check peripheral advertisement name and advertised service UUIDs
+        if let adv = advertisementData {
+            if let localName = adv[CBAdvertisementDataLocalNameKey] as? String,
+               localName.lowercased().contains(targetLower) {
+                return true
+            }
+            if let serviceUuids = adv[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
+                for uuid in serviceUuids {
+                    if uuid.uuidString.lowercased().contains(targetLower) {
+                        return true
+                    }
+                }
+            }
+        }
+
+        // 3. Check peripheral standard name
+        if let name = peripheral.name?.lowercased(), name.contains(targetLower) {
+            return true
+        }
+
+        return false
+    }
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        if matchesTarget(peripheral: peripheral) {
+            NSLog("[KiloTax Native] Paired vehicle connected: \(peripheral.name ?? peripheral.identifier.uuidString). Triggering autonomous trip start.")
             startNativeRecording()
         }
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT)
-        guard let target = target, let peripheralName = peripheral.name?.lowercased() else { return }
-
-        if peripheralName.contains(target) && isRecording {
+        if matchesTarget(peripheral: peripheral) && isRecording {
             NSLog("[KiloTax Native] Vehicle disconnected. Engine turned off. Finalizing trip.")
             finalizeNativeTrip()
         }
@@ -121,11 +148,8 @@ import UserNotifications
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        guard let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT), !target.isEmpty else { return }
-        let discoveredName = (advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? peripheral.name ?? "").lowercased()
-
-        if discoveredName.contains(target) && !isRecording {
-            NSLog("[KiloTax Native] Found target vehicle in beacon scan: \(discoveredName). Starting auto drive.")
+        if matchesTarget(peripheral: peripheral, advertisementData: advertisementData) && !isRecording {
+            NSLog("[KiloTax Native] Found target vehicle in beacon scan: \(peripheral.name ?? peripheral.identifier.uuidString). Starting auto drive.")
             startNativeRecording()
         }
     }
