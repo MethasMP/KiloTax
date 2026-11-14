@@ -588,6 +588,25 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 onChanged: (v) {
                   if (v != null) _changeAllocation(i, purpose: v);
                 }),
+            if (_allocations[i].purpose != AllocationPurpose.private &&
+                _receiptIntelligence
+                    .isLikelyPersonalItem(_allocations[i].description)) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ActionChip(
+                  key: ValueKey('mark-private-chip-$i'),
+                  avatar: const Icon(Icons.person_outline,
+                      size: 16, color: Colors.blueGrey),
+                  label: const Text('Mark as Private'),
+                  backgroundColor: Colors.blueGrey.shade50,
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    _changeAllocation(i, purpose: AllocationPurpose.private);
+                  },
+                ),
+              ),
+            ],
             if (_allocations[i].purpose == AllocationPurpose.work) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<ExpenseCategory>(

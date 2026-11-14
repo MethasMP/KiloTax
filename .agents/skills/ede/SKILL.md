@@ -48,17 +48,24 @@ EDE is an engineering workflow harness designed to eliminate the fundamental fla
 
 ---
 
-## Tooling & Verification Automation
+## Tooling & Verification Automation (Polyglot & Stack-Adaptive)
 
-EDE v2.0 includes automated CLI tools in `tool/ede/`:
+EDE v2.0 adapts to the host project's native stack without introducing alien runtimes. Pre-built triage templates exist in `.agents/skills/ede/templates/tool/`:
 
-```bash
-# Verify presentation layer purity (Ensures Tier D does not calculate tax directly)
-dart run tool/ede/verify_ede_invariants.dart
-
-# Run deterministic debate falsification on an auditor claim
-dart run tool/ede/run_debate_falsification.dart .ede/claims/<claim-file>.yaml
-```
+- **Flutter / Dart Projects:**
+  ```bash
+  dart run tool/ede/triage_risk_gate.dart
+  dart run tool/ede/verify_ede_invariants.dart
+  dart run tool/ede/run_debate_falsification.dart .ede/claims/<claim-file>.yaml
+  ```
+- **Node.js / TypeScript Projects:**
+  ```bash
+  node tool/ede/triage_risk_gate.mjs
+  ```
+- **Python / FastAPI / Django Projects:**
+  ```bash
+  python3 tool/ede/triage_risk_gate.py
+  ```
 
 ---
 

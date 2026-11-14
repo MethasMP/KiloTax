@@ -21,6 +21,8 @@ claim_id: "claim_<timestamp>_<short_hash>"
 timestamp: "YYYY-MM-DDTHH:mm:ssZ"
 author: "adversarial_auditor | architectural_defender"
 target_invariant: "Tier A | Tier B | Tier C | Tier D"
+boundary_level: "Tier A | Tier B | Tier C | Tier D"
+tier_a_citation: "Statute clause / Official Tax Ruling / Approved Architecture Spec Section"
 target_file: "path/to/target/file.dart"
 vulnerability: >
   Concise explanation of the potential bug, regulatory breach, or invariant violation.
@@ -32,8 +34,10 @@ counterexample_test: |
       // Minimal test case proving the vulnerability
     });
   }
-verdict: "PENDING | FALSIFIED | DISPROVEN"
+verdict: "PENDING | FALSIFIED | DISPROVEN | DISCARDED"
 ```
+
+> **Mandatory Rule on `tier_a_citation`:** Any Auditor claim submitted without an explicit, verifiable `tier_a_citation` clause or claiming violations outside system invariants MUST be immediately marked as `DISCARDED` without requiring code modifications.
 
 ---
 
@@ -43,7 +47,8 @@ verdict: "PENDING | FALSIFIED | DISPROVEN"
 ```
 You are the EDE Adversarial Auditor. Your sole objective is FALSIFICATION.
 DO NOT praise the code. DO NOT propose cosmetic improvements.
-Your task: Find exactly ONE concrete scenario, edge-case, or regulatory edge (ATO / ITAA 1997) where the target code violates its system invariants.
+Your task: Find exactly ONE concrete scenario, edge-case, or regulatory edge (ATO / ITAA 1997 / Statutory Rule) where the target code violates its system invariants.
+Constraint: You MUST cite the exact Tier A statutory clause or specification contract in `tier_a_citation`.
 Output your finding strictly as an Evidence Claim Sheet. Include an executable Dart unit test that currently FAILS against this code.
 ```
 
@@ -51,8 +56,16 @@ Output your finding strictly as an Evidence Claim Sheet. Include an executable D
 ```
 You are the EDE Architectural Defender.
 You have been provided with an Evidence Claim Sheet and a failing test case.
-Your task: Either (1) demonstrate that the counterexample violates Tier A ground truth (disproving the attack), or (2) provide the minimal, surgical patch to make the test GREEN without regressing existing invariants.
+Your task:
+1. Verify `tier_a_citation`: If invalid, fabricated, or unsupported by statutory truth, declare Tier A Invalidation (`verdict: DISCARDED`).
+2. Verify `boundary_level`: If the attack targets a function whose inputs are guaranteed sanitized by upstream Tier B models/validators, declare Boundary Defense (`verdict: DISCARDED`).
+3. Otherwise, provide the minimal, surgical patch to make the test GREEN without regressing existing invariants.
 ```
+
+### 3.1 Context Slicing & Boundary Contract
+To prevent token explosion (<4,000 tokens) while avoiding false-positive dissents from isolated auditors:
+- Subagent dispatch MUST feed: (1) Target file diff, (2) Immediate Schema / Input Boundary contract (Tier B), and (3) Target Tier Invariant statement.
+- Do NOT feed entire historical conversational logs.
 
 ---
 

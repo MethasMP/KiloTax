@@ -6,13 +6,14 @@
 ---
 
 ## 1. The Dissent Lifecycle
-1. **Dissent Raised:** An Adversarial Auditor generates an Evidence Claim Sheet containing a valid failing unit test (`counterexample_test`).
+1. **Dissent Raised:** An Adversarial Auditor generates an Evidence Claim Sheet containing a valid failing unit test (`counterexample_test`), explicit `boundary_level`, and verifiable `tier_a_citation`.
 2. **Deterministic Verification:** The test runner (`tool/ede/run_debate_falsification.dart`) executes the test.
-   - If test fails $\rightarrow$ Dissent is **VALID & BLOCKING**.
+   - If test fails $\rightarrow$ Dissent is evaluated for legitimacy.
    - If test passes $\rightarrow$ Dissent is **DISPROVEN & ARCHIVED**.
-3. **Resolution Requirement:** A blocking dissent can ONLY be resolved in two ways:
+3. **Resolution Requirement:** A blocking dissent can ONLY be resolved in three ways:
    - **Code Fix:** Architectural Defender patches the code so the counterexample test turns GREEN without regressing other tests.
-   - **Tier A Invalidation:** The Defender proves in `.ede/ledger/` that the counterexample violates statutory ground truth (e.g. invalid tax assumption).
+   - **Tier A Invalidation:** The Defender proves that the counterexample asserts an illegal premise, lacks a valid `tier_a_citation`, or violates statutory ground truth $\rightarrow$ Dissent is **DISCARDED**.
+   - **Boundary Invalidation:** The Defender demonstrates that the attack scenario is impossible at runtime because inputs are already validated and sanitized by an upstream boundary (Tier B) $\rightarrow$ Dissent is **ARCHIVED AS OUT-OF-SCOPE**.
 
 ---
 
