@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/formatters.dart';
-import '../../../data/models/trip.dart';
+import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
 import '../../../services/tracking/sensor_fusion_tracking_engine.dart';
-import '../../../services/tracking/geocoding_service.dart';
 import '../../../services/tracking/location_permission_service.dart';
 import 'trip_detection_screen.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_space.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Screen: Genuine Hardware GPS Live Tracking HUD with Sensor Fusion & Dead Reckoning
 /// Connects directly to device CoreLocation/Android Location sensor.
@@ -139,7 +141,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       return;
     }
 
-    // 3. Obtain initial GPS lock
     try {
       final initialPos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -151,7 +152,7 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
           _startPosition = initialPos;
           _lastPosition = initialPos;
           _isGpsLocked = true;
-          _gpsStatusMessage = 'GPS LOCKED • HARDWARE ACCURATE';
+          _gpsStatusMessage = 'GPS SIGNAL AVAILABLE';
         });
       }
     } catch (e, stack) {
@@ -160,14 +161,23 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       // Stream will attempt to pick up
     }
 
-    // 4. Notify appState that live drive is underway
-    widget.appState.startLiveDrive(
-      startPosition: _startPosition,
-      originAddress: widget.originAddress,
-      purpose: widget.initialPurpose,
-    );
+    if (!widget.appState.isDriving) {
+      widget.appState.startLiveDrive(
+        startPosition: _startPosition,
+        originAddress: widget.originAddress,
+        purpose: widget.initialPurpose,
+      );
+    } else {
+      _distanceKm = widget.appState.activeDriveDistanceKm;
+      if (widget.appState.activeDriveStartedAt != null) {
+        _secondsElapsed = DateTime.now()
+            .difference(widget.appState.activeDriveStartedAt!)
+            .inSeconds;
+      }
+      _startPosition ??= widget.appState.activeDriveStartPosition;
+      _lastPosition ??= widget.appState.activeDriveLastPosition;
+    }
 
-    // 5. Start drive timer
     _driveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!_isPaused) {
         setState(() {
@@ -176,7 +186,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       }
     });
 
-    // 6. Hardware GPS Location Stream with Anti-Drift Filtering & Telemetry Continuity
     final LocationSettings locationSettings;
     if (defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
@@ -272,58 +281,93 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
     _driveTimer?.cancel();
     _positionStreamSub?.cancel();
     _pulseController.dispose();
-    Future.microtask(() {
-      widget.appState.endLiveDrive();
-    });
+    // P2 Lifecycle Decoupling: UI widget disposal must never end or discard an in-flight drive.
+    // Drive termination is strictly an intentional user decision (_finishDrive / Discard)
+    // or autonomous engine event, never an artifact of transient screen navigation.
     super.dispose();
   }
 
   Future<void> _finishDrive() async {
     HapticFeedback.heavyImpact();
+    final trip =
+        widget.appState.finishLiveDriveForReview(distanceKm: _distanceKm);
+    if (trip == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'No distance recorded yet. Continue recording or discard this drive.'),
+      ));
+      return;
+    }
+    _driveTimer?.cancel();
+    await _positionStreamSub?.cancel();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+      builder: (_) =>
+          TripDetectionScreen(appState: widget.appState, detectedTrip: trip),
+    ));
+  }
+
+  void _disposeRecording() {
     _driveTimer?.cancel();
     _positionStreamSub?.cancel();
+  }
 
-    final finalDistance = double.parse(_distanceKm.toStringAsFixed(2));
-    final lastOdo = widget.appState.currentOdometer;
-
-    String startLoc = widget.originAddress;
-    String endLoc = 'Destination Site';
-
-    if (_startPosition != null) {
-      startLoc = await GeocodingService.reverseGeocode(
-        _startPosition!.latitude,
-        _startPosition!.longitude,
-      );
+  /// Leaving mid-recording: prompt the user whether to keep recording in background,
+  /// discard, or end and save.
+  Future<void> _handleExitRequest() async {
+    final hasData = _secondsElapsed > 0 || _distanceKm > 0.05;
+    if (!hasData) {
+      _disposeRecording();
+      widget.appState.endLiveDrive();
+      if (mounted) Navigator.of(context).pop();
+      return;
     }
 
-    if (_lastPosition != null) {
-      endLoc = await GeocodingService.reverseGeocode(
-        _lastPosition!.latitude,
-        _lastPosition!.longitude,
-      );
-    }
-
-    final detectedTrip = Trip(
-      id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
-      vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
-      distanceKm: finalDistance,
-      date: DateTime.now(),
-      purpose: widget.initialPurpose,
-      startOdometer: lastOdo,
-      endOdometer: lastOdo + finalDistance,
-      originAddress: startLoc,
-      destinationAddress: endLoc,
-    );
-
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => TripDetectionScreen(
-          appState: widget.appState,
-          detectedTrip: detectedTrip,
+    final choice = await showCupertinoDialog<String>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Drive in progress'),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Text(
+            '${_distanceKm.toStringAsFixed(1)} km recorded over ${_formatDuration(_secondsElapsed)}.\n\nYou can keep recording in the background, discard this drive, or end & save now.',
+          ),
         ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(ctx).pop('keep'),
+            child: const Text('Keep in background'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(ctx).pop('discard'),
+            child: const Text('Discard'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.of(ctx).pop('save'),
+            child: const Text('End & save'),
+          ),
+        ],
       ),
     );
+    if (!mounted) return;
+
+    if (choice == 'save') {
+      await _finishDrive();
+      return;
+    }
+    if (choice == 'discard') {
+      _disposeRecording();
+      widget.appState.endLiveDrive();
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    if (choice == 'keep') {
+      // Exit HUD while leaving drive running in AppState
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
   }
 
   String _formatDuration(int seconds) {
@@ -334,253 +378,274 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final claimValue =
-        _distanceKm * widget.appState.activeTaxRule.centsPerKmRate;
+    final vehicle = widget.appState.primaryVehicle;
+    final isLogbook = vehicle?.taxMethod == TaxMethod.logbook;
 
-    return Scaffold(
-      backgroundColor: AppColors.deepNavy,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
-          onPressed: () {
-            _driveTimer?.cancel();
-            _positionStreamSub?.cancel();
-            Navigator.of(context).pop();
-          },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleExitRequest();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.deepNavy,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon:
+                const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+            onPressed: _handleExitRequest,
+          ),
+          title: Text(
+            'Live Hardware GPS Tracking',
+            style: AppType.cardTitle.copyWith(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          centerTitle: true,
         ),
-        title: const Text(
-          'Live Hardware GPS Tracking',
-          style: TextStyle(
-              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Real GPS Satellite Status Pill (Interactive on error)
-              GestureDetector(
-                onTap: _handleGpsDiagnosticTap,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _isGpsLocked
-                          ? AppColors.emerald.withValues(alpha: 0.5)
-                          : const Color(0xFFF97316).withValues(alpha: 0.5),
+        body: SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: S.xxl, vertical: S.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Real GPS Satellite Status Pill (Interactive on error)
+                GestureDetector(
+                  onTap: _handleGpsDiagnosticTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: S.md, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isGpsLocked
+                            ? AppColors.emerald.withValues(alpha: 0.5)
+                            : AppColor.attentionStrong.withValues(alpha: 0.5),
+                      ),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RepaintBoundary(
+                          child: FadeTransition(
+                            opacity: _pulseController,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _isGpsLocked
+                                    ? AppColors.emerald
+                                    : AppColor.attentionStrong,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: S.sm),
+                        Text(
+                          _gpsStatusMessage,
+                          style: AppType.eyebrow.copyWith(
+                            color: Colors.white,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Real Distance Hero Display (0.00 when stationary!)
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _distanceKm.toStringAsFixed(2),
+                    style: AppType.metricXL.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -2,
+                      fontFeatures: AppType.tabular,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: S.labelGap),
+                Text(
+                  'KILOMETRES · GPS ESTIMATE',
+                  style: AppType.secondary.copyWith(
+                    color: AppColor.line,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: S.xxl),
+
+                // Real Estimated Tax Claim Badge (CPK) or Logbook Status Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: S.lg, vertical: S.sm),
+                  decoration: BoxDecoration(
+                    color: isLogbook
+                        ? AppColors.workBlue.withValues(alpha: 0.2)
+                        : AppColors.emerald.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: isLogbook
+                            ? AppColors.workBlue.withValues(alpha: 0.5)
+                            : AppColors.emerald.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      RepaintBoundary(
-                        child: FadeTransition(
-                          opacity: _pulseController,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _isGpsLocked
-                                  ? AppColors.emerald
-                                  : const Color(0xFFF97316),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
+                      Icon(
+                        isLogbook
+                            ? LucideIcons.bookOpen
+                            : LucideIcons.trendingUp,
+                        color: isLogbook
+                            ? AppColors.workBlueLight
+                            : AppColors.emerald,
+                        size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: S.sm),
                       Text(
-                        _gpsStatusMessage,
-                        style: const TextStyle(
+                        isLogbook
+                            ? 'Logbook Substantiation Drive'
+                            : 'Review work purpose after this drive',
+                        style: AppType.bodyStrong.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                          letterSpacing: 0.8,
+                          fontSize: 14,
+                          fontFeatures: AppType.tabular,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              const Spacer(),
+                const Spacer(),
 
-              // Real Distance Hero Display (0.00 when stationary!)
-              Text(
-                _distanceKm.toStringAsFixed(2),
-                style: const TextStyle(
-                  fontSize: 72,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -2,
-                  height: 1.0,
+                // Metrics Row (Duration & Real Hardware Speed)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: S.xl, vertical: S.lg),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(18),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            _formatDuration(_secondsElapsed),
+                            style: AppType.titleSmall.copyWith(
+                              color: Colors.white,
+                              fontFeatures: AppType.tabular,
+                            ),
+                          ),
+                          const SizedBox(height: S.xxs),
+                          Text(
+                            'Duration',
+                            style: AppType.secondary.copyWith(
+                              color: AppColor.line,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                          height: 30,
+                          width: 1,
+                          color: Colors.white.withValues(alpha: 0.15)),
+                      Column(
+                        children: [
+                          Text(
+                            '${_currentSpeedKmh.toStringAsFixed(0)} km/h',
+                            style: AppType.titleSmall.copyWith(
+                              color: Colors.white,
+                              fontFeatures: AppType.tabular,
+                            ),
+                          ),
+                          const SizedBox(height: S.xxs),
+                          Text(
+                            'Hardware Speed',
+                            style: AppType.secondary.copyWith(
+                              color: AppColor.line,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'KILOMETRES (GPS ACTUAL)',
-                style: TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: S.xxl),
 
-              // Real Estimated Tax Claim Badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.emerald.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.emerald.withValues(alpha: 0.5)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                // Action Buttons (Pause & Finish)
+                Row(
                   children: [
-                    const Icon(LucideIcons.trendingUp,
-                        color: AppColors.emerald, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Claim Accumulating: ${Formatters.currency(claimValue)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: S.lg),
+                          side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.3)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _isPaused = !_isPaused);
+                        },
+                        icon: Icon(
+                            _isPaused
+                                ? Icons.play_arrow_rounded
+                                : Icons.pause_rounded,
+                            color: Colors.white),
+                        label: Text(
+                          _isPaused ? 'Resume' : 'Pause',
+                          style: AppType.body.copyWith(
+                              color: Colors.white, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.emerald,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: S.lg),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        onPressed: _finishDrive,
+                        icon: const Icon(LucideIcons.flag, size: 18),
+                        label: Text(
+                          'Finish Drive',
+                          style: AppType.cardTitle.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              const Spacer(),
-
-              // Metrics Row (Duration & Real Hardware Speed)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(18),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          _formatDuration(_secondsElapsed),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Duration',
-                          style:
-                              TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    Container(
-                        height: 30,
-                        width: 1,
-                        color: Colors.white.withValues(alpha: 0.15)),
-                    Column(
-                      children: [
-                        Text(
-                          '${_currentSpeedKmh.toStringAsFixed(0)} km/h',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Hardware Speed',
-                          style:
-                              TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Action Buttons (Pause & Finish)
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.3)),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => _isPaused = !_isPaused);
-                      },
-                      icon: Icon(
-                          _isPaused
-                              ? Icons.play_arrow_rounded
-                              : Icons.pause_rounded,
-                          color: Colors.white),
-                      label: Text(
-                        _isPaused ? 'Resume' : 'Pause',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.emerald,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
-                      onPressed: _finishDrive,
-                      icon: const Icon(LucideIcons.flag, size: 18),
-                      label: const Text(
-                        'Finish Drive',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: S.md),
+              ],
+            ),
           ),
         ),
       ),

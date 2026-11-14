@@ -9,6 +9,7 @@ class ExportFileNameHelper {
   static const String manualJournalXero = 'Manual_Journal_Xero';
   static const String generalJournalMyob = 'General_Journal_MYOB';
   static const String multiVehicleBoxD1Schedule = 'MultiVehicle_BoxD1_Schedule';
+  static const String handiTaxD1Schedule = 'HandiTax_D1_Schedule';
 
   /// Sanitizes alphanumeric input, replacing spaces and hyphens with underscores,
   /// stripping special characters, and truncating to [maxLength].

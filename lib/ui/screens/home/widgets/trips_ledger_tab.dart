@@ -1,3 +1,5 @@
+import '../../../widgets/adaptive_row.dart';
+import '../../../../core/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -7,9 +9,16 @@ import '../../../../data/models/trip.dart';
 import '../../../../data/models/vehicle.dart';
 import '../../../../state/app_state.dart';
 import '../../cpk/cpk_trip_entry_screen.dart';
+import '../../logbook/logbook_trip_entry_screen.dart';
 import '../../trips/trip_detail_screen.dart';
-import '../../trips/trip_detection_screen.dart';
 import '../../trips/trip_quick_resolve_sheet.dart';
+import '../../evidence/evidence_review_screen.dart';
+import '../../workflow/workflow_screen.dart';
+import '../../workflow/workflow_trip_editor.dart';
+import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/app_typography.dart';
+import 'scaffold_bottom_nav_bar.dart';
+import '../../../../services/engine/evidence_review_service.dart';
 
 class TripsLedgerTab extends StatefulWidget {
   final AppState appState;
@@ -21,27 +30,40 @@ class TripsLedgerTab extends StatefulWidget {
 }
 
 class _TripsLedgerTabState extends State<TripsLedgerTab> {
+  Set<String> _reviewTripIds = {};
   String _selectedFilter =
       'All'; // 'All', 'Needs review', 'Business', 'Personal'
   String?
       _selectedVehicleId; // null = follow active primary vehicle, or specific vehicle id
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: widget.appState,
+        builder: (context, _) => _buildLedger(context),
+      );
+
+  Widget _buildLedger(BuildContext context) {
     final appState = widget.appState;
     final primaryVeh = appState.primaryVehicle;
     final activeVehicleId = _selectedVehicleId ?? primaryVeh?.id;
 
-    // Vehicle-isolated trip streams (Prevents cross-vehicle pollution in ATO audit logs)
-    final vehicleTrips = activeVehicleId != null
-        ? appState.trips.where((t) => t.vehicleId == activeVehicleId).toList()
-        : appState.trips;
-
+    final activeVehicle =
+        appState.vehicles.where((v) => v.id == activeVehicleId).firstOrNull ??
+            primaryVeh;
+    final report = const EvidenceReviewService().evaluate(
+      vehicle: activeVehicle,
+      financialYear: appState.activeTaxRule.financialYear,
+      trips: appState.trips,
+      expenses: appState.expenses,
+    );
+    final vehicleTrips = report.trips;
+    _reviewTripIds = report.items
+        .whereType<TripReviewItem>()
+        .map((item) => item.tripId)
+        .toSet();
     final filteredTrips = vehicleTrips.where((t) {
       if (_selectedFilter == 'Needs review') {
-        return t.purpose.trim().isEmpty ||
-            t.purpose.contains('?') ||
-            t.classification == TripClassification.unclassified;
+        return _reviewTripIds.contains(t.id);
       }
       if (_selectedFilter == 'Business') {
         return t.classification == TripClassification.business;
@@ -51,29 +73,6 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
       }
       return true;
     }).toList();
-
-    final activeVehicle = appState.vehicles.firstWhere(
-      (v) => v.id == activeVehicleId,
-      orElse: () =>
-          primaryVeh ??
-          Vehicle(
-            id: 'default',
-            make: 'All Vehicles',
-            model: '',
-            regoPlate: '',
-            initialOdometer: 0.0,
-          ),
-    );
-
-    final totalClaimKm = vehicleTrips
-        .where((t) => t.isBusiness)
-        .fold<double>(0.0, (sum, t) => sum + t.distanceKm);
-    final claimAmountStr = Formatters.currency(
-      activeVehicle.taxMethod == TaxMethod.centsPerKm
-          ? (totalClaimKm.clamp(0.0, 5000.0) *
-              appState.activeTaxRule.centsPerKmRate)
-          : appState.taxSummary.logbookClaim,
-    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -86,100 +85,50 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Trips Ledger',
+              'Trips',
               style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
                 color: AppColors.ink,
                 letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 2),
-            Row(
-              children: [
-                Text(
-                  activeVehicle.regoPlate.isNotEmpty
-                      ? activeVehicle.regoPlate
-                      : activeVehicle.displayName,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.muted,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  width: 3,
-                  height: 3,
-                  decoration: const BoxDecoration(
-                    color: AppColors.muted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  activeVehicle.taxMethod == TaxMethod.centsPerKm
-                      ? '${totalClaimKm.toStringAsFixed(0)} / 5,000 km'
-                      : 'Week ${appState.currentLogbookWeek}/12',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.deepNavy,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  width: 3,
-                  height: 3,
-                  decoration: const BoxDecoration(
-                    color: AppColors.muted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  claimAmountStr,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.emerald,
-                  ),
-                ),
-              ],
+            Text(
+              activeVehicle?.displayName ?? 'Your vehicle',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            tooltip: activeVehicle.taxMethod == TaxMethod.centsPerKm
-                ? 'Add CPK Trip'
-                : 'Log Trip',
-            icon: Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: AppColors.deepNavy.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(LucideIcons.plus,
-                  size: 18, color: AppColors.deepNavy),
-            ),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              if (activeVehicle.taxMethod == TaxMethod.centsPerKm) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CpkTripEntryScreen(appState: appState),
-                  ),
-                );
-              } else {
-                TripDetectionScreen.show(context, appState);
-              }
-            },
+              tooltip: 'Trip to accountant workflow',
+              icon: const Icon(Icons.account_tree_outlined),
+              onPressed: () {
+                if (activeVehicleId != null) {
+                  appState.selectVehicle(activeVehicleId);
+                }
+                WorkflowScreen.show(context, appState);
+              }),
+          if (vehicleTrips.isNotEmpty)
+            IconButton(
+                tooltip: 'Add trip',
+                icon: const Icon(AppIcons.add),
+                onPressed: () => _addTrip(context, appState)),
+          IconButton(
+            tooltip: 'Review evidence',
+            icon: const Icon(Icons.fact_check_outlined),
+            onPressed: () => EvidenceReviewScreen.show(context,
+                appState: appState, vehicleId: activeVehicleId),
           ),
           if (appState.vehicles.length > 1)
             PopupMenuButton<String>(
-              icon: const Icon(LucideIcons.car,
-                  color: AppColors.deepNavy, size: 20),
+              icon: const Icon(AppIcons.vehicle,
+                  color: AppColors.deepNavy, size: AppIconSize.control),
               tooltip: 'Switch Vehicle Ledger',
               onSelected: (vehId) {
                 setState(() {
@@ -190,13 +139,13 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                 for (final v in appState.vehicles)
                   PopupMenuItem<String>(
                     value: v.id,
-                    child: Row(
+                    child: AdaptiveRow(
                       children: [
                         Icon(
                           v.id == activeVehicleId
-                              ? Icons.check_circle
-                              : Icons.circle_outlined,
-                          size: 16,
+                              ? AppIcons.selected
+                              : AppIcons.unselected,
+                          size: AppIconSize.inline,
                           color: v.id == activeVehicleId
                               ? AppColors.emerald
                               : AppColors.muted,
@@ -212,84 +161,58 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 116.0, right: 4.0),
-        child: FloatingActionButton(
-          heroTag: 'trips_ledger_fab',
-          onPressed: () {
-            HapticFeedback.mediumImpact();
-            if (activeVehicle.taxMethod == TaxMethod.centsPerKm) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CpkTripEntryScreen(appState: appState),
-                ),
-              );
-            } else {
-              TripDetectionScreen.show(context, appState);
-            }
-          },
-          backgroundColor: AppColors.deepNavy,
-          foregroundColor: Colors.white,
-          elevation: 5,
-          shape: const CircleBorder(),
-          child: const Icon(LucideIcons.plus, size: 24),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Segmented Filter Bar
-          Container(
-            color: AppColors.background,
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  _buildFilterChip('All', vehicleTrips.length),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    'Needs review',
-                    vehicleTrips
-                        .where((t) =>
-                            t.purpose.trim().isEmpty ||
-                            t.purpose.contains('?') ||
-                            t.classification == TripClassification.unclassified)
-                        .length,
-                    isAlert: vehicleTrips.any((t) =>
-                        t.purpose.trim().isEmpty ||
-                        t.purpose.contains('?') ||
-                        t.classification == TripClassification.unclassified),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    'Business',
-                    vehicleTrips
-                        .where((t) =>
-                            t.classification == TripClassification.business)
-                        .length,
-                  ),
-                  if (activeVehicle.taxMethod == TaxMethod.logbook) ...[
+      body: CustomScrollView(slivers: [
+        SliverToBoxAdapter(
+            child: Column(children: [
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Text('FY ${appState.activeTaxRule.financialYear}',
+                  style: AppTextStyles.caption)),
+          // Segmented Filter Bar (Only shown when trips exist to avoid zero-counter clutter)
+          if (vehicleTrips.isNotEmpty)
+            Container(
+              color: AppColors.background,
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: AdaptiveRow(
+                  children: [
+                    _buildFilterChip('All', vehicleTrips.length),
                     const SizedBox(width: 8),
                     _buildFilterChip(
-                      'Personal',
+                      'Needs review',
+                      vehicleTrips
+                          .where((t) => _reviewTripIds.contains(t.id))
+                          .length,
+                      isAlert: vehicleTrips
+                          .any((t) => _reviewTripIds.contains(t.id)),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                      'Business',
                       vehicleTrips
                           .where((t) =>
-                              t.classification == TripClassification.personal)
+                              t.classification == TripClassification.business)
                           .length,
                     ),
+                    if (activeVehicle?.taxMethod == TaxMethod.logbook) ...[
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        'Personal',
+                        vehicleTrips
+                            .where((t) =>
+                                t.classification == TripClassification.personal)
+                            .length,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
 
           // 3M Lean Optimization: Eliminate Muri (Overburden) & Muda (Waiting/Inventory)
-          if (vehicleTrips.any((t) =>
-              t.purpose.trim().isEmpty ||
-              t.purpose.contains('?') ||
-              t.classification == TripClassification.unclassified))
+          if (vehicleTrips.any((t) => _reviewTripIds.contains(t.id)))
             Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -299,16 +222,16 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                 border: Border.all(
                     color: AppColors.amberDark.withValues(alpha: 0.3)),
               ),
-              child: Row(
+              child: AdaptiveRow(
                 children: [
-                  const Icon(LucideIcons.alertTriangle,
-                      size: 16, color: AppColors.amberDark),
+                  const Icon(AppIcons.warning,
+                      size: AppIconSize.inline, color: AppColors.amberDark),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${vehicleTrips.where((t) => t.purpose.trim().isEmpty || t.purpose.contains('?') || t.classification == TripClassification.unclassified).length} unclassified trips waiting',
+                      '${_reviewTripIds.length} ${_reviewTripIds.length == 1 ? "trip" : "trips"} to review',
                       style: const TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.deepNavy),
                     ),
@@ -316,25 +239,23 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                   InkWell(
                     onTap: () {
                       HapticFeedback.mediumImpact();
-                      final unclassifiedTrip = vehicleTrips.firstWhere((t) =>
-                          t.purpose.trim().isEmpty ||
-                          t.purpose.contains('?') ||
-                          t.classification == TripClassification.unclassified);
+                      final unclassifiedTrip = vehicleTrips
+                          .firstWhere((t) => _reviewTripIds.contains(t.id));
                       TripQuickResolveSheet.show(context,
                           trip: unclassifiedTrip, appState: appState);
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                          horizontal: 12, vertical: 16),
                       decoration: BoxDecoration(
                         color: AppColors.deepNavy,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Fast Review →',
+                        'Review next',
                         style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white),
                       ),
@@ -345,71 +266,67 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
             ),
 
           const Divider(height: 1, color: AppColors.border),
-
-          // Trips List View
-          Expanded(
-            child: filteredTrips.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Elegant Apple-Style Route Icon Surface
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: AppColors.background,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: const Icon(
-                              Icons.directions_car_filled_rounded,
-                              size: 32,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-
-                          // Typography: Confident, Minimalist
-                          const Text(
-                            'No Trips Yet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.deepNavy,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Your drives will appear here automatically as you travel.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.muted,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                    itemCount: filteredTrips.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (ctx, index) {
-                      return _buildTripCard(filteredTrips[index], appState);
-                    },
-                  ),
+        ])),
+        if (filteredTrips.isEmpty)
+          SliverToBoxAdapter(
+              child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                      vehicleTrips.isEmpty
+                          ? 'No trips yet'
+                          : 'No trips in this filter',
+                      style: AppTextStyles.sectionTitle),
+                  const SizedBox(height: 12),
+                  Text(
+                      vehicleTrips.isEmpty
+                          ? 'Add a trip to start your driving record.'
+                          : 'Choose another filter to see your recorded trips.',
+                      style: AppTextStyles.secondaryMedium),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                      onPressed: () => _addTrip(context, appState),
+                      icon: const Icon(AppIcons.add),
+                      label: const Text('Add a trip')),
+                ]),
+          ))
+        else
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                (ModalRoute.of(context)?.canPop ?? false)
+                    ? 20
+                    : ScaffoldBottomNavBar.clearanceFor(context,
+                        taxMethod: appState.primaryVehicle?.taxMethod)),
+            sliver: SliverList.separated(
+              itemCount: filteredTrips.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, index) => _buildTripCard(
+                  filteredTrips[index],
+                  appState,
+                  activeVehicle ??
+                      Vehicle(
+                          id: 'none',
+                          make: '',
+                          model: '',
+                          regoPlate: '',
+                          initialOdometer: 0)),
+            ),
           ),
-        ],
-      ),
+      ]),
     );
+  }
+
+  void _addTrip(BuildContext context, AppState appState) {
+    if (_selectedVehicleId != null) appState.selectVehicle(_selectedVehicleId!);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => appState.primaryVehicle?.taxMethod == TaxMethod.logbook
+            ? LogbookTripEntryScreen(appState: appState)
+            : CpkTripEntryScreen(appState: appState)));
   }
 
   String _cleanPlaceName(String? raw, {String fallback = 'Destination'}) {
@@ -420,13 +337,11 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
   }
 
   IconData _getTripIcon(Trip trip) {
-    if (trip.purpose.trim().isEmpty ||
-        trip.purpose.contains('?') ||
-        trip.classification == TripClassification.unclassified) {
+    if (_reviewTripIds.contains(trip.id)) {
       return LucideIcons.sparkles;
     }
     if (trip.classification == TripClassification.personal) {
-      return LucideIcons.user;
+      return AppIcons.personal;
     }
     final text =
         '${trip.purpose} ${trip.destinationAddress ?? ""} ${trip.originAddress ?? ""}'
@@ -449,7 +364,7 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
         text.contains('build')) {
       return LucideIcons.hardHat;
     }
-    return LucideIcons.briefcase;
+    return AppIcons.business;
   }
 
   Color _getTripAccentColor(Trip trip, bool isNeedsReview, bool isBusiness) {
@@ -468,32 +383,61 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
     if (text.contains('site') ||
         text.contains('reno') ||
         text.contains('fitout')) {
-      return const Color(0xFFD97706);
+      return AppColor.attentionStrong;
     }
     return AppColors.deepNavy;
   }
 
-  Widget _buildTripCard(Trip trip, AppState appState) {
+  Widget _buildTripCard(Trip trip, AppState appState,
+      [Vehicle? vehicleOverride]) {
+    final activeVehicle = vehicleOverride ??
+        appState.vehicles.cast<Vehicle?>().firstWhere(
+              (v) => v?.id == trip.vehicleId,
+              orElse: () => appState.primaryVehicle,
+            ) ??
+        Vehicle(
+          id: 'default',
+          make: 'All Vehicles',
+          model: '',
+          regoPlate: '',
+          initialOdometer: 0.0,
+        );
+
     final isBusiness = trip.classification == TripClassification.business;
-    final isNeedsReview = trip.purpose.trim().isEmpty ||
-        trip.purpose.contains('?') ||
-        trip.classification == TripClassification.unclassified;
+    final isNeedsReview = _reviewTripIds.contains(trip.id);
 
     final destName =
         _cleanPlaceName(trip.destinationAddress, fallback: 'Destination');
-    final originName =
-        _cleanPlaceName(trip.originAddress, fallback: 'Origin');
+    final originName = _cleanPlaceName(trip.originAddress, fallback: 'Origin');
     final hasDistinctRoute = trip.originAddress != null &&
         trip.originAddress != trip.destinationAddress &&
         originName != destName;
 
     final icon = _getTripIcon(trip);
     final accentColor = _getTripAccentColor(trip, isNeedsReview, isBusiness);
-    final claimAmount =
-        trip.distanceKm * appState.activeTaxRule.centsPerKmRate;
+    final claimAmount = trip.distanceKm * appState.activeTaxRule.centsPerKmRate;
+    final isLogbook = activeVehicle.taxMethod == TaxMethod.logbook ||
+        trip.taxMethod == TaxMethod.logbook;
 
-    return Container(
-      key: ValueKey(trip.id),
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final dateFormatted = '${trip.date.day} ${months[trip.date.month - 1]}';
+    final distanceDateText =
+        '${trip.distanceKm.toStringAsFixed(1)} km · $dateFormatted';
+
+    final cardContent = Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -504,7 +448,7 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x04000000),
+            color: AppColor.scrimSoft,
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -516,7 +460,7 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
             TripDetailScreen.show(context, trip: trip, appState: appState),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
+          child: AdaptiveRow(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Refined, contextual category indicator (Replaces repetitive generic briefcase)
@@ -528,7 +472,8 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                   color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: accentColor, size: 18),
+                child:
+                    Icon(icon, color: accentColor, size: AppIconSize.control),
               ),
               const SizedBox(width: 12),
 
@@ -537,8 +482,8 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: Primary Destination + Financial Value Claim
-                    Row(
+                    // Row 1: Destination Title (destName) on left, Distance & Date on right
+                    AdaptiveRow(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
@@ -547,69 +492,74 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                                 ? destName
                                 : (destName != 'Destination'
                                     ? destName
-                                    : 'Personal Drive'),
+                                    : (isNeedsReview
+                                        ? 'Unclassified trip'
+                                        : 'Personal Drive')),
                             style: const TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.ink,
-                              letterSpacing: -0.2,
+                              letterSpacing: 0,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (isBusiness)
+                        Text(
+                          distanceDateText,
+                          style: const TextStyle(
+                            fontFeatures: AppType.tabular,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // Row 2: Route origin context on left, Status / Claim Badge on right
+                    AdaptiveRow(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (hasDistinctRoute)
+                          Expanded(
+                            child: Text(
+                              'from $originName',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.muted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )
+                        else if (!isNeedsReview)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFECFDF5),
+                              color: AppColor.surfaceSunken,
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                  color: const Color(0xFFA7F3D0)),
+                              border: Border.all(color: AppColors.border),
                             ),
                             child: Text(
-                              '+${Formatters.currency(claimAmount)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                              isBusiness ? 'Work Drive' : 'Personal Drive',
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF059669),
+                                fontWeight: FontWeight.w600,
+                                color: isBusiness
+                                    ? AppColors.deepNavy
+                                    : AppColors.muted,
                               ),
                             ),
                           )
                         else
-                          Text(
-                            '${trip.distanceKm.toStringAsFixed(1)} km',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    // Row 2: Route origin context (if distinct)
-                    if (hasDistinctRoute) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'from $originName',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.muted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-
-                    const SizedBox(height: 8),
-
-                    // Row 3: Dedicated Purpose Slot + Date & Distance
-                    Row(
-                      children: [
+                          const Spacer(),
+                        const SizedBox(width: 8),
                         if (isNeedsReview)
                           GestureDetector(
                             onTap: () {
@@ -619,24 +569,23 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                  horizontal: 12, vertical: 16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFFBEB),
+                                color: AppColor.attentionTintSoft,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                    color: const Color(0xFFFDE68A)),
+                                    color: AppColor.attentionTintStrong),
                               ),
-                              child: const Row(
+                              child: const AdaptiveRow(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(LucideIcons.sparkles,
-                                      size: 11,
-                                      color: AppColors.amberDark),
+                                      size: 11, color: AppColors.amberDark),
                                   SizedBox(width: 4),
                                   Text(
                                     '1-Tap Purpose',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.amberDark,
                                     ),
@@ -645,46 +594,63 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                               ),
                             ),
                           )
-                        else
-                          Flexible(
-                            child: Container(
+                        else if (isBusiness) ...[
+                          if (!isLogbook)
+                            Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 7, vertical: 2.5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
+                                color: AppColor.positiveTint,
                                 borderRadius: BorderRadius.circular(6),
-                                border:
-                                    Border.all(color: AppColors.border),
+                                border: Border.all(
+                                    color: AppColor.positiveTintStrong),
                               ),
                               child: Text(
-                                trip.purpose.isNotEmpty
-                                    ? trip.purpose
-                                    : 'Business drive',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                '+${Formatters.currency(claimAmount)}',
+                                style: const TextStyle(
+                                  fontFeatures: AppType.tabular,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: AppColor.positiveStrong,
+                                ),
+                              ),
+                            )
+                          else if (hasDistinctRoute)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: AppColor.surfaceSunken,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: const Text(
+                                'Work Drive',
                                 style: TextStyle(
-                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: isBusiness
-                                      ? AppColors.deepNavy
-                                      : AppColors.muted,
+                                  fontSize: 12,
+                                  color: AppColors.deepNavy,
                                 ),
                               ),
                             ),
+                        ] else if (hasDistinctRoute)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: AppColor.surfaceSunken,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: const Text(
+                              'Personal Drive',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                color: AppColors.muted,
+                              ),
+                            ),
                           ),
-
-                        const SizedBox(width: 8),
-                        const Spacer(),
-
-                        // Clean, minimal metadata (no tiny micro-icons)
-                        Text(
-                          '${trip.distanceKm.toStringAsFixed(1)} km · ${Formatters.date(trip.date)}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.muted,
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -694,6 +660,125 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
           ),
         ),
       ),
+    );
+
+    return Dismissible(
+      key: ValueKey('dismissible_${trip.id}'),
+      direction: DismissDirection.horizontal,
+      dismissThresholds: const {
+        DismissDirection.startToEnd: 0.35,
+        DismissDirection.endToStart: 0.35,
+      },
+      confirmDismiss: (direction) async {
+        if (trip.review.isNotEmpty) {
+          await WorkflowTripEditor.show(context,
+              appState: appState, trip: trip);
+          return false;
+        }
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe Right: Classify as Business
+          HapticFeedback.mediumImpact();
+          final updated = trip.copyWith(
+            classification: TripClassification.business,
+            purpose: trip.purpose.trim().isEmpty || trip.purpose.contains('?')
+                ? 'Client Site / Job'
+                : trip.purpose,
+          );
+          appState.updateTrip(updated);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColor.positiveStrong,
+              content: const AdaptiveRow(
+                children: [
+                  Icon(AppIcons.business,
+                      color: Colors.white, size: AppIconSize.inline),
+                  SizedBox(width: 8),
+                  Text('Classified as Business (Deductible)',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else if (direction == DismissDirection.endToStart) {
+          // Swipe Left: Classify as Personal
+          HapticFeedback.lightImpact();
+          final updated = trip.copyWith(
+            classification: TripClassification.personal,
+            purpose: trip.purpose.trim().isEmpty || trip.purpose.contains('?')
+                ? 'Personal travel'
+                : trip.purpose,
+          );
+          appState.updateTrip(updated);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.deepNavy,
+              content: AdaptiveRow(
+                children: [
+                  Icon(AppIcons.personal,
+                      color: Colors.white, size: AppIconSize.inline),
+                  SizedBox(width: 8),
+                  Text('Classified as Personal',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        // Return false to keep trip card in list while state updates cleanly without jarring removal animation
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: AppColor.positiveStrong,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const AdaptiveRow(
+          children: [
+            Icon(AppIcons.business,
+                color: Colors.white, size: AppIconSize.control),
+            SizedBox(width: 8),
+            Text(
+              'Business',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: AppColors.deepNavy,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const AdaptiveRow(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Personal',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(AppIcons.personal,
+                color: Colors.white, size: AppIconSize.control),
+          ],
+        ),
+      ),
+      child: cardContent,
     );
   }
 
@@ -719,13 +804,13 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                     : AppColors.border),
           ),
         ),
-        child: Row(
+        child: AdaptiveRow(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? Colors.white

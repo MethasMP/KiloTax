@@ -4,6 +4,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/vehicle.dart';
 import '../../../../state/app_state.dart';
+import '../../../../core/theme/app_color.dart';
 
 /// SIGNATURE KILLER INTERACTION:
 /// Tax Savings Ticker Dialog providing immediate positive emotional reinforcement
@@ -155,7 +156,7 @@ class TaxSavingsTickerDialog extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppColors.deepNavy, Color(0xFF1E293B)],
+                  colors: [AppColors.deepNavy, AppColor.navyRaised],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -177,7 +178,7 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                       const Text(
                         'Estimated Tax Deduction Added',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColor.line,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -190,11 +191,12 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
-                          'ATO D1',
+                          'ATO ITEM D1',
                           style: TextStyle(
                             color: Colors.greenAccent,
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4,
                           ),
                         ),
                       ),
@@ -218,7 +220,7 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                       const Text(
                         'AUD',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColor.line,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
@@ -226,7 +228,7 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Divider(color: Color(0xFF334155), height: 1),
+                  const Divider(color: AppColor.navyLine, height: 1),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -234,7 +236,7 @@ class TaxSavingsTickerDialog extends StatelessWidget {
                       const Text(
                         'FY26 Total Claim to Date',
                         style: TextStyle(
-                          color: Color(0xFFCBD5E1),
+                          color: AppColor.line,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                         ),

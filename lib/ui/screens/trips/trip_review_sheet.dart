@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
+import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
 import 'widgets/cpk_batch_review_sheet.dart';
 
@@ -25,6 +26,7 @@ class TripReviewSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trips = appState.trips;
+    final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     final businessKm = trips
         .where((t) => t.classification == TripClassification.business)
         .fold(0.0, (sum, t) => sum + t.distanceKm);
@@ -66,7 +68,7 @@ class TripReviewSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Trip Review & Audit Trail',
+                    const Text('Review trips',
                         style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
@@ -78,7 +80,7 @@ class TripReviewSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              if (appState.missingComplianceTrips.isNotEmpty)
+              if (!isLogbook && appState.missingComplianceTrips.isNotEmpty)
                 TextButton.icon(
                   style: TextButton.styleFrom(
                     backgroundColor: AppColors.emeraldLight,
@@ -93,8 +95,9 @@ class TripReviewSheet extends StatelessWidget {
                       style:
                           TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                   onPressed: () {
-                    Navigator.of(context).pop();
-                    CpkBatchReviewSheet.show(context, appState);
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    CpkBatchReviewSheet.show(navigator.context, appState);
                   },
                 ),
               IconButton(
@@ -116,8 +119,7 @@ class TripReviewSheet extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w800, color: AppColors.ink)),
                     SizedBox(height: 4),
-                    Text(
-                        'Use the + button on Dashboard to log your first drive.',
+                    Text('Use Add trip on Home to record your first drive.',
                         style: TextStyle(fontSize: 12, color: AppColors.muted)),
                   ],
                 ),

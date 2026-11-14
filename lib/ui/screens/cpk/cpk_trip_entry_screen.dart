@@ -1,3 +1,4 @@
+import '../../widgets/adaptive_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -7,8 +8,8 @@ import '../../../data/models/trip.dart';
 import '../../../services/engine/purpose_synthesizer_service.dart';
 import '../../../services/tracking/trade_poi_resolver.dart';
 import '../../../state/app_state.dart';
-import '../trips/widgets/tax_savings_ticker_dialog.dart';
-import '../../widgets/tactile_primary_button.dart';
+import '../logbook/widgets/logbook_design.dart';
+import '../../../core/theme/app_color.dart';
 
 /// Dedicated Trip Entry Screen for Cents-per-Kilometre (CPK) Method
 /// 100% Lean: Net Distance + 1-Tap Bulky Tools Exception. No Odometer. No Personal Trip.
@@ -34,6 +35,8 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
   late TextEditingController _destinationController;
   late TextEditingController _jobRefController;
   double _currentDistance = 0.0;
+  bool _isSaving = false;
+  late DateTime _tripDate = widget.detectedTrip?.date ?? DateTime.now();
   TradePoiMatch? _detectedTradePoi;
 
   @override
@@ -93,10 +96,13 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
   }
 
   void _saveTrip() {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
     HapticFeedback.heavyImpact();
     final parsedDist =
         double.tryParse(_distanceController.text.trim()) ?? _currentDistance;
     if (parsedDist <= 0) {
+      setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -107,12 +113,15 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
       return;
     }
 
-    final origin = _originController.text.trim().isNotEmpty
-        ? _originController.text.trim()
-        : 'Work Site';
-    final dest = _destinationController.text.trim().isNotEmpty
-        ? _destinationController.text.trim()
-        : 'Client Destination';
+    final origin = _originController.text.trim();
+    final dest = _destinationController.text.trim();
+    if (origin.isEmpty || dest.isEmpty) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Add the starting and destination locations before saving.')));
+      return;
+    }
     final jobRef = _jobRefController.text.trim().isNotEmpty
         ? _jobRefController.text.trim()
         : null;
@@ -129,7 +138,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
           'cpk_trip_${DateTime.now().millisecondsSinceEpoch}',
       vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
       distanceKm: parsedDist,
-      date: widget.detectedTrip?.date ?? DateTime.now(),
+      date: _tripDate,
       purpose: effectivePurpose,
       startOdometer: 0.0, // CPK does not track continuous odometer
       endOdometer: 0.0,
@@ -141,23 +150,32 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
     );
 
     widget.appState.recordTrip(trip);
-    Navigator.of(context).pop();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    navigator.pop();
+    messenger.showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      content: Text(
+          'Work trip saved · ${Formatters.date(_tripDate)} · ${parsedDist.toStringAsFixed(1)} km'),
+    ));
+  }
 
-    TaxSavingsTickerDialog.show(
-      context,
-      tripDistanceKm: parsedDist,
-      appState: widget.appState,
-      bulkyToolsCarried: _bulkyToolsCarried,
-    );
+  Future<void> _chooseDate() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+        context: context,
+        initialDate: _tripDate,
+        firstDate: DateTime(2000),
+        lastDate: _tripDate.isAfter(now) ? _tripDate : now);
+    if (!mounted || date == null) return;
+    setState(() => _tripDate = DateTime(
+        date.year, date.month, date.day, _tripDate.hour, _tripDate.minute));
   }
 
   @override
   Widget build(BuildContext context) {
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
     final rateCents = (rate * 100).toInt();
-    final tripDate = widget.detectedTrip?.date ?? DateTime.now();
-    final isWeekend = tripDate.weekday == DateTime.saturday ||
-        tripDate.weekday == DateTime.sunday;
     final claimAmount = _currentDistance * rate;
 
     return Scaffold(
@@ -177,8 +195,8 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          'Review Work Drive (CPK)',
+        title: Text(
+          widget.detectedTrip == null ? 'Add trip' : 'Review trip',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -192,53 +210,43 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
+      bottomNavigationBar: LogbookFooter(
+          label: 'Save trip', onPressed: _isSaving ? null : _saveTrip),
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Weekend Notice (Subtle, Human, No Jargon)
-            if (isWeekend) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.amber.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(LucideIcons.calendar,
-                          size: 15, color: AppColors.amberDark),
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Weekend Drive • Select your work purpose below for ATO compliance',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.muted,
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // 2. UNIFIED CLEAN DISTANCE & CLAIM HERO CARD
+            const Text('Trip details', style: AppTextStyles.sectionTitle),
+            const SizedBox(height: 12),
+            Text(
+                'Record the distance and work purpose for this trip. Estimate uses $rateCents¢/km.',
+                style: AppTextStyles.secondaryMedium),
+            const SizedBox(height: 12),
+            Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                    onPressed: _chooseDate,
+                    icon: const Icon(Icons.calendar_today_outlined, size: 20),
+                    label: Text(Formatters.date(_tripDate)))),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _distanceController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                  labelText: 'Trip distance',
+                  hintText: '0.0',
+                  suffixText: 'km',
+                  border: OutlineInputBorder()),
+              onChanged: (value) => setState(
+                  () => _currentDistance = double.tryParse(value.trim()) ?? 0),
+            ),
+            const SizedBox(height: 20),
+            // Region 2: Journey & Evidence Context (Gestalt Common Region: Audit Proofing)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -254,74 +262,11 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Claim Value Subhead
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'TAX DEDUCTION VALUE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.muted,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '$rateCents¢ / km (ATO Rate)',
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Claim Hero Number
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '+${Formatters.currency(claimAmount)}',
-                        style: const TextStyle(
-                          color: AppColors.ink,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1.0,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'AUD deduction',
-                        style: TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 14),
-
-                  // Distance Traveled Input Row
-                  Row(
+                  AdaptiveRow(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Text(
-                        'DISTANCE TRAVELED',
+                        'Route',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -330,81 +275,19 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                         ),
                       ),
                       Text(
-                        'Tap number to edit',
+                        'Trip locations',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF94A3B8),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.gauge,
-                            size: 20, color: AppColors.deepNavy),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _distanceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            autofocus: false, // Don't block screen on open!
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.ink,
-                              letterSpacing: -0.5,
-                            ),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              hintText: '0.0',
-                              contentPadding: EdgeInsets.zero,
-                              border: InputBorder.none,
-                            ),
-                            onChanged: (val) {
-                              setState(() {
-                                _currentDistance =
-                                    double.tryParse(val.trim()) ?? 0.0;
-                              });
-                            },
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: const Text(
-                            'KM',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 16),
-
-                  // Visual Route Path (Start to End)
-                  Row(
+                  // Visual Route Path (Start to End - Gestalt Continuity / Closure)
+                  AdaptiveRow(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Column(
@@ -413,7 +296,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                             width: 10,
                             height: 10,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF94A3B8),
+                              color: AppColor.line,
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 2),
                               boxShadow: [
@@ -427,7 +310,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                           Container(
                             width: 2,
                             height: 32,
-                            color: const Color(0xFFCBD5E1),
+                            color: AppColor.line,
                           ),
                           Container(
                             width: 10,
@@ -460,16 +343,16 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                               ),
                               decoration: const InputDecoration(
                                 isDense: true,
-                                hintText:
-                                    'Start location (e.g. Home Depot / Base)',
+                                hintText: 'From',
                                 hintStyle: TextStyle(
-                                    color: Color(0xFF94A3B8), fontSize: 13),
+                                    color: AppColor.inkSubtle, fontSize: 13),
                                 border: InputBorder.none,
                                 contentPadding:
                                     EdgeInsets.symmetric(vertical: 4),
                               ),
                             ),
-                            const Divider(height: 12, color: Color(0xFFF1F5F9)),
+                            const Divider(
+                                height: 12, color: AppColor.surfaceMuted),
                             TextField(
                               controller: _destinationController,
                               style: const TextStyle(
@@ -479,9 +362,9 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                               ),
                               decoration: const InputDecoration(
                                 isDense: true,
-                                hintText: 'Destination (e.g. Client Site)',
+                                hintText: 'To',
                                 hintStyle: TextStyle(
-                                    color: Color(0xFF94A3B8), fontSize: 13),
+                                    color: AppColor.inkSubtle, fontSize: 13),
                                 border: InputBorder.none,
                                 contentPadding:
                                     EdgeInsets.symmetric(vertical: 4),
@@ -498,7 +381,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    child: Row(
+                    child: AdaptiveRow(
                       children: [
                         _buildQuickLocChip('Client Job Site', () {
                           _destinationController.text = 'Client Job Site';
@@ -522,59 +405,35 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: AppColor.surfaceMuted),
+                  const SizedBox(height: 10),
+
+                  Material(
+                      color: AppColor.surface,
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text('Job reference (optional)',
+                            style: AppTextStyles.secondaryMedium),
+                        children: [
+                          TextField(
+                              controller: _jobRefController,
+                              decoration: const InputDecoration(
+                                  labelText: 'Job or client reference',
+                                  border: OutlineInputBorder()))
+                        ],
+                      )),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
 
-            // Tier 2: Job / Client Reference (Evidence Chain Link)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.tag, size: 16, color: AppColors.muted),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _jobRefController,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
-                      ),
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        hintText: 'Job / Client Ref (Optional, e.g. Job #402)',
-                        hintStyle:
-                            TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // 4. Trade Purpose Selection (Clean Inset Grouped Card)
-            Row(
+            // Region 3: Trade Purpose (Gestalt Common Region: Statutory Purpose)
+            AdaptiveRow(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
                 Text(
-                  'Trade Purpose',
+                  'Work purpose',
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -583,7 +442,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                   ),
                 ),
                 Text(
-                  'ATO Tax Claim',
+                  'Choose the reason',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -640,9 +499,11 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                   ),
                   _buildGroupedPurposeRow(
                     label: 'Tool Transport',
-                    subtitle: 'Carried heavy gear (>20kg) with no secure lockup',
+                    subtitle:
+                        'Carried heavy gear (>20kg) with no secure lockup',
                     icon: LucideIcons.hammer,
-                    isSelected: _selectedPurpose == 'Tool Transport' || _bulkyToolsCarried,
+                    isSelected: _selectedPurpose == 'Tool Transport' ||
+                        _bulkyToolsCarried,
                     isTop: false,
                     isBottom: true,
                     onTap: () {
@@ -655,46 +516,28 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
 
-            // 5. Clean Quota Progress Bar (Subtle & Non-competing)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.gauge, size: 16, color: AppColors.muted),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Deduction estimate',
+                  style: AppTextStyles.secondaryMedium),
+              children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const SizedBox(height: 12),
+                  Text('Estimated deduction', style: AppTextStyles.caption),
+                  Text('+${Formatters.currency(claimAmount)}',
+                      style: AppTextStyles.sectionTitle),
+                  const SizedBox(height: 8),
+                  Text(
                       '${(widget.appState.activeTaxRule.centsPerKmMaxKm - (widget.appState.taxSummary.businessKm + _currentDistance)).clamp(0.0, 5000.0).toStringAsFixed(0)} km remaining of 5,000 km annual ATO quota',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                      style: AppTextStyles.caption),
+                  const SizedBox(height: 20),
+                ])
+              ],
             ),
-            const SizedBox(height: 22),
-
-            // 6. Primary Save Button (High-End Tactile Double-Bezel Architecture)
-            TactilePrimaryButton(
-              label: 'Save Work Trip',
-              leadingIcon: LucideIcons.check,
-              onPressed: _saveTrip,
-            ),
-            const SizedBox(height: 10),
-
-            // 7. Secondary Discard Action (Clean & Short)
-            SizedBox(
-              height: 46,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
               child: TextButton.icon(
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.muted,
@@ -703,7 +546,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                 ),
                 icon: const Icon(LucideIcons.trash2, size: 15),
                 label: const Text(
-                  'Discard / Personal Trip',
+                  'Cancel without saving',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -712,13 +555,13 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                 ),
                 onPressed: () {
                   HapticFeedback.lightImpact();
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       behavior: SnackBarBehavior.floating,
                       backgroundColor: AppColors.deepNavy,
-                      content: Text(
-                          'Personal trip discarded. 5,000 km quota preserved.'),
+                      content: Text('No trip was saved.'),
                     ),
                   );
                 },
@@ -742,11 +585,11 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: AppColor.surfaceMuted,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColor.hairline),
           ),
-          child: Row(
+          child: AdaptiveRow(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(LucideIcons.mapPin, size: 12, color: AppColors.muted),
@@ -791,7 +634,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-              child: Row(
+              child: AdaptiveRow(
                 children: [
                   Container(
                     width: 38,
@@ -799,7 +642,7 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.deepNavy
-                          : const Color(0xFFF1F5F9),
+                          : AppColor.surfaceMuted,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -816,9 +659,11 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                         Text(
                           label,
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w600,
                             fontSize: 14,
-                            color: isSelected ? AppColors.deepNavy : AppColors.ink,
+                            color:
+                                isSelected ? AppColors.deepNavy : AppColors.ink,
                             letterSpacing: -0.2,
                           ),
                         ),
@@ -841,11 +686,10 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isSelected ? AppColors.deepNavy : Colors.transparent,
+                      color:
+                          isSelected ? AppColors.deepNavy : Colors.transparent,
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.deepNavy
-                            : const Color(0xFFCBD5E1),
+                        color: isSelected ? AppColors.deepNavy : AppColor.line,
                         width: 1.75,
                       ),
                     ),
@@ -859,7 +703,8 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
             if (!isBottom)
               const Padding(
                 padding: EdgeInsets.only(left: 68),
-                child: Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                child: Divider(
+                    height: 1, thickness: 1, color: AppColor.surfaceMuted),
               ),
           ],
         ),

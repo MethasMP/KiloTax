@@ -95,5 +95,43 @@ void main() {
       expect(PurposeSynthesizerService.getHumanLabel('Personal Drive'),
           'Personal');
     });
+
+    test('Validates business purpose specificity rejecting vague descriptions', () {
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('work'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('business'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('job'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('client'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('meeting'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('drive'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('site visit'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('errand'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('run'), isFalse);
+      expect(PurposeSynthesizerService.isValidBusinessPurpose('   '), isFalse);
+
+      expect(
+        PurposeSynthesizerService.isValidBusinessPurpose(
+            'Reece Plumbing parts pickup for bathroom renovation'),
+        isTrue,
+      );
+      expect(
+        PurposeSynthesizerService.isValidBusinessPurpose(
+            'Client site electrical rough-in at 42 Smith St'),
+        isTrue,
+      );
+    });
+
+    test('Synthesizes statutory description when merchant is in selectedPurpose or destination', () {
+      final textFromPurpose = PurposeSynthesizerService.synthesize(
+        selectedPurpose: 'Bunnings run for screws',
+        destination: null,
+      );
+      expect(textFromPurpose, contains('Trade consumables & parts procurement at Bunnings Warehouse'));
+
+      final textFromReece = PurposeSynthesizerService.synthesize(
+        selectedPurpose: 'Materials',
+        destination: 'Reece Plumbing Richmond',
+      );
+      expect(textFromReece, contains('Trade consumables & parts procurement at Reece Plumbing'));
+    });
   });
 }

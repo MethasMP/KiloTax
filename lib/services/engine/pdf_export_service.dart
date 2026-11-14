@@ -36,18 +36,32 @@ class PdfExportService {
     required List<Trip> trips,
     required TaxSummary summary,
     required AtoTaxRule taxRule,
+    String? taxpayerName,
+    String? abn,
+    double? openingOdometer,
+    double? closingOdometer,
+    ByteData? regularFont,
+    ByteData? boldFont,
   }) async {
     // Load true Unicode font to avoid Helvetica Type 1 limitations
     pw.ThemeData? theme;
-    try {
-      final baseFont = await PdfGoogleFonts.interRegular();
-      final boldFont = await PdfGoogleFonts.interBold();
+    if (regularFont != null && boldFont != null) {
       theme = pw.ThemeData.withFont(
-        base: baseFont,
-        bold: boldFont,
+        base: pw.Font.ttf(regularFont),
+        bold: pw.Font.ttf(boldFont),
       );
-    } catch (e, stack) {
-      debugPrint('[PdfExportService] Warning loading Google Fonts: $e\n$stack');
+    } else {
+      try {
+        final baseFont = await PdfGoogleFonts.interRegular();
+        final boldFont = await PdfGoogleFonts.interBold();
+        theme = pw.ThemeData.withFont(
+          base: baseFont,
+          bold: boldFont,
+        );
+      } catch (e, stack) {
+        debugPrint(
+            '[PdfExportService] Warning loading Google Fonts: $e\n$stack');
+      }
     }
 
     final pdf = pw.Document(theme: theme);
@@ -69,10 +83,32 @@ class PdfExportService {
     final regoLabel = _sanitizeForPdf(rawRego);
     final rate = '${(taxRule.centsPerKmRate * 100).toInt()}c per km';
 
+    // Derive or use provided odometer readings
+    final effectiveOpeningOdo = openingOdometer ??
+        (trips.isNotEmpty && trips.first.startOdometer > 0
+            ? trips.first.startOdometer
+            : null);
+    final effectiveClosingOdo = closingOdometer ??
+        (trips.isNotEmpty && trips.last.endOdometer > 0
+            ? trips.last.endOdometer
+            : null);
+
+    final cleanTaxpayerName =
+        taxpayerName != null && taxpayerName.trim().isNotEmpty
+            ? _sanitizeForPdf(taxpayerName.trim())
+            : null;
+    final cleanAbn = abn != null && abn.trim().isNotEmpty
+        ? _sanitizeForPdf(abn.trim())
+        : null;
+    final hasClientInfo = cleanTaxpayerName != null || cleanAbn != null;
+
+    final hasOdometer =
+        effectiveOpeningOdo != null && effectiveClosingOdo != null;
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(36),
         theme: theme,
         build: (pw.Context context) {
           return pw.Column(
@@ -81,11 +117,10 @@ class PdfExportService {
               // ── Header bar ───────────────────────────────────────────────
               pw.Container(
                 padding:
-                    const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: pw.BoxDecoration(
+                    const pw.EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: const pw.BoxDecoration(
                   color: _navy,
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -104,18 +139,18 @@ class PdfExportService {
                         pw.SizedBox(height: 3),
                         pw.Text(
                           'Individual Tax Return - Schedule D1 - Work-Related Car Expenses',
-                          style: pw.TextStyle(
-                              color: const PdfColor(1, 1, 1, 0.7), fontSize: 9),
+                          style: const pw.TextStyle(
+                              color: PdfColor(1, 1, 1, 0.7), fontSize: 9),
                         ),
                       ],
                     ),
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
-                      decoration: pw.BoxDecoration(
+                      decoration: const pw.BoxDecoration(
                         color: _emerald,
                         borderRadius:
-                            const pw.BorderRadius.all(pw.Radius.circular(6)),
+                            pw.BorderRadius.all(pw.Radius.circular(6)),
                       ),
                       child: pw.Text(
                         fyLabel,
@@ -130,7 +165,72 @@ class PdfExportService {
                 ),
               ),
 
-              pw.SizedBox(height: 20),
+              if (hasClientInfo) ...[
+                pw.SizedBox(height: 10),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  decoration: pw.BoxDecoration(
+                    color: _background,
+                    borderRadius:
+                        const pw.BorderRadius.all(pw.Radius.circular(6)),
+                    border: pw.Border.all(color: _border),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (cleanTaxpayerName != null)
+                        pw.Row(
+                          children: [
+                            pw.Text(
+                              'Taxpayer: ',
+                              style: pw.TextStyle(
+                                fontSize: 9,
+                                color: _muted,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                            pw.Text(
+                              cleanTaxpayerName,
+                              style: pw.TextStyle(
+                                fontSize: 9.5,
+                                color: _navy,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        pw.SizedBox(),
+                      if (cleanAbn != null)
+                        pw.Row(
+                          children: [
+                            pw.Text(
+                              'ABN: ',
+                              style: pw.TextStyle(
+                                fontSize: 9,
+                                color: _muted,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                            pw.Text(
+                              cleanAbn,
+                              style: pw.TextStyle(
+                                fontSize: 9.5,
+                                color: _navy,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        pw.SizedBox(),
+                    ],
+                  ),
+                ),
+              ],
+
+              pw.SizedBox(height: 14),
 
               // ── ATO Box D1 badge + subtitle ────────────────────────────
               pw.Row(
@@ -138,10 +238,9 @@ class PdfExportService {
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
-                    decoration: pw.BoxDecoration(
+                    decoration: const pw.BoxDecoration(
                       color: _navy,
-                      borderRadius:
-                          const pw.BorderRadius.all(pw.Radius.circular(4)),
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
                     ),
                     child: pw.Text(
                       'ATO BOX D1',
@@ -156,7 +255,7 @@ class PdfExportService {
                   pw.SizedBox(width: 8),
                   pw.Text(
                     'Tax Agent Fast-Fill Data - Prepared for Lodgement',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       color: _muted,
                       fontSize: 10,
                     ),
@@ -164,7 +263,7 @@ class PdfExportService {
                 ],
               ),
 
-              pw.SizedBox(height: 14),
+              pw.SizedBox(height: 12),
 
               // ── Data rows card ─────────────────────────────────────────
               pw.Container(
@@ -179,6 +278,13 @@ class PdfExportService {
                     _buildDivider(),
                     _buildRow('Vehicle Registration', regoLabel),
                     _buildDivider(),
+                    if (hasOdometer) ...[
+                      _buildRow(
+                        'Odometer Readings',
+                        'Opening: ${effectiveOpeningOdo.toStringAsFixed(0)} km  |  Closing: ${effectiveClosingOdo.toStringAsFixed(0)} km',
+                      ),
+                      _buildDivider(),
+                    ],
                     _buildRow('Total Work Travel',
                         '${summary.businessKm.toStringAsFixed(1)} km  (${businessTrips.length} trips)'),
                     _buildDivider(),
@@ -200,7 +306,7 @@ class PdfExportService {
                     // Highlight row — total claimable
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                          horizontal: 16, vertical: 12),
                       decoration: const pw.BoxDecoration(
                         color: _emeraldLight,
                         borderRadius: pw.BorderRadius.only(

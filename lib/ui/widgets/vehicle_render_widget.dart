@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/models/vehicle.dart';
-import 'vehicle_type_ui_extension.dart';
+import '../../core/theme/app_color.dart';
 
-/// Presentation widget responsible for rendering vehicle 3D renders, models, and silhouettes.
-/// Decoupled from the Vehicle domain entity.
+/// Presentation widget responsible for rendering vehicle brand monogram badges
+/// and clean geometric typography (Apple Wallet / Linear style).
 class VehicleRenderWidget extends StatelessWidget {
   final VehicleType vehicleType;
   final String? make;
@@ -24,7 +23,7 @@ class VehicleRenderWidget extends StatelessWidget {
     this.height,
     this.fit = BoxFit.contain,
     this.silhouetteOnly = false,
-    this.silhouetteColor = const Color(0xFF0F172A),
+    this.silhouetteColor = AppColor.surfaceNavy,
   });
 
   /// Factory constructor to render directly from a [Vehicle] entity
@@ -46,18 +45,22 @@ class VehicleRenderWidget extends StatelessWidget {
     );
   }
 
-  /// Factory constructor for high-precision vector silhouettes
+  /// High-precision Vector / Icon Monogram
   factory VehicleRenderWidget.silhouette({
     Key? key,
     required VehicleType vehicleType,
-    double width = 24,
-    double height = 24,
-    Color color = const Color(0xFF0F172A),
+    String? make,
+    String? model,
+    double width = 36,
+    double height = 28,
+    Color color = AppColor.surfaceNavy,
     BoxFit fit = BoxFit.contain,
   }) {
     return VehicleRenderWidget(
       key: key,
       vehicleType: vehicleType,
+      make: make,
+      model: model,
       width: width,
       height: height,
       fit: fit,
@@ -66,7 +69,7 @@ class VehicleRenderWidget extends StatelessWidget {
     );
   }
 
-  /// Factory constructor for 3D studio transparent cutout renders
+  /// Studio / Hero Monogram Card
   factory VehicleRenderWidget.studio3d({
     Key? key,
     required VehicleType vehicleType,
@@ -89,49 +92,69 @@ class VehicleRenderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (silhouetteOnly) {
-      return _buildSilhouette();
-    }
-    return _build3dRender();
+    return _buildBrandMonogram();
   }
 
-  Widget _buildSilhouette() {
-    return SvgPicture.asset(
-      vehicleType.svgAssetPath,
-      width: width,
-      height: height,
-      fit: fit,
-      colorFilter: ColorFilter.mode(silhouetteColor, BlendMode.srcIn),
-      placeholderBuilder: (_) =>
-          Icon(vehicleType.iconData, size: height, color: silhouetteColor),
-    );
-  }
+  Widget _buildBrandMonogram() {
+    final effectiveMake = (make ?? '').trim();
+    final monogram = _resolveMonogram(effectiveMake, vehicleType);
+    final w = width ?? 44;
+    final h = height ?? 32;
 
-  Widget _build3dRender() {
-    String resolvedPath = vehicleType.imageAssetPath;
-    final cleanModel = (model ?? '').toLowerCase();
-    final cleanMake = (make ?? '').toLowerCase();
-
-    if (cleanModel.contains('model y')) {
-      resolvedPath = 'assets/vehicles/tesla_model_y.png';
-    } else if (cleanModel.contains('corolla')) {
-      resolvedPath = 'assets/vehicles/toyota_corolla.png';
-    } else if (cleanMake.contains('tesla') && cleanModel.contains('model 3')) {
-      resolvedPath = 'assets/vehicles/car.png';
-    }
-
-    return Image.asset(
-      resolvedPath,
-      width: width,
-      height: height,
-      fit: fit,
-      errorBuilder: (_, __, ___) => Image.asset(
-        vehicleType.imageAssetPath,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) => _buildSilhouette(),
+    return Container(
+      width: w,
+      height: h,
+      decoration: BoxDecoration(
+        color: AppColor.surfaceNavy,
+        borderRadius: BorderRadius.circular(w > 60 ? 14 : 8),
+        border: Border.all(
+          color: AppColor.navyLine,
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              vehicleType.iconData,
+              size: (h * 0.44).clamp(11.0, 20.0),
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+            if (w >= 48) ...[
+              const SizedBox(width: 4),
+              Text(
+                monogram,
+                style: TextStyle(
+                  fontSize: (h * 0.36).clamp(10.0, 16.0),
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _resolveMonogram(String make, VehicleType type) {
+    if (make.isEmpty) {
+      return type.displayName.toUpperCase();
+    }
+    final upper = make.toUpperCase();
+    if (upper.contains('FORD')) return 'FORD';
+    if (upper.contains('TOYOTA')) return 'TOYOTA';
+    if (upper.contains('ISUZU')) return 'ISUZU';
+    if (upper.contains('MITSUBISHI')) return 'MITSU';
+    if (upper.contains('TESLA')) return 'TESLA';
+    if (upper.contains('HOLDEN')) return 'HOLDEN';
+    if (upper.contains('MAZDA')) return 'MAZDA';
+    if (upper.contains('HYUNDAI')) return 'HYUNDAI';
+    if (upper.contains('NISSAN')) return 'NISSAN';
+    if (upper.contains('VOLKSWAGEN') || upper.contains('VW')) return 'VW';
+    return upper.length > 6 ? upper.substring(0, 5) : upper;
   }
 }

@@ -4,10 +4,12 @@ import 'package:kilotax/services/scanner/document_scanner_service.dart';
 
 class MockImagePicker extends Fake implements ImagePicker {
   final XFile? returnedFile;
+  final List<XFile>? returnedFiles;
   bool pickImageCalled = false;
+  bool pickMultiImageCalled = false;
   ImageSource? lastSource;
 
-  MockImagePicker({this.returnedFile});
+  MockImagePicker({this.returnedFile, this.returnedFiles});
 
   @override
   Future<XFile?> pickImage({
@@ -21,6 +23,18 @@ class MockImagePicker extends Fake implements ImagePicker {
     pickImageCalled = true;
     lastSource = source;
     return returnedFile;
+  }
+
+  @override
+  Future<List<XFile>> pickMultiImage({
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    int? limit,
+    bool requestFullMetadata = true,
+  }) async {
+    pickMultiImageCalled = true;
+    return returnedFiles ?? [];
   }
 }
 
@@ -66,6 +80,39 @@ void main() {
 
       expect(mockPicker.pickImageCalled, isTrue);
       expect(result, isNull);
+    });
+
+    test('scanBatchDocuments falls back to camera returning list with single image',
+        () async {
+      final mockPicker = MockImagePicker(
+        returnedFile: XFile('/mock/path/batch_camera.jpg'),
+      );
+      final service = DocumentScannerService(picker: mockPicker);
+
+      final result =
+          await service.scanBatchDocuments(allowFallbackToCamera: true);
+
+      expect(mockPicker.pickImageCalled, isTrue);
+      expect(result, equals(['/mock/path/batch_camera.jpg']));
+    });
+
+    test('pickMultipleFromGallery invokes pickMultiImage and returns files',
+        () async {
+      final mockPicker = MockImagePicker(
+        returnedFiles: [
+          XFile('/mock/path/receipt1.jpg'),
+          XFile('/mock/path/receipt2.jpg'),
+        ],
+      );
+      final service = DocumentScannerService(picker: mockPicker);
+
+      final results = await service.pickMultipleFromGallery();
+
+      expect(mockPicker.pickMultiImageCalled, isTrue);
+      expect(
+        results,
+        equals(['/mock/path/receipt1.jpg', '/mock/path/receipt2.jpg']),
+      );
     });
   });
 }

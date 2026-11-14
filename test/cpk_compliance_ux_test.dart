@@ -55,20 +55,14 @@ void main() {
       await tester.tap(find.text('Open Quick Capture'));
       await tester.pumpAndSettle();
 
-      // Tap on 'Trip' option
-      expect(find.text('Trip'), findsOneWidget);
-      await tester.tap(find.text('Trip'));
-      await tester.pumpAndSettle();
-
-      // Tap 'Log Trip Manually'
-      expect(find.text('Log Trip Manually'), findsOneWidget);
-      await tester.tap(find.text('Log Trip Manually'));
+      expect(find.text('Add a past trip'), findsOneWidget);
+      await tester.tap(find.text('Add a past trip'));
       await tester.pumpAndSettle();
 
       // Should open CpkTripEntryScreen (has ATO 5,000 km cap meter & no odometer inputs)
       expect(find.byType(CpkTripEntryScreen), findsOneWidget);
       expect(find.byType(LogbookTripEntryScreen), findsNothing);
-      expect(find.textContaining('Review Work Drive (CPK)'), findsOneWidget);
+      expect(find.textContaining('Add trip'), findsOneWidget);
     });
 
     testWidgets(
@@ -88,20 +82,14 @@ void main() {
       await tester.tap(find.text('Open Quick Capture'));
       await tester.pumpAndSettle();
 
-      // Tap on 'Trip' option
-      expect(find.text('Trip'), findsOneWidget);
-      await tester.tap(find.text('Trip'));
-      await tester.pumpAndSettle();
-
-      // Tap 'Log Trip Manually'
-      expect(find.text('Log Trip Manually'), findsOneWidget);
-      await tester.tap(find.text('Log Trip Manually'));
+      expect(find.text('Add a past trip'), findsOneWidget);
+      await tester.tap(find.text('Add a past trip'));
       await tester.pumpAndSettle();
 
       // Should open LogbookTripEntryScreen
       expect(find.byType(LogbookTripEntryScreen), findsOneWidget);
       expect(find.byType(CpkTripEntryScreen), findsNothing);
-      expect(find.textContaining('Log Logbook Drive'), findsOneWidget);
+      expect(find.text('Add trip'), findsOneWidget);
     });
 
     testWidgets(
@@ -109,11 +97,11 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(TripsLedgerTab(appState: appState)));
 
-      // In empty state: Clean view with elevated FloatingActionButton
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      // In empty state: Clean view with primary Manual Log CTA
+      expect(find.text('Add a trip'), findsOneWidget);
 
-      // Tap FAB to ensure it routes directly to CpkTripEntryScreen
-      await tester.tap(find.byType(FloatingActionButton));
+      // Tap CTA to ensure it routes directly to CpkTripEntryScreen
+      await tester.tap(find.text('Add a trip'));
       await tester.pumpAndSettle();
 
       expect(find.byType(CpkTripEntryScreen), findsOneWidget);
@@ -124,29 +112,34 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(const TaxSummaryScreen()));
 
+      await tester.scrollUntilVisible(find.text('Record checklist'), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.text('Record checklist'));
+      await tester.pumpAndSettle();
+
       // Should display CPK specific items
-      expect(
-          find.text('Reasonable estimate basis established'), findsOneWidget);
-      expect(find.text('Business trips substantiated'), findsOneWidget);
+      expect(find.text('Recorded trip history'), findsOneWidget);
+      expect(find.text('Business trip details'), findsOneWidget);
       expect(find.text('Odometer recorded'), findsNothing);
 
-      // Verify ZERO duplicate 'Log Drive →' labels
-      expect(find.text('Log Drive →'), findsOneWidget);
+      // Verify ZERO duplicate 'Log drive' labels. The trailing arrow is now a
+      // Lucide chevron icon rather than a raw "→" glyph in the label.
+      expect(find.text('Log drive'), findsOneWidget);
       expect(find.text('Awaiting Drives'), findsOneWidget);
 
       // Readiness score should be exactly 50% (Deterministic: 2 of 4 pillars complete - Vehicle 25% + Tax Method 25%)
       expect(appState.taxReadinessScore, 50);
     });
 
-    testWidgets(
-        'ComplianceCenterScreen displays 50% Tax-Ready in setup phase with consistent status chips',
+    testWidgets('record checks describe setup without asserting readiness',
         (tester) async {
       await tester.pumpWidget(wrap(ComplianceCenterScreen(appState: appState)));
 
-      expect(find.text('50% Tax-Ready'), findsOneWidget);
-      expect(find.text('Awaiting Drives'), findsOneWidget);
-      expect(find.text('Pending'), findsOneWidget);
-      expect(find.text('Statutory Rate'), findsOneWidget);
+      expect(find.text('Your evidence starts here'), findsOneWidget);
+      expect(find.textContaining('Tax-Ready'), findsNothing);
+      expect(find.text('Trips recorded'), findsOneWidget);
+      expect(find.text('Items to review'), findsOneWidget);
+      expect(find.text('Review records and files'), findsOneWidget);
     });
   });
 }

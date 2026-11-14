@@ -43,7 +43,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify exactly 3 Tabs: Dashboard, Trips, Tax
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
       expect(find.text('Trips'), findsOneWidget);
       expect(find.text('Tax'), findsOneWidget);
 

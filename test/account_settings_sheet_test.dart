@@ -13,7 +13,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    testWidgets('Renders Guest Mode Cloud Shield card and Export Backup Tile',
+    testWidgets('Guest sign-in is separate from local data management',
         (tester) async {
       final storage = await LocalStorageService.init();
       final appState = AppState(storageService: storage);
@@ -36,18 +36,38 @@ void main() {
       await tester.tap(find.text('Open Settings'));
       await tester.pumpAndSettle();
 
-      // Check Guest Mode UI
-      expect(find.text('Guest / Offline Mode'), findsOneWidget);
-      expect(find.text('Local Device Only'), findsOneWidget);
-      expect(find.text('Protect 5-Year Tax Evidence'), findsOneWidget);
-      expect(find.text('Apple ID'), findsOneWidget);
-      expect(find.text('Google'), findsOneWidget);
-
-      // Check Local File Backup Tile
-      expect(find.text('Export Backup to Files'), findsOneWidget);
-      expect(find.text('Save .json snapshot to iCloud Drive or Files'),
+      expect(find.text('Sign in').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('Continue with Apple'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Export backup file'), findsNothing);
+      await tester.tap(find.byTooltip('Back to Settings'));
+      await tester.pumpAndSettle();
+      expect(find.text('Backup & sync'), findsNothing);
+      expect(find.text('Account & sync'), findsNothing);
+      expect(find.text('Continue with Apple'), findsNothing);
+      expect(find.text('Reset Local Data'), findsNothing);
+      expect(find.text('Export backup file'), findsNothing);
+      await tester.tap(find.text('Manage data'));
+      await tester.pumpAndSettle();
+      expect(find.text('Export backup file'), findsOneWidget);
+      expect(find.text('Restore backup file'), findsOneWidget);
+      expect(find.text('Include receipt images and pending drafts'),
           findsOneWidget);
+      expect(find.text('Continue with Apple'), findsNothing);
       expect(find.text('Reset Local Data'), findsOneWidget);
+      await tester.tap(find.text('Reset Local Data'));
+      await tester.pumpAndSettle();
+      expect(find.text('Erase Everything Anyway'), findsOneWidget);
+      await tester.tap(find.text('Keep Data & Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Settings'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send feedback'));
+      await tester.tap(find.text('Send feedback'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tell us what got in the way'), findsOneWidget);
     });
   });
 }

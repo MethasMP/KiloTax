@@ -6,16 +6,26 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import '../data/models/vehicle.dart';
 import '../data/models/trip.dart';
-import '../data/dev_seed.dart';
 import '../data/models/vehicle_expense.dart';
 import '../data/models/tax_summary.dart';
 import '../data/models/audit_evidence.dart';
+import '../data/models/annual_odometer.dart';
 import '../data/models/in_flight_trip.dart';
+import '../data/models/logbook_period.dart';
+import '../data/models/user_profile.dart';
+import '../data/models/job_site.dart';
+import '../services/tracking/job_site_geofence_engine.dart';
+import '../services/notifications/notification_service.dart';
 import '../services/engine/evidence_engine.dart';
+import '../services/engine/evidence_review_service.dart';
 import '../services/engine/tax_calculator_service.dart';
 import '../services/evidence/evidence_vault_service.dart';
 import '../services/sync/sync_engine_service.dart';
 import '../services/storage/local_storage_service.dart';
+import '../services/receipts/receipt_inbox_service.dart';
+import '../services/receipts/receipt_workflow_policy.dart';
+import '../services/receipts/receipt_document_integrity.dart';
+import '../services/ocr/receipt_intelligence_service.dart';
 import '../services/storage/receipt_image_optimization_service.dart';
 import '../services/auth/supabase_auth_service.dart';
 import '../services/engine/tax_rule_service.dart';
@@ -23,6 +33,8 @@ import '../services/tracking/location_permission_service.dart';
 import '../services/tracking/autonomous_trip_detector.dart';
 import '../services/tracking/hardware_bluetooth_service.dart';
 import '../services/tracking/native_hardware_telemetry_bridge.dart';
+import '../services/tracking/odometer_gap_reconciler.dart';
+import '../services/tax/ato_tax_period_engine.dart';
 import '../core/constants/app_constants.dart';
 
 enum SyncStatus { idle, syncing, success, error }
@@ -39,6 +51,10 @@ class AppState extends ChangeNotifier {
   final List<Trip> _trips = [];
   final List<VehicleExpense> _expenses = [];
   final List<AuditEvidence> _evidenceList = [];
+  final List<AnnualVehicleOdometer> _annualOdometers = [];
+  final List<LogbookPeriod> _logbookPeriods = [];
+  final List<JobSite> _jobSites = [];
+  LogbookPeriod? _activeLogbookPeriod;
   final EvidenceVaultService _evidenceVaultService;
 
   LocalStorageService? _storageService;
@@ -53,8 +69,13 @@ class AppState extends ChangeNotifier {
   String? _activeDriveOriginAddress;
   String _activeDrivePurpose = 'Business';
   bool _isBluetoothLinked = false;
-  final AutonomousTripDetector _autonomousTripDetector =
-      AutonomousTripDetector();
+  UserProfile _userProfile = const UserProfile();
+  late final AutonomousTripDetector _autonomousTripDetector =
+      AutonomousTripDetector(
+    odometerProvider: () => currentOdometer,
+    vehicleIdProvider: () => _primaryVehicle?.id ?? 'primary_vehicle',
+    userProfileProvider: () => _userProfile,
+  );
   AppLocationPermissionStatus _locationPermissionStatus =
       AppLocationPermissionStatus.denied;
 
@@ -94,7 +115,11 @@ class AppState extends ChangeNotifier {
     EvidenceVaultService? evidenceVaultService,
   })  : _storageService = storageService,
         _authService = authService ?? SupabaseAuthService(),
-        _syncEngine = syncEngine ?? SyncEngineService(),
+        _syncEngine = syncEngine ??
+            SyncEngineService(
+              tokenProvider: () =>
+                  (authService ?? SupabaseAuthService()).currentAccessToken,
+            ),
         _taxRuleService =
             taxRuleService ?? TaxRuleService(storageService: storageService),
         _evidenceVaultService = evidenceVaultService ?? EvidenceVaultService();
@@ -102,6 +127,8 @@ class AppState extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   AuthUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  String? get currentAccessToken =>
+      _authService.currentAccessToken ?? _currentUser?.accessToken;
   bool get isGuestMode => _isGuestMode;
 
   Future<void> setGuestMode(bool isGuest) async {
@@ -122,7 +149,44 @@ class AppState extends ChangeNotifier {
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);
   List<Trip> get trips => List.unmodifiable(_trips);
   List<VehicleExpense> get expenses => List.unmodifiable(_expenses);
+  String? get receiptStorageWarning => _storageService?.expenseRecoveryWarning;
   List<AuditEvidence> get evidenceList => List.unmodifiable(_evidenceList);
+  List<AnnualVehicleOdometer> get annualOdometers =>
+      List.unmodifiable(_annualOdometers);
+  List<JobSite> get jobSites => List.unmodifiable(_jobSites);
+  List<LogbookPeriod> get logbookPeriods => List.unmodifiable(_logbookPeriods);
+  LogbookPeriod? get activeLogbookPeriod => _activeLogbookPeriod;
+
+  /// Returns recent distinct custom purposes logged across trips (up to 4)
+  List<String> get recentPurposes {
+    final list = <String>[];
+    for (final trip in _trips.reversed) {
+      final p = trip.purpose
+          .replaceAll(' (Bulky Tools Carried)', '')
+          .replaceAll('Bulky Tools Carried', '')
+          .trim();
+      if (p.isNotEmpty &&
+          p != '?' &&
+          p != 'Personal Drive' &&
+          p != 'Client / Job' &&
+          p != 'Supplier / Materials' &&
+          p != 'Work Site Inspection' &&
+          !list.contains(p)) {
+        list.add(p);
+        if (list.length >= 4) break;
+      }
+    }
+    return list;
+  }
+
+  void _upsertLogbookPeriod(LogbookPeriod period) {
+    final idx = _logbookPeriods.indexWhere((p) => p.id == period.id);
+    if (idx != -1) {
+      _logbookPeriods[idx] = period;
+    } else {
+      _logbookPeriods.add(period);
+    }
+  }
 
   // TELEMETRY GETTERS & ACTIONS
   DriveTelemetryStatus get telemetryStatus => _telemetryStatus;
@@ -145,6 +209,12 @@ class AppState extends ChangeNotifier {
     String? originAddress,
     String purpose = 'Business',
   }) {
+    if (_telemetryStatus == DriveTelemetryStatus.driving) {
+      debugPrint(
+          '[AppState] startLiveDrive called while already driving; preserving active drive');
+      return;
+    }
+
     _telemetryStatus = DriveTelemetryStatus.driving;
     _activeDriveDistanceKm = 0.0;
     _activeDriveStartedAt = DateTime.now();
@@ -155,7 +225,8 @@ class AppState extends ChangeNotifier {
 
     // Immediately persist initial in-flight snapshot
     if (startPosition != null) {
-      final tripId = 'inflight_${_activeDriveStartedAt!.millisecondsSinceEpoch}';
+      final tripId =
+          'inflight_${_activeDriveStartedAt!.millisecondsSinceEpoch}';
       final inFlight = InFlightTrip(
         id: tripId,
         vehicleId: _primaryVehicle?.id ?? 'default_vehicle',
@@ -218,6 +289,35 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Trip? finishLiveDriveForReview(
+      {double? distanceKm, String? destinationAddress}) {
+    final vehicle = _primaryVehicle;
+    final distance = distanceKm ?? _activeDriveDistanceKm;
+    if (!isDriving || vehicle == null || !distance.isFinite || distance <= 0) {
+      return null;
+    }
+    final started = _activeDriveStartedAt ?? DateTime.now();
+    final tracksOdometer = vehicle.taxMethod == TaxMethod.logbook;
+    final opening = tracksOdometer ? currentOdometer : 0.0;
+    final trip = Trip(
+      id: 'gps_${started.microsecondsSinceEpoch}',
+      vehicleId: vehicle.id,
+      date: started,
+      distanceKm: distance,
+      purpose: '',
+      classification: TripClassification.unclassified,
+      startOdometer: opening,
+      endOdometer: tracksOdometer ? opening + distance : 0.0,
+      originAddress: _activeDriveOriginAddress,
+      destinationAddress: destinationAddress,
+      taxMethod: vehicle.taxMethod,
+      evidenceSource: 'gps_recorded',
+    );
+    recordTrip(trip);
+    endLiveDrive();
+    return trip;
+  }
+
   void endLiveDrive() {
     _telemetryStatus = DriveTelemetryStatus.armed;
     _activeDriveDistanceKm = 0.0;
@@ -250,6 +350,7 @@ class AppState extends ChangeNotifier {
         originAddress: resolvedOrigin ?? orphan.originAddress ?? 'Start Site',
         destinationAddress:
             resolvedDestination ?? orphan.lastAddress ?? 'Interrupted Site',
+        classification: TripClassification.unclassified,
         evidenceSource: 'rescued_crash_continuity',
       );
       recordTrip(trip);
@@ -288,11 +389,14 @@ class AppState extends ChangeNotifier {
     try {
       final targetName = vehicle.bluetoothDeviceName!.toLowerCase().trim();
 
-      // 1. Check system audio bluetooth devices (CarPlay / Car A2DP)
       final audioDevices =
           await HardwareBluetoothService().getActiveAudioBluetoothDevices();
-      final hasAudio =
-          audioDevices.any((d) => d.name.toLowerCase().trim() == targetName);
+      if (_primaryVehicle?.id != vehicle.id ||
+          _primaryVehicle?.bluetoothDeviceName != vehicle.bluetoothDeviceName) {
+        return;
+      }
+      final hasAudio = audioDevices.any(
+          (d) => HardwareBluetoothService().isDeviceMatching(d, targetName));
       if (hasAudio) {
         if (!_isBluetoothLinked) {
           _isBluetoothLinked = true;
@@ -301,10 +405,14 @@ class AppState extends ChangeNotifier {
         return;
       }
 
-      // 2. Check connected BLE system devices
       final isSupported = await FlutterBluePlus.isSupported;
       if (isSupported) {
         final sysDevices = await FlutterBluePlus.systemDevices([]);
+        if (_primaryVehicle?.id != vehicle.id ||
+            _primaryVehicle?.bluetoothDeviceName !=
+                vehicle.bluetoothDeviceName) {
+          return;
+        }
         final hasBle = sysDevices.any((d) {
           final n = (d.platformName.isNotEmpty ? d.platformName : d.advName)
               .toLowerCase()
@@ -326,23 +434,72 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // In test / simulator / desktop environments where Bluetooth channels are not available,
-      // keep current status if configured so unit tests remain stable
-      debugPrint('[AppState] Bluetooth real check note: $e');
+      if (_primaryVehicle?.id == vehicle.id &&
+          _primaryVehicle?.bluetoothDeviceName == vehicle.bluetoothDeviceName &&
+          _isBluetoothLinked) {
+        _isBluetoothLinked = false;
+        notifyListeners();
+      }
+      debugPrint('[AppState] Could not verify Bluetooth connection: $e');
     }
   }
 
   /// Ingests a new continuous GPS fix into the AutonomousTripDetector
   void ingestAutonomousFix(Position fix) async {
-    final newState = await _autonomousTripDetector.processFix(fix);
+    final newState = await _autonomousTripDetector.processFix(
+      fix,
+      isBluetoothCarConnected: _isBluetoothLinked,
+    );
     if (newState == AutonomousDetectorState.activeDriving && !isDriving) {
       startLiveDrive(startPosition: fix);
     } else if (newState == AutonomousDetectorState.finalized) {
       final trip = _autonomousTripDetector.finalizedTrip;
       if (trip != null) {
-        recordTrip(trip);
+        handleFinalizedAutonomousTrip(trip);
       }
       endLiveDrive();
+    }
+  }
+
+  /// Handles finalized autonomous trip with 5-minute Trip Stitching & Passenger Verification
+  void handleFinalizedAutonomousTrip(Trip trip) {
+    // Task 2: Trip Stitching Buffer (Anti-Fragmentation for 2-Minute Quick Stops)
+    // If the previous trip finalized within the last 5 minutes (300s) and is geographically adjacent,
+    // stitch them together instead of producing fragmented records.
+    Trip? stitchedTrip;
+    if (_trips.isNotEmpty) {
+      final previousTrip = _trips.first;
+      final timeSinceLastTrip = trip.date.difference(previousTrip.date);
+      if (timeSinceLastTrip.inMinutes.abs() <= 5 &&
+          previousTrip.vehicleId == (_primaryVehicle?.id ?? trip.vehicleId)) {
+        final combinedDistance = previousTrip.distanceKm + trip.distanceKm;
+        stitchedTrip = previousTrip.copyWith(
+          distanceKm: combinedDistance,
+          endOdometer: previousTrip.startOdometer + combinedDistance,
+          destinationAddress: trip.destinationAddress ?? previousTrip.destinationAddress,
+          detectedPoi: trip.detectedPoi ?? previousTrip.detectedPoi,
+          isPassengerUnverified: !_isBluetoothLinked,
+        );
+        // Replace previous fragmented trip with the stitched continuous trip
+        _trips.removeAt(0);
+        _trips.insert(0, stitchedTrip);
+        _storageService?.saveTrips(_trips);
+        notifyListeners();
+      }
+    }
+
+    if (stitchedTrip == null) {
+      final effectiveTrip = (trip.startOdometer == 0.0 && currentOdometer > 0.0
+          ? trip.copyWith(
+              startOdometer: currentOdometer,
+              endOdometer: currentOdometer + trip.distanceKm,
+              vehicleId: _primaryVehicle?.id ?? trip.vehicleId,
+              isPassengerUnverified: !_isBluetoothLinked,
+            )
+          : trip.copyWith(
+              isPassengerUnverified: !_isBluetoothLinked,
+            ));
+      recordTrip(effectiveTrip);
     }
   }
 
@@ -358,11 +515,12 @@ class AppState extends ChangeNotifier {
     }
     _storageService?.saveVehicles(_vehicles);
     _storageService?.savePrimaryVehicleId(_primaryVehicle!.id);
-    _isBluetoothLinked = deviceName != null && deviceName.isNotEmpty;
+    _isBluetoothLinked = false;
     checkRealBluetoothConnection();
 
     // Push down to iOS Native CoreBluetooth State Restoration
-    unawaited(NativeHardwareTelemetryBridge().syncTargetBluetoothName(deviceName));
+    unawaited(
+        NativeHardwareTelemetryBridge().syncTargetBluetoothName(deviceName));
 
     notifyListeners();
   }
@@ -381,6 +539,7 @@ class AppState extends ChangeNotifier {
       _storageService = storageService;
     }
     _storageService ??= await LocalStorageService.init();
+    await _storageService!.recoverRestoreIntent();
 
     if (_storageService != null) {
       _isGuestMode = _storageService!.isGuestMode();
@@ -403,18 +562,27 @@ class AppState extends ChangeNotifier {
 
       _expenses.clear();
       _expenses.addAll(_storageService!.loadExpenses());
+      _rebuildExpenseLinks();
 
       _evidenceList.clear();
       _evidenceList.addAll(_storageService!.loadEvidence());
 
-      // DEV ONLY — remove `DevSeed.inject(this)` + delete lib/data/dev_seed.dart to clean up
-      DevSeed.inject(this);
+      _annualOdometers.clear();
+      _annualOdometers.addAll(_storageService!.loadAnnualOdometers());
+
+      _jobSites.clear();
+      _jobSites.addAll(_storageService!.loadJobSites());
+
+      _userProfile = _storageService!.loadUserProfile();
     }
 
     // Restore or listen to Supabase Auth state
     _currentUser = _authService.getCurrentUser();
     await _authSubscription?.cancel();
-    _authSubscription = _authService.onAuthStateChange?.listen((data) {
+    _authSubscription = _authService.onAuthStateChange?.listen((data) async {
+      while (_backupRestoreGate != null) {
+        await _backupRestoreGate!.future;
+      }
       final session = data.session;
       if (session != null) {
         final metadata = session.user.userMetadata ?? {};
@@ -440,17 +608,14 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     });
 
-    // 4. Initialize ATO Tax Compliance Rule (Local Cache first)
     await _taxRuleService.init();
 
-    // 5. Fetch latest official ATO compliance updates silently in background
     _taxRuleService.syncLatestOfficialRates().then((updated) {
       if (updated) {
         notifyListeners();
       }
     });
 
-    // 6. Check location permission status silently
     LocationPermissionService().checkStatus().then((status) {
       _locationPermissionStatus = status;
       notifyListeners();
@@ -459,16 +624,13 @@ class AppState extends ChangeNotifier {
           '[AppState] Warning checking location permission status: $e\n$stack');
     });
 
-    // 7. Update initial Bluetooth link state based on primary vehicle
     if (_primaryVehicle != null) {
-      _isBluetoothLinked = _primaryVehicle!.bluetoothDeviceName != null &&
-          _primaryVehicle!.bluetoothDeviceName!.isNotEmpty;
+      _isBluetoothLinked = false;
       checkRealBluetoothConnection();
     } else {
       _isBluetoothLinked = false;
     }
 
-    // 8. In-Flight Crash / Force-Kill Recovery Check
     if (_storageService != null) {
       final savedInFlight = _storageService!.loadInFlightTrip();
       if (savedInFlight != null && savedInFlight.distanceKm > 0.05) {
@@ -478,26 +640,33 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // 9. Sync & Ingest Autonomously Logged Native Trips (Logged while Flutter was completely dead)
     if (_primaryVehicle != null) {
-      unawaited(NativeHardwareTelemetryBridge().syncTargetBluetoothName(_primaryVehicle!.bluetoothDeviceName));
-      NativeHardwareTelemetryBridge().fetchCompletedNativeTrips().then((nativeTrips) {
+      unawaited(NativeHardwareTelemetryBridge()
+          .syncTargetBluetoothName(_primaryVehicle!.bluetoothDeviceName));
+      NativeHardwareTelemetryBridge()
+          .fetchCompletedNativeTrips()
+          .then((nativeTrips) {
         for (final item in nativeTrips) {
           final dist = (item['distanceKm'] as num?)?.toDouble() ?? 0.0;
           if (dist > 0.1) {
-            final startMs = item['startedAt'] as num? ?? DateTime.now().millisecondsSinceEpoch;
+            final startMs = item['startedAt'] as num? ??
+                DateTime.now().millisecondsSinceEpoch;
             final trip = Trip(
-              id: item['id'] as String? ?? 'native_${DateTime.now().millisecondsSinceEpoch}',
+              id: item['id'] as String? ??
+                  'native_${DateTime.now().millisecondsSinceEpoch}',
               vehicleId: _primaryVehicle!.id,
               distanceKm: dist,
               date: DateTime.fromMillisecondsSinceEpoch(startMs.toInt()),
-              purpose: 'Business',
+              purpose: '',
+              classification: TripClassification.unclassified,
+              taxMethod: _primaryVehicle!.taxMethod,
               startOdometer: currentOdometer,
               endOdometer: currentOdometer + dist,
               evidenceSource: 'native_bluetooth_auto',
             );
             recordTrip(trip);
-            debugPrint('[AppState] Auto-ingested native trip: $dist km from iOS background daemon.');
+            debugPrint(
+                '[AppState] Auto-ingested native trip: $dist km from iOS background daemon.');
           }
         }
       }).catchError((e) {
@@ -517,8 +686,7 @@ class AppState extends ChangeNotifier {
     if (vehicle.isPrimary || _primaryVehicle == null) {
       _primaryVehicle = vehicle;
       _storageService?.savePrimaryVehicleId(vehicle.id);
-      _isBluetoothLinked = vehicle.bluetoothDeviceName != null &&
-          vehicle.bluetoothDeviceName!.isNotEmpty;
+      _isBluetoothLinked = false;
       checkRealBluetoothConnection();
     }
     _storageService?.saveVehicles(_vehicles);
@@ -530,8 +698,7 @@ class AppState extends ChangeNotifier {
         orElse: () => _primaryVehicle!);
     _primaryVehicle = found;
     _storageService?.savePrimaryVehicleId(found.id);
-    _isBluetoothLinked = found.bluetoothDeviceName != null &&
-        found.bluetoothDeviceName!.isNotEmpty;
+    _isBluetoothLinked = false;
     checkRealBluetoothConnection();
     notifyListeners();
   }
@@ -545,21 +712,44 @@ class AppState extends ChangeNotifier {
 
   /// Get Current Odometer for a specific vehicle by ID
   double getVehicleCurrentOdometer(String vehicleId) {
-    final vehicle = _vehicles.firstWhere((v) => v.id == vehicleId,
-        orElse: () =>
-            _primaryVehicle ??
-            Vehicle(
-              id: 'fallback',
-              make: '',
-              model: '',
-              regoPlate: '',
-              initialOdometer: 0.0,
-            ));
-    final base = vehicle.initialOdometer;
-    final vehicleTrips =
-        _trips.where((t) => t.vehicleId == vehicle.id).toList();
-    if (vehicleTrips.isEmpty) return base;
-    return vehicleTrips.last.endOdometer;
+    final odo = getLastKnownOdometer(vehicleId);
+    if (odo > 0.0) return odo;
+
+    final vehicle = _vehicles.firstWhere(
+      (v) => v.id == vehicleId,
+      orElse: () =>
+          _primaryVehicle ??
+          Vehicle(
+            id: vehicleId,
+            make: '',
+            model: '',
+            regoPlate: '',
+            initialOdometer: 0.0,
+          ),
+    );
+    return vehicle.initialOdometer;
+  }
+
+  /// Get the last recorded odometer reading from trips for a vehicle (0.0 if no trips exist)
+  double getLastKnownOdometer(String vehicleId, {String? excludeTripId}) {
+    final vehicleTrips = _trips
+        .where((t) =>
+            t.vehicleId == vehicleId &&
+            !t.isDeleted &&
+            (excludeTripId == null || t.id != excludeTripId))
+        .toList();
+
+    if (vehicleTrips.isNotEmpty) {
+      final tripsWithOdo =
+          vehicleTrips.where((t) => t.endOdometer > 0.0).toList();
+      if (tripsWithOdo.isNotEmpty) {
+        return tripsWithOdo
+            .map((t) => t.endOdometer)
+            .reduce((a, b) => a > b ? a : b);
+      }
+    }
+
+    return 0.0;
   }
 
   /// Odometer Integrity: Maximum allowed Starting Odometer
@@ -619,43 +809,52 @@ class AppState extends ChangeNotifier {
     return (true, null);
   }
 
-  /// Odometer Chain Gapless Verification:
-  /// Evaluates whether all recorded trips for primary vehicle connect monotonically without gaps (> 0.1 km)
-  bool get isOdometerChainGapless {
-    if (_primaryVehicle == null) return true;
-    final vehicleTrips =
-        _trips.where((t) => t.vehicleId == _primaryVehicle!.id).toList();
-    if (vehicleTrips.length <= 1) return true;
-    for (int i = 1; i < vehicleTrips.length; i++) {
-      final prevEnd = vehicleTrips[i - 1].endOdometer;
-      final curStart = vehicleTrips[i].startOdometer;
-      if ((curStart - prevEnd).abs() > 0.1) {
-        return false;
-      }
-    }
-    return true;
+  List<OdometerGap> odometerGapsForVehicle(String vehicleId) {
+    final vehicles = _vehicles.where((v) => v.id == vehicleId);
+    if (vehicles.isEmpty) return const [];
+    return OdometerGapReconciler.findGaps(
+        vehicleId: vehicleId,
+        baseline: vehicles.first.initialOdometer,
+        trips: _trips);
   }
 
-  /// Detects unrecorded odometer gap between current dashboard odometer and target start odometer
+  List<OdometerGap> get pendingOdometerGaps => _primaryVehicle == null
+      ? const []
+      : odometerGapsForVehicle(_primaryVehicle!.id);
+
+  bool get isOdometerChainGapless => pendingOdometerGaps.isEmpty;
+
   double detectOdometerGap(double nextStartOdometer) {
-    final current = currentOdometer;
-    final diff = nextStartOdometer - current;
-    return diff > 0.01 ? diff : 0.0;
+    final diff = nextStartOdometer - currentOdometer;
+    return diff > 0.1 ? diff : 0.0;
   }
+
+  OdometerGap? findFirstOdometerGap() =>
+      pendingOdometerGaps.isEmpty ? null : pendingOdometerGaps.first;
+
+  /// Used immediately before saving a missing trip to reject stale/overlapping input.
+  bool isUnrecordedOdometerSpan(
+          {required String vehicleId,
+          required double startOdo,
+          required double endOdo,
+          String? legacyTripId}) =>
+      odometerGapsForVehicle(vehicleId).any((gap) =>
+          gap.legacyTripId == legacyTripId && gap.contains(startOdo, endOdo));
 
   /// Bridges an unrecorded odometer gap as either Personal or Work travel to maintain gapless compliance
   void fillOdometerGap({
     required double gapEndOdometer,
     required bool isBusiness,
+    double? gapStartOdometer,
     String? purpose,
     String? origin,
     String? destination,
   }) {
-    final startOdo = currentOdometer;
+    final startOdo = gapStartOdometer ?? currentOdometer;
     if (gapEndOdometer <= startOdo) return;
     final distance = gapEndOdometer - startOdo;
     final trip = Trip(
-      id: 'gap_bridge_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'gap_bridge_${DateTime.now().microsecondsSinceEpoch}',
       vehicleId: _primaryVehicle?.id ?? 'default_vehicle',
       distanceKm: distance,
       date: DateTime.now(),
@@ -663,6 +862,8 @@ class AppState extends ChangeNotifier {
           purpose ?? (isBusiness ? 'Work drive (Bridging)' : 'Personal travel'),
       startOdometer: startOdo,
       endOdometer: gapEndOdometer,
+      taxMethod: _primaryVehicle?.taxMethod ?? TaxMethod.logbook,
+      evidenceSource: 'manual_gap_resolution',
       classification: isBusiness
           ? TripClassification.business
           : TripClassification.personal,
@@ -673,26 +874,272 @@ class AppState extends ChangeNotifier {
     recordTrip(trip);
   }
 
+  UserProfile get userProfile => _userProfile;
+
+  /// Updates user profile (including home base geofence coordinates) and persists to local storage.
+  Future<void> updateUserProfile(UserProfile profile) async {
+    _userProfile = profile;
+    await _storageService?.saveUserProfile(_userProfile);
+    notifyListeners();
+  }
+
+  bool _savingWorkflow = false;
+  Completer<void>? _backupRestoreGate;
+  bool _accountTransitionInProgress = false;
+
+  /// Save the reviewed evidence before notifying UI or scheduling cloud sync.
+  Future<void> reviewWorkflowTrip({
+    required String tripId,
+    required TripClassification classification,
+    required String purpose,
+    required double businessKm,
+    String? jobId,
+    String allocationReason = '',
+  }) async {
+    if (_savingWorkflow) {
+      throw StateError('Another record is being saved. Try again.');
+    }
+    final index = _trips.indexWhere((t) => t.id == tripId && !t.isDeleted);
+    if (index < 0) throw StateError('This trip is no longer available.');
+    final trip = _trips[index];
+    if (!businessKm.isFinite ||
+        businessKm < 0 ||
+        businessKm > trip.distanceKm) {
+      throw ArgumentError(
+          'Business distance must be within the recorded trip distance.');
+    }
+    if (classification == TripClassification.business &&
+        (!EvidenceReviewService.hasMeaningfulBusinessPurpose(purpose) ||
+            businessKm <= 0)) {
+      throw ArgumentError('Add the actual business reason and distance.');
+    }
+    if (classification == TripClassification.business &&
+        businessKm < trip.distanceKm &&
+        allocationReason.trim().isEmpty) {
+      throw ArgumentError('Explain how you separated the private distance.');
+    }
+    final jobs = _jobSites.where((j) => j.id == jobId);
+    if (jobId != null && jobs.isEmpty) {
+      throw ArgumentError('Choose an available job.');
+    }
+    final job = jobs.isEmpty ? null : jobs.first;
+    final decision = <String, dynamic>{
+      'classification': classification.name,
+      'purpose': classification == TripClassification.personal
+          ? 'Personal journey'
+          : purpose.trim(),
+      'businessKm':
+          classification == TripClassification.business ? businessKm : 0.0,
+      'jobId': classification == TripClassification.personal ? null : jobId,
+      'allocationReason': allocationReason.trim(),
+      'confirmedAt': DateTime.now().toUtc().toIso8601String(),
+      'actor': 'user',
+      'version': 1,
+    };
+    final updated = trip.copyWith(
+      classification: classification,
+      purpose: decision['purpose'] as String,
+      jobId: job?.id,
+      jobReference: job == null ? null : '${job.name} — ${job.clientName}',
+      clearJob: job == null || classification == TripClassification.personal,
+      review: {
+        ...decision,
+        'history': [...(trip.review['history'] as List? ?? []), decision],
+      },
+    );
+    final next = [..._trips]..[index] = updated;
+    _savingWorkflow = true;
+    try {
+      if (_storageService != null && !await _storageService!.saveTrips(next)) {
+        throw StateError('Could not save this trip. Please try again.');
+      }
+      _trips[index] = updated;
+      notifyListeners();
+      _autoSyncInBackground();
+    } finally {
+      _savingWorkflow = false;
+    }
+  }
+
+  Future<void> assignWorkflowExpense(
+      {required String expenseId, String? tripId, String? jobId}) async {
+    if (_savingWorkflow) {
+      throw StateError('Another record is being saved. Try again.');
+    }
+    final index =
+        _expenses.indexWhere((e) => e.id == expenseId && !e.isDeleted);
+    if (index < 0) throw StateError('This receipt is no longer available.');
+    final expense = _expenses[index];
+    final matching = _trips.where((t) => t.id == tripId && !t.isDeleted);
+    final trip = matching.isEmpty ? null : matching.first;
+    if (tripId != null &&
+        (trip == null || trip.vehicleId != expense.vehicleId)) {
+      throw ArgumentError('Choose a trip for the same vehicle.');
+    }
+    if (jobId != null && !_jobSites.any((j) => j.id == jobId)) {
+      throw ArgumentError('Choose an available job.');
+    }
+    final resolvedJob = jobId ?? trip?.jobId;
+    final next = [..._expenses]..[index] = expense.copyWith(
+        linkedTripId: tripId,
+        clearLinkedTripId: tripId == null,
+        jobId: resolvedJob,
+        clearJob: resolvedJob == null,
+      );
+    _savingWorkflow = true;
+    try {
+      if (_storageService != null &&
+          !await _storageService!.saveExpenses(next)) {
+        throw StateError('Could not save this receipt link. Please try again.');
+      }
+      _expenses[index] = next[index];
+      _rebuildExpenseLinks();
+      await _storageService?.saveTrips(_trips);
+      notifyListeners();
+      _autoSyncInBackground();
+    } finally {
+      _savingWorkflow = false;
+    }
+  }
+
+  // Expenses own the link, so interrupted saves can safely reconstruct the trip index.
+  void _rebuildExpenseLinks() {
+    for (var i = 0; i < _trips.length; i++) {
+      final trip = _trips[i];
+      _trips[i] = trip.copyWith(
+          linkedExpenseIds: _expenses
+              .where((e) =>
+                  !e.isDeleted &&
+                  e.vehicleId == trip.vehicleId &&
+                  e.linkedTripId == trip.id)
+              .map((e) => e.id)
+              .toList());
+    }
+  }
+
+  // --- JOB SITES / POI ENGINE ---
+  Future<void> addJobSite(JobSite site) async {
+    final next = [..._jobSites];
+    final idx = next.indexWhere((s) => s.id == site.id);
+    if (idx != -1) {
+      next[idx] = site;
+    } else {
+      next.add(site);
+    }
+    if (_storageService != null && !await _storageService!.saveJobSites(next)) {
+      throw StateError('Could not save this job.');
+    }
+    _jobSites
+      ..clear()
+      ..addAll(next);
+    notifyListeners();
+    _autoSyncInBackground();
+  }
+
+  Future<void> removeJobSite(String siteId) async {
+    final index = _jobSites.indexWhere((s) => s.id == siteId);
+    if (index < 0) return;
+    await addJobSite(
+        _jobSites[index].copyWith(isActive: false, updatedAt: DateTime.now()));
+  }
+
+  /// Evaluates whether coordinates fall within a known JobSite geofence (150m default).
+  JobSiteMatchResult? matchJobSiteEndpoints({
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+  }) {
+    return JobSiteGeofenceEngine.matchTripEndpoints(
+      jobSites: _jobSites,
+      startLatitude: startLatitude,
+      startLongitude: startLongitude,
+      endLatitude: endLatitude,
+      endLongitude: endLongitude,
+    );
+  }
+
+  /// Sets home base coordinates and optional address for geofenced commute detection.
+  Future<void> setHomeBase({
+    required double latitude,
+    required double longitude,
+    String? address,
+    double radiusMeters = 200.0,
+  }) async {
+    final updated = _userProfile.copyWith(
+      homeLatitude: latitude,
+      homeLongitude: longitude,
+      homeAddress: address ?? _userProfile.homeAddress,
+      homeRadiusMeters: radiusMeters,
+    );
+    await updateUserProfile(updated);
+  }
+
+  /// Checks if given coordinates fall within user's home base geofence (200m default).
+  bool isPositionHome(double latitude, double longitude) {
+    if (!_userProfile.hasHomeCoordinates) return false;
+    final dist = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      _userProfile.homeLatitude!,
+      _userProfile.homeLongitude!,
+    );
+    return dist <= _userProfile.homeRadiusMeters;
+  }
+
   /// ATO Home-to-Work Compliance Validator (TR 2021/1):
-  /// Warns when travel starts at Home and ends at Work Site without transporting bulky trade tools
+  /// ATO Home-to-Work Compliance Validator (TR 2021/1 & TR 95/34):
+  /// Checks whether travel starting at home and ending at a work site qualifies
+  /// as a deductible business trip. Under ATO rules, commuting from home is deductible
+  /// only when transporting heavy trade tools and the site has no secure lock-up.
   (bool isCompliant, String? warning) validateHomeToWorkCompliance({
     required String origin,
     required String destination,
     required String purpose,
     required bool isBulkyToolsCarried,
+    bool hasNoSecureStorage = true,
+    double? originLat,
+    double? originLon,
+    double? destinationLat,
+    double? destinationLon,
   }) {
-    final origLower = origin.trim().toLowerCase();
+    final bool isHomeOrigin;
+    if (originLat != null &&
+        originLon != null &&
+        _userProfile.hasHomeCoordinates) {
+      final distance = Geolocator.distanceBetween(
+        originLat,
+        originLon,
+        _userProfile.homeLatitude!,
+        _userProfile.homeLongitude!,
+      );
+      isHomeOrigin = distance <= _userProfile.homeRadiusMeters;
+    } else {
+      final origLower = origin.trim().toLowerCase();
+      isHomeOrigin =
+          origLower.contains('home') || origLower.contains('residence');
+    }
+
     final destLower = destination.trim().toLowerCase();
-    final isHomeOrigin =
-        origLower.contains('home') || origLower.contains('residence');
     final isWorkDest = destLower.contains('work') ||
         destLower.contains('job') ||
         destLower.contains('site') ||
         destLower.contains('client') ||
         destLower.contains('depot');
 
-    if (isHomeOrigin && isWorkDest && !isBulkyToolsCarried) {
-      return (false, 'Home trips require heavy or bulky equipment.');
+    if (isHomeOrigin && isWorkDest) {
+      if (!isBulkyToolsCarried) {
+        return (
+          false,
+          'Home trips count as private travel unless carrying heavy trade tools (>20kg).'
+        );
+      }
+      if (!hasNoSecureStorage) {
+        return (
+          false,
+          'Home trips cannot be claimed if the job site has secure tool lock-up.'
+        );
+      }
     }
     return (true, null);
   }
@@ -790,6 +1237,116 @@ class AppState extends ChangeNotifier {
     _autoSyncInBackground();
   }
 
+  /// Records or updates the statutory annual odometer reading (ITAA 1997 s 28-125)
+  void recordAnnualOdometer(AnnualVehicleOdometer record) {
+    final idx = _annualOdometers.indexWhere(
+      (a) =>
+          a.vehicleId == record.vehicleId &&
+          a.financialYear == record.financialYear,
+    );
+    if (idx != -1) {
+      _annualOdometers[idx] = record;
+    } else {
+      _annualOdometers.add(record);
+    }
+    _storageService?.saveAnnualOdometers(_annualOdometers);
+    notifyListeners();
+    _autoSyncInBackground();
+  }
+
+  /// Finds the annual odometer record for a given vehicle and financial year.
+  AnnualVehicleOdometer? getAnnualOdometer(
+      String vehicleId, String financialYear) {
+    return _annualOdometers.cast<AnnualVehicleOdometer?>().firstWhere(
+          (a) => a?.vehicleId == vehicleId && a?.financialYear == financialYear,
+          orElse: () => null,
+        );
+  }
+
+  /// ATO 5-Year Logbook Exemption Guard (ITAA 1997 s 28-125):
+  /// Checks if the vehicle requires a June 30 closing odometer reading for the current FY.
+  /// Applicable when:
+  /// 1. Vehicle tax method is logbook and vehicle has established logbook.
+  /// 2. Vehicle is within Years 1-5 of the logbook window.
+  /// 3. Current date is near EOFY (June or July) or closing odometer has not yet been recorded.
+  bool isAnnualOdometerRequired({DateTime? date}) {
+    final vehicle = _primaryVehicle;
+    if (vehicle == null || vehicle.taxMethod != TaxMethod.logbook) {
+      return false;
+    }
+    final now = date ?? DateTime.now();
+    // Near EOFY check: month is June (6) or July (7)
+    final isNearEofy = now.month == 6 || now.month == 7;
+
+    final periodEngine = const AtoTaxPeriodEngine();
+    // In June, closing is for current FY ending June 30
+    // In July, closing is for the FY that just closed June 30
+    final targetFy = now.month == 7
+        ? AtoFinancialYear(now.year - 1)
+        : periodEngine.forDate(now);
+    final fyLabel = targetFy.shortLabel;
+
+    final record = getAnnualOdometer(vehicle.id, fyLabel);
+    final isMissingClosing = record == null || record.closingOdometer == null;
+
+    // Check if vehicle has an active logbook started
+    if (vehicle.logbookStartDate == null) {
+      return false;
+    }
+
+    // Vehicle in years 1-5 of logbook
+    final yearsSinceStart =
+        now.difference(vehicle.logbookStartDate!).inDays / 365.25;
+    if (yearsSinceStart > 5.0) {
+      return false; // Logbook expired, needs new 12-week logbook
+    }
+
+    return isNearEofy && isMissingClosing;
+  }
+
+  /// Saves trade gear / bulky tools profile to the primary vehicle and persists to evidence vault & local storage
+  Future<void> saveTradeGearProfile({
+    required String description,
+    required String photoPath,
+    required String imageHash,
+  }) async {
+    if (_primaryVehicle == null) return;
+    final now = DateTime.now();
+    final updated = _primaryVehicle!.copyWith(
+      tradeToolsDescription: description,
+      tradeToolsPhotoPath: photoPath,
+      tradeToolsImageHash: imageHash,
+      tradeToolsRegisteredAt: now,
+    );
+    _primaryVehicle = updated;
+    final idx = _vehicles.indexWhere((v) => v.id == updated.id);
+    if (idx != -1) {
+      _vehicles[idx] = updated;
+    }
+    _storageService?.saveVehicles(_vehicles);
+
+    // Record into Unified Evidence Vault
+    final evidence = AuditEvidence(
+      id: 'ev_${now.millisecondsSinceEpoch}_trade_gear',
+      vehicleId: updated.id,
+      evidenceType: EvidenceType.heavyToolsSetup,
+      storagePath: photoPath,
+      imageSha256: imageHash,
+      capturedAt: now,
+      captureSource: 'camera_live',
+      watermarkMetadata: {
+        'regoPlate': updated.regoPlate,
+        'description': description,
+        'timestamp': now.toIso8601String(),
+      },
+    );
+    _evidenceList.add(evidence);
+    _storageService?.saveEvidence(_evidenceList);
+
+    notifyListeners();
+    _autoSyncInBackground();
+  }
+
   /// Set Day 1 or Day 84 Odometer Cluster Photo evidence for 12-week statutory logbook
   void setLogbookOdometerPhotos({
     String? startPhotoPath,
@@ -845,6 +1402,25 @@ class AppState extends ChangeNotifier {
       return;
     }
 
+    // Auto-enrich trip with known JobSite POI geofence if available
+    final effectiveTrip = _jobSites.isNotEmpty
+        ? JobSiteGeofenceEngine.enrichTripWithJobSite(
+            trip: trip,
+            jobSites: _jobSites,
+            startLatitude: _activeDriveStartPosition?.latitude,
+            endLatitude: _activeDriveLastPosition?.latitude,
+            startLongitude: _activeDriveStartPosition?.longitude,
+            endLongitude: _activeDriveLastPosition?.longitude,
+          )
+        : trip;
+
+    // Check if trip already exists by ID (Idempotent write)
+    final existingIdx = _trips.indexWhere((t) => t.id == effectiveTrip.id);
+    final isNewTrip = existingIdx == -1;
+
+    // Missing spans are derived from observed readings. Never manufacture a trip
+    // or classify unobserved travel while ingesting another record.
+
     // Inter-Trip Odometer Monotonicity Invariant (ATO Subdivision 28-F):
     // For Logbook method vehicles, trips must advance monotonically (trip.startOdometer >= previousTrip.endOdometer)
     final vehicle = _vehicles.firstWhere(
@@ -862,11 +1438,18 @@ class AppState extends ChangeNotifier {
 
     if (vehicle.taxMethod == TaxMethod.logbook) {
       final existingVehicleTrips = _trips
-          .where((t) => t.vehicleId == trip.vehicleId && t.id != trip.id)
+          .where((t) =>
+              t.vehicleId == trip.vehicleId &&
+              t.id != trip.id &&
+              !t.isDeleted &&
+              t.endOdometer > 0)
           .toList();
       if (existingVehicleTrips.isNotEmpty) {
-        final previousTrip = existingVehicleTrips.last;
-        if (trip.startOdometer < previousTrip.endOdometer) {
+        final overlaps = existingVehicleTrips.where((previous) =>
+            trip.startOdometer < previous.endOdometer - 0.1 &&
+            trip.endOdometer > previous.startOdometer + 0.1);
+        if (overlaps.isNotEmpty) {
+          final previousTrip = overlaps.first;
           _hasOdometerMonotonicityViolation = true;
           final warningMsg =
               '[ATO Subdivision 28-F Monotonicity Warning] Odometer non-monotonicity detected for vehicle ${vehicle.regoPlate} (${vehicle.id}): '
@@ -879,12 +1462,51 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Check if trip already exists by ID (Idempotent write)
-    final existingIdx = _trips.indexWhere((t) => t.id == trip.id);
     if (existingIdx != -1) {
-      _trips[existingIdx] = trip;
+      _trips[existingIdx] = effectiveTrip;
     } else {
-      _trips.add(trip);
+      _trips.add(effectiveTrip);
+    }
+
+    // Automated First Odometer Snapshot Latch:
+    // When a vehicle is in active logbook mode and this is its first trip in the period,
+    // automatically latch starting odometer to trip.startOdometer without manual guesswork.
+    if (isNewTrip &&
+        vehicle.taxMethod == TaxMethod.logbook &&
+        vehicle.logbookStartDate != null) {
+      final periodStart = DateTime(
+        vehicle.logbookStartDate!.year,
+        vehicle.logbookStartDate!.month,
+        vehicle.logbookStartDate!.day,
+      );
+      final logbookTripsPrior = _trips
+          .where((t) =>
+              t.vehicleId == vehicle.id &&
+              !t.date.isBefore(periodStart) &&
+              t.id != trip.id)
+          .toList();
+
+      if (logbookTripsPrior.isEmpty &&
+          vehicle.initialOdometer <= 0 &&
+          trip.startOdometer > 0) {
+        final updatedVehicle =
+            vehicle.copyWith(initialOdometer: trip.startOdometer);
+        if (_primaryVehicle?.id == vehicle.id) {
+          _primaryVehicle = updatedVehicle;
+        }
+        final vIdx = _vehicles.indexWhere((v) => v.id == vehicle.id);
+        if (vIdx != -1) {
+          _vehicles[vIdx] = updatedVehicle;
+        }
+        _storageService?.saveVehicles(_vehicles);
+
+        if (_activeLogbookPeriod != null &&
+            _activeLogbookPeriod!.vehicleId == vehicle.id) {
+          _activeLogbookPeriod =
+              _activeLogbookPeriod!.copyWith(startOdometer: trip.startOdometer);
+          _upsertLogbookPeriod(_activeLogbookPeriod!);
+        }
+      }
     }
 
     _storageService?.saveTrips(_trips);
@@ -904,13 +1526,56 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// EVIDENCE GRAPH CASCADE: Delete a trip and unlink all associated expenses.
+  /// Sets `clearLinkedTripId: true` on any expense pointing to this trip.
+  void deleteTrip(String tripId) {
+    // 1. Unlink all expenses linked to this trip
+    bool expensesChanged = false;
+    for (int i = 0; i < _expenses.length; i++) {
+      if (_expenses[i].linkedTripId == tripId) {
+        _expenses[i] = _expenses[i].copyWith(clearLinkedTripId: true);
+        expensesChanged = true;
+      }
+    }
+    if (expensesChanged) {
+      _storageService?.saveExpenses(_expenses);
+    }
+
+    // 2. Remove or mark trip as deleted
+    final tripIdx = _trips.indexWhere((t) => t.id == tripId);
+    if (tripIdx != -1) {
+      _trips.removeAt(tripIdx);
+      _storageService?.saveTrips(_trips);
+    }
+
+    notifyListeners();
+    _autoSyncInBackground();
+  }
+
   /// Spec #4 & #5: Activate 12-Week Logbook Period for Primary Vehicle
+  /// Automatically latches starting odometer to first trip's startOdometer if trips exist.
   void startLogbookPeriod(
-      {required DateTime startDate, required double startingOdometer}) {
+      {required DateTime startDate, double? startingOdometer}) {
     if (_primaryVehicle == null) return;
     final old = _primaryVehicle!;
+
+    // Find any existing trips for this vehicle on or after the startDate to auto-latch start odometer
+    final relevantTrips = _trips
+        .where((t) =>
+            t.vehicleId == old.id &&
+            !t.date.isBefore(
+                DateTime(startDate.year, startDate.month, startDate.day)))
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    // Automated First Odometer Snapshot Latch
+    final latchedStartOdo =
+        (relevantTrips.isNotEmpty && relevantTrips.first.startOdometer > 0)
+            ? relevantTrips.first.startOdometer
+            : (startingOdometer ?? old.initialOdometer);
+
     _primaryVehicle = old.copyWith(
-      initialOdometer: startingOdometer,
+      initialOdometer: latchedStartOdo,
       taxMethod: TaxMethod.logbook,
       logbookStartDate: startDate,
     );
@@ -921,11 +1586,122 @@ class AppState extends ChangeNotifier {
     _storageService?.saveVehicles(_vehicles);
     _storageService?.savePrimaryVehicleId(_primaryVehicle!.id);
 
+    final periodEngine = const AtoTaxPeriodEngine();
+    final establishedFy = periodEngine.forDate(startDate).shortLabel;
+    final validUntilFy = periodEngine
+        .forDate(startDate.add(const Duration(days: 365 * 5)))
+        .shortLabel;
+
+    _activeLogbookPeriod = LogbookPeriod(
+      id: 'logbook_${old.id}_${startDate.millisecondsSinceEpoch}',
+      vehicleId: old.id,
+      startDate: startDate,
+      endDate: startDate.add(const Duration(days: 84)),
+      startOdometer: latchedStartOdo,
+      status: LogbookStatus.inProgress,
+      establishedFinancialYear: establishedFy,
+      validUntilFinancialYear: validUntilFy,
+    );
+    _upsertLogbookPeriod(_activeLogbookPeriod!);
+
     // Unvault fuel/running expenses that were safely held during CPK mode
     unvaultCpkFuelExpenses();
 
     notifyListeners();
     _autoSyncInBackground();
+  }
+
+  /// Completes the 12-week logbook period under ITAA 1997 s 28-G:
+  /// - Automatically latches start odometer to first trip's startOdometer
+  /// - Automatically latches closing odometer to final trip's endOdometer
+  /// - Calculates certified business percentage and locks in LogbookStatus.completedPendingReview
+  /// - Latches closing odometer into AnnualVehicleOdometer for the financial year
+  LogbookPeriod? completeLogbookPeriod({
+    String? vehicleId,
+    DateTime? completionDate,
+  }) {
+    final vId = vehicleId ?? _primaryVehicle?.id;
+    if (vId == null) return null;
+    final vehicle = _vehicles.firstWhere(
+      (v) => v.id == vId,
+      orElse: () => _primaryVehicle!,
+    );
+
+    final start = vehicle.logbookStartDate ??
+        DateTime.now().subtract(const Duration(days: 84));
+    final periodStart = DateTime(start.year, start.month, start.day);
+    final end = completionDate ?? start.add(const Duration(days: 84));
+    final periodEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
+    final periodTrips = _trips
+        .where((t) =>
+            t.vehicleId == vId &&
+            !t.date.isBefore(periodStart) &&
+            !t.date.isAfter(periodEnd))
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    // Automated First/Last Odometer Snapshot Latch
+    final latchedStartOdo =
+        (periodTrips.isNotEmpty && periodTrips.first.startOdometer > 0)
+            ? periodTrips.first.startOdometer
+            : vehicle.initialOdometer;
+    final latchedEndOdo = periodTrips.isNotEmpty
+        ? periodTrips.last.endOdometer
+        : getVehicleCurrentOdometer(vId);
+
+    // Calculate certified statutory business percentage
+    final totalKm = periodTrips.fold(0.0, (sum, t) => sum + t.distanceKm);
+    final businessKm = periodTrips
+        .where((t) => t.isBusiness)
+        .fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+    final businessPct = totalKm > 0 ? (businessKm / totalKm) * 100.0 : 0.0;
+
+    final periodEngine = const AtoTaxPeriodEngine();
+    final establishedFy = periodEngine.forDate(start).shortLabel;
+    final validUntilFy = periodEngine
+        .forDate(start.add(const Duration(days: 365 * 5)))
+        .shortLabel;
+
+    final completedPeriod = LogbookPeriod(
+      id: 'logbook_${vId}_${start.millisecondsSinceEpoch}',
+      vehicleId: vId,
+      startDate: start,
+      endDate: end,
+      startOdometer: latchedStartOdo,
+      endOdometer: latchedEndOdo,
+      status: LogbookStatus.completedPendingReview,
+      certifiedBusinessPercentage: businessPct,
+      establishedFinancialYear: establishedFy,
+      validUntilFinancialYear: validUntilFy,
+      certifiedAt: completionDate ?? DateTime.now(),
+    );
+
+    _activeLogbookPeriod = completedPeriod;
+    _upsertLogbookPeriod(completedPeriod);
+
+    // Latch closing odometer into AnnualVehicleOdometer for this financial year
+    final targetFy = periodEngine.forDate(end).shortLabel;
+    final existingAnnual = getAnnualOdometer(vId, targetFy);
+    final updatedAnnual = (existingAnnual != null)
+        ? existingAnnual.copyWith(
+            closingOdometer: latchedEndOdo,
+            closingDate: periodTrips.isNotEmpty ? periodTrips.last.date : end,
+          )
+        : AnnualVehicleOdometer(
+            id: 'annual_${vId}_$targetFy',
+            vehicleId: vId,
+            financialYear: targetFy,
+            openingDate: start,
+            openingOdometer: latchedStartOdo,
+            closingDate: periodTrips.isNotEmpty ? periodTrips.last.date : end,
+            closingOdometer: latchedEndOdo,
+          );
+    recordAnnualOdometer(updatedAnnual);
+
+    notifyListeners();
+    _autoSyncInBackground();
+    return completedPeriod;
   }
 
   /// Unvaults vehicle expenses that were previously held in vault solely because
@@ -949,23 +1725,31 @@ class AppState extends ChangeNotifier {
 
   /// EVIDENCE GRAPH: Connect an expense (e.g. Bunnings/Fuel receipt) to a specific Trip
   void linkExpenseToTrip({required String expenseId, required String tripId}) {
+    final target = _trips.where((t) => t.id == tripId && !t.isDeleted);
+    final source = _expenses.where((e) => e.id == expenseId && !e.isDeleted);
+    if (target.isEmpty ||
+        source.isEmpty ||
+        target.first.vehicleId != source.first.vehicleId) {
+      return;
+    }
     final expIndex = _expenses.indexWhere((e) => e.id == expenseId);
     if (expIndex != -1) {
       final oldExp = _expenses[expIndex];
-      _expenses[expIndex] = VehicleExpense(
-        id: oldExp.id,
-        vehicleId: oldExp.vehicleId,
-        amount: oldExp.amount,
-        category: oldExp.category,
-        date: oldExp.date,
-        receiptPath: oldExp.receiptPath,
-        businessPercentage: oldExp.businessPercentage,
-        notes: oldExp.notes,
-        linkedTripId: tripId,
-        clientDedupId: oldExp.clientDedupId,
-        deletedAt: oldExp.deletedAt,
-        receiptAudit: oldExp.receiptAudit,
-      );
+      // If previously linked to another trip, unlink from it first
+      if (oldExp.linkedTripId != null && oldExp.linkedTripId != tripId) {
+        final prevTripIndex =
+            _trips.indexWhere((t) => t.id == oldExp.linkedTripId);
+        if (prevTripIndex != -1) {
+          final prevTrip = _trips[prevTripIndex];
+          _trips[prevTripIndex] = prevTrip.copyWith(
+            linkedExpenseIds: prevTrip.linkedExpenseIds
+                .where((id) => id != expenseId)
+                .toList(),
+          );
+        }
+      }
+
+      _expenses[expIndex] = oldExp.copyWith(linkedTripId: tripId);
       _storageService?.saveExpenses(_expenses);
     }
 
@@ -973,17 +1757,7 @@ class AppState extends ChangeNotifier {
     if (tripIndex != -1) {
       final oldTrip = _trips[tripIndex];
       if (!oldTrip.linkedExpenseIds.contains(expenseId)) {
-        _trips[tripIndex] = Trip(
-          id: oldTrip.id,
-          vehicleId: oldTrip.vehicleId,
-          distanceKm: oldTrip.distanceKm,
-          date: oldTrip.date,
-          purpose: oldTrip.purpose,
-          startOdometer: oldTrip.startOdometer,
-          endOdometer: oldTrip.endOdometer,
-          classification: oldTrip.classification,
-          originAddress: oldTrip.originAddress,
-          destinationAddress: oldTrip.destinationAddress,
+        _trips[tripIndex] = oldTrip.copyWith(
           linkedExpenseIds: [...oldTrip.linkedExpenseIds, expenseId],
         );
         _storageService?.saveTrips(_trips);
@@ -993,9 +1767,262 @@ class AppState extends ChangeNotifier {
     _autoSyncInBackground();
   }
 
+  /// EVIDENCE GRAPH: Disconnect an expense from a trip
+  void unlinkExpenseFromTrip({required String expenseId}) {
+    final expIndex = _expenses.indexWhere((e) => e.id == expenseId);
+    if (expIndex != -1) {
+      final oldExp = _expenses[expIndex];
+      final currentTripId = oldExp.linkedTripId;
+      _expenses[expIndex] = oldExp.copyWith(clearLinkedTripId: true);
+      _storageService?.saveExpenses(_expenses);
+
+      if (currentTripId != null) {
+        final tripIndex = _trips.indexWhere((t) => t.id == currentTripId);
+        if (tripIndex != -1) {
+          final oldTrip = _trips[tripIndex];
+          _trips[tripIndex] = oldTrip.copyWith(
+            linkedExpenseIds: oldTrip.linkedExpenseIds
+                .where((id) => id != expenseId)
+                .toList(),
+          );
+          _storageService?.saveTrips(_trips);
+        }
+      }
+      notifyListeners();
+      _autoSyncInBackground();
+    }
+  }
+
+  Future<void> _adoptGuestReceipts(String account) async {
+    try {
+      for (final vehicle in _vehicles) {
+        final guest = await ReceiptInboxService.open('guest', vehicle.id);
+        await guest.migrateGuestTo(account);
+      }
+    } catch (e) {
+      debugPrint(
+          '[Receipt inbox] Guest receipts retained for migration retry: $e');
+    }
+  }
+
+  /// Merges a validated backup without silently overwriting an existing record.
+  Future<void> restoreLocalBackup(Map<String, dynamic> payload,
+      {String? expectedAccount}) async {
+    if (_accountTransitionInProgress) {
+      throw StateError(
+          'Account is changing. Restore the backup after signing in.');
+    }
+    final owner = expectedAccount ?? (_currentUser?.id ?? 'guest');
+    if ((_currentUser?.id ?? 'guest') != owner) {
+      throw StateError('Account changed. Choose the backup again.');
+    }
+    if (_backupRestoreGate != null) {
+      throw StateError('Another backup is being restored.');
+    }
+    final gate = Completer<void>();
+    _backupRestoreGate = gate;
+    try {
+      List<Map<String, dynamic>> rows(String key) =>
+          (payload[key] as List? ?? [])
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+      List<Map<String, dynamic>> merge(
+          List<Map<String, dynamic>> old, List<Map<String, dynamic>> incoming) {
+        final byId = {for (final item in incoming) item['id'] as String: item};
+        // Existing records take precedence. Restoring the same archive is idempotent.
+        for (final item in old) {
+          byId[item['id'] as String] = item;
+        }
+        return byId.values.toList();
+      }
+
+      final vehicles =
+          merge(_vehicles.map((e) => e.toJson()).toList(), rows('vehicles'))
+              .map(Vehicle.fromJson)
+              .toList();
+      final trips = merge(_trips.map((e) => e.toJson()).toList(), rows('trips'))
+          .map(Trip.fromJson)
+          .toList();
+      final expenses =
+          merge(_expenses.map((e) => e.toJson()).toList(), rows('expenses'))
+              .map(VehicleExpense.fromJson)
+              .toList();
+      final evidence =
+          merge(_evidenceList.map((e) => e.toJson()).toList(), rows('evidence'))
+              .map(AuditEvidence.fromJson)
+              .toList();
+      final annual = merge(_annualOdometers.map((e) => e.toJson()).toList(),
+              rows('annualOdometers'))
+          .map(AnnualVehicleOdometer.fromJson)
+          .toList();
+      final jobs =
+          merge(_jobSites.map((e) => e.toJson()).toList(), rows('jobSites'))
+              .map(JobSite.fromJson)
+              .toList();
+      for (final expense in expenses) {
+        if (!vehicles.any((v) => v.id == expense.vehicleId)) {
+          throw const FormatException(
+              'Backup receipt has no matching vehicle.');
+        }
+        if (expense.allocationError != null) {
+          throw FormatException(expense.allocationError!);
+        }
+      }
+      final snapshot = <String, dynamic>{
+        'vehicles': vehicles.map((e) => e.toJson()).toList(),
+        'trips': trips.map((e) => e.toJson()).toList(),
+        'expenses': expenses.map((e) => e.toJson()).toList(),
+        'evidence': evidence.map((e) => e.toJson()).toList(),
+        'annualOdometers': annual.map((e) => e.toJson()).toList(),
+        'jobSites': jobs.map((e) => e.toJson()).toList(),
+        'primaryVehicleId': _primaryVehicle?.id ?? payload['primaryVehicleId'],
+        'userProfile':
+            _vehicles.isEmpty ? payload['userProfile'] : _userProfile.toJson(),
+      };
+      _storageService ??= await LocalStorageService.init();
+      await _storageService!.restoreSnapshot(snapshot);
+      _vehicles
+        ..clear()
+        ..addAll(vehicles);
+      _trips
+        ..clear()
+        ..addAll(trips);
+      _expenses
+        ..clear()
+        ..addAll(expenses);
+      _evidenceList
+        ..clear()
+        ..addAll(evidence);
+      _annualOdometers
+        ..clear()
+        ..addAll(annual);
+      _jobSites
+        ..clear()
+        ..addAll(jobs);
+      _primaryVehicle = _vehicles
+              .where((v) => v.id == snapshot['primaryVehicleId'])
+              .firstOrNull ??
+          _vehicles.firstOrNull;
+      if (snapshot['userProfile'] != null) {
+        _userProfile = UserProfile.fromJson(
+            Map<String, dynamic>.from(snapshot['userProfile'] as Map));
+      }
+      _rebuildExpenseLinks();
+      notifyListeners();
+    } finally {
+      _backupRestoreGate = null;
+      gate.complete();
+    }
+  }
+
+  Future<void> saveWorkflowReceipt(VehicleExpense expense) async {
+    if (_backupRestoreGate != null) {
+      throw StateError('Backup restoration is finishing. Try again shortly.');
+    }
+    final ownerAtStart = _currentUser?.id;
+    final coreIssues = const ReceiptWorkflowPolicy().coreIssues(expense);
+    if (coreIssues.isNotEmpty) throw FormatException(coreIssues.join('. '));
+    final approvalIssues =
+        const ReceiptWorkflowPolicy().approvalIssues(expense);
+    if (approvalIssues.isNotEmpty) {
+      throw FormatException(approvalIssues.join('. '));
+    }
+    final raw = expense.receiptAudit?.rawOcrText;
+    if (raw != null &&
+        const ReceiptIntelligenceService().analyseText(raw).hasMixedItems &&
+        expense.allocations.isEmpty) {
+      throw const FormatException(
+          'Split mixed vehicle and private items before recording.');
+    }
+    if (expense.receiptAudit?.currentFields.containsKey('date') == true &&
+        expense.receiptAudit!.currentFields['date'] == null) {
+      throw const FormatException('Choose the purchase date before recording.');
+    }
+    final audit = expense.receiptAudit;
+    if (audit?.reviewStatus == ReceiptReviewStatus.confirmed) {
+      final pages =
+          (audit!.currentFields['pagePaths'] as List?)?.cast<String>() ??
+              [if (expense.receiptPath != null) expense.receiptPath!];
+      await ReceiptDocumentIntegrity.inspect(pages,
+          expectedHashes:
+              (audit.currentFields['pageHashes'] as List?)?.cast<String>() ??
+                  [if (audit.imageSha256 != null) audit.imageSha256!]);
+    }
+    if (audit?.reviewStatus == ReceiptReviewStatus.confirmed &&
+        audit!.reviewedRevision != null &&
+        audit.reviewedRevision != audit.revision) {
+      throw StateError(
+          'Receipt details changed after confirmation. Review again.');
+    }
+    if (_currentUser?.id != ownerAtStart) {
+      throw StateError('Account changed before saving this receipt.');
+    }
+    if (_savingWorkflow) {
+      throw StateError('Another record is being saved. Try again.');
+    }
+    if (expense.allocationError != null) {
+      throw ArgumentError(expense.allocationError);
+    }
+    final unchangedLegacyLink = _expenses.any((e) =>
+        e.id == expense.id &&
+        e.vehicleId == expense.vehicleId &&
+        e.linkedTripId == expense.linkedTripId);
+    if (!unchangedLegacyLink &&
+        expense.linkedTripId != null &&
+        !_trips.any((t) =>
+            t.id == expense.linkedTripId &&
+            t.vehicleId == expense.vehicleId &&
+            !t.isDeleted)) {
+      throw ArgumentError('Choose an available trip for the same vehicle.');
+    }
+    final next = [..._expenses];
+    final index = next.indexWhere((e) => e.id == expense.id);
+    if (index < 0) {
+      next.add(expense);
+    } else {
+      next[index] = expense;
+    }
+    _savingWorkflow = true;
+    try {
+      if (_storageService != null &&
+          !await _storageService!.saveExpenses(next)) {
+        throw StateError('Could not save this receipt. Try again.');
+      }
+      _expenses
+        ..clear()
+        ..addAll(next);
+      _rebuildExpenseLinks();
+      await _storageService?.saveTrips(_trips);
+      notifyListeners();
+      _autoSyncInBackground();
+    } finally {
+      _savingWorkflow = false;
+    }
+  }
+
   void recordExpense(VehicleExpense expense) {
+    final existing = _expenses.indexWhere((e) => e.id == expense.id);
+    if (existing >= 0) {
+      updateExpense(expense);
+      return;
+    }
     _expenses.add(expense);
     _storageService?.saveExpenses(_expenses);
+
+    // If expense was created with a linkedTripId, update that trip's linkedExpenseIds
+    if (expense.linkedTripId != null) {
+      final tripIndex = _trips.indexWhere((t) => t.id == expense.linkedTripId);
+      if (tripIndex != -1) {
+        final trip = _trips[tripIndex];
+        if (!trip.linkedExpenseIds.contains(expense.id)) {
+          _trips[tripIndex] = trip.copyWith(
+            linkedExpenseIds: [...trip.linkedExpenseIds, expense.id],
+          );
+          _storageService?.saveTrips(_trips);
+        }
+      }
+    }
+
     notifyListeners();
     _autoSyncInBackground();
   }
@@ -1003,11 +2030,72 @@ class AppState extends ChangeNotifier {
   void updateExpense(VehicleExpense expense) {
     final idx = _expenses.indexWhere((e) => e.id == expense.id);
     if (idx != -1) {
+      final oldExp = _expenses[idx];
+      // If linkedTripId changed, clean up previous trip link and add to new
+      if (oldExp.linkedTripId != expense.linkedTripId) {
+        if (oldExp.linkedTripId != null) {
+          final prevTripIndex =
+              _trips.indexWhere((t) => t.id == oldExp.linkedTripId);
+          if (prevTripIndex != -1) {
+            final prevTrip = _trips[prevTripIndex];
+            _trips[prevTripIndex] = prevTrip.copyWith(
+              linkedExpenseIds: prevTrip.linkedExpenseIds
+                  .where((id) => id != expense.id)
+                  .toList(),
+            );
+            _storageService?.saveTrips(_trips);
+          }
+        }
+        if (expense.linkedTripId != null) {
+          final nextTripIndex =
+              _trips.indexWhere((t) => t.id == expense.linkedTripId);
+          if (nextTripIndex != -1) {
+            final nextTrip = _trips[nextTripIndex];
+            if (!nextTrip.linkedExpenseIds.contains(expense.id)) {
+              _trips[nextTripIndex] = nextTrip.copyWith(
+                linkedExpenseIds: [...nextTrip.linkedExpenseIds, expense.id],
+              );
+              _storageService?.saveTrips(_trips);
+            }
+          }
+        }
+      }
+
       _expenses[idx] = expense;
       _storageService?.saveExpenses(_expenses);
       notifyListeners();
       _autoSyncInBackground();
     }
+  }
+
+  /// EVIDENCE GRAPH CASCADE: Delete an expense and remove it from any trip's `linkedExpenseIds`.
+  void deleteExpense(String expenseId) {
+    // 1. Remove expenseId from any trip's linkedExpenseIds
+    bool tripsChanged = false;
+    for (int i = 0; i < _trips.length; i++) {
+      if (_trips[i].linkedExpenseIds.contains(expenseId)) {
+        _trips[i] = _trips[i].copyWith(
+          linkedExpenseIds: _trips[i]
+              .linkedExpenseIds
+              .where((id) => id != expenseId)
+              .toList(),
+        );
+        tripsChanged = true;
+      }
+    }
+    if (tripsChanged) {
+      _storageService?.saveTrips(_trips);
+    }
+
+    // 2. Remove expense from _expenses
+    final expIdx = _expenses.indexWhere((e) => e.id == expenseId);
+    if (expIdx != -1) {
+      _expenses.removeAt(expIdx);
+      _storageService?.saveExpenses(_expenses);
+    }
+
+    notifyListeners();
+    _autoSyncInBackground();
   }
 
   void _autoSyncInBackground() {
@@ -1017,7 +2105,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  EvidenceEngine createEvidenceEngine() {
+  EvidenceEngine createEvidenceEngine({String? financialYear}) {
     final vehicle = _primaryVehicle ??
         Vehicle(
           id: 'default',
@@ -1027,11 +2115,29 @@ class AppState extends ChangeNotifier {
           initialOdometer: 0.0,
         );
 
+    final targetFy =
+        (financialYear ?? activeTaxRule.financialYear).replaceAll('–', '-');
+    const periodEngine = AtoTaxPeriodEngine();
+
+    final scopedTrips = _trips.where((t) {
+      if (t.vehicleId != vehicle.id) return false;
+      final tripFy =
+          periodEngine.forDate(t.date).shortLabel.replaceAll('–', '-');
+      return tripFy == targetFy;
+    });
+
+    final scopedExpenses = _expenses.where((e) {
+      if (e.vehicleId != vehicle.id) return false;
+      final expenseFy =
+          periodEngine.forDate(e.date).shortLabel.replaceAll('–', '-');
+      return expenseFy == targetFy;
+    });
+
     final engine = EvidenceEngine(vehicle: vehicle);
-    for (final t in _trips) {
+    for (final t in scopedTrips) {
       engine.recordTrip(t);
     }
-    for (final e in _expenses) {
+    for (final e in scopedExpenses) {
       engine.recordExpense(e);
     }
     return engine;
@@ -1043,6 +2149,13 @@ class AppState extends ChangeNotifier {
     final diffDays = DateTime.now().difference(start).inDays;
     final week = (diffDays / 7).floor() + 1;
     return week.clamp(1, 12);
+  }
+
+  /// 12-WEEK STATUTORY COMPLIANCE: Current day in 84-day period (1-84)
+  int get currentLogbookDay {
+    final start = _primaryVehicle?.logbookStartDate ?? DateTime.now();
+    final diffDays = DateTime.now().difference(start).inDays;
+    return (diffDays + 1).clamp(1, 84);
   }
 
   /// 12-WEEK STATUTORY COMPLIANCE: Progress percentage (0.0 - 1.0)
@@ -1073,13 +2186,100 @@ class AppState extends ChangeNotifier {
     return '12-week window spans across 30 June: $daysInFy1 days in FY${boundaryYear - 1}–$boundaryYear, $daysInFy2 days in FY$boundaryYear–${boundaryYear + 1}. Business % applies proportionally.';
   }
 
+  /// Automated check for substantiation gap warning (> 14 consecutive unlogged days)
+  /// on the active 12-week logbook period.
+  bool get hasActiveLogbookSubstantiationGapWarning {
+    return activeLogbookGapEvaluation?.hasWarning ?? false;
+  }
+
+  /// Detailed evaluation of unlogged gaps and representative travel pattern for active logbook.
+  LogbookGapEvaluation? get activeLogbookGapEvaluation {
+    if (_primaryVehicle == null ||
+        _primaryVehicle!.taxMethod != TaxMethod.logbook) {
+      return null;
+    }
+    final start = _primaryVehicle!.logbookStartDate;
+    if (start == null) return null;
+
+    final period = _activeLogbookPeriod ??
+        LogbookPeriod(
+          id: 'temp_${_primaryVehicle!.id}',
+          vehicleId: _primaryVehicle!.id,
+          startDate: start,
+          endDate: start.add(const Duration(days: 84)),
+          startOdometer: startingOdometer,
+          establishedFinancialYear:
+              const AtoTaxPeriodEngine().forDate(start).shortLabel,
+          validUntilFinancialYear: const AtoTaxPeriodEngine()
+              .forDate(start.add(const Duration(days: 365 * 5)))
+              .shortLabel,
+        );
+
+    final tripDates = _trips
+        .where((t) => t.vehicleId == _primaryVehicle!.id)
+        .map((t) => t.date)
+        .toList();
+
+    return period.evaluateSubstantiationPattern(tripDates);
+  }
+
+  /// Automated trigger check for statutory EOFY alerts (June 15, June 28, June 30)
+  Future<List<KiloTaxNotification>> checkEofyReminders(
+      {DateTime? date, NotificationService? customNotificationService}) async {
+    final notifService =
+        customNotificationService ?? await NotificationService.getInstance();
+    return notifService.evaluateEofyAlertPipeline(
+      vehicles: _vehicles,
+      isMissingClosingOdometer: (vehicleId, fyLabel) {
+        final record = getAnnualOdometer(vehicleId, fyLabel);
+        return record == null || record.closingOdometer == null;
+      },
+      currentDate: date,
+    );
+  }
+
   /// COMPLIANCE STATE: Trips with missing purpose or unclassified status
-  List<Trip> get missingComplianceTrips => _trips
-      .where((t) =>
-          t.purpose.trim().isEmpty ||
-          t.purpose.contains('?') ||
-          t.classification == TripClassification.unclassified)
-      .toList();
+  Future<void> evaluateWeeklyEvidenceReview(
+      {DateTime? now, NotificationService? notificationService}) async {
+    final date = now ?? DateTime.now();
+    final notifications =
+        notificationService ?? await NotificationService.getInstance();
+    const reviewer = EvidenceReviewService();
+    for (final vehicle in List<Vehicle>.of(_vehicles)) {
+      if (vehicle.deletedAt != null) continue;
+      final snapshot = reviewer.evaluate(
+          vehicle: vehicle,
+          financialYear: const AtoTaxPeriodEngine().forDate(date).shortLabel,
+          trips: _trips,
+          expenses: _expenses);
+      final files = await reviewer.inspectReceipts(snapshot.expenses);
+      final report = reviewer.evaluate(
+          vehicle: vehicle,
+          financialYear: snapshot.financialYear,
+          trips: _trips,
+          expenses: _expenses,
+          receiptFiles: files);
+      await notifications.notifyWeeklyEvidenceReview(report: report, now: date);
+    }
+  }
+
+  EvidenceReviewReport get evidenceReview =>
+      const EvidenceReviewService().evaluate(
+        vehicle: _primaryVehicle,
+        financialYear: activeTaxRule.financialYear,
+        trips: _trips,
+        expenses: _expenses,
+        hasOdometerGaps: pendingOdometerGaps.isNotEmpty,
+      );
+
+  List<Trip> get missingComplianceTrips {
+    final report = evidenceReview;
+    final ids = report.items
+        .whereType<TripReviewItem>()
+        .map((item) => item.tripId)
+        .toSet();
+    return report.trips.where((trip) => ids.contains(trip.id)).toList();
+  }
 
   /// Fix a trip purpose directly in 1 tap
   void resolveTripPurpose(String tripId, String newPurpose) {
@@ -1168,15 +2368,25 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Tax Summary isolated strictly to Primary Vehicle
+  /// Tax Summary isolated strictly to Primary Vehicle and active Financial Year
   TaxSummary get taxSummary {
     final vehicleId = _primaryVehicle?.id;
-    final scopedTrips = vehicleId != null
-        ? _trips.where((t) => t.vehicleId == vehicleId).toList()
-        : _trips;
-    final scopedExpenses = vehicleId != null
-        ? _expenses.where((e) => e.vehicleId == vehicleId).toList()
-        : _expenses;
+    final targetFy = activeTaxRule.financialYear.replaceAll('–', '-');
+    const periodEngine = AtoTaxPeriodEngine();
+
+    final scopedTrips = _trips.where((t) {
+      if (vehicleId != null && t.vehicleId != vehicleId) return false;
+      final tripFy =
+          periodEngine.forDate(t.date).shortLabel.replaceAll('–', '-');
+      return tripFy == targetFy;
+    }).toList();
+
+    final scopedExpenses = _expenses.where((e) {
+      if (vehicleId != null && e.vehicleId != vehicleId) return false;
+      final expenseFy =
+          periodEngine.forDate(e.date).shortLabel.replaceAll('–', '-');
+      return expenseFy == targetFy;
+    }).toList();
 
     return TaxCalculatorService.evaluateSummary(
       trips: scopedTrips,
@@ -1192,26 +2402,18 @@ class AppState extends ChangeNotifier {
     final hasTaxMethod = hasVeh;
     final isLogbook = vehicle?.taxMethod == TaxMethod.logbook;
     final hasOdo = (vehicle?.initialOdometer ?? 0) > 0;
-    final vehicleId = vehicle?.id;
-    final scopedTrips = vehicleId != null
-        ? _trips.where((t) => t.vehicleId == vehicleId).toList()
-        : _trips;
-    final missingTrips = scopedTrips
-        .where((t) =>
-            t.purpose.trim().isEmpty ||
-            t.purpose.contains('?') ||
-            t.classification == TripClassification.unclassified)
-        .toList();
+    final report = evidenceReview;
+    final scopedTrips = report.trips;
+    final missingTrips = report.items.whereType<TripReviewItem>().toList();
     final totalTrips = scopedTrips.length;
     final classifiedTrips = totalTrips - missingTrips.length;
-    final scopedExpenses = vehicleId != null
-        ? _expenses.where((e) => e.vehicleId == vehicleId).toList()
-        : _expenses;
+    final scopedExpenses =
+        report.expenses.where((expense) => !expense.isVaultOnly).toList();
     final totalExpenses = scopedExpenses.length;
     final receiptsBackedUp = totalExpenses == 0 ||
         scopedExpenses.every((e) =>
-            e.receiptPath != null &&
-            e.receiptAudit?.reviewStatus == ReceiptReviewStatus.verified);
+            (e.receiptPath?.trim().isNotEmpty ?? false) &&
+            e.receiptAudit?.reviewStatus == ReceiptReviewStatus.confirmed);
 
     // =========================================================================
     // DETERMINISTIC AUDIT READINESS FORMULA (4 Pillars = 100% Exact)
@@ -1259,12 +2461,19 @@ class AppState extends ChangeNotifier {
   }
 
   /// Expenses that must be confirmed before accountant export.
-  List<VehicleExpense> get unclassifiedExpenses => _expenses
-      .where((e) =>
-          e.receiptPath == null ||
-          e.receiptAudit == null ||
-          e.receiptAudit!.needsReview)
-      .toList();
+  List<VehicleExpense> get unclassifiedExpenses {
+    final report = evidenceReview;
+    final ids = report.items
+        .whereType<ExpenseReviewItem>()
+        .where((item) =>
+            item.reasons.contains(ExpenseReviewReason.unconfirmedDetails) ||
+            item.reasons.contains(ExpenseReviewReason.missingPhoto))
+        .map((item) => item.expenseId)
+        .toSet();
+    return report.expenses
+        .where((expense) => ids.contains(expense.id))
+        .toList();
+  }
 
   /// Daily Evidence Streak (Consecutive days with at least 1 trip or expense logged)
   int get evidenceStreakDays {
@@ -1337,14 +2546,36 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _syncEngine.syncToCloud(
-        vehicle: _primaryVehicle!,
-        trips: _trips,
-        expenses: _expenses,
-        userToken: _currentUser?.accessToken,
-        userId: _currentUser?.id,
-        requireAuth: true,
-      );
+      final results = <SyncResult>[];
+      final vehiclesToSync =
+          _vehicles.isEmpty ? [_primaryVehicle!] : List<Vehicle>.of(_vehicles);
+      for (final vehicle in vehiclesToSync) {
+        results.add(await _syncEngine.syncToCloud(
+            vehicle: vehicle,
+            trips: _trips.where((t) => t.vehicleId == vehicle.id).toList(),
+            expenses:
+                _expenses.where((e) => e.vehicleId == vehicle.id).toList(),
+            userToken: currentAccessToken,
+            userId: _currentUser?.id,
+            requireAuth: true));
+      }
+      if (_jobSites.isNotEmpty) {
+        results.add(await _syncEngine.syncJobSitesToCloud(
+          jobSites: _jobSites,
+          userToken: currentAccessToken,
+          userId: _currentUser?.id,
+          requireAuth: true,
+        ));
+      }
+      final failures = results.where((r) => !r.success).toList();
+      final res = SyncResult(
+          success: failures.isEmpty,
+          syncedTrips: results.fold(0, (n, r) => n + r.syncedTrips),
+          syncedExpenses: results.fold(0, (n, r) => n + r.syncedExpenses),
+          rejectedOrIgnored: results.fold(0, (n, r) => n + r.rejectedOrIgnored),
+          errorMessage: failures.isEmpty
+              ? null
+              : failures.map((r) => r.errorMessage ?? 'Sync failed').join(' '));
 
       _lastSyncResult = res;
       if (res.success) {
@@ -1398,24 +2629,41 @@ class AppState extends ChangeNotifier {
     try {
       Directory? cacheDir;
       try {
-        cacheDir = await ReceiptImageOptimizationService()
-            .getEvidenceVaultDirectory();
+        cacheDir =
+            await ReceiptImageOptimizationService().getEvidenceVaultDirectory();
       } catch (e) {
         debugPrint('[AppState] Could not access evidence vault directory: $e');
       }
 
       final result = await _syncEngine.restoreFromCloud(
-        userToken: _currentUser?.accessToken,
+        userToken: currentAccessToken,
         userId: _currentUser?.id,
         requireAuth: true,
         localCacheDir: cacheDir,
       );
-      if (result.success) {
+      if (result.success ||
+          result.vehicles.isNotEmpty ||
+          result.trips.isNotEmpty ||
+          result.expenses.isNotEmpty ||
+          result.jobSites.isNotEmpty) {
         if (result.vehicles.isNotEmpty) {
-          _vehicles.clear();
-          _vehicles.addAll(result.vehicles);
-          _primaryVehicle = _vehicles.firstWhere((v) => v.isPrimary,
-              orElse: () => _vehicles.first);
+          // Non-destructive merge: preserve local vehicles while merging cloud updates
+          for (final cloudVehicle in result.vehicles) {
+            final idx = _vehicles.indexWhere((v) => v.id == cloudVehicle.id);
+            if (idx != -1) {
+              _vehicles[idx] = cloudVehicle;
+            } else {
+              _vehicles.add(cloudVehicle);
+            }
+          }
+          if (_primaryVehicle == null ||
+              !_vehicles.any((v) => v.id == _primaryVehicle!.id)) {
+            _primaryVehicle = _vehicles.firstWhere((v) => v.isPrimary,
+                orElse: () => _vehicles.first);
+          } else {
+            _primaryVehicle =
+                _vehicles.firstWhere((v) => v.id == _primaryVehicle!.id);
+          }
           _storageService?.saveVehicles(_vehicles);
           _storageService?.savePrimaryVehicleId(_primaryVehicle!.id);
         }
@@ -1445,8 +2693,23 @@ class AppState extends ChangeNotifier {
           _expenses.sort((a, b) => a.date.compareTo(b.date));
           _storageService?.saveExpenses(_expenses);
         }
-        _syncStatus = SyncStatus.success;
-        _lastSyncedAt = DateTime.now();
+        _rebuildExpenseLinks();
+        await _storageService?.saveTrips(_trips);
+        if (result.jobSites.isNotEmpty) {
+          // Non-destructive merge: preserve locally created JobSites
+          for (final cloudSite in result.jobSites) {
+            final idx = _jobSites.indexWhere((s) => s.id == cloudSite.id);
+            if (idx != -1) {
+              _jobSites[idx] = cloudSite;
+            } else {
+              _jobSites.add(cloudSite);
+            }
+          }
+          _storageService?.saveJobSites(_jobSites);
+        }
+        _syncStatus = result.success ? SyncStatus.success : SyncStatus.error;
+        _syncErrorMessage = result.success ? null : result.errorMessage;
+        if (result.success) _lastSyncedAt = DateTime.now();
       } else {
         _syncStatus = SyncStatus.error;
         _syncErrorMessage = result.errorMessage;
@@ -1467,54 +2730,99 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Pre-warms DNS and TLS session to Supabase Auth to eliminate cold-start delay
+  void prewarmAuthConnection() {
+    _authService.prewarmConnection();
+  }
+
   /// Sign In with Apple via Supabase Auth
-  Future<AuthResult> signInWithApple() async {
-    final result = await _authService.signInWithApple();
-    if (result.success && result.user != null) {
-      _currentUser = result.user;
-      _isGuestMode = false;
-      await _storageService?.setGuestMode(false);
-      notifyListeners();
-      // Non-destructive adoption: immediately upload local guest data to cloud
-      if (_primaryVehicle != null) {
-        triggerSyncToCloud().catchError((e) {
-          debugPrint('[AppState] Auto-sync on Apple sign-in warning: $e');
-          return SyncResult(
-            success: false,
-            syncedTrips: 0,
-            syncedExpenses: 0,
-            rejectedOrIgnored: 0,
-            errorMessage: e.toString(),
-          );
-        });
+  /// Supports [onLocalSuccess] for instant optimistic UI transition without waiting for server network hops.
+  Future<AuthResult> signInWithApple({
+    void Function(AuthUser optimisticUser)? onLocalSuccess,
+  }) async {
+    await _backupRestoreGate?.future;
+    _accountTransitionInProgress = true;
+    try {
+      final result = await _authService.signInWithApple(
+        onLocalSuccess: (optimisticUser) {
+          _currentUser = optimisticUser;
+          _isGuestMode = false;
+          unawaited(_storageService?.setGuestMode(false));
+          notifyListeners();
+          if (onLocalSuccess != null) {
+            onLocalSuccess(optimisticUser);
+          }
+        },
+      );
+      if (result.success && result.user != null) {
+        await _adoptGuestReceipts(result.user!.id);
+        _currentUser = result.user;
+        _isGuestMode = false;
+        unawaited(_storageService?.setGuestMode(false));
+        notifyListeners();
+        // Non-destructive adoption: immediately upload local guest data to cloud
+        if (_primaryVehicle != null) {
+          triggerSyncToCloud().catchError((e) {
+            debugPrint('[AppState] Auto-sync on Apple sign-in warning: $e');
+            return SyncResult(
+              success: false,
+              syncedTrips: 0,
+              syncedExpenses: 0,
+              rejectedOrIgnored: 0,
+              errorMessage: e.toString(),
+            );
+          });
+        }
       }
+      return result;
+    } finally {
+      _accountTransitionInProgress = false;
     }
-    return result;
   }
 
   /// Sign In with Google via Supabase Auth
-  Future<AuthResult> signInWithGoogle() async {
-    final result = await _authService.signInWithGoogle();
-    if (result.success && result.user != null) {
-      _currentUser = result.user;
-      _isGuestMode = false;
-      await _storageService?.setGuestMode(false);
-      notifyListeners();
-      // Non-destructive adoption: immediately upload local guest data to cloud
-      if (_primaryVehicle != null) {
-        triggerSyncToCloud().catchError((e) {
-          debugPrint('[AppState] Auto-sync on Google sign-in warning: $e');
-          return SyncResult(
-            success: false,
-            syncedTrips: 0,
-            syncedExpenses: 0,
-            rejectedOrIgnored: 0,
-            errorMessage: e.toString(),
-          );
-        });
+  /// Supports [onLocalSuccess] for instant optimistic UI transition without waiting for server network hops.
+  Future<AuthResult> signInWithGoogle({
+    void Function(AuthUser optimisticUser)? onLocalSuccess,
+  }) async {
+    await _backupRestoreGate?.future;
+    _accountTransitionInProgress = true;
+    try {
+      final result = await _authService.signInWithGoogle(
+        onLocalSuccess: (optimisticUser) {
+          _currentUser = optimisticUser;
+          _isGuestMode = false;
+          unawaited(_storageService?.setGuestMode(false));
+          notifyListeners();
+          if (onLocalSuccess != null) {
+            onLocalSuccess(optimisticUser);
+          }
+        },
+      );
+      if (result.success && result.user != null) {
+        await _adoptGuestReceipts(result.user!.id);
+        _currentUser = result.user;
+        _isGuestMode = false;
+        unawaited(_storageService?.setGuestMode(false));
+        notifyListeners();
+        // Non-destructive adoption: immediately upload local guest data to cloud
+        if (_primaryVehicle != null) {
+          triggerSyncToCloud().catchError((e) {
+            debugPrint('[AppState] Auto-sync on Google sign-in warning: $e');
+            return SyncResult(
+              success: false,
+              syncedTrips: 0,
+              syncedExpenses: 0,
+              rejectedOrIgnored: 0,
+              errorMessage: e.toString(),
+            );
+          });
+        }
       }
+      return result;
+    } finally {
+      _accountTransitionInProgress = false;
     }
-    return result;
   }
 
   /// Sign Out from Supabase Auth and perform comprehensive teardown:
@@ -1530,6 +2838,8 @@ class AppState extends ChangeNotifier {
   /// 3. In-Memory Zeroization of active user session
   /// 4. Synchronous UI Notification for Non-Blocking Navigation Reset
   Future<void> signOut({bool wipeLocalData = false}) async {
+    await _backupRestoreGate?.future;
+    _accountTransitionInProgress = true;
     try {
       // Pre-flight: If user chose full wipe, attempt a cloud push first to ensure zero data loss
       if (wipeLocalData && _primaryVehicle != null && hasUnsyncedChanges) {
@@ -1541,14 +2851,18 @@ class AppState extends ChangeNotifier {
         }
       }
 
-      // 1. Remote Session Revocation
       await _authService.signOut();
     } catch (e) {
       debugPrint(
           '[KiloTax Security] Non-fatal error during remote token revocation: $e');
     } finally {
-      // 2. Hardware / Local Storage Purge (if requested by user)
       if (wipeLocalData) {
+        try {
+          await ReceiptInboxService.deleteAccount(_currentUser?.id ?? 'guest',
+              knownVehicleIds: _vehicles.map((v) => v.id));
+        } catch (e) {
+          debugPrint('[Receipt inbox] Local cleanup requires retry: $e');
+        }
         try {
           if (_storageService != null) {
             await _storageService!.clearAll();
@@ -1557,44 +2871,57 @@ class AppState extends ChangeNotifier {
           debugPrint('[KiloTax Security] Error clearing local storage: $e');
         }
 
-        // Zero out in-memory local data
-        _primaryVehicle = null;
-        _vehicles.clear();
-        _trips.clear();
-        _expenses.clear();
-        _evidenceList.clear();
-        _syncStatus = SyncStatus.idle;
-        _syncErrorMessage = null;
-        _lastSyncResult = null;
-        _hasOdometerMonotonicityViolation = false;
-        _lastOdometerAnomalyWarning = null;
+        try {
+          await _evidenceVaultService.clearLocalVault();
+        } catch (e) {
+          debugPrint(
+              '[KiloTax Security] Error clearing evidence vault during sign out wipe: $e');
+        }
         _isGuestMode = false;
       } else {
-        // If data kept on device, switch smoothly to local guest mode
+        // If data kept on device storage, switch to clean guest mode
         _isGuestMode = true;
         await _storageService?.setGuestMode(true);
       }
 
-      // 3. In-Memory Auth Zeroization (Always de-authenticate)
-      _currentUser = null;
+      // Zero out in-memory local data on sign out to prevent cross-session persistence
+      _primaryVehicle = null;
+      _vehicles.clear();
+      _trips.clear();
+      _expenses.clear();
+      _evidenceList.clear();
+      _annualOdometers.clear();
+      _syncStatus = SyncStatus.idle;
+      _syncErrorMessage = null;
+      _lastSyncResult = null;
+      _hasOdometerMonotonicityViolation = false;
+      _lastOdometerAnomalyWarning = null;
 
-      // 4. Instant Reactive Navigation Trigger
+      _currentUser = null;
+      _accountTransitionInProgress = false;
+
       notifyListeners();
     }
   }
 
   /// In-App Account Deletion per Apple Guideline 5.1.1(v) & Privacy Compliance:
-  /// 1. Calls Supabase RPC / REST to purge all remote taxpayer records & user account
+  /// 1. Requires server acknowledgement before clearing recoverable local data
   /// 2. Clears all local storage, preferences, and cached evidence binaries
   /// 3. Zeroes out all in-memory vehicles, trips, expenses, and evidence
   /// 4. Resets app to pristine onboarding state and notifies UI listeners
-  Future<void> deleteAccount() async {
+  Future<bool> deleteAccount() async {
+    await _backupRestoreGate?.future;
+    _accountTransitionInProgress = true;
     try {
-      await _authService.deleteAccount();
-    } catch (e) {
-      debugPrint('[KiloTax Security] Error deleting remote account: $e');
-    } finally {
       try {
+        if (!await _authService.deleteAccount()) return false;
+      } catch (e) {
+        debugPrint('[KiloTax Security] Error deleting remote account: $e');
+        return false;
+      }
+      try {
+        await ReceiptInboxService.deleteAccount(_currentUser?.id ?? 'guest',
+            knownVehicleIds: _vehicles.map((v) => v.id));
         if (_storageService != null) {
           await _storageService!.clearAll();
         }
@@ -1616,6 +2943,7 @@ class AppState extends ChangeNotifier {
       _trips.clear();
       _expenses.clear();
       _evidenceList.clear();
+      _annualOdometers.clear();
       _syncStatus = SyncStatus.idle;
       _syncErrorMessage = null;
       _lastSyncResult = null;
@@ -1629,6 +2957,9 @@ class AppState extends ChangeNotifier {
 
       // Instant Reactive Navigation Trigger to reset to clean onboarding state
       notifyListeners();
+      return true;
+    } finally {
+      _accountTransitionInProgress = false;
     }
   }
 
@@ -1636,7 +2967,10 @@ class AppState extends ChangeNotifier {
   /// Clears all local database records, cached evidence binaries, and preferences,
   /// resetting the app to a fresh onboarding zero-state without contacting remote auth backend.
   Future<void> resetLocalData() async {
+    await _backupRestoreGate?.future;
     try {
+      await ReceiptInboxService.deleteAccount(_currentUser?.id ?? 'guest',
+          knownVehicleIds: _vehicles.map((v) => v.id));
       if (_storageService != null) {
         await _storageService!.clearAll();
       }
@@ -1658,6 +2992,7 @@ class AppState extends ChangeNotifier {
     _trips.clear();
     _expenses.clear();
     _evidenceList.clear();
+    _annualOdometers.clear();
     _syncStatus = SyncStatus.idle;
     _syncErrorMessage = null;
     _lastSyncResult = null;
@@ -1671,7 +3006,6 @@ class AppState extends ChangeNotifier {
     // Instant Reactive Navigation Trigger to reset to clean onboarding state
     notifyListeners();
   }
-
 
   @override
   void dispose() {

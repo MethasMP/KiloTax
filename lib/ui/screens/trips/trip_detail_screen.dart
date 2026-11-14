@@ -1,16 +1,25 @@
+import '../../widgets/adaptive_row.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
+import '../../../services/engine/bulky_tools_suggestion_engine.dart';
 import 'trip_quick_resolve_sheet.dart';
+import '../workflow/workflow_trip_editor.dart';
+import 'widgets/bulky_tools_toggle_chip.dart';
+import 'widgets/trade_gear_registration_sheet.dart';
+import 'widgets/trip_evidence_graph_capsule.dart';
+import 'widgets/trip_route_preview_widget.dart';
+import '../../../core/theme/app_color.dart';
 
 /// Screen: Trip Detail
 /// High-signal, minimalist audit card designed for Australian sole traders & tradies.
 /// Eliminates cognitive clutter, verbose addresses, and repetitive "Verified" status lists.
-class TripDetailScreen extends StatelessWidget {
+class TripDetailScreen extends StatefulWidget {
   final Trip trip;
   final AppState appState;
 
@@ -30,22 +39,172 @@ class TripDetailScreen extends StatelessWidget {
   }
 
   @override
+  State<TripDetailScreen> createState() => _TripDetailScreenState();
+}
+
+class _TripDetailScreenState extends State<TripDetailScreen> {
+  late Trip _localTrip;
+  late final bool _isOriginHome;
+  late final bool _isDestinationHome;
+
+  @override
+  void initState() {
+    super.initState();
+    _localTrip = widget.trip;
+    final originLower = (widget.trip.originAddress ?? '').trim().toLowerCase();
+    final destLower =
+        (widget.trip.destinationAddress ?? '').trim().toLowerCase();
+    _isOriginHome =
+        originLower.contains('home') || originLower.contains('residence');
+    _isDestinationHome =
+        destLower.contains('home') || destLower.contains('residence');
+  }
+
+  bool get _isHomeCommute => _isOriginHome || _isDestinationHome;
+
+  Trip get _currentTrip {
+    try {
+      return widget.appState.trips.firstWhere(
+        (t) => t.id == _localTrip.id,
+        orElse: () => _localTrip,
+      );
+    } catch (_) {
+      return _localTrip;
+    }
+  }
+
+  Future<void> _toggleBulkyTools(bool enabled) async {
+    if (enabled && _isHomeCommute) {
+      final primary = widget.appState.primaryVehicle;
+      if (primary?.tradeToolsRegisteredAt == null) {
+        final registered = await TradeGearRegistrationSheet.show(
+          context,
+          appState: widget.appState,
+        );
+        if (registered != true) {
+          return;
+        }
+      }
+    }
+
+    _applyBulkyToolsUpdate(enabled);
+  }
+
+  void _updateClassification(TripClassification classification) {
+    HapticFeedback.selectionClick();
+    final current = _currentTrip;
+    if (current.review.isNotEmpty) {
+      WorkflowTripEditor.show(context, appState: widget.appState, trip: current).then((_) { if (mounted) setState(() {}); });
+      return;
+    }
+    if (current.classification == classification) return;
+
+    String newPurpose = current.purpose;
+    if (classification == TripClassification.personal) {
+      if (newPurpose.contains('Bulky Tools')) {
+        newPurpose = newPurpose
+            .replaceAll(' (Bulky Tools Carried)', '')
+            .replaceAll('Bulky Tools Carried', '')
+            .replaceAll('Bulky Tools', '')
+            .trim();
+      }
+      if (newPurpose.isEmpty ||
+          newPurpose == '?' ||
+          newPurpose == 'Work Site' ||
+          newPurpose == 'Client / Job') {
+        newPurpose = 'Personal Drive';
+      }
+    } else if (classification == TripClassification.business) {
+      if (newPurpose == 'Personal Drive' ||
+          newPurpose == '?' ||
+          newPurpose.isEmpty) {
+        newPurpose = 'Client / Job';
+      }
+    }
+
+    final updated = current.copyWith(
+      classification: classification,
+      purpose: newPurpose,
+    );
+    setState(() {
+      _localTrip = updated;
+    });
+    widget.appState.updateTrip(updated);
+  }
+
+  void _applyBulkyToolsUpdate(bool qualifies) {
+    HapticFeedback.mediumImpact();
+    final current = _currentTrip;
+    String newPurpose;
+    if (qualifies) {
+      if (!current.purpose.contains('Bulky Tools')) {
+        newPurpose = (current.purpose.isEmpty || current.purpose == '?')
+            ? 'Work Site (Bulky Tools Carried)'
+            : '${current.purpose} (Bulky Tools Carried)';
+      } else {
+        newPurpose = current.purpose;
+      }
+    } else {
+      newPurpose = current.purpose
+          .replaceAll(' (Bulky Tools Carried)', '')
+          .replaceAll('Bulky Tools Carried', '')
+          .replaceAll('Bulky Tools', '')
+          .trim();
+      if (newPurpose.isEmpty) newPurpose = 'Work Site';
+    }
+
+    final updated = current.copyWith(
+      purpose: newPurpose,
+      classification: qualifies
+          ? TripClassification.business
+          : (_isHomeCommute
+              ? TripClassification.personal
+              : current.classification),
+    );
+    setState(() {
+      _localTrip = updated;
+    });
+    widget.appState.updateTrip(updated);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: qualifies ? AppColors.emerald : AppColors.deepNavy,
+        content: Text(
+          qualifies
+              ? '✓ Bulky Tools exemption claimed (s 8-1)'
+              : 'Bulky Tools removed',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final trip = _currentTrip;
+    final appState = widget.appState;
+    final bulkySuggestion = BulkyToolsSuggestionEngine.evaluate(trip);
+    final isBulkyToolsActive = trip.purpose.contains('Bulky Tools');
+    final isBusiness = trip.classification == TripClassification.business;
+    final isPersonal = trip.classification == TripClassification.personal;
+
     final vehicle = appState.vehicles.firstWhere(
       (v) => v.id == trip.vehicleId,
       orElse: () =>
           appState.primaryVehicle ??
           Vehicle(
             id: trip.vehicleId,
-            make: 'Ford Ranger',
-            model: '2024',
-            regoPlate: '1GTF892',
+            make: 'Vehicle',
+            model: 'not set',
+            regoPlate: '',
             initialOdometer: 0.0,
           ),
     );
     final vehicleName = vehicle.displayName.isNotEmpty
         ? vehicle.displayName
-        : 'Ford Ranger (2024) (1GTF892)';
+        : 'Vehicle not set';
 
     final origin = trip.originAddress ?? 'Home';
     final destination = trip.destinationAddress ?? 'Work Site';
@@ -54,24 +213,25 @@ class TripDetailScreen extends StatelessWidget {
     // Parse location titles and secondary addresses cleanly
     final originParts = origin.split(',');
     final originTitle = originParts.first.trim();
-    final originSub = originParts.length > 1
-        ? originParts.sublist(1).join(',').trim()
-        : null;
+    final originSub =
+        originParts.length > 1 ? originParts.sublist(1).join(',').trim() : null;
 
     final destParts = destination.split(',');
     final destTitle = destParts.first.trim();
     final destSub =
         destParts.length > 1 ? destParts.sublist(1).join(',').trim() : null;
 
-    final claimAmount = trip.distanceKm * appState.activeTaxRule.centsPerKmRate;
+    final claimAmount =
+        trip.businessDistanceKm * appState.activeTaxRule.centsPerKmRate;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColor.surfaceSunken,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: AppColors.ink),
           onPressed: () => Navigator.of(context).pop(),
@@ -86,12 +246,25 @@ class TripDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+              tooltip: 'Review job and mixed use',
+              icon: const Icon(Icons.edit_note),
+              onPressed: () async {
+                await WorkflowTripEditor.show(context,
+                    appState: appState, trip: trip);
+                if (mounted) setState(() {});
+              }),
           TextButton.icon(
             onPressed: () {
               TripQuickResolveSheet.show(
                 context,
                 trip: trip,
                 appState: appState,
+                onTripResolved: (resolved) {
+                  setState(() {
+                    _localTrip = resolved;
+                  });
+                },
               );
             },
             icon: const Icon(LucideIcons.pencil,
@@ -109,10 +282,19 @@ class TripDetailScreen extends StatelessWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Route & Trade POI Visualization
+            TripRoutePreviewWidget(
+              routePolyline: trip.routePolyline,
+              origin: originTitle,
+              destination: destTitle,
+              distanceKm: trip.distanceKm,
+              detectedPoi: trip.detectedPoi,
+            ),
+
             // Card 1: Route Timeline Card
             Container(
               padding: const EdgeInsets.all(18),
@@ -122,7 +304,7 @@ class TripDetailScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x06000000),
+                    color: AppColor.scrimSoft,
                     blurRadius: 10,
                     offset: Offset(0, 2),
                   ),
@@ -131,7 +313,7 @@ class TripDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  AdaptiveRow(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
@@ -142,21 +324,61 @@ class TripDetailScreen extends StatelessWidget {
                           color: AppColors.muted,
                         ),
                       ),
-                      if (claimAmount > 0)
+                      if (trip.classification == TripClassification.business)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
+                            color: AppColor.positiveTint,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                            border:
+                                Border.all(color: AppColor.positiveTintStrong),
                           ),
                           child: Text(
-                            '+\$${claimAmount.toStringAsFixed(2)} ATO Claim',
+                            vehicle.taxMethod == TaxMethod.logbook
+                                ? 'ATO Business Trip'
+                                : '+\$${claimAmount.toStringAsFixed(2)} ATO Claim',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF059669),
+                              color: AppColor.positiveStrong,
+                            ),
+                          ),
+                        )
+                      else if (trip.classification ==
+                          TripClassification.personal)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColor.surfaceSunken,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Text(
+                            'Personal (Private)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColor.surfaceSunken,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Text(
+                            'Unclassified',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
                             ),
                           ),
                         ),
@@ -165,7 +387,7 @@ class TripDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // Route Timeline
-                  Row(
+                  AdaptiveRow(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Dots & Connector line
@@ -254,13 +476,13 @@ class TripDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 12),
-                  Row(
+                  AdaptiveRow(
                     children: [
                       const Icon(LucideIcons.gauge,
                           size: 15, color: AppColors.muted),
                       const SizedBox(width: 6),
                       Text(
-                        '${Formatters.distance(trip.distanceKm)} · 28 min',
+                        Formatters.distance(trip.distanceKm),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -283,7 +505,7 @@ class TripDetailScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x06000000),
+                    color: AppColor.scrimSoft,
                     blurRadius: 10,
                     offset: Offset(0, 2),
                   ),
@@ -291,22 +513,223 @@ class TripDetailScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildDetailRow(
-                    icon: LucideIcons.briefcase,
-                    label: 'Purpose',
-                    value: hasPurpose ? trip.purpose : 'Needs attention',
-                    isInteractive: true,
-                    valueColor:
-                        hasPurpose ? AppColors.ink : AppColors.amberDark,
-                    onTap: () {
-                      TripQuickResolveSheet.show(
-                        context,
-                        trip: trip,
-                        appState: appState,
-                      );
-                    },
+                  // 1-Tap Classification Toggle Row
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColor.surfaceSunken,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: AdaptiveRow(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _updateClassification(
+                                TripClassification.business),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(vertical: 9),
+                              decoration: BoxDecoration(
+                                color: isBusiness
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                                boxShadow: isBusiness
+                                    ? const [
+                                        BoxShadow(
+                                          color: AppColor.scrimSoft,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: AdaptiveRow(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    LucideIcons.briefcase,
+                                    size: 15,
+                                    color: isBusiness
+                                        ? AppColors.deepNavy
+                                        : AppColors.muted,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Business',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isBusiness
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: isBusiness
+                                          ? AppColors.deepNavy
+                                          : AppColors.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _updateClassification(
+                                TripClassification.personal),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(vertical: 9),
+                              decoration: BoxDecoration(
+                                color: isPersonal
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                                boxShadow: isPersonal
+                                    ? const [
+                                        BoxShadow(
+                                          color: AppColor.scrimSoft,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: AdaptiveRow(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    LucideIcons.user,
+                                    size: 15,
+                                    color: isPersonal
+                                        ? AppColors.deepNavy
+                                        : AppColors.muted,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Personal',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isPersonal
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: isPersonal
+                                          ? AppColors.deepNavy
+                                          : AppColors.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const Divider(height: 24, color: AppColors.border),
+                  if (!isPersonal) ...[
+                    _buildDetailRow(
+                      icon: LucideIcons.briefcase,
+                      label: 'Purpose',
+                      value: hasPurpose ? trip.purpose : 'Needs attention',
+                      isInteractive: true,
+                      maxLines: 2,
+                      valueColor:
+                          hasPurpose ? AppColors.ink : AppColors.amberDark,
+                      onTap: () {
+                        TripQuickResolveSheet.show(
+                          context,
+                          trip: trip,
+                          appState: appState,
+                          onTripResolved: (resolved) {
+                            setState(() {
+                              _localTrip = resolved;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                    const Divider(height: 24, color: AppColors.border),
+                    if (_isHomeCommute) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const AdaptiveRow(
+                            children: [
+                              Icon(LucideIcons.hammer,
+                                  size: 16, color: AppColors.muted),
+                              SizedBox(width: 10),
+                              Text(
+                                'Heavy Tools & Gear (>20kg)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Required by ATO (TR 2021/1) to claim trips to/from home when no secure storage exists on site.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.muted,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          BulkyToolsToggleChip(
+                            isSelected: isBulkyToolsActive,
+                            isSuggested: bulkySuggestion.isSuggested,
+                            suggestionLabel: bulkySuggestion.badgeText,
+                            estimatedDeductionDelta: claimAmount > 0
+                                ? '+${Formatters.currency(claimAmount)} AUD'
+                                : null,
+                            onChanged: (val) => _toggleBulkyTools(val),
+                          ),
+                          if (isBulkyToolsActive) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: AppColor.positiveTint
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColor.positiveStrong
+                                      .withValues(alpha: 0.35),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: const AdaptiveRow(
+                                children: [
+                                  Icon(
+                                    LucideIcons.shieldCheck,
+                                    size: 15,
+                                    color: AppColor.positiveStrong,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '1-Tap Confirmed: Tools >20kg carried & no secure site storage (ATO TR 2021/1 & Vogt\'s Case)',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColor.positiveInk,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const Divider(height: 24, color: AppColors.border),
+                    ],
+                  ],
                   _buildDetailRow(
                     icon: LucideIcons.car,
                     label: 'Vehicle',
@@ -330,137 +753,86 @@ class TripDetailScreen extends StatelessWidget {
                   const Divider(height: 24, color: AppColors.border),
                   _buildDetailRow(
                     icon: LucideIcons.clipboardList,
-                    label: 'Notes',
+                    label: 'Notes / Job',
                     value: trip.jobReference?.isNotEmpty == true
                         ? trip.jobReference!
-                        : 'Installed electrical switchboard',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Card 3: ATO Evidence Audit Shield (No repetitive "Verified" spam)
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Evidence',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                      Container(
+                        : 'No note added',
+                    trailingBadge: () {
+                      if (trip.jobReference?.isNotEmpty != true) return null;
+                      final ref = trip.jobReference!.trim().toLowerCase();
+                      final matchesPoi = appState.jobSites.any((site) =>
+                          site.name.toLowerCase() == ref ||
+                          site.clientName.toLowerCase() == ref ||
+                          (site.projectCode != null &&
+                              site.projectCode!.toLowerCase() == ref) ||
+                          site.address.toLowerCase().contains(ref));
+                      if (!matchesPoi) return null;
+                      return Container(
+                        margin: const EdgeInsets.only(left: 6),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: hasPurpose
-                              ? const Color(0xFFECFDF5)
-                              : const Color(0xFFFFFBEB),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColor.positiveTint,
+                          borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: hasPurpose
-                                ? const Color(0xFFA7F3D0)
-                                : const Color(0xFFFDE68A),
-                          ),
+                              color: AppColor.positiveTintStrong, width: 0.5),
                         ),
-                        child: Row(
+                        child: const AdaptiveRow(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              hasPurpose
-                                  ? LucideIcons.shieldCheck
-                                  : LucideIcons.alertCircle,
-                              size: 13,
-                              color: hasPurpose
-                                  ? const Color(0xFF059669)
-                                  : AppColors.amberDark,
-                            ),
-                            const SizedBox(width: 4),
+                            Icon(LucideIcons.mapPinCheck,
+                                size: 10, color: AppColor.positiveStrong),
+                            SizedBox(width: 3),
                             Text(
-                              hasPurpose ? 'Audit Ready' : 'Incomplete',
+                              'Verified POI',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: hasPurpose
-                                  ? const Color(0xFF059669)
-                                  : AppColors.amberDark,
+                                color: AppColor.positiveStrong,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 2x2 Clean Evidence Bento Tiles
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildEvidenceTile(
-                          icon: LucideIcons.mapPin,
-                          label: 'Location',
-                          detail: 'GPS point logged',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildEvidenceTile(
-                          icon: LucideIcons.route,
-                          label: 'Distance',
-                          detail: Formatters.distance(trip.distanceKm),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildEvidenceTile(
-                          icon: LucideIcons.clock,
-                          label: 'Time',
-                          detail: 'Timestamp locked',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildEvidenceTile(
-                          icon: LucideIcons.fileCheck,
-                          label: 'Purpose',
-                          detail: hasPurpose ? 'Explicit' : 'Needs entry',
-                          isAlert: !hasPurpose,
-                        ),
-                      ),
-                    ],
+                      );
+                    }(),
                   ),
                 ],
+              ),
+            ),
+            if (trip.linkedExpenseIds.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildEvidenceGraphCapsule(trip, appState),
+            ],
+            const SizedBox(height: 24),
+
+            // Primary Done action
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.deepNavy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildEvidenceGraphCapsule(Trip trip, AppState appState) {
+    return TripEvidenceGraphCapsule(trip: trip, appState: appState);
   }
 
   Widget _buildDetailRow({
@@ -470,23 +842,36 @@ class TripDetailScreen extends StatelessWidget {
     bool isInteractive = false,
     Color? valueColor,
     VoidCallback? onTap,
+    Widget? trailingBadge,
+    int maxLines = 1,
   }) {
-    final row = Row(
+    final row = AdaptiveRow(
+      crossAxisAlignment:
+          maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 16, color: AppColors.muted),
+        Padding(
+          padding: EdgeInsets.only(top: maxLines > 1 ? 2.0 : 0),
+          child: Icon(icon, size: 16, color: AppColors.muted),
+        ),
         const SizedBox(width: 10),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.muted,
+        Padding(
+          padding: EdgeInsets.only(top: maxLines > 1 ? 1.0 : 0),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.muted,
+            ),
           ),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Row(
+          child: AdaptiveRow(
             mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: maxLines > 1
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
               Flexible(
                 child: Text(
@@ -497,15 +882,20 @@ class TripDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: valueColor ?? AppColors.ink,
                   ),
+                  maxLines: maxLines,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (trailingBadge != null) trailingBadge,
               if (isInteractive) ...[
                 const SizedBox(width: 6),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 12,
-                  color: AppColors.muted,
+                Padding(
+                  padding: EdgeInsets.only(top: maxLines > 1 ? 2.0 : 0),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ],
@@ -526,69 +916,5 @@ class TripDetailScreen extends StatelessWidget {
     }
 
     return row;
-  }
-
-  Widget _buildEvidenceTile({
-    required IconData icon,
-    required String label,
-    required String detail,
-    bool isAlert = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isAlert
-              ? const Color(0xFFFDE68A)
-              : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isAlert
-                  ? const Color(0xFFFFFBEB)
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 14,
-              color: isAlert ? AppColors.amberDark : AppColors.ink,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-                Text(
-                  detail,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isAlert ? AppColors.amberDark : AppColors.muted,
-                    fontWeight: isAlert ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

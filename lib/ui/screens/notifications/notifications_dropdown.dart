@@ -1,8 +1,13 @@
+import '../../widgets/adaptive_row.dart';
+import 'package:provider/provider.dart';
+import '../../../state/app_state.dart';
+import '../evidence/evidence_review_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../services/notifications/notification_service.dart';
+import '../../../core/theme/app_color.dart';
 
 class NotificationsDropdown extends StatefulWidget {
   final NotificationService notificationService;
@@ -105,10 +110,10 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
               // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 16, 14, 12),
-                child: Row(
+                child: AdaptiveRow(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    AdaptiveRow(
                       children: [
                         Container(
                           width: 32,
@@ -139,7 +144,7 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF97316),
+                              color: AppColor.attentionStrong,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -154,7 +159,7 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                         ],
                       ],
                     ),
-                    Row(
+                    AdaptiveRow(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (list.isNotEmpty)
@@ -250,7 +255,25 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                           await widget.notificationService.markAsRead(item.id);
                           if (mounted) setState(() {});
                           if (context.mounted) {
-                            Navigator.of(context).pop();
+                            final navigator = Navigator.of(context);
+                            final state =
+                                item.deepLinkRoute == '/evidence-review'
+                                    ? context.read<AppState>()
+                                    : null;
+                            navigator.pop();
+                            final vehicleId = item.data?['vehicleId'];
+                            final financialYear = item.data?['financialYear'];
+                            if (state != null &&
+                                vehicleId is String &&
+                                financialYear is String &&
+                                state.vehicles.any(
+                                    (vehicle) => vehicle.id == vehicleId)) {
+                              navigator.push(MaterialPageRoute<void>(
+                                  builder: (_) => EvidenceReviewScreen(
+                                      appState: state,
+                                      vehicleId: vehicleId,
+                                      financialYear: financialYear)));
+                            }
                             widget.onNotificationAction?.call();
                           }
                         },
@@ -297,75 +320,83 @@ class _NotificationTile extends StatelessWidget {
     switch (notification.type) {
       case KiloTaxNotificationType.tripDetected:
         icon = LucideIcons.car;
-        iconBg = const Color(0xFFEFF6FF);
-        iconColor = const Color(0xFF2563EB);
+        iconBg = AppColor.brandTint;
+        iconColor = AppColor.brandBright;
         break;
       case KiloTaxNotificationType.dailySummary:
         icon = LucideIcons.clipboardCheck;
-        iconBg = const Color(0xFFF0FDF4);
-        iconColor = const Color(0xFF16A34A);
+        iconBg = AppColor.positiveTint;
+        iconColor = AppColor.positiveStrong;
         break;
       case KiloTaxNotificationType.logbookReminder:
         icon = LucideIcons.calendarDays;
-        iconBg = const Color(0xFFFAF5FF);
-        iconColor = const Color(0xFF9333EA);
+        iconBg = AppColor.brandTint;
+        iconColor = AppColor.brand;
         break;
       case KiloTaxNotificationType.complianceAlert:
         icon = LucideIcons.triangleAlert;
-        iconBg = const Color(0xFFFFF7ED);
-        iconColor = const Color(0xFFEA580C);
+        iconBg = AppColor.attentionTintSoft;
+        iconColor = AppColor.attention;
+        break;
+      case KiloTaxNotificationType.eofyAlert:
+        icon = LucideIcons.calendarClock;
+        iconBg = AppColor.attentionTintSoft;
+        iconColor = AppColor.attention;
         break;
     }
 
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: iconBg,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: iconColor),
-      ),
-      title: Row(
-        children: [
-          Expanded(
+    return Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          title: AdaptiveRow(
+            children: [
+              Expanded(
+                child: Text(
+                  notification.title,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight:
+                        notification.isRead ? FontWeight.w600 : FontWeight.w800,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              if (!notification.isRead)
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColor.attentionStrong,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 2),
             child: Text(
-              notification.title,
+              notification.body,
               style: TextStyle(
-                fontSize: 13.5,
-                fontWeight:
-                    notification.isRead ? FontWeight.w600 : FontWeight.w800,
-                color: AppColors.ink,
+                fontSize: 12,
+                color: notification.isRead
+                    ? AppColors.muted
+                    : AppColors.ink.withValues(alpha: 0.8),
+                height: 1.3,
               ),
             ),
           ),
-          if (!notification.isRead)
-            Container(
-              width: 7,
-              height: 7,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF97316),
-                shape: BoxShape.circle,
-              ),
-            ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          notification.body,
-          style: TextStyle(
-            fontSize: 12,
-            color: notification.isRead
-                ? AppColors.muted
-                : AppColors.ink.withValues(alpha: 0.8),
-            height: 1.3,
-          ),
-        ),
-      ),
-    );
+        ));
   }
 }

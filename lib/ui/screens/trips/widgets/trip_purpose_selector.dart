@@ -1,3 +1,7 @@
+import '../../../../core/theme/app_icons.dart';
+import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_space.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -20,15 +24,15 @@ class TripPurposeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'What was this trip for?',
-          style: AppTextStyles.cardPrimary,
+          style: isLogbook ? AppType.section : AppTextStyles.cardPrimary,
         ),
         const SizedBox(height: 12),
 
         _buildOption(
           label: 'Client Site',
-          icon: LucideIcons.briefcase,
+          icon: AppIcons.business,
           isSelected: selectedPurpose == 'Client Site' ||
               selectedPurpose == 'Client / Job',
           onTap: () => onPurposeSelected('Client Site'),
@@ -76,6 +80,41 @@ class TripPurposeSelector extends StatelessWidget {
     required VoidCallback onTap,
     bool isPersonal = false,
   }) {
+    if (isLogbook) {
+      return Semantics(
+          button: true,
+          selected: isSelected,
+          child: Material(
+            color: isSelected ? AppColor.brandTint : AppColor.surface,
+            shape: RoundedRectangleBorder(
+                borderRadius: R.controlR,
+                side: BorderSide(
+                    color: isSelected ? AppColor.ink : AppColor.hairline)),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTap();
+              },
+              child: Padding(
+                  padding: const EdgeInsets.all(S.lg),
+                  child: Row(children: [
+                    Icon(icon,
+                        size: AppIconSize.control, color: AppColor.inkMuted),
+                    const SizedBox(width: S.md),
+                    Expanded(
+                        child: Text(label,
+                            style: isSelected
+                                ? AppType.bodyStrong
+                                : AppType.body)),
+                    const SizedBox(width: S.sm),
+                    Icon(isSelected ? AppIcons.selected : AppIcons.unselected,
+                        size: AppIconSize.control,
+                        color: isSelected ? AppColor.ink : AppColor.inkSubtle),
+                  ])),
+            ),
+          ));
+    }
     final activeColor = isPersonal ? AppColors.muted : AppColors.deepNavy;
     return Material(
       color: Colors.transparent,
@@ -99,7 +138,8 @@ class TripPurposeSelector extends StatelessWidget {
           child: Row(
             children: [
               Icon(icon,
-                  size: 18, color: isSelected ? activeColor : AppColors.muted),
+                  size: AppIconSize.control,
+                  color: isSelected ? activeColor : AppColors.muted),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -112,10 +152,11 @@ class TripPurposeSelector extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(Icons.check_circle_rounded, size: 18, color: activeColor)
+                Icon(AppIcons.selected,
+                    size: AppIconSize.control, color: activeColor)
               else
-                const Icon(Icons.circle_outlined,
-                    size: 18, color: AppColors.border),
+                const Icon(AppIcons.unselected,
+                    size: AppIconSize.control, color: AppColors.border),
             ],
           ),
         ),

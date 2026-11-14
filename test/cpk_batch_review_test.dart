@@ -100,7 +100,7 @@ void main() {
     });
 
     testWidgets(
-        'CpkBatchReviewSheet renders hero value and allows 1-tap approval',
+        'CpkBatchReviewSheet requires explicit confirmation before claiming',
         (tester) async {
       final t1 = Trip(
         id: 't_ui_1',
@@ -125,14 +125,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Smart Trip Verification'), findsOneWidget);
-      expect(find.text('BATCH CLAIM VALUE'), findsOneWidget);
-      // 20 km * 0.91 = $18.20 appears in hero card and item list
-      expect(find.text('+\$18.20'), findsWidgets);
-      expect(find.text('Sign-Off (1)'), findsOneWidget);
+      expect(find.text('NEEDS YOUR CONFIRMATION'), findsOneWidget);
+      expect(find.textContaining('Confirm the job and business reason'),
+          findsOneWidget);
+      expect(find.text('Sign-Off (1)'), findsNothing);
+      expect(appState.missingComplianceTrips.map((trip) => trip.id),
+          contains(t1.id));
+      expect(
+          appState.trips.firstWhere((trip) => trip.id == t1.id).classification,
+          TripClassification.unclassified);
 
-      await tester.tap(find.text('Sign-Off (1)'));
+      // The place name is only a suggestion until the user confirms this trip.
+      final claimAction = find.text('Claim Work Trip');
+      await tester.ensureVisible(claimAction);
+      await tester.tap(claimAction);
       await tester.pumpAndSettle();
 
+      final approved = appState.trips.firstWhere((trip) => trip.id == t1.id);
+      expect(approved.classification, TripClassification.business);
+      expect(approved.purpose, 'Client Site');
       expect(appState.missingComplianceTrips.isEmpty, isTrue);
     });
   });

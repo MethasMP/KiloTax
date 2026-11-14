@@ -6,6 +6,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/trip.dart';
 import '../../../../services/engine/trip_confidence_classifier.dart';
 import '../../../../state/app_state.dart';
+import '../../../../core/theme/app_color.dart';
 
 /// Meta Muse-Inspired "Structured Approval Sheet"
 /// Separates high-confidence work travel (1-tap sign-off) from high-audit-risk drives (user decision card)
@@ -78,7 +79,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
         content: Row(
           children: [
             const Icon(LucideIcons.checkCircle2,
-                color: Color(0xFF34D399), size: 18),
+                color: AppColor.positiveBright, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -148,7 +149,12 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.90,
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -195,7 +201,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                       ),
                     ),
                     Text(
-                      '${pendingTrips.length} drives pending • Muse Safe-Approval',
+                      '${pendingTrips.length} drives pending review',
                       style:
                           const TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
@@ -250,14 +256,13 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
           Expanded(
             child: ListView(
               children: [
-                // SECTION 1: HIGH-CONFIDENCE PRE-COOKED WORK BUNDLE
                 if (highConfidence.isNotEmpty) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: const [
-                          Icon(LucideIcons.sparkles,
+                          Icon(LucideIcons.shieldCheck,
                               size: 14, color: AppColors.emerald),
                           SizedBox(width: 6),
                           Text(
@@ -287,7 +292,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [AppColors.deepNavy, Color(0xFF0F172A)],
+                        colors: [AppColors.deepNavy, AppColor.surfaceNavy],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -305,7 +310,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 const Text(
                                   'BATCH CLAIM VALUE',
                                   style: TextStyle(
-                                    color: Color(0xFF94A3B8),
+                                    color: AppColor.line,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 0.5,
@@ -315,7 +320,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 Text(
                                   '+${Formatters.currency(selectedHighConfidenceDollars)}',
                                   style: const TextStyle(
-                                    color: Color(0xFF34D399),
+                                    color: AppColor.positiveBright,
                                     fontSize: 26,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: -0.5,
@@ -324,11 +329,12 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                               ],
                             ),
                             SizedBox(
-                              height: 42,
+                              height: 48,
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.emerald,
                                   foregroundColor: Colors.white,
+                                  minimumSize: const Size(0, 48),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14),
                                   shape: RoundedRectangleBorder(
@@ -376,20 +382,26 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                       ),
                       child: Row(
                         children: [
-                          Checkbox.adaptive(
-                            value: isSelected,
-                            activeColor: AppColors.emerald,
-                            onChanged: (val) {
-                              setState(() {
-                                if (val == true) {
-                                  _selectedHighConfidenceIds
-                                      .add(assessment.trip.id);
-                                } else {
-                                  _selectedHighConfidenceIds
-                                      .remove(assessment.trip.id);
-                                }
-                              });
-                            },
+                          SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: Checkbox.adaptive(
+                                value: isSelected,
+                                activeColor: AppColors.emerald,
+                                onChanged: (val) {
+                                  setState(() {
+                                    if (val == true) {
+                                      _selectedHighConfidenceIds
+                                          .add(assessment.trip.id);
+                                    } else {
+                                      _selectedHighConfidenceIds
+                                          .remove(assessment.trip.id);
+                                    }
+                                  });
+                                },
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -442,7 +454,6 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                   const SizedBox(height: 16),
                 ],
 
-                // SECTION 2: HIGH-RISK EXCEPTIONS (MUSE SENTINEL CARDS)
                 if (requiresDecision.isNotEmpty) ...[
                   Row(
                     children: const [
@@ -450,7 +461,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                           size: 14, color: AppColors.amberDark),
                       SizedBox(width: 6),
                       Text(
-                        'NEEDS YOUR SIGN-OFF (SENTINEL GUARD)',
+                        'NEEDS YOUR CONFIRMATION',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -470,7 +481,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
+                        border: Border.all(color: AppColor.attentionTintStrong),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.02),
@@ -524,7 +535,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                             '${Formatters.distance(assessment.trip.distanceKm)} • ${assessment.decisionReason}',
                             style: const TextStyle(
                                 fontSize: 11.5,
-                                color: Color(0xFF92400E),
+                                color: AppColor.attentionInk,
                                 height: 1.3),
                           ),
                           const SizedBox(height: 12),
@@ -538,6 +549,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                     backgroundColor: AppColors.emeraldLight,
                                     foregroundColor: AppColors.emerald,
                                     elevation: 0,
+                                    minimumSize: const Size(0, 48),
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 8),
                                     shape: RoundedRectangleBorder(
@@ -565,6 +577,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.muted,
+                                    minimumSize: const Size(0, 48),
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 8),
                                     shape: RoundedRectangleBorder(

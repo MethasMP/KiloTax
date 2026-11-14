@@ -101,7 +101,7 @@ void main() {
       // Verify Money Left on the Table Card warns about lost claim
       expect(find.text('MONEY LEFT ON THE TABLE'), findsOneWidget);
       expect(find.text('-\$45.50 AT RISK'), findsOneWidget);
-      expect(find.textContaining('TR 97/11'), findsOneWidget);
+      expect(find.textContaining('missing a work reason'), findsOneWidget);
       expect(find.textContaining('Recover \$45.50 in 1 Tap'), findsOneWidget);
     });
 
@@ -165,12 +165,12 @@ void main() {
       await tester.tap(find.text('Switch'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Set Up Your Logbook'), findsOneWidget);
-      expect(find.text('Start 12-Week Logbook'), findsOneWidget);
+      expect(find.text('Set up logbook'), findsOneWidget);
+      expect(find.text('Start 12-week logbook'), findsOneWidget);
 
       // Scroll into view and confirm starting logbook
-      await tester.ensureVisible(find.text('Start 12-Week Logbook'));
-      await tester.tap(find.text('Start 12-Week Logbook'));
+      await tester.ensureVisible(find.text('Start 12-week logbook'));
+      await tester.tap(find.text('Start 12-week logbook'));
       await tester.pumpAndSettle();
 
       expect(appState.primaryVehicle?.taxMethod, equals(TaxMethod.logbook));

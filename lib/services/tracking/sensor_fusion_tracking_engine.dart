@@ -1,6 +1,8 @@
 import 'package:geolocator/geolocator.dart';
 import 'wgs84_geodesic_engine.dart';
 
+export 'odometer_gap_reconciler.dart';
+
 /// Sensor Fusion & Dead Reckoning Core Engine
 ///
 /// Principles:
@@ -49,10 +51,20 @@ class SensorFusionTrackingEngine {
 
   /// Ingests a raw GPS fix, applies Sensor Fusion, Kalman & WGS-84 Geodesic filters,
   /// and outputs high-fidelity audited distance delta.
-  FilteredPositionUpdate processFix(Position newFix) {
-    final now = DateTime.now();
+  FilteredPositionUpdate processFix(Position newFix, {bool allowMockLocations = false}) {
+    // Filter out spoofed/mocked GPS fixes to prevent audit fraud
+    if (newFix.isMocked && !allowMockLocations) {
+      return FilteredPositionUpdate(
+        distanceDeltaKm: 0.0,
+        instantaneousSpeedKmh: 0.0,
+        isStationary: true,
+        isAnomalousJumpDiscarded: true,
+        currentPosition: _lastValidPosition ?? newFix,
+      );
+    }
 
-    // 1. First Fix Baseline
+    final now = newFix.timestamp;
+
     if (_lastValidPosition == null || _lastTimestamp == null) {
       _lastValidPosition = newFix;
       _lastTimestamp = now;
@@ -67,11 +79,9 @@ class SensorFusionTrackingEngine {
       );
     }
 
-    // 2. Compute Physical Time Delta
     final dtSeconds = (now.difference(_lastTimestamp!).inMilliseconds / 1000.0)
-        .clamp(0.001, 60.0);
+        .clamp(0.05, 60.0);
 
-    // 3. Compute WGS-84 Ellipsoidal Geodesic Distance (Vincenty's Inverse)
     final rawMeters = Wgs84GeodesicEngine.calculateDistanceMeters(
       lat1: _lastValidPosition!.latitude,
       lon1: _lastValidPosition!.longitude,
@@ -79,7 +89,6 @@ class SensorFusionTrackingEngine {
       lon2: newFix.longitude,
     );
 
-    // 4. Physical Speed Validation (Sanity Check against teleportation / multipath reflection)
     final calculatedSpeedMs = rawMeters / dtSeconds;
     final calculatedSpeedKmh = calculatedSpeedMs * 3.6;
 
@@ -108,11 +117,12 @@ class SensorFusionTrackingEngine {
       );
     }
 
-    // Filter C: Stationary Jitter / Dead Zone Filter
-    // If phone is stationary or moving less than 3.5m with low speed
-    final sensorSpeedKmh = newFix.speed > 0.8 ? (newFix.speed * 3.6) : 0.0;
-    final isStationary =
-        sensorSpeedKmh < 3.0 && rawMeters < minMovementThresholdMeters;
+    // Filter C: Stationary Jitter / Dead Zone Filter (ZUPT: Zero Velocity Update)
+    // When speed is 0 (or below human crawl threshold 1.0 km/h) and movement is within jitter radius,
+    // clamp to stationary and discard any accumulated drift.
+    final sensorSpeedKmh = newFix.speed > 0.3 ? (newFix.speed * 3.6) : 0.0;
+    final isStationary = sensorSpeedKmh == 0.0 ||
+        (sensorSpeedKmh < 2.0 && rawMeters < minMovementThresholdMeters);
 
     if (isStationary) {
       _lastTimestamp = now;
@@ -126,7 +136,6 @@ class SensorFusionTrackingEngine {
       );
     }
 
-    // 5. High-Fidelity Update Accepted
     _lastValidPosition = newFix;
     _lastTimestamp = now;
     _lastValidSpeedKmh =

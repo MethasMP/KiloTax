@@ -75,9 +75,11 @@ void main() {
       expect(find.text('MONEY LEFT ON THE TABLE'), findsOneWidget);
       expect(
           find.textContaining('800 km until trips earn \$0'), findsOneWidget);
+      // Body must state the real vault count, never an invented one.
       expect(
-          find.textContaining('fuel receipts in the glovebox'), findsOneWidget);
+          find.textContaining('in the vault'), findsOneWidget);
       expect(find.text('Claim My Fuel'), findsOneWidget);
+      expect(find.textContaining('8 fuel receipts'), findsNothing);
     });
 
     test(

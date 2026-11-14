@@ -1,3 +1,6 @@
+import '../../../core/theme/app_typography.dart';
+import '../../widgets/adaptive_row.dart';
+import '../../../core/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -6,11 +9,15 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/tax_summary.dart';
 import '../../../data/models/vehicle.dart';
-import '../../../services/engine/tax_pack_share_helper.dart';
 import '../../../state/app_state.dart';
 import '../compliance/compliance_center_screen.dart';
 import '../trips/trip_detection_screen.dart';
 import '../trips/trip_quick_resolve_sheet.dart';
+import '../evidence/evidence_review_screen.dart';
+import '../workflow/workflow_screen.dart';
+import '../../../core/theme/app_color.dart';
+import '../dashboard/widgets/tax_readiness_card.dart';
+import '../home/widgets/trips_ledger_tab.dart';
 
 /// Professional ATO Tax Summary Desk
 /// Designed for compliant record-keeping and senior tax agent review:
@@ -25,210 +32,133 @@ class TaxSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final summary = appState.taxSummary;
-    final primaryVehicle = appState.primaryVehicle;
-    final isCpk = (primaryVehicle?.taxMethod ?? TaxMethod.centsPerKm) ==
-        TaxMethod.centsPerKm;
-
-    final vehicleClaim = isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
-    final otherExpenses = summary.totalDirectDeductions;
-    final totalClaim =
-        isCpk ? summary.centsPerKmClaim : (vehicleClaim + otherExpenses);
-
-    final score = appState.taxReadinessScore;
-    final missingTrips = appState.missingComplianceTrips;
-    final unclassifiedExpenses = appState.unclassifiedExpenses;
-    final totalIssues =
-        missingTrips.length + (isCpk ? 0 : unclassifiedExpenses.length);
-
-    // Contextual Arbitrage Status
+    final vehicle = appState.primaryVehicle;
+    final isCpk =
+        (vehicle?.taxMethod ?? TaxMethod.centsPerKm) == TaxMethod.centsPerKm;
+    final totalClaim = isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
     final hasActivity = summary.totalKm > 0 || summary.totalRunningExpenses > 0;
-    final logbookHasAdvantage =
-        summary.recommendedMethod == RecommendedMethod.logbook &&
-            summary.taxSavingsDiff > 0;
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColor.canvas,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: Navigator.of(context).canPop()
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 18, color: AppColors.ink),
-                onPressed: () => Navigator.of(context).pop(),
-              )
-            : null,
-        title: Column(
+          backgroundColor: AppColor.canvas,
+          title: const Text('Tax Summary'),
+          centerTitle: false),
+      bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              child: FilledButton.icon(
+                onPressed: () =>
+                    EvidenceReviewScreen.show(context, appState: appState),
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColor.ink,
+                    foregroundColor: AppColor.onNavy,
+                    minimumSize: const Size(48, 48)),
+                icon: const Icon(Icons.ios_share, size: 20),
+                label: const Text('Review & share'),
+              ))),
+      body: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           children: [
-            const Text(
-              'Tax Summary',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.ink,
-                letterSpacing: -0.4,
-              ),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              'FY ${appState.activeTaxRule.financialYear} • ATO Schedule D1',
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.muted,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: 'Share Tax Pack (PDF + CSV)',
-            icon: const Icon(LucideIcons.share2,
-                size: 19, color: AppColors.deepNavy),
-            onPressed: () => TaxPackShareHelper.shareTaxPack(context, appState),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1. COMPACT ATO CLAIM & FILING CONTEXT STRIP
-            _buildCompactTaxClaimStrip(
-              appState: appState,
-              totalClaim: totalClaim,
-              isCpk: isCpk,
-              primaryVehicle: primaryVehicle,
-            ),
-            const SizedBox(height: 14),
-
-            // 2. PRIMARY FOCUS: ATO AUDIT-READINESS INTEGRITY CARD
-            _buildAuditReadinessCard(
-              context: context,
-              appState: appState,
-              score: score,
-              totalIssues: totalIssues,
-              missingTrips: missingTrips,
-              unclassifiedExpenses: unclassifiedExpenses,
-              isCpk: isCpk,
-            ),
+            Text('FY ${appState.activeTaxRule.financialYear}',
+                style: AppType.secondary),
             const SizedBox(height: 16),
-
-            // 3. INTELLIGENT METHOD ARBITRAGE CARD (Shows only when user has activity data)
-            if (hasActivity) ...[
-              _buildArbitrageAdvisorCard(
-                context: context,
+            _buildCompactTaxClaimStrip(
                 appState: appState,
-                summary: summary,
+                totalClaim: totalClaim,
                 isCpk: isCpk,
-                hasActivity: hasActivity,
-                logbookHasAdvantage: logbookHasAdvantage,
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // 4. THE ACCOUNTANT HAND-OFF FLYWHEEL
-            _buildAccountantHandoffCard(
-                context, appState, isCpk, totalClaim, score),
-          ],
-        ),
-      ),
+                primaryVehicle: vehicle),
+            const SizedBox(height: 20),
+            TaxReadinessCard(appState: appState),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+                onPressed: () => WorkflowScreen.show(context, appState),
+                icon: const Icon(Icons.account_tree_outlined),
+                label: const Text('Trip → Job → Receipt → Pack')),
+            const SizedBox(height: 16),
+            const Text('Before sharing', style: AppType.section),
+            const SizedBox(height: 8),
+            const Text(
+                'Review your records and available receipt files. The sharing flow lets you check the pack before sending it.',
+                style: AppType.body),
+            const SizedBox(height: 16),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Record checklist', style: AppType.bodyStrong),
+              subtitle: const Text(
+                  'Vehicle, trip details and supporting records',
+                  style: AppType.secondary),
+              children: [
+                _buildAuditReadinessCard(
+                    context: context,
+                    appState: appState,
+                    score: appState.taxReadinessScore,
+                    totalIssues: appState.evidenceReview.items.length,
+                    missingTrips: appState.missingComplianceTrips,
+                    unclassifiedExpenses: appState.unclassifiedExpenses,
+                    isCpk: isCpk)
+              ],
+            ),
+            if (hasActivity)
+              _buildArbitrageAdvisorCard(
+                  context: context,
+                  appState: appState,
+                  summary: summary,
+                  isCpk: isCpk,
+                  hasActivity: hasActivity,
+                  logbookHasAdvantage:
+                      summary.recommendedMethod == RecommendedMethod.logbook),
+            ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Detailed record checks',
+                    style: AppType.bodyStrong),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) =>
+                        ComplianceCenterScreen(appState: appState)))),
+          ]),
     );
   }
 
-  /// 1. Compact ATO Tax Claim & Filing Context Strip
   Widget _buildCompactTaxClaimStrip({
     required AppState appState,
     required double totalClaim,
     required bool isCpk,
     required Vehicle? primaryVehicle,
   }) {
-    final rateCents = (appState.activeTaxRule.centsPerKmRate * 100).toStringAsFixed(0);
-
+    final rateCents = (appState.activeTaxRule.centsPerKmRate * 100).toInt();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: AppColors.emeraldLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(LucideIcons.shieldCheck,
-                size: 16, color: AppColors.emerald),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      isCpk ? 'ATO Cents/KM ($rateCents¢)' : 'ATO Logbook Claim',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    if (primaryVehicle?.regoPlate != null &&
-                        primaryVehicle!.regoPlate.isNotEmpty &&
-                        primaryVehicle.regoPlate != 'No Plate') ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        '• ${primaryVehicle.regoPlate}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Tax Deduction Subtotal',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          color: AppColor.surface,
+          border: Border.all(color: AppColor.hairline),
+          borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Estimated deduction', style: AppType.bodyStrong),
+        const SizedBox(height: 8),
+        Text(Formatters.currency(totalClaim), style: AppType.title),
+        const SizedBox(height: 8),
+        Text(
+            isCpk
+                ? 'Cents per kilometre · $rateCents¢/km'
+                : '${primaryVehicle?.taxMethod.title ?? 'Logbook'} · Recorded expenses',
+            style: AppType.secondary),
+        if (isCpk) ...[
+          const SizedBox(height: 8),
           Text(
-            Formatters.currency(totalClaim),
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-              color: AppColors.ink,
-              letterSpacing: -0.4,
-            ),
-          ),
+              '${Formatters.distance(appState.taxSummary.businessKm)} business recorded · Calculation limited to ${appState.activeTaxRule.centsPerKmMaxKm.toStringAsFixed(0)} km',
+              style: AppType.secondary),
+          if (appState.taxSummary.businessKm >=
+              appState.activeTaxRule.centsPerKmMaxKm)
+            Text('Kilometre limit reached for this estimate.',
+                style:
+                    AppType.secondary.copyWith(color: AppColor.attentionInk)),
         ],
-      ),
+        const SizedBox(height: 8),
+        const Text(
+            'Based on the records entered so far. This is a deduction estimate, not a tax refund.',
+            style: AppType.secondary),
+      ]),
     );
   }
 
@@ -241,188 +171,27 @@ class TaxSummaryScreen extends StatelessWidget {
     required bool hasActivity,
     required bool logbookHasAdvantage,
   }) {
-    if (!hasActivity) {
-      return const SizedBox.shrink();
-    }
-
-    if (logbookHasAdvantage && isCpk) {
-      // High-Value Arbitrage Opportunity: Logbook offers higher yield!
-      return Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0F2B48), Color(0xFF0B1F33)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.deepNavy.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.4)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.sparkles,
-                          size: 11, color: Color(0xFF34D399)),
-                      SizedBox(width: 5),
-                      Text(
-                        'LOGBOOK ADVANTAGE DETECTED',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          color: Color(0xFF34D399),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '+${Formatters.currency(summary.taxSavingsDiff)} extra',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF34D399),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Switching to the Logbook method will unlock an estimated +${Formatters.currency(summary.taxSavingsDiff)} extra deductions from actual fuel, servicing and depreciation.',
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: Color(0xFFE2E8F0),
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildComparisonPill(
-                    label: 'Cents / KM (Current)',
-                    amount: Formatters.currency(summary.centsPerKmClaim),
-                    isActive: false,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildComparisonPill(
-                    label: 'Logbook (Optimal)',
-                    amount: Formatters.currency(summary.logbookClaim),
-                    isActive: true,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Default Balanced State (CPK is currently optimal or equivalent)
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.emeraldLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(LucideIcons.check,
-                size: 16, color: AppColors.emerald),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isCpk
-                      ? 'Cents per KM is currently optimal'
-                      : 'Logbook method active',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isCpk
-                      ? 'Maximum deduction with zero fuel receipt substantiation required.'
-                      : 'Tracking actual running expenses multiplied by your business use %.',
-                  style: const TextStyle(
-                      fontSize: 11.5, color: AppColors.muted, height: 1.3),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparisonPill(
-      {required String label, required String amount, required bool isActive}) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isActive ? const Color(0xFF34D399) : Colors.white12,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF94A3B8),
-                fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: isActive ? const Color(0xFF34D399) : Colors.white,
-            ),
-          ),
-        ],
-      ),
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: const Text('Compare method estimates', style: AppType.bodyStrong),
+      subtitle: const Text('View amounts and evidence requirements',
+          style: AppType.secondary),
+      childrenPadding: const EdgeInsets.only(bottom: 16),
+      children: [
+        ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Cents / km estimate'),
+            subtitle: Text(Formatters.currency(summary.centsPerKmClaim),
+                style: AppType.cardNumeric)),
+        ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Logbook estimate'),
+            subtitle: Text(Formatters.currency(summary.logbookClaim),
+                style: AppType.cardNumeric)),
+        const Text(
+            'These estimates use the records available. A different method may require additional evidence. Review the method and records with your accountant before changing.',
+            style: AppType.secondary),
+      ],
     );
   }
 
@@ -436,17 +205,7 @@ class TaxSummaryScreen extends StatelessWidget {
     required List<dynamic> unclassifiedExpenses,
     required bool isCpk,
   }) {
-    final hasNoTrips = appState.trips.isEmpty;
-    final readinessTitle = hasNoTrips
-        ? 'Setup Complete'
-        : (score >= 90 ? 'ATO Audit-Ready' : 'Substantiation in Progress');
-
-    final readinessColor = score >= 90
-        ? AppColors.emerald
-        : (hasNoTrips
-            ? const Color(0xFF2563EB) // Royal Blue: Calm, armed, setup complete
-            : (score >= 50 ? AppColors.amberDark : AppColors.crimson));
-
+    final scopedTrips = appState.evidenceReview.trips;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -457,109 +216,16 @@ class TaxSummaryScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'AUDIT READINESS SCORE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      color: AppColors.muted,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    readinessTitle,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                '$score%',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22,
-                  color: readinessColor,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: score / 100.0,
-              minHeight: 7,
-              backgroundColor: AppColors.background,
-              valueColor: AlwaysStoppedAnimation<Color>(readinessColor),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Actionable State / Review Link
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                totalIssues == 0
-                    ? (hasNoTrips
-                        ? 'Awaiting initial drive logs'
-                        : 'All logged records substantiated')
-                    : '$totalIssues ${totalIssues == 1 ? "item needs" : "items need"} attention',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color:
-                      totalIssues == 0 ? AppColors.muted : AppColors.amberDark,
-                ),
-              ),
-              if (totalIssues > 0)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ComplianceCenterScreen(appState: appState),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Review all →',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12.5,
-                      color: AppColors.deepNavy,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const Divider(height: 20, color: AppColors.border),
-
           // Interactive ATO Audit Ledger (Kidlin's Law: Zero Ambiguity, 100% Actionable)
           _buildInteractiveAuditRow(
             context: context,
-            icon: appState.hasVehicle
-                ? LucideIcons.checkCircle2
-                : LucideIcons.circle,
+            icon:
+                appState.hasVehicle ? AppIcons.confirmed : AppIcons.unselected,
             statusColor:
                 appState.hasVehicle ? AppColors.emerald : AppColors.muted,
             title: 'Vehicle Profile',
             subtitle: appState.primaryVehicle?.displayName ?? 'Not configured',
-            actionLabel: appState.hasVehicle ? 'Edit →' : 'Setup →',
+            actionLabel: appState.hasVehicle ? 'View profile' : 'Set up',
             onTap: () {
               HapticFeedback.lightImpact();
               _showVehicleProfileSheet(context, appState);
@@ -570,14 +236,14 @@ class TaxSummaryScreen extends StatelessWidget {
           _buildInteractiveAuditRow(
             context: context,
             icon: appState.primaryVehicle != null
-                ? LucideIcons.checkCircle2
-                : LucideIcons.circle,
+                ? AppIcons.confirmed
+                : AppIcons.unselected,
             statusColor: appState.primaryVehicle != null
                 ? AppColors.emerald
                 : AppColors.muted,
             title: 'ATO Tax Method',
             subtitle: isCpk
-                ? 'Cents per KM (91¢/km)'
+                ? 'Cents per km (${(appState.activeTaxRule.centsPerKmRate * 100).toInt()}¢/km)'
                 : 'Logbook Method (Actual Expenses)',
             actionLabel: 'Active',
             isActionEnabled: false,
@@ -588,29 +254,33 @@ class TaxSummaryScreen extends StatelessWidget {
           if (isCpk) ...[
             _buildInteractiveAuditRow(
               context: context,
-              icon: appState.trips.isNotEmpty
-                  ? LucideIcons.checkCircle2
-                  : LucideIcons.circle,
-              statusColor: appState.trips.isNotEmpty
-                  ? AppColors.emerald
-                  : AppColors.muted,
-              title: 'Reasonable estimate basis established',
-              subtitle: appState.trips.isNotEmpty
-                  ? '${appState.trips.length} drives recorded'
-                  : 'Awaiting initial drive logs',
-              actionLabel: appState.trips.isNotEmpty ? 'View →' : 'Log Drive →',
+              icon: scopedTrips.isNotEmpty
+                  ? AppIcons.confirmed
+                  : AppIcons.unselected,
+              statusColor:
+                  scopedTrips.isNotEmpty ? AppColors.emerald : AppColors.muted,
+              title: 'Recorded trip history',
+              subtitle: scopedTrips.isNotEmpty
+                  ? '${scopedTrips.length} ${scopedTrips.length == 1 ? 'drive' : 'drives'} recorded'
+                  : 'No trips recorded',
+              actionLabel: scopedTrips.isNotEmpty ? 'View' : 'Log drive',
               onTap: () {
                 HapticFeedback.lightImpact();
-                TripDetectionScreen.show(context, appState);
+                if (scopedTrips.isEmpty) {
+                  TripDetectionScreen.show(context, appState);
+                } else {
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => TripsLedgerTab(appState: appState)));
+                }
               },
             ),
             const SizedBox(height: 10),
-            if (appState.trips.isEmpty)
+            if (scopedTrips.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.circle,
+                icon: AppIcons.unselected,
                 statusColor: AppColors.muted,
-                title: 'Business trips substantiated',
+                title: 'Business trip details',
                 subtitle: 'Awaiting drive logs to substantiate',
                 actionLabel: 'Awaiting Drives',
                 isActionEnabled: false,
@@ -619,12 +289,12 @@ class TaxSummaryScreen extends StatelessWidget {
             else if (missingTrips.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.checkCircle2,
+                icon: AppIcons.confirmed,
                 statusColor: AppColors.emerald,
-                title: 'Business trips substantiated',
+                title: 'Business trip details',
                 subtitle:
-                    '${appState.trips.length} drives verified & ATO compliant',
-                actionLabel: 'Details →',
+                    '${scopedTrips.length} ${scopedTrips.length == 1 ? 'drive' : 'drives'} recorded',
+                actionLabel: 'Details',
                 onTap: () {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
@@ -638,7 +308,7 @@ class TaxSummaryScreen extends StatelessWidget {
             else
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.alertTriangle,
+                icon: AppIcons.warning,
                 statusColor: AppColors.amberDark,
                 title: '${missingTrips.length} Trips Need Work Purpose',
                 subtitle: 'ATO requires clear business justification',
@@ -654,8 +324,8 @@ class TaxSummaryScreen extends StatelessWidget {
             _buildInteractiveAuditRow(
               context: context,
               icon: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
-                  ? LucideIcons.checkCircle2
-                  : LucideIcons.circle,
+                  ? AppIcons.confirmed
+                  : AppIcons.unselected,
               statusColor: (appState.primaryVehicle?.initialOdometer ?? 0) > 0
                   ? AppColors.emerald
                   : AppColors.muted,
@@ -679,7 +349,7 @@ class TaxSummaryScreen extends StatelessWidget {
             if (missingTrips.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.checkCircle2,
+                icon: AppIcons.confirmed,
                 statusColor: AppColors.emerald,
                 title: 'Logbook Trips Classified',
                 subtitle: 'All trips split by business & personal',
@@ -697,7 +367,7 @@ class TaxSummaryScreen extends StatelessWidget {
             else
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.alertTriangle,
+                icon: AppIcons.warning,
                 statusColor: AppColors.amberDark,
                 title: '${missingTrips.length} Unclassified Drives',
                 subtitle: 'Classify as Business or Personal for %',
@@ -713,10 +383,10 @@ class TaxSummaryScreen extends StatelessWidget {
             if (unclassifiedExpenses.isEmpty)
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.checkCircle2,
+                icon: AppIcons.confirmed,
                 statusColor: AppColors.emerald,
-                title: 'Receipts Backed Up',
-                subtitle: 'Fuel, rego and service receipts in vault',
+                title: 'Receipt details confirmed',
+                subtitle: 'Receipt files are checked when preparing the pack',
                 actionLabel: 'Vault →',
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -731,10 +401,10 @@ class TaxSummaryScreen extends StatelessWidget {
             else
               _buildInteractiveAuditRow(
                 context: context,
-                icon: LucideIcons.receipt,
+                icon: AppIcons.expenses,
                 statusColor: AppColors.amberDark,
-                title: '${unclassifiedExpenses.length} Receipts Need Category',
-                subtitle: 'Add expense type and receipt photo',
+                title: '${unclassifiedExpenses.length} Expenses Need Review',
+                subtitle: 'Confirm details and attach receipt photos',
                 actionLabel: 'Fix →',
                 isAlert: true,
                 onTap: () {
@@ -769,9 +439,10 @@ class TaxSummaryScreen extends StatelessWidget {
       child: InkWell(
         onTap: isActionEnabled ? onTap : null,
         borderRadius: BorderRadius.circular(10),
-        child: Padding(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-          child: Row(
+          child: AdaptiveRow(
             children: [
               Icon(icon, size: 17, color: statusColor),
               const SizedBox(width: 10),
@@ -804,7 +475,7 @@ class TaxSummaryScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: !isActionEnabled
-                      ? const Color(0xFFF1F5F9)
+                      ? AppColor.surfaceMuted
                       : (isAlert ? AppColors.amberLight : AppColors.background),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
@@ -815,15 +486,28 @@ class TaxSummaryScreen extends StatelessWidget {
                             : AppColors.border),
                   ),
                 ),
-                child: Text(
-                  actionLabel,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: !isActionEnabled
-                        ? AppColors.muted
-                        : (isAlert ? AppColors.deepNavy : AppColors.muted),
-                  ),
+                child: AdaptiveRow(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      actionLabel.replaceAll('→', '').trim(),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: !isActionEnabled
+                            ? AppColors.muted
+                            : (isAlert ? AppColors.deepNavy : AppColors.muted),
+                      ),
+                    ),
+                    if (isActionEnabled && actionLabel.contains('→')) ...[
+                      const SizedBox(width: 3),
+                      Icon(
+                        AppIcons.next,
+                        size: AppIconSize.inline,
+                        color: isAlert ? AppColors.deepNavy : AppColors.muted,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -859,7 +543,7 @@ class TaxSummaryScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              AdaptiveRow(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -867,8 +551,8 @@ class TaxSummaryScreen extends StatelessWidget {
                       color: AppColors.emeraldLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(LucideIcons.car,
-                        color: AppColors.emerald, size: 22),
+                    child: const Icon(AppIcons.vehicle,
+                        color: AppColors.emerald, size: AppIconSize.control),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -904,7 +588,7 @@ class TaxSummaryScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Row(
+                    AdaptiveRow(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Tax Strategy',
@@ -922,7 +606,7 @@ class TaxSummaryScreen extends StatelessWidget {
                       ],
                     ),
                     const Divider(height: 16, color: AppColors.border),
-                    Row(
+                    AdaptiveRow(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('ATO Logged Drives',
@@ -953,8 +637,9 @@ class TaxSummaryScreen extends StatelessWidget {
                     ),
                   );
                 },
-                icon: const Icon(LucideIcons.shieldCheck, size: 16),
-                label: const Text('View Full Compliance Audit',
+                icon: const Icon(LucideIcons.shieldCheck,
+                    size: AppIconSize.inline),
+                label: const Text('Open record checks',
                     style: TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.deepNavy,
@@ -973,75 +658,4 @@ class TaxSummaryScreen extends StatelessWidget {
   }
 
   /// 4. Primary Handoff Flywheel: 1-Tap Accountant Pack
-  Widget _buildAccountantHandoffCard(
-    BuildContext context,
-    AppState appState,
-    bool isCpk,
-    double totalClaim,
-    int score,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(LucideIcons.userCheck,
-                    color: AppColors.deepNavy, size: 18),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Accountant Hand-off',
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ink),
-                    ),
-                    SizedBox(height: 1),
-                    Text(
-                      'Email ATO Tax Pack (PDF + CSV) in 1 tap',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ElevatedButton.icon(
-            icon: const Icon(LucideIcons.mail, size: 16),
-            label: const Text(
-              'Share with Accountant',
-              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.deepNavy,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            onPressed: () => TaxPackShareHelper.shareTaxPack(context, appState),
-          ),
-        ],
-      ),
-    );
-  }
 }

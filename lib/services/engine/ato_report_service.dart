@@ -162,7 +162,7 @@ class AtoReportService {
           ? summary.businessKm
           : trips
               .where((t) => t.isBusiness)
-              .fold(0.0, (sum, t) => sum + t.distanceKm);
+              .fold(0.0, (sum, t) => sum + t.businessDistanceKm);
 
       totalAggregatedWorkKm += workKm;
 
@@ -221,7 +221,7 @@ class AtoReportService {
           ? summary.businessKm
           : trips
               .where((t) => t.isBusiness)
-              .fold(0.0, (sum, t) => sum + t.distanceKm);
+              .fold(0.0, (sum, t) => sum + t.businessDistanceKm);
 
       buffer.writeln('Vehicle #$idx: ${v.regoPlate} - ${v.displayName}');
       if (v.taxMethod == TaxMethod.centsPerKm) {
@@ -252,7 +252,7 @@ class AtoReportService {
         buffer.writeln(
             '  • Work Distance:       ${workKm.toStringAsFixed(1)} km');
         buffer.writeln(
-            '  • Business Use %:      ${businessPct.toStringAsFixed(2)}% (TR 97/11 compliant)');
+            '  • Business Use %:      ${businessPct.toStringAsFixed(2)}% (review supporting records)');
         buffer.writeln(
             '  • Subtotal Deduction:  \$${vClaim.toStringAsFixed(2)} AUD\n');
       }
@@ -287,9 +287,9 @@ class AtoReportService {
     buffer.writeln(
         '====================================================================================================\n');
 
-    buffer.writeln('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):');
     buffer.writeln(
-        '$statutoryDisclaimer\n'
+        'STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):');
+    buffer.writeln('$statutoryDisclaimer\n'
         'KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected');
     buffer.writeln(
         'to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).\n'
@@ -323,7 +323,7 @@ class AtoReportService {
           ? summary.businessKm
           : trips
               .where((t) => t.isBusiness)
-              .fold(0.0, (sum, t) => sum + t.distanceKm);
+              .fold(0.0, (sum, t) => sum + t.businessDistanceKm);
 
       final isCpk = v.taxMethod == TaxMethod.centsPerKm;
       final methodStr = isCpk ? 'CPK' : 'LOGBOOK';
@@ -345,11 +345,14 @@ class AtoReportService {
 
       final sanitizedId = CsvSecurity.sanitizeCsvCell(v.id);
       final sanitizedRego = CsvSecurity.sanitizeCsvCell(v.regoPlate);
-      final sanitizedModel =
-          CsvSecurity.sanitizeCsvCell('${v.make} ${v.model}');
+      final modelStr = '${v.make} ${v.model}';
+      final sanitizedModel = CsvSecurity.sanitizeCsvCell(modelStr);
+      final modelCell = modelStr.contains(',') || modelStr.contains('"')
+          ? '"$sanitizedModel"'
+          : sanitizedModel;
 
       buffer.writeln(
-        '$sanitizedId,$sanitizedRego,$sanitizedModel,$methodStr,${workKm.toStringAsFixed(2)},${cappedKm.toStringAsFixed(2)},$rateOrPct,${claimAmount.toStringAsFixed(2)},${claimAmount.toStringAsFixed(2)}',
+        '$sanitizedId,$sanitizedRego,$modelCell,$methodStr,${workKm.toStringAsFixed(2)},${cappedKm.toStringAsFixed(2)},$rateOrPct,${claimAmount.toStringAsFixed(2)},${claimAmount.toStringAsFixed(2)}',
       );
     }
 
@@ -371,48 +374,64 @@ class AtoReportService {
     required int tripCount,
     required int expenseCount,
     required AtoTaxRule taxRule,
+    double? openingOdometer,
+    double? closingOdometer,
+    bool isGaplessAuditProof = true,
   }) {
     final isCpk = vehicle.taxMethod == TaxMethod.centsPerKm;
     final claimAmount = isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
     final methodCode = isCpk ? 'S (Cents per km)' : 'B (Logbook)';
 
+    final effectiveOpeningOdo = openingOdometer ??
+        (vehicle.initialOdometer > 0 ? vehicle.initialOdometer : null);
+    final effectiveClosingOdo = closingOdometer;
+
     if (isCpk) {
       return '''Hi [Accountant Name],
 
-Here is my official ATO Vehicle Tax Lodgement Summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
+Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
 
 --------------------------------------------------
 📊 ATO TAX RETURN BOX D1 CLAIM (FY${taxRule.financialYear}):
 --------------------------------------------------
 • Claim Method: Box D1 Code $methodCode
 • Statutory Rate: ${(taxRule.centsPerKmRate * 100).toInt()}c / km
-• Total Claimable Distance: ${summary.businessKm.toStringAsFixed(1)} km (Capped at 5,000 km)
+• Total Claimable Distance: ${summary.businessKm.toStringAsFixed(1)} km (Capped at 5,000 km per s 28-25)
 • Final Box D1 Deductible Claim: \$${claimAmount.toStringAsFixed(2)} AUD
+• Odometer Check: ${isGaplessAuditProof ? 'No reported odometer gaps; review recorded trip sources' : 'Standard Log'}
 
 📁 ATTACHED EVIDENCE:
-• Total Logged Work Drives: $tripCount (Contemporaneous GPS Log)
-• Reasonable Estimate Ledger attached: KiloTax_CPK_Trip_Ledger.csv
+• Total Logged Work Drives: $tripCount (review recorded sources)
+• Confirm the trip ledger and supporting files supplied with this message.
 
 Regards,
 [Tradie Name]
 ''';
     } else {
+      final odoLine = (effectiveOpeningOdo != null &&
+              effectiveClosingOdo != null)
+          ? '• Odometer Period: ${effectiveOpeningOdo.toStringAsFixed(0)} km (Opening) to ${effectiveClosingOdo.toStringAsFixed(0)} km (Closing)\n'
+          : (effectiveOpeningOdo != null
+              ? '• Opening Odometer: ${effectiveOpeningOdo.toStringAsFixed(0)} km (Baseline Latch)\n'
+              : '');
+
       return '''Hi [Accountant Name],
 
-Here is my official ATO Vehicle Tax Substantiation Summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
+Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
 
 --------------------------------------------------
 📊 ATO TAX RETURN BOX D1 CLAIM (FY${taxRule.financialYear}):
 --------------------------------------------------
 • Primary Tax Method: Box D1 Code $methodCode
-• Statutory Business Percentage: ${summary.businessPercentage.toStringAsFixed(2)}% (Valid 5 Years under TR 97/11)
+• Recorded Business Percentage: ${summary.businessPercentage.toStringAsFixed(2)}% (review logbook eligibility and period)
 • Total Business Distance: ${summary.businessKm.toStringAsFixed(1)} km of ${summary.totalKm.toStringAsFixed(1)} total km
-• Final Box D1 Deductible Claim: \$${claimAmount.toStringAsFixed(2)} AUD
+$odoLine• Final Box D1 Deductible Claim: \$${claimAmount.toStringAsFixed(2)} AUD
+• Odometer Check: ${isGaplessAuditProof ? 'No odometer gaps detected; other evidence still requires review' : 'Pending Review'}
 
-📁 ATTACHED AUDIT-PROOF EVIDENCE DOSSIER:
-• Continuous Odometer Ledger: $tripCount trips (100% gapless)
-• Substantiated Receipts Vault: $expenseCount receipts (Fuel, Repairs, Rego, Ins)
-• 1-Click Xero / MYOB Manual Journal CSV attached
+📁 ATTACHED RECORD SUMMARY FOR REVIEW:
+• Continuous Odometer Ledger: $tripCount trips (review continuity)
+• Recorded Expenses: $expenseCount expense records; receipt availability requires checking
+• Confirm the files supplied with this message.
 
 Regards,
 [Tradie Name]

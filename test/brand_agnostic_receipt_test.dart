@@ -54,7 +54,9 @@ PAID VISA \$1,450.00
       expect(result.category, equals(ExpenseCategory.maintenanceTyres));
       expect(result.amount, equals(1450.00));
       expect(result.abn, equals('53 004 085 616'));
-      expect(result.isHighConfidence, isTrue);
+      expect(result.currency, isNull);
+      expect(result.isHighConfidence, isFalse,
+          reason: 'A dollar sign alone does not establish AUD.');
     });
 
     test('3. Statutory ABN extracted and mapped into ReceiptAuditTrail',

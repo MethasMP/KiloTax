@@ -1,9 +1,11 @@
+import '../../../../core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/vehicle.dart';
 import '../../../../state/app_state.dart';
+import '../../../../core/theme/app_color.dart';
 
 class TaxShieldHeroCard extends StatelessWidget {
   final AppState appState;
@@ -69,7 +71,7 @@ class TaxShieldHeroCard extends StatelessWidget {
                     isAuditReady ? 'AUDIT-READY • 100%' : 'ACTION REQUIRED',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 11.5,
+                      fontSize: 12,
                       letterSpacing: 0.6,
                       color: isAuditReady
                           ? AppColors.emerald
@@ -99,7 +101,7 @@ class TaxShieldHeroCard extends StatelessWidget {
                           ? vehicle.model
                           : 'Vehicle',
                       style: const TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.ink,
                       ),
@@ -119,7 +121,7 @@ class TaxShieldHeroCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.muted,
-              letterSpacing: -0.1,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 4),
@@ -132,7 +134,8 @@ class TaxShieldHeroCard extends StatelessWidget {
               Text(
                 Formatters.currency(summary.centsPerKmClaim),
                 style: const TextStyle(
-                  fontSize: 42,
+                  fontSize: 44,
+                  fontFeatures: AppType.tabular,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -1.2,
                   color: AppColors.deepNavy,
@@ -149,7 +152,7 @@ class TaxShieldHeroCard extends StatelessWidget {
                 child: Text(
                   '${(appState.activeTaxRule.centsPerKmRate * 100).toInt()}c/km ATO rate',
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.emerald,
                   ),
@@ -160,14 +163,16 @@ class TaxShieldHeroCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Quota Metrics
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Quota metrics wrap as text grows rather than competing for one row.
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               Text(
                 '${Formatters.distance(businessKm)} of 5,000 km claimed',
                 style: const TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.ink,
                 ),
@@ -175,7 +180,7 @@ class TaxShieldHeroCard extends StatelessWidget {
               Text(
                 '${remainingKm.toStringAsFixed(0)} km left',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.muted,
                 ),
@@ -189,7 +194,7 @@ class TaxShieldHeroCard extends StatelessWidget {
             height: 6,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: AppColor.surfaceMuted,
               borderRadius: BorderRadius.circular(3),
             ),
             child: Align(
@@ -251,7 +256,7 @@ class TaxShieldHeroCard extends StatelessWidget {
                   'LOGBOOK • Week ${appState.currentLogbookWeek} of 12',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 10.5,
+                    fontSize: 12,
                     color: AppColors.emerald,
                     letterSpacing: 0.5,
                   ),
@@ -281,7 +286,7 @@ class TaxShieldHeroCard extends StatelessWidget {
                         '${businessUse.toStringAsFixed(1)}%',
                         style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 12.5,
+                            fontSize: 14,
                             color: AppColors.ink),
                       ),
                     ),
@@ -340,7 +345,7 @@ class TaxShieldHeroCard extends StatelessWidget {
               Text(
                 'Active • ${Formatters.date(appState.primaryVehicle?.logbookStartDate ?? DateTime.now())} - ${Formatters.date((appState.primaryVehicle?.logbookStartDate ?? DateTime.now()).add(Duration(days: AppConstants.statutoryLogbookDays)))}',
                 style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.ink),
               ),

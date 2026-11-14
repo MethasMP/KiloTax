@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum VehicleType {
   car,
   ute,
@@ -37,6 +39,8 @@ enum VehicleType {
 
   String get svgAssetPath {
     switch (this) {
+      case VehicleType.car:
+        return 'assets/vehicles/car.svg';
       case VehicleType.ute:
         return 'assets/vehicles/ute.svg';
       case VehicleType.van:
@@ -45,31 +49,38 @@ enum VehicleType {
         return 'assets/vehicles/suv.svg';
       case VehicleType.truck:
         return 'assets/vehicles/truck.svg';
-      case VehicleType.car:
-        return 'assets/vehicles/car.svg';
     }
   }
 
-  String get imageAssetPath {
+  IconData get iconData {
     switch (this) {
       case VehicleType.ute:
-        return 'assets/vehicles/ute.png';
+        return Icons.minor_crash_rounded;
       case VehicleType.van:
-        return 'assets/vehicles/van.png';
+        return Icons.airport_shuttle_rounded;
       case VehicleType.suv:
-        return 'assets/vehicles/suv.png';
+        return Icons.directions_car_filled_rounded;
       case VehicleType.truck:
-        return 'assets/vehicles/truck.png';
+        return Icons.local_shipping_rounded;
       case VehicleType.car:
-        return 'assets/vehicles/car.png';
+        return Icons.directions_car_rounded;
     }
   }
+}
+
+/// Structured ATO Substantiation / Recordkeeping item
+class TaxSubstantiationItem {
+  final String text;
+  final bool isExemption; // If true, represents an exemption/benefit (e.g. no receipts needed)
+
+  const TaxSubstantiationItem(this.text, {this.isExemption = false});
 }
 
 /// Tax Tracking Strategy per Vehicle (ATO Aligned)
 enum TaxMethod {
   centsPerKm,
-  logbook;
+  logbook,
+  actualExpenses;
 
   String get title {
     switch (this) {
@@ -77,6 +88,8 @@ enum TaxMethod {
         return 'Cents per Kilometre';
       case TaxMethod.logbook:
         return 'Logbook Method';
+      case TaxMethod.actualExpenses:
+        return 'Actual Expenses (s 8-1)';
     }
   }
 
@@ -86,6 +99,8 @@ enum TaxMethod {
         return 'Best if you drive less than 5,000 work km/year. Set rate 91c/km, no receipt hoarding required.';
       case TaxMethod.logbook:
         return 'Best if you drive a lot for work. 12-week logbook unlocks actual fuel, lease & depreciation claims.';
+      case TaxMethod.actualExpenses:
+        return 'Mandatory for commercial vehicles (payload >= 1t or >= 9 passengers). Claim actual costs under Section 8-1.';
     }
   }
 
@@ -95,6 +110,100 @@ enum TaxMethod {
         return '91c/km';
       case TaxMethod.logbook:
         return 'Logbook %';
+      case TaxMethod.actualExpenses:
+        return 'Actuals';
+    }
+  }
+
+  /// Official ATO statutory reference
+  String get atoReference {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return 'ATO Div 28-B';
+      case TaxMethod.logbook:
+        return 'ATO Div 28-C';
+      case TaxMethod.actualExpenses:
+        return 'ATO Section 8-1';
+    }
+  }
+
+  /// Objective category label without marketing bias
+  String get categoryBadge {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return 'FIXED RATE';
+      case TaxMethod.logbook:
+        return 'ACTUAL COST %';
+      case TaxMethod.actualExpenses:
+        return 'COMMERCIAL';
+    }
+  }
+
+  /// Primary deduction value headline
+  String get deductionHeadline {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return r'Claim up to $4,550 / year';
+      case TaxMethod.logbook:
+        return r'Claim actual car expenses (No $ cap)';
+      case TaxMethod.actualExpenses:
+        return r'Claim actual operating costs (No $ cap)';
+    }
+  }
+
+  /// Secondary subtitle with statutory rate and ceiling details
+  String get deductionSubtext {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return '91¢/km statutory rate • Capped at 5,000 business km';
+      case TaxMethod.logbook:
+        return 'Multiplies vehicle running costs & depreciation by business %';
+      case TaxMethod.actualExpenses:
+        return 'Mandatory for commercial vehicles with payload ≥ 1,000 kg';
+    }
+  }
+
+  /// Tradie-friendly target profile
+  String get targetProfile {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return 'Best for light-medium driving (≤ 5,000 km/yr) or zero receipt hassle';
+      case TaxMethod.logbook:
+        return 'Best for heavy driving (> 5,000 km/yr), high fuel, or vehicle finance/lease';
+      case TaxMethod.actualExpenses:
+        return 'Required for commercial vehicles, heavy utes (≥1t payload), or trucks';
+    }
+  }
+
+  /// Structured ATO substantiation & evidence checklist
+  List<TaxSubstantiationItem> get substantiationChecklist {
+    switch (this) {
+      case TaxMethod.centsPerKm:
+        return const [
+          TaxSubstantiationItem('Log daily business trips (purpose, date & km)'),
+          TaxSubstantiationItem('No fuel, service or repair receipts needed',
+              isExemption: true),
+          TaxSubstantiationItem('No continuous 12-week logbook required',
+              isExemption: true),
+        ];
+      case TaxMethod.logbook:
+        return const [
+          TaxSubstantiationItem(
+              'Continuous 12-week trip logbook (valid for 5 years)'),
+          TaxSubstantiationItem(
+              'Opening and closing odometer readings each financial year'),
+          TaxSubstantiationItem(
+              'Keep all receipts for fuel, servicing, insurance & interest'),
+        ];
+      case TaxMethod.actualExpenses:
+        return const [
+          TaxSubstantiationItem(
+              'Mandatory for commercial vehicles with payload ≥ 1 tonne'),
+          TaxSubstantiationItem(
+              'Keep receipts for all vehicle running, service & finance costs'),
+          TaxSubstantiationItem(
+              'Diary or trip evidence proving business proportion'),
+        ];
     }
   }
 }
@@ -105,6 +214,9 @@ class Vehicle {
   final String model;
   final String regoPlate;
   final double initialOdometer;
+  final int? year;
+  final double? payloadKg;
+  final int? seatingCapacity;
   final String? engineCapacity;
   final VehicleType vehicleType;
   final String? bluetoothDeviceName;
@@ -119,13 +231,20 @@ class Vehicle {
   final String? endOdometerPhotoPath;
   final DateTime? endOdometerVerifiedAt;
   final String? endOdometerImageHash;
+  final String? tradeToolsDescription;
+  final String? tradeToolsPhotoPath;
+  final String? tradeToolsImageHash;
+  final DateTime? tradeToolsRegisteredAt;
 
   Vehicle({
     required this.id,
     required this.make,
     required this.model,
-    required this.regoPlate,
-    required this.initialOdometer,
+    this.regoPlate = '',
+    this.initialOdometer = 0.0,
+    this.year,
+    this.payloadKg,
+    this.seatingCapacity,
     this.engineCapacity,
     this.vehicleType = VehicleType.car,
     this.bluetoothDeviceName,
@@ -140,6 +259,10 @@ class Vehicle {
     this.endOdometerPhotoPath,
     this.endOdometerVerifiedAt,
     this.endOdometerImageHash,
+    this.tradeToolsDescription,
+    this.tradeToolsPhotoPath,
+    this.tradeToolsImageHash,
+    this.tradeToolsRegisteredAt,
   });
 
   bool get hasRegoPlate =>
@@ -207,6 +330,9 @@ class Vehicle {
     String? model,
     String? regoPlate,
     double? initialOdometer,
+    int? year,
+    double? payloadKg,
+    int? seatingCapacity,
     String? engineCapacity,
     VehicleType? vehicleType,
     String? bluetoothDeviceName,
@@ -221,6 +347,10 @@ class Vehicle {
     String? endOdometerPhotoPath,
     DateTime? endOdometerVerifiedAt,
     String? endOdometerImageHash,
+    String? tradeToolsDescription,
+    String? tradeToolsPhotoPath,
+    String? tradeToolsImageHash,
+    DateTime? tradeToolsRegisteredAt,
     bool clearBluetoothDevice = false,
   }) {
     return Vehicle(
@@ -229,6 +359,9 @@ class Vehicle {
       model: model ?? this.model,
       regoPlate: regoPlate ?? this.regoPlate,
       initialOdometer: initialOdometer ?? this.initialOdometer,
+      year: year ?? this.year,
+      payloadKg: payloadKg ?? this.payloadKg,
+      seatingCapacity: seatingCapacity ?? this.seatingCapacity,
       engineCapacity: engineCapacity ?? this.engineCapacity,
       vehicleType: vehicleType ?? this.vehicleType,
       bluetoothDeviceName: clearBluetoothDevice
@@ -249,6 +382,12 @@ class Vehicle {
       endOdometerVerifiedAt:
           endOdometerVerifiedAt ?? this.endOdometerVerifiedAt,
       endOdometerImageHash: endOdometerImageHash ?? this.endOdometerImageHash,
+      tradeToolsDescription:
+          tradeToolsDescription ?? this.tradeToolsDescription,
+      tradeToolsPhotoPath: tradeToolsPhotoPath ?? this.tradeToolsPhotoPath,
+      tradeToolsImageHash: tradeToolsImageHash ?? this.tradeToolsImageHash,
+      tradeToolsRegisteredAt:
+          tradeToolsRegisteredAt ?? this.tradeToolsRegisteredAt,
     );
   }
 
@@ -259,6 +398,9 @@ class Vehicle {
       'model': model,
       'regoPlate': regoPlate,
       'initialOdometer': initialOdometer,
+      'year': year,
+      'payloadKg': payloadKg,
+      'seatingCapacity': seatingCapacity,
       'engineCapacity': engineCapacity,
       'vehicleType': vehicleType.name,
       'bluetoothDeviceName': bluetoothDeviceName,
@@ -273,6 +415,10 @@ class Vehicle {
       'endOdometerPhotoPath': endOdometerPhotoPath,
       'endOdometerVerifiedAt': endOdometerVerifiedAt?.toIso8601String(),
       'endOdometerImageHash': endOdometerImageHash,
+      'tradeToolsDescription': tradeToolsDescription,
+      'tradeToolsPhotoPath': tradeToolsPhotoPath,
+      'tradeToolsImageHash': tradeToolsImageHash,
+      'tradeToolsRegisteredAt': tradeToolsRegisteredAt?.toIso8601String(),
     };
   }
 
@@ -281,10 +427,14 @@ class Vehicle {
       id: json['id'] as String,
       make: json['make'] as String,
       model: json['model'] as String,
-      regoPlate: (json['regoPlate'] ?? json['rego_plate']) as String,
+      regoPlate: (json['regoPlate'] ?? json['rego_plate'] ?? '') as String,
       initialOdometer:
-          ((json['initialOdometer'] ?? json['initial_odometer']) as num)
+          ((json['initialOdometer'] ?? json['initial_odometer'] ?? 0.0) as num)
               .toDouble(),
+      year: (json['year'] as num?)?.toInt(),
+      payloadKg: ((json['payloadKg'] ?? json['payload_kg']) as num?)?.toDouble(),
+      seatingCapacity:
+          ((json['seatingCapacity'] ?? json['seating_capacity']) as num?)?.toInt(),
       engineCapacity:
           (json['engineCapacity'] ?? json['engine_capacity']) as String?,
       vehicleType: VehicleType.values.firstWhere(
@@ -329,6 +479,18 @@ class Vehicle {
           : null,
       endOdometerImageHash: (json['endOdometerImageHash'] ??
               json['end_odometer_image_hash']) as String?,
+      tradeToolsDescription: (json['tradeToolsDescription'] ??
+              json['trade_tools_description']) as String?,
+      tradeToolsPhotoPath: (json['tradeToolsPhotoPath'] ??
+              json['trade_tools_photo_path']) as String?,
+      tradeToolsImageHash: (json['tradeToolsImageHash'] ??
+              json['trade_tools_image_hash']) as String?,
+      tradeToolsRegisteredAt: (json['tradeToolsRegisteredAt'] ??
+                  json['trade_tools_registered_at']) !=
+              null
+          ? DateTime.tryParse((json['tradeToolsRegisteredAt'] ??
+              json['trade_tools_registered_at']) as String)
+          : null,
     );
   }
 }

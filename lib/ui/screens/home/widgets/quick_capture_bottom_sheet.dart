@@ -1,32 +1,22 @@
+import '../../../../core/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../data/models/vehicle.dart';
 import '../../../../state/app_state.dart';
+import '../../cpk/cpk_trip_entry_screen.dart';
 import '../../expenses/scan_receipt_screen.dart';
-import '../../trips/trip_detection_screen.dart';
+import '../../logbook/logbook_trip_entry_screen.dart';
+import '../../logbook/logbook_progress_screen.dart';
+import '../../logbook/logbook_setup_screen.dart';
 import '../../trips/trip_live_tracking_screen.dart';
 
 class QuickCaptureBottomSheet {
   static void show(BuildContext context, AppState appState) {
     HapticFeedback.mediumImpact();
 
-    final now = DateTime.now();
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
-
-    String contextHint;
-    if (now.hour < 11) {
-      contextHint = 'Morning drive? Log your work trip';
-    } else if (now.hour >= 11 && now.hour < 15) {
-      contextHint = isLogbook
-          ? 'Midday run? Scan receipts or log a trip'
-          : 'On a job? Log your work trip';
-    } else {
-      contextHint = isLogbook
-          ? 'End of shift? Log final odometer or wrap up trips'
-          : 'End of day? Log any trips you made';
-    }
 
     showModalBottomSheet(
       context: context,
@@ -53,7 +43,7 @@ class QuickCaptureBottomSheet {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Quick Capture',
+                'CAPTURE',
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 11,
@@ -63,67 +53,82 @@ class QuickCaptureBottomSheet {
               ),
               const SizedBox(height: 4),
               const Text(
-                'What do you want to add?',
+                'Capture a record',
                 style: AppTextStyles.sectionTitle,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                contextHint,
+                isLogbook
+                    ? 'Scan receipts or record a drive. Review the details before sharing.'
+                    : 'Record a drive or add a past trip. Review its work purpose.',
                 style: AppTextStyles.captionMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 18),
-
-              // 1. Trip (Always primary action)
+              if (isLogbook) ...[
+                QuickCaptureOptionTile(
+                  icon: Icons.document_scanner_outlined,
+                  color: AppColors.emerald,
+                  title: 'Scan a receipt',
+                  subtitle:
+                      'Read merchant, total and date, then check the details',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    ScanReceiptScreen.show(context, appState);
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
               QuickCaptureOptionTile(
-                icon: LucideIcons.car,
+                icon: LucideIcons.navigation,
                 color: AppColors.deepNavy,
-                title: 'Trip',
-                subtitle: isLogbook
-                    ? 'Log drive with odometer tracking'
-                    : 'Log work trip (${(appState.activeTaxRule.centsPerKmRate * 100).toInt()}c/km ATO rate)',
+                title: appState.isDriving
+                    ? 'Open current drive'
+                    : 'Record with GPS',
+                subtitle: appState.isDriving
+                    ? 'Return to your recording and finish when parked'
+                    : 'Start a drive, then review its purpose when parked',
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  _showTripCaptureModeSheet(context, appState);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => TripLiveTrackingScreen(appState: appState),
+                  ));
                 },
               ),
               const SizedBox(height: 10),
-
-              // 2. Expense — Logbook ONLY (ATO rule: CPK rate covers all car costs)
-              if (isLogbook)
-                QuickCaptureOptionTile(
-                  icon: LucideIcons.receipt,
-                  color: AppColors.emerald,
-                  title: 'Car Expense',
-                  subtitle: 'Scan fuel, service, or insurance receipt',
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ScanReceiptScreen(appState: appState),
-                      ),
-                    );
-                  },
-                ),
-
-              // 3. Odometer (Rendered ONLY for Logbook method)
+              QuickCaptureOptionTile(
+                icon: AppIcons.edit,
+                color: AppColors.deepNavy,
+                title: 'Add a past trip',
+                subtitle: 'Enter the details without location access',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => isLogbook
+                        ? LogbookTripEntryScreen(appState: appState)
+                        : CpkTripEntryScreen(appState: appState),
+                  ));
+                },
+              ),
               if (isLogbook) ...[
                 const SizedBox(height: 10),
                 QuickCaptureOptionTile(
-                  icon: LucideIcons.gauge,
+                  icon: AppIcons.odometer,
                   color: AppColors.workBlue,
                   title: 'Odometer',
-                  subtitle: appState.currentOdometer > 0
-                      ? 'Record dashboard reading (${appState.currentOdometer.toStringAsFixed(0)} km)'
-                      : 'Record opening dashboard reading',
+                  subtitle: 'Review logbook readings and odometer photos',
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    _showOdometerCaptureDialog(context, appState);
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) =>
+                          appState.primaryVehicle?.logbookStartDate == null
+                              ? LogbookSetupScreen(appState: appState)
+                              : const LogbookProgressScreen(),
+                    ));
                   },
                 ),
               ],
-
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
@@ -137,7 +142,7 @@ class QuickCaptureBottomSheet {
     );
   }
 
-  static void _showTripCaptureModeSheet(
+  static void showTripCaptureModeSheet(
       BuildContext context, AppState appState) {
     HapticFeedback.mediumImpact();
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
@@ -182,8 +187,8 @@ class QuickCaptureBottomSheet {
               QuickCaptureOptionTile(
                 icon: LucideIcons.navigation,
                 color: AppColors.emerald,
-                title: 'Start Live Drive (GPS)',
-                subtitle: 'Track actual distance, speed and route in real-time',
+                title: 'Record with GPS',
+                subtitle: 'Start and stop a drive. Location access is needed.',
                 onTap: () {
                   Navigator.of(ctx).pop();
                   Navigator.of(context).push(
@@ -198,15 +203,28 @@ class QuickCaptureBottomSheet {
 
               // Option 2: Manual Past Trip Entry
               QuickCaptureOptionTile(
-                icon: LucideIcons.edit3,
+                icon: AppIcons.edit,
                 color: AppColors.deepNavy,
-                title: 'Log Trip Manually',
+                title: 'Add a past trip',
                 subtitle: isLogbook
                     ? 'Enter exact distance, purpose, and odometer readings'
-                    : 'Enter distance, purpose, and travel details',
+                    : 'Enter the date, distance and work purpose. No location access needed.',
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  TripDetectionScreen.show(context, appState);
+                  if (isLogbook) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            LogbookTripEntryScreen(appState: appState),
+                      ),
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CpkTripEntryScreen(appState: appState),
+                      ),
+                    );
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -217,132 +235,6 @@ class QuickCaptureBottomSheet {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  static void _showOdometerCaptureDialog(
-      BuildContext context, AppState appState) {
-    final controller = TextEditingController(
-      text: appState.currentOdometer > 0
-          ? appState.currentOdometer.toStringAsFixed(0)
-          : '',
-    );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
-          children: [
-            Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 22),
-            SizedBox(width: 8),
-            Text('Record Odometer',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter current dashboard odometer for ATO logbook substantiation:',
-              style: TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 13,
-                  color: AppColors.muted),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Minimum allowable: ${appState.currentOdometer.toStringAsFixed(0)} km',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: AppColors.muted),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  color: AppColors.ink),
-              decoration: InputDecoration(
-                suffixText: 'km',
-                hintText: 'e.g. 45,200',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel',
-                style: TextStyle(
-                    fontWeight: FontWeight.w500, color: AppColors.muted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.deepNavy,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              final val =
-                  double.tryParse(controller.text.replaceAll(',', '').trim());
-              if (val != null) {
-                final (isValid, errMsg) =
-                    appState.validateNewCurrentOdometer(val);
-                if (!isValid) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: AppColors.crimson,
-                      content: Text(errMsg ?? 'Invalid odometer reading.'),
-                    ),
-                  );
-                  return;
-                }
-
-                if (appState.primaryVehicle != null) {
-                  final v = appState.primaryVehicle!;
-                  appState.addVehicle(Vehicle(
-                    id: v.id,
-                    make: v.make,
-                    model: v.model,
-                    regoPlate: v.regoPlate,
-                    initialOdometer: val,
-                    engineCapacity: v.engineCapacity,
-                    vehicleType: v.vehicleType,
-                    bluetoothDeviceName: v.bluetoothDeviceName,
-                    isPrimary: v.isPrimary,
-                    taxMethod: v.taxMethod,
-                    logbookStartDate: v.logbookStartDate,
-                  ));
-                }
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: AppColors.ink,
-                    content: Text(
-                        '✓ Dashboard odometer recorded: ${val.toStringAsFixed(0)} km'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Save Reading',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        ],
       ),
     );
   }
@@ -389,7 +281,7 @@ class QuickCaptureOptionTile extends StatelessWidget {
                   color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: color, size: AppIconSize.control),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -408,8 +300,8 @@ class QuickCaptureOptionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.muted),
+              const Icon(AppIcons.next,
+                  size: AppIconSize.inline, color: AppColors.muted),
             ],
           ),
         ),
