@@ -52,3 +52,27 @@ app.*.map.json
 *.jks
 *.keystore
 
+
+# Local agent and scratch artifacts
+.agents/skills/
+*.docx
+create_doc.py
+tool/paddle_ocr/
+tool/design_audit/
+tool/brand/
+tool/audit/
+specs/
+docs/
+.superpowers/
+.cursor/
+.codex/
+.audit/
+skills-lock.json
+scripts/verify_evidence_handoff.sh
+assets/fonts/
+assets/brand/
+assets/vehicles/
+PRODUCT.md
+DESIGN.md
+"humanizer .md"
+
