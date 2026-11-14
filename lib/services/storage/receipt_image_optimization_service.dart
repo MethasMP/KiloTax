@@ -65,6 +65,7 @@ class ReceiptImageOptimizationService {
     File rawFile, {
     int quality = 78,
     int maxDimension = 1800,
+    Directory? targetDirectory,
   }) async {
     if (!await rawFile.exists()) {
       throw FileSystemException(
@@ -76,8 +77,9 @@ class ReceiptImageOptimizationService {
     final originalBytes = await rawFile.readAsBytes();
     final originalSize = originalBytes.length;
 
-    // Generate output path with .webp extension
-    final targetPath = generateWebpOutputPath(rawFile.path);
+    // Save into evidence vault directory to ensure durable isolation and wipe support
+    final vaultDir = targetDirectory ?? await getEvidenceVaultDirectory();
+    final targetPath = generateWebpOutputPath(rawFile.path, targetDirectory: vaultDir.path);
 
     // Compute dimensions (default fallback assumption if reading header fails)
     final targetDim = calculateTargetDimensions(
@@ -121,10 +123,18 @@ class ReceiptImageOptimizationService {
       );
     }
 
-    // Fallback: If compression returned null or failed, use rawFile safely
-    final finalFile = (compressedFile != null && await compressedFile.exists())
-        ? compressedFile
-        : rawFile;
+    // Fallback: If compression returned null or failed, persist copy inside vault
+    File finalFile;
+    if (compressedFile != null && await compressedFile.exists()) {
+      finalFile = compressedFile;
+    } else {
+      if (rawFile.parent.path == vaultDir.path) {
+        finalFile = rawFile;
+      } else {
+        final fallbackPath = '${vaultDir.path}/${rawFile.uri.pathSegments.last}';
+        finalFile = await rawFile.copy(fallbackPath);
+      }
+    }
 
     final finalBytes = await finalFile.readAsBytes();
     final finalSha256 = await computeSha256Async(finalBytes);
@@ -159,9 +169,9 @@ class ReceiptImageOptimizationService {
     return TargetDimensions(targetW, targetH);
   }
 
-  /// Generates a standardized .webp target file path next to the source file.
-  String generateWebpOutputPath(String sourcePath) {
-    final parent = File(sourcePath).parent.path;
+  /// Generates a standardized .webp target file path next to the source file or in [targetDirectory].
+  String generateWebpOutputPath(String sourcePath, {String? targetDirectory}) {
+    final parent = targetDirectory ?? File(sourcePath).parent.path;
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final baseName =
         sourcePath.split(Platform.pathSeparator).last.split('.').first;
@@ -171,7 +181,12 @@ class ReceiptImageOptimizationService {
   /// Returns the persistent evidence vault directory in the app documents space,
   /// ensuring receipt/odometer photos are stored durably instead of in OS temp cache.
   Future<Directory> getEvidenceVaultDirectory() async {
-    final docsDir = await getApplicationDocumentsDirectory();
+    Directory docsDir;
+    try {
+      docsDir = await getApplicationDocumentsDirectory();
+    } catch (_) {
+      docsDir = Directory.systemTemp;
+    }
     final vaultDir = Directory('${docsDir.path}/evidence_vault');
     if (!await vaultDir.exists()) {
       await vaultDir.create(recursive: true);

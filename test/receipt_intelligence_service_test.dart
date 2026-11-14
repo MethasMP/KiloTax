@@ -49,7 +49,7 @@ Bridgestone Select
 Wheel alignment
 Tyre puncture repair
 Engine oil filter
-Grand Total \$289.00
+Grand Total AUD \$289.00
 10/09/2026
 ''');
 

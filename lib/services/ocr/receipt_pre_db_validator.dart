@@ -83,10 +83,14 @@ class ReceiptPreDbValidator {
 
     final taxEngine = const AtoTaxPeriodEngine();
     final receiptDate = ocrResult.date;
+    if (ocrResult.dateNeedsReview) errors.add('Purchase date needs review');
+    if (ocrResult.currency != 'AUD') warnings.add('Currency needs review');
+    if (ocrResult.hasMixedItems) {
+      warnings.add('Mixed items need allocation review');
+    }
     final currentFy = taxEngine.forDate(now);
 
     // ==========================================
-    // 1. DATE VALIDATION & LOGBOOK BOUNDARY
     // ==========================================
     if (receiptDate.isAfter(now.add(const Duration(minutes: 5)))) {
       errors.add(
@@ -126,7 +130,6 @@ class ReceiptPreDbValidator {
     }
 
     // ==========================================
-    // 2. AMOUNT VALIDATION (PURE NUMERIC > 0)
     // ==========================================
     double cleanAmount = ocrResult.amount;
     if (cleanAmount <= 0.0) {
@@ -142,7 +145,6 @@ class ReceiptPreDbValidator {
     cleanAmount = double.parse(cleanAmount.toStringAsFixed(2));
 
     // ==========================================
-    // 3. GST VALIDATION (ATO 1/11th STANDARD)
     // ==========================================
     double? cleanGst = ocrResult.gstAmount;
     if (cleanGst != null) {
@@ -153,28 +155,13 @@ class ReceiptPreDbValidator {
         errors.add(
             'GST (\$${cleanGst.toStringAsFixed(2)}) cannot exceed total amount (\$${cleanAmount.toStringAsFixed(2)})');
       } else {
-        final maxTheoreticalGst =
-            double.parse(((cleanAmount / 11.0) + 0.05).toStringAsFixed(2));
-        final legalMaxGst =
-            double.parse((cleanAmount / 11.0).toStringAsFixed(2));
-        if (cleanGst > maxTheoreticalGst) {
-          recommendedCappedGst = legalMaxGst;
-          warnings.add(
-            'GST (\$${cleanGst.toStringAsFixed(2)}) exceeds standard ATO 1/11th rate for total \$${cleanAmount.toStringAsFixed(2)} (max expected: \$${maxTheoreticalGst.toStringAsFixed(2)})',
-          );
-          humanGuidance ??= HumanizedValidationError(
-            title: 'Check GST amount',
-            explanation:
-                'For a \$${cleanAmount.toStringAsFixed(2)} purchase, GST cannot exceed \$${legalMaxGst.toStringAsFixed(2)}. The camera may have misread the tax line.',
-            primaryActionLabel: 'Fix to \$${legalMaxGst.toStringAsFixed(2)}',
-            secondaryActionLabel: 'Keep \$${cleanGst.toStringAsFixed(2)}',
-          );
+        if (ocrResult.currency == 'AUD' && cleanGst > cleanAmount / 11 + 0.05) {
+          warnings.add('Check the observed GST and the receipt tax scenario.');
         }
       }
     }
 
     // ==========================================
-    // 4. ABN & MERCHANT SANITIZATION
     // ==========================================
     String? cleanAbn;
     if (ocrResult.abn != null && ocrResult.abn!.trim().isNotEmpty) {
