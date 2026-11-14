@@ -12,3 +12,5 @@ Tasks:
 - Commit cohesive application changes and merge locally to main; test merged result. Do not push or deploy cloud schema automatically.
 
 Progress and final evidence will be recorded in project integration report.
+
+Verified: final committed application code passed 627 full-suite tests and whole-project static analysis. Standalone PaddleOCR Python suite passed 7 tests, and real inference returned 12 blocks after restarting from the verified worktree. iOS Simulator build succeeded. Late cloud/session lifecycle and workflow/backup exclusion regressions are included. Proceed with authorized local fast-forward integration; no remote push or database deployment.
