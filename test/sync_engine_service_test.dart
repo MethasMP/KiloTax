@@ -1,5 +1,6 @@
 import 'package:kilotax/services/storage/local_storage_service.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +26,62 @@ class ReceiptRestoreAuth extends SupabaseAuthService {
   void prewarmConnection() {}
 }
 
+class DelayedRestoreEngine extends SyncEngineService {
+  final firstStarted = Completer<void>();
+  final secondStarted = Completer<void>();
+  final response = Completer<CloudRestoreResult>();
+  int calls = 0;
+  @override
+  Future<CloudRestoreResult> restoreFromCloud(
+      {String? vehicleId,
+      String? userToken,
+      String? userId,
+      bool requireAuth = false,
+      Directory? localCacheDir}) {
+    calls++;
+    if (calls == 1) firstStarted.complete();
+    if (calls == 2) secondStarted.complete();
+    return response.future;
+  }
+}
+
 void main() {
+  for (final dispose in [true, false]) {
+    test(
+        'late cloud restore is ignored after ${dispose ? 'dispose' : 'sign out'}',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = await LocalStorageService.init();
+      final engine = DelayedRestoreEngine();
+      final state = AppState(
+          storageService: storage,
+          authService: ReceiptRestoreAuth(),
+          syncEngine: engine);
+      await state.init();
+      await engine.firstStarted.future;
+      final restoring = state.restoreFromCloud();
+      await engine.secondStarted.future;
+      if (dispose) {
+        state.dispose();
+      } else {
+        await state.signOut();
+      }
+      engine.response.complete(CloudRestoreResult(success: true, vehicles: [
+        Vehicle(
+            id: 'late-car',
+            make: 'Toyota',
+            model: 'Hilux',
+            regoPlate: 'LATE',
+            initialOdometer: 0)
+      ], trips: [], expenses: []));
+      final result = await restoring;
+      expect(result.success, isFalse);
+      expect(state.vehicles, isEmpty);
+      expect(storage.loadVehicles(), isEmpty);
+      if (!dispose) state.dispose();
+    });
+  }
+
   test('job sync failure keeps the overall sync in error for retry', () async {
     SharedPreferences.setMockInitialValues({});
     final storage = await LocalStorageService.init();

@@ -887,6 +887,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _disposed = false;
+  int _cloudRestoreEpoch = 0;
   bool _savingWorkflow = false;
   Completer<void>? _workflowSaveGate;
   Completer<void>? _backupRestoreGate;
@@ -2635,6 +2637,22 @@ class AppState extends ChangeNotifier {
   /// RESTORE FROM CLOUD: Pulls vehicles, trips, and expenses back into state and local storage
   /// Essential for disaster recovery / app reinstall.
   Future<CloudRestoreResult> restoreFromCloud() async {
+    final owner = _currentUser?.id;
+    final token = currentAccessToken;
+    final epoch = ++_cloudRestoreEpoch;
+    bool isCurrent() =>
+        !_disposed &&
+        epoch == _cloudRestoreEpoch &&
+        _currentUser?.id == owner &&
+        currentAccessToken == token &&
+        !_accountTransitionInProgress;
+    CloudRestoreResult superseded() => CloudRestoreResult(
+        success: false,
+        vehicles: [],
+        trips: [],
+        expenses: [],
+        errorMessage: 'Restore cancelled because the session changed.');
+    if (!isCurrent()) return superseded();
     // Strictly gate on authentication to prevent unauthenticated hits to Supabase REST endpoints
     if (!isAuthenticated || currentUser == null) {
       final res = CloudRestoreResult(
@@ -2664,12 +2682,14 @@ class AppState extends ChangeNotifier {
         debugPrint('[AppState] Could not access evidence vault directory: $e');
       }
 
+      if (!isCurrent()) return superseded();
       final result = await _syncEngine.restoreFromCloud(
-        userToken: currentAccessToken,
-        userId: _currentUser?.id,
+        userToken: token,
+        userId: owner,
         requireAuth: true,
         localCacheDir: cacheDir,
       );
+      if (!isCurrent()) return superseded();
       if (result.success ||
           result.vehicles.isNotEmpty ||
           result.trips.isNotEmpty ||
@@ -2724,6 +2744,7 @@ class AppState extends ChangeNotifier {
         }
         _rebuildExpenseLinks();
         await _storageService?.saveTrips(_trips);
+        if (!isCurrent()) return superseded();
         if (result.jobSites.isNotEmpty) {
           // Non-destructive merge: preserve locally created JobSites
           for (final cloudSite in result.jobSites) {
@@ -2746,6 +2767,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       return result;
     } catch (e) {
+      if (!isCurrent()) return superseded();
       _syncStatus = SyncStatus.error;
       _syncErrorMessage = e.toString();
       notifyListeners();
@@ -3045,6 +3067,8 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _cloudRestoreEpoch++;
     _authSubscription?.cancel();
     super.dispose();
   }
