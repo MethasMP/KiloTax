@@ -1,6 +1,10 @@
+import '../../../../core/theme/app_icons.dart';
+import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_space.dart';
+import '../../logbook/widgets/logbook_design.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../state/app_state.dart';
 
@@ -30,10 +34,13 @@ class LogbookOdometerCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
-            Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 20),
+            Icon(AppIcons.odometer,
+                color: AppColors.workBlue, size: AppIconSize.control),
             SizedBox(width: 8),
-            Text('Adjust Start Odometer',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            Expanded(
+                child: Text('Adjust Start Odometer',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
           ],
         ),
         content: Column(
@@ -95,110 +102,32 @@ class LogbookOdometerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.workBlue.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.deepNavy.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(LucideIcons.gauge, size: 16, color: AppColors.workBlue),
-                  SizedBox(width: 8),
-                  Text(
-                    'ATO Logbook Evidence (Odometer Chain)',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: AppColors.ink),
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: () => _showEditStartOdoDialog(context),
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  child: Text(
-                    'Edit',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: AppColors.workBlue),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Start Odometer',
-                        style: TextStyle(fontSize: 11, color: AppColors.muted)),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${startOdometer.toStringAsFixed(0)} km',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppColors.ink),
-                    ),
-                  ],
-                ),
-                const Icon(Icons.arrow_forward_rounded,
-                    size: 16, color: AppColors.muted),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text('End Odometer',
-                        style: TextStyle(fontSize: 11, color: AppColors.muted)),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${endOdometer.toStringAsFixed(0)} km',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: AppColors.deepNavy),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '✓ Auto-calculated continuous audit trail (ATO TR 97/11)',
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.emerald),
-          ),
-        ],
-      ),
-    );
+    return LogbookPanel(
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Odometer', style: AppType.section),
+        TextButton.icon(
+            onPressed: () => _showEditStartOdoDialog(context),
+            style: TextButton.styleFrom(
+                foregroundColor: AppColor.ink, minimumSize: const Size(48, 48)),
+            icon: const Icon(AppIcons.edit, size: AppIconSize.inline),
+            label: const Text('Edit start')),
+      ]),
+      const SizedBox(height: S.md),
+      _reading('Start', startOdometer),
+      const Divider(height: S.xxl, color: AppColor.hairline),
+      _reading('Calculated end', endOdometer),
+      const SizedBox(height: S.lg),
+      const Text('End reading = starting odometer + trip distance.',
+          style: AppType.secondary),
+    ]));
   }
+
+  Widget _reading(String label, double value) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: AppType.secondary),
+        const SizedBox(height: S.xs),
+        Text('${value.toStringAsFixed(0)} km', style: AppType.cardNumeric),
+      ]);
 }

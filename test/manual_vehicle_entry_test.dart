@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kilotax/state/app_state.dart';
 import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kilotax/ui/widgets/tactile_primary_button.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -31,8 +32,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    // Tap "Can't find your vehicle? Enter manually"
-    final manualButton = find.text("Can't find your vehicle? Enter manually");
+    // Tap "Enter vehicle manually"
+    final manualButton = find.text("Enter vehicle manually");
     await tester.ensureVisible(manualButton);
     await tester.tap(manualButton);
     await tester.pumpAndSettle();
@@ -44,23 +45,36 @@ void main() {
     expect(find.text('HiLux, Ranger'), findsOneWidget);
 
     // Verify Body Type selector exists
-    expect(find.text('Body Type (for ATO Tax Classification)'), findsOneWidget);
+    expect(find.text('Body Type'), findsOneWidget);
 
     // Verify Year field is NOT present in the manual entry dialog
     expect(find.text('Year'), findsNothing);
 
-    // Fill Make & Model
+    // Verify button is disabled when fields are empty (cannot submit blank)
+    final nextBtnFinder =
+        find.widgetWithText(TactilePrimaryButton, 'Use this vehicle');
+    final TactilePrimaryButton nextBtnBefore = tester.widget(nextBtnFinder);
+    expect(nextBtnBefore.onPressed, isNull);
+
+    // Fill Make only -> still disabled
     await tester.enterText(
         find.widgetWithText(TextField, 'Make (Brand)'), 'Isuzu');
+    await tester.pumpAndSettle();
+    final TactilePrimaryButton nextBtnPartial = tester.widget(nextBtnFinder);
+    expect(nextBtnPartial.onPressed, isNull);
+
+    // Fill Model -> now enabled
     await tester.enterText(find.widgetWithText(TextField, 'Model'), 'D-Max');
     await tester.pumpAndSettle();
+    final TactilePrimaryButton nextBtnReady = tester.widget(nextBtnFinder);
+    expect(nextBtnReady.onPressed, isNotNull);
 
-    // Tap Continue
-    await tester.tap(find.text('Continue'));
+    // Tap Use this vehicle
+    await tester.tap(nextBtnFinder);
     await tester.pumpAndSettle();
 
     // Dialog dismissed and navigated to confirmVehicle stage
-    expect(find.text('Your Vehicle'), findsOneWidget);
+    expect(find.text('Confirm Details'), findsOneWidget);
     expect(find.text('Isuzu D-Max'), findsOneWidget);
   });
 }

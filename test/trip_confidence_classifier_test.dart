@@ -3,80 +3,72 @@ import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/services/engine/trip_confidence_classifier.dart';
 
 void main() {
-  group('TripConfidenceClassifier (Sentinel Risk Gatekeeper)', () {
-    test('Weekdays to trade merchants classified as highConfidenceWork', () {
-      final trip = Trip(
-        id: 't_bunnings',
-        vehicleId: 'v1',
-        distanceKm: 12.0,
-        // Wednesday at 10:30 AM
-        date: DateTime(2026, 9, 23, 10, 30),
+  Trip journey(String origin, String destination, DateTime date,
+          {TripClassification classification =
+              TripClassification.unclassified}) =>
+      Trip(
+        id: 'trip',
+        vehicleId: 'vehicle',
+        distanceKm: 12,
+        date: date,
         purpose: '?',
-        originAddress: 'Home Base',
-        destinationAddress: 'Bunnings Warehouse Notting Hill',
-        classification: TripClassification.unclassified,
+        originAddress: origin,
+        destinationAddress: destination,
+        classification: classification,
       );
 
-      final assessment = TripConfidenceClassifier.assess(trip);
-      expect(assessment.isHighConfidence, isTrue);
-      expect(assessment.suggestedPurpose, 'Supplies Run');
-    });
+  test('merchant and site names never preselect unresolved business claims',
+      () {
+    for (final destination in [
+      'Bunnings Warehouse',
+      'Client Site Hawthorn',
+      'New location'
+    ]) {
+      final trip = journey('Workshop', destination, DateTime(2026, 9, 23, 10));
+      final result = TripConfidenceClassifier.assess(trip);
+      expect(result.isHighConfidence, isFalse);
+      expect(result.suggestedBulkyTools, isFalse);
+      expect(result.trip.classification, TripClassification.unclassified);
+      expect(result.trip.purpose, '?');
+    }
+  });
 
-    test('Weekend travel strictly held for user decision (Sentinel Guard)', () {
-      final trip = Trip(
-        id: 't_sunday_drive',
-        vehicleId: 'v1',
-        distanceKm: 18.5,
-        // Sunday at 2:00 PM
-        date: DateTime(2026, 9, 27, 14, 0),
-        purpose: '?',
-        originAddress: 'Home Base',
-        destinationAddress: 'Client Site Richmond',
-        classification: TripClassification.unclassified,
+  test(
+      'home in either direction requires review without inventing tool transport',
+      () {
+    for (final addresses in [
+      ['Home', 'Client Site'],
+      ['Client Site', 'Residence']
+    ]) {
+      final result = TripConfidenceClassifier.assess(
+        journey(addresses[0], addresses[1], DateTime(2026, 9, 23, 8)),
       );
+      expect(result.isHighConfidence, isFalse);
+      expect(result.decisionReason, contains('exception'));
+      expect(result.suggestedBulkyTools, isFalse);
+      expect(result.suggestedPurpose, isNot('Tool Transport'));
+    }
+  });
 
-      final assessment = TripConfidenceClassifier.assess(trip);
-      expect(assessment.isHighConfidence, isFalse);
-      expect(assessment.tier, ConfidenceTier.requiresUserDecision);
-      expect(assessment.decisionReason,
-          contains('Weekend drive requires explicit trade confirmation'));
-    });
+  test('time does not invent an emergency callout or tools', () {
+    for (final date in [DateTime(2026, 9, 27, 14), DateTime(2026, 9, 23, 23)]) {
+      final result =
+          TripConfidenceClassifier.assess(journey('Site A', 'Site B', date));
+      expect(result.isHighConfidence, isFalse);
+      expect(result.suggestedPurpose, isNot('Emergency Trade Callout'));
+      expect(result.suggestedBulkyTools, isFalse);
+    }
+  });
 
-    test('Late night travel held for user confirmation', () {
-      final trip = Trip(
-        id: 't_late_night',
-        vehicleId: 'v1',
-        distanceKm: 15.0,
-        // Wednesday at 11:30 PM (after hours)
-        date: DateTime(2026, 9, 23, 23, 30),
-        purpose: '?',
-        originAddress: 'Site A',
-        destinationAddress: 'Site B',
-        classification: TripClassification.unclassified,
-      );
-
-      final assessment = TripConfidenceClassifier.assess(trip);
-      expect(assessment.isHighConfidence, isFalse);
-      expect(assessment.tier, ConfidenceTier.requiresUserDecision);
-      expect(assessment.suggestedPurpose, 'Emergency Trade Callout');
-    });
-
-    test('Weekday job site travel is high confidence', () {
-      final trip = Trip(
-        id: 't_site',
-        vehicleId: 'v1',
-        distanceKm: 25.0,
-        // Tuesday at 8:00 AM
-        date: DateTime(2026, 9, 22, 8, 0),
-        purpose: '?',
-        originAddress: 'Workshop Depot',
-        destinationAddress: 'Client Site Hawthorn',
-        classification: TripClassification.unclassified,
-      );
-
-      final assessment = TripConfidenceClassifier.assess(trip);
-      expect(assessment.isHighConfidence, isTrue);
-      expect(assessment.suggestedPurpose, 'Client Site');
-    });
+  test('personal visits to merchants remain personal', () {
+    final result = TripConfidenceClassifier.assess(journey(
+      'Home',
+      'Bunnings Warehouse',
+      DateTime(2026, 9, 23, 10),
+      classification: TripClassification.personal,
+    ));
+    expect(result.suggestedPurpose, 'Personal');
+    expect(result.isHighConfidence, isFalse);
+    expect(result.trip.isBusiness, isFalse);
   });
 }

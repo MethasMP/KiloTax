@@ -26,7 +26,7 @@ class CpkExportService {
 
     // CSV Header (Standard ATO Audit Schedule with Bulky Tools Exemption)
     buffer.writeln(
-      'Trip_ID,Trip_Date,Start_Time,Vehicle_Rego,Origin_Address,Destination_Address,Distance_KM,ATO_Purpose_Category,Business_Purpose_Detail,Bulky_Tools_Carried,Statutory_Rate,Claim_Value_AUD,Cumulative_KM_Year,Cap_Status',
+      'Trip_ID,Trip_Date,Start_Time,Vehicle_Rego,Origin_Address,Destination_Address,Distance_KM,ATO_Purpose_Category,Business_Purpose_Detail,Bulky_Tools_Carried,Statutory_Rate,Uncapped_Trip_Value_AUD,Cumulative_KM_Year,Cap_Status',
     );
 
     double cumulativeKm = 0.0;
@@ -34,7 +34,7 @@ class CpkExportService {
 
     for (final t in trips) {
       if (!t.isBusiness) continue; // CPK only tracks claimable business trips
-      cumulativeKm += t.distanceKm;
+      cumulativeKm += t.businessDistanceKm;
 
       final tripId =
           'CPK-${t.date.year}${(t.date.month).toString().padLeft(2, "0")}${(t.date.day).toString().padLeft(2, "0")}-${index.toString().padLeft(3, "0")}';
@@ -42,25 +42,36 @@ class CpkExportService {
       final startTime =
           '${t.date.hour.toString().padLeft(2, "0")}:${t.date.minute.toString().padLeft(2, "0")}';
       final rego = sanitizeCsvCell(vehicle.regoPlate);
-      final origin = sanitizeCsvCell(
-          (t.originAddress ?? 'Work Site').replaceAll(',', ' '));
-      final dest = sanitizeCsvCell(
-          (t.destinationAddress ?? 'Client Job').replaceAll(',', ' '));
-      final dist = t.distanceKm.toStringAsFixed(2);
+      final origin = sanitizeCsvCell((t.shareRoute &&
+                  t.originAddress != null &&
+                  t.originAddress!.trim().isNotEmpty
+              ? t.originAddress!
+              : '[Unspecified Origin]')
+          .replaceAll(',', ' '));
+      final dest = sanitizeCsvCell((t.shareRoute &&
+                  t.destinationAddress != null &&
+                  t.destinationAddress!.trim().isNotEmpty
+              ? t.destinationAddress!
+              : '[Unspecified Destination]')
+          .replaceAll(',', ' '));
+      final dist = t.businessDistanceKm.toStringAsFixed(2);
       final purposeCat = _mapAtoPurposeCategory(t.purpose);
-      final purposeDetail = sanitizeCsvCell(t.purpose.replaceAll(',', ' '));
+      final purposeDetail = sanitizeCsvCell(
+          (t.purpose.trim().isNotEmpty ? t.purpose : '[Unspecified Purpose]')
+              .replaceAll(',', ' '));
       final carriesBulkyTools = _isBulkyToolsTrip(t.purpose)
           ? 'YES (Vogt 75 ATC 4073 / TR 95/34)'
           : 'NO';
       final rate = taxRule.centsPerKmRate.toStringAsFixed(2);
-      final claim = (t.distanceKm * taxRule.centsPerKmRate).toStringAsFixed(2);
+      final claim =
+          (t.businessDistanceKm * taxRule.centsPerKmRate).toStringAsFixed(2);
       final cumKm = cumulativeKm.toStringAsFixed(2);
       final capStatus = cumulativeKm <= taxRule.centsPerKmMaxKm
           ? 'UNDER_5000_CAP'
           : 'CAPPED_EXCESS';
 
       buffer.writeln(
-        '$tripId,$dateStr,$startTime,$rego,"$origin","$dest",$dist,$purposeCat,"$purposeDetail",$carriesBulkyTools,$rate,$claim,$cumKm,$capStatus',
+        '$tripId,$dateStr,$startTime,"$rego","$origin","$dest",$dist,$purposeCat,"$purposeDetail",$carriesBulkyTools,$rate,$claim,$cumKm,$capStatus',
       );
       index++;
     }
@@ -74,7 +85,6 @@ class CpkExportService {
   /// Statutory disclaimer text mandated under ITAA 1997 Division 28-C / Subdivision 28-H
   static const String statutoryDisclaimer =
       'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
-
 
   /// Generates the visual 1-Page Box D1 Lodgement Slip text layout
   static String generateCpkLodgementSlipText({
@@ -113,10 +123,14 @@ class CpkExportService {
             !supplyRuns.contains(t))
         .toList();
 
-    double distClient = clientVisits.fold(0.0, (sum, t) => sum + t.distanceKm);
-    double distSupply = supplyRuns.fold(0.0, (sum, t) => sum + t.distanceKm);
-    double distBulky = bulkyToolTrips.fold(0.0, (sum, t) => sum + t.distanceKm);
-    double distOther = otherVisits.fold(0.0, (sum, t) => sum + t.distanceKm);
+    double distClient =
+        clientVisits.fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+    double distSupply =
+        supplyRuns.fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+    double distBulky =
+        bulkyToolTrips.fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+    double distOther =
+        otherVisits.fold(0.0, (sum, t) => sum + t.businessDistanceKm);
 
     return '''
 ====================================================================================================
@@ -165,33 +179,17 @@ Inter-worksite Itinerant Drives     ${otherVisits.length.toString().padLeft(5)} 
 ----------------------------------------------------------------------------------------------------
 TOTAL RECORDED WORK TRAVEL          ${trips.where((t) => t.isBusiness).length.toString().padLeft(5)}       ${Formatters.distance(businessKm).padLeft(12)}       ${Formatters.currency(claimAmount).padLeft(14)}
 
-[4. SUBSTANTIATION & AUDIT INTEGRITY STATEMENT]
-• Contemporaneous Electronic Telemetry: Verified by KiloTax Engine
-• Bulky Tools Exemption: Taxpayer transported essential trade equipment with no secure on-site storage.
+[4. RECORD REVIEW]
+• Trip source: Review the recorded source for each trip. Entries may be manual or automatic.
+• Bulky tools: Review actual equipment, transport purpose, and storage circumstances before claiming.
 • Expenses Note: Fuel and servicing are absorbed in statutory rate; no separate expense receipts claimed.
+• The category amounts above are uncapped trip values. Review the capped total separately.
 
 ====================================================================================================
-BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)
+TAXPAYER & TAX AGENT REVIEW
 ====================================================================================================
-This schedule includes home-to-work / itinerant transit where the taxpayer carried substantial 
-trade equipment, ladders, machinery, and tools of trade exceeding 20 kg / 0.15 m³ in volume.
-
-STATUTORY DEFENSE UNDER VOGT'S CASE (75 ATC 4073) & ATO TR 95/34 (PARAGRAPHS 63–68):
-1. Equipment Bulky & Essential: The equipment transported is cumbersome, essential to the daily 
-   income-earning trade activities of the taxpayer, and incapable of safe transport via public conveyance.
-2. Absence of Secure Storage: No secure lock-up storage was provided at client premises or changing 
-   job sites. The taxpayer is legally and practically required to store equipment at base and transport 
-   it continuously to diverse sites.
-3. Character of Travel: The mode and requirement of carriage constitutes the vehicle as a mobile workshop, 
-   attributing the essential character of the travel to income generation under Section 8-1.
-
-Specific Equipment Manifest: Professional Trade Tools, Diagnostic & Construction Equipment
-Storage Verification: No lock-up facilities available on temporary project work sites.
-====================================================================================================
-
-TAXPAYER & TAX AGENT STATUTORY DECLARATION (Taxation Administration Act 1953):
-"I declare that the motor vehicle travel claimed at Box D1 represents a reasonable estimate of work-related
-travel for income-producing purposes, substantiated by contemporaneous electronic travel logs."
+Review the dates, distances, business purposes, supporting evidence, and tax treatment before lodging.
+This generated schedule does not establish contemporaneous recording, receipt authenticity, or eligibility.
 
 Taxpayer Signature: ___________________________        Date: ____ / ____ / ________
 Tax Agent Signature: __________________________        RAN:  ______________________

@@ -1,11 +1,18 @@
+import 'widgets/odometer_gap_review_card.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_space.dart';
+import 'widgets/logbook_design.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../state/app_state.dart';
 import '../trips/trip_quick_resolve_sheet.dart';
 import 'widgets/odometer_camera_capture_sheet.dart';
+import 'widgets/gap_bridge_sheet.dart';
+import 'widgets/tax_exemption_streak_hero.dart';
 
 /// Implements Screen 14: Logbook Progress from UI.png
 /// - Title: "Logbook" + Settings icon
@@ -24,11 +31,7 @@ class LogbookProgressScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final summary = appState.taxSummary;
 
-    final businessUse = summary.businessPercentage;
-    final businessKm = summary.businessKm;
-    final totalKm = summary.totalKm;
     final missingCount = appState.missingComplianceTrips.length;
 
     final now = DateTime.now();
@@ -37,381 +40,158 @@ class LogbookProgressScreen extends StatelessWidget {
         DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
     final thisWeekWorkTrips = appState.trips
         .where((t) =>
-            t.isBusiness &&
-            t.date.isAfter(weekStartMidnight) &&
-            !t.isDeleted)
+            t.isBusiness && t.date.isAfter(weekStartMidnight) && !t.isDeleted)
         .length;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: AppColors.ink),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Logbook',
-          style: TextStyle(
-              fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.ink),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.settings,
-                color: AppColors.ink, size: 20),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Progress Header Card
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
+      backgroundColor: AppColor.canvas,
+      appBar: logbookAppBar(context, 'Logbook overview'),
+      body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(S.xl),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Week ${appState.currentLogbookWeek} of 12',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: AppColors.ink),
-                  ),
-                  const SizedBox(height: 20),
-                  // Circular Gauge
-                  SizedBox(
-                    width: 130,
-                    height: 130,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CircularProgressIndicator(
-                          value: businessUse / 100.0,
-                          strokeWidth: 12,
-                          backgroundColor: AppColors.background,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.emerald),
-                        ),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${businessUse.toStringAsFixed(1)}%',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 24,
-                                    color: AppColors.ink),
-                              ),
-                              const Text('Business use',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.muted,
-                                      fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
+                  OdometerGapReviewCard(appState: appState),
+                  TaxExemptionStreakHero(appState: appState),
+                  const SizedBox(height: S.xxl),
+                  const LogbookSection('Review & activity',
+                      subtitle: 'Keep the details of your driving up to date.'),
+                  LogbookPanel(
+                      child: Column(children: [
+                    Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(Formatters.distance(businessKm),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: AppColors.ink)),
-                          const SizedBox(height: 2),
-                          const Text('Business',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      Container(width: 1, height: 32, color: AppColors.border),
-                      Column(
-                        children: [
-                          Text(Formatters.distance(totalKm),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: AppColors.ink)),
-                          const SizedBox(height: 2),
-                          const Text('Total',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // This Week Section Card
-            const Text('This week',
-                style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                    color: AppColors.ink)),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                      leading: const Icon(LucideIcons.car,
-                          color: AppColors.deepNavy, size: 20),
-                      title: Text(
-                          '$thisWeekWorkTrips ${thisWeekWorkTrips == 1 ? "work trip" : "work trips"}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 14)),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: AppColors.muted),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                  const Divider(height: 1, color: AppColors.border),
-                  Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                      leading: const Icon(LucideIcons.alertCircle,
-                          color: AppColors.amberDark, size: 20),
-                      title: const Text('Missing purpose',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 14)),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                            color: AppColors.amberLight,
-                            borderRadius: BorderRadius.circular(6)),
-                        child: Text(
-                          '$missingCount',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                              color: AppColors.amberDark),
-                        ),
-                      ),
-                      onTap: () {
-                        if (appState.missingComplianceTrips.isNotEmpty) {
-                          TripQuickResolveSheet.show(context,
-                              trip: appState.missingComplianceTrips.first,
-                              appState: appState);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // Odometer Tracker Card
-            const Text('Odometer',
-                style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                    color: AppColors.ink)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Text('Start',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5,
-                                  color: AppColors.muted)),
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () => _showEditStartingOdometerDialog(
-                                context, appState),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.workBlueLight,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
+                          const Icon(AppIcons.trips,
+                              size: AppIconSize.control,
+                              color: AppColor.inkMuted),
+                          const SizedBox(width: S.md),
+                          Expanded(
+                              child: Text(
+                                  '$thisWeekWorkTrips ${thisWeekWorkTrips == 1 ? 'business trip' : 'business trips'} this week',
+                                  style: AppType.bodyStrong)),
+                        ]),
+                    const Divider(height: S.xxxl, color: AppColor.hairline),
+                    ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        minVerticalPadding: S.sm,
+                        leading:
+                            Icon(missingCount > 0 ? AppIcons.attention : AppIcons.confirmed,
+                                color: missingCount > 0
+                                    ? AppColor.attentionInk
+                                    : AppColor.positiveStrong,
+                                size: AppIconSize.control),
+                        title: Text(
+                            missingCount > 0
+                                ? '$missingCount ${missingCount == 1 ? 'trip needs' : 'trips need'} a purpose'
+                                : 'No missing trip purposes',
+                            style: AppType.bodyStrong),
+                        subtitle: Text(
+                            missingCount > 0
+                                ? 'Review the details before reporting.'
+                                : 'Your trip purposes are up to date.',
+                            style: AppType.secondary),
+                        trailing: missingCount > 0
+                            ? const Icon(AppIcons.next,
+                                color: AppColor.inkMuted,
+                                size: AppIconSize.control)
+                            : null,
+                        onTap: missingCount > 0
+                            ? () => TripQuickResolveSheet.show(context,
+                                trip: appState.missingComplianceTrips.first,
+                                appState: appState)
+                            : null),
+                  ])),
+                  const SizedBox(height: S.xxl),
+                  const LogbookSection('Odometer record'),
+                  LogbookPanel(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                        _odometerValue(
+                            'Starting reading', appState.startingOdometer),
+                        Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                                style: TextButton.styleFrom(
+                                    foregroundColor: AppColor.ink,
+                                    minimumSize: const Size(48, 48)),
+                                onPressed: () =>
+                                    _showEditStartingOdometerDialog(
+                                        context, appState),
+                                icon: const Icon(AppIcons.edit,
+                                    size: AppIconSize.inline),
+                                label: const Text('Edit starting reading'))),
+                        const Divider(height: S.xxl, color: AppColor.hairline),
+                        _odometerValue(
+                            'Latest reading', appState.currentOdometer),
+                        const SizedBox(height: S.xl),
+                        Container(
+                            padding: const EdgeInsets.all(S.md),
+                            decoration: BoxDecoration(
+                                color: appState.isOdometerChainGapless
+                                    ? AppColor.surfaceMuted
+                                    : AppColor.attentionTintSoft,
+                                borderRadius: R.controlR),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(LucideIcons.pencil,
-                                      size: 10, color: AppColors.workBlue),
-                                  SizedBox(width: 2),
-                                  Text('Edit',
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.workBlue)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '${Formatters.distance(appState.startingOdometer)} km',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                            color: AppColors.ink),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 20, color: AppColors.border),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Current / End',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13.5,
-                              color: AppColors.muted)),
-                      Text(
-                        '${Formatters.distance(appState.currentOdometer)} km',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                            color: AppColors.ink),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 20, color: AppColors.border),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            appState.isOdometerChainGapless
-                                ? LucideIcons.checkCircle2
-                                : LucideIcons.alertTriangle,
-                            size: 15,
-                            color: appState.isOdometerChainGapless
-                                ? AppColors.emerald
-                                : AppColors.amber,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            appState.isOdometerChainGapless
-                                ? 'Odometer complete'
-                                : 'Odometer gap',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: appState.isOdometerChainGapless
-                                  ? AppColors.emerald
-                                  : AppColors.amber,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (!appState.isOdometerChainGapless)
-                        const Text(
-                          'Review',
-                          style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.amber),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Odometer Photo Evidence Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(LucideIcons.camera, size: 16, color: AppColors.ink),
-                      SizedBox(width: 8),
-                      Text(
-                        'Odometer Photo',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13.5,
-                            color: AppColors.ink),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPhotoProofRow(
-                    context: context,
-                    label: 'Day 1 Start',
-                    photoPath: appState.primaryVehicle?.startOdometerPhotoPath,
-                    onTap: () =>
-                        _handleCapturePhoto(context, appState, isStart: true),
-                  ),
-                  const Divider(height: 16, color: AppColors.border),
-                  _buildPhotoProofRow(
-                    context: context,
-                    label: 'Day 84 Finish',
-                    photoPath: appState.primaryVehicle?.endOdometerPhotoPath,
-                    onTap: () =>
-                        _handleCapturePhoto(context, appState, isStart: false),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                                  Text(
+                                      appState.isOdometerChainGapless
+                                          ? 'No odometer gaps detected'
+                                          : 'An odometer gap needs review',
+                                      style: AppType.secondary.copyWith(
+                                          color: appState.isOdometerChainGapless
+                                              ? AppColor.inkMuted
+                                              : AppColor.attentionInk)),
+                                  if (!appState.isOdometerChainGapless)
+                                    TextButton(
+                                        onPressed: () => GapBridgeSheet.show(
+                                            context,
+                                            appState: appState),
+                                        style: TextButton.styleFrom(
+                                            foregroundColor:
+                                                AppColor.attentionInk,
+                                            minimumSize: const Size(48, 48)),
+                                        child: const Text('Review gap')),
+                                ])),
+                      ])),
+                  const SizedBox(height: S.xxl),
+                  const LogbookSection('Photo evidence',
+                      subtitle:
+                          'Keep dashboard photos alongside your readings.'),
+                  LogbookPanel(
+                      child: Column(children: [
+                    _buildPhotoProofRow(
+                        context: context,
+                        label: 'Starting odometer',
+                        photoPath:
+                            appState.primaryVehicle?.startOdometerPhotoPath,
+                        onTap: () => _handleCapturePhoto(context, appState,
+                            isStart: true)),
+                    const Divider(height: S.xxl, color: AppColor.hairline),
+                    _buildPhotoProofRow(
+                        context: context,
+                        label: 'Finishing odometer',
+                        photoPath:
+                            appState.primaryVehicle?.endOdometerPhotoPath,
+                        onTap: () => _handleCapturePhoto(context, appState,
+                            isStart: false)),
+                  ])),
+                  const SizedBox(height: S.xxl),
+                ]),
+          )),
     );
   }
+
+  Widget _odometerValue(String label, double value) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: AppType.secondary),
+        const SizedBox(height: S.sm),
+        Text(value > 0 ? '${Formatters.odometer(value)} km' : 'Not recorded',
+            style: AppType.titleSmall.copyWith(fontFeatures: AppType.tabular)),
+      ]);
 
   void _showEditStartingOdometerDialog(
       BuildContext context, AppState appState) {
@@ -426,7 +206,8 @@ class LogbookProgressScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(LucideIcons.gauge, color: AppColors.workBlue, size: 22),
+            Icon(AppIcons.odometer,
+                color: AppColors.workBlue, size: AppIconSize.control),
             SizedBox(width: 8),
             Text('Edit Starting Odometer',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
@@ -450,8 +231,8 @@ class LogbookProgressScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.info,
-                      size: 14, color: AppColors.workBlue),
+                  const Icon(AppIcons.info,
+                      size: AppIconSize.inline, color: AppColors.workBlue),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -543,65 +324,39 @@ class LogbookProgressScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final isVerified = photoPath != null && photoPath.isNotEmpty;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink)),
-                const SizedBox(height: 2),
-                Text(
-                  isVerified ? 'Photo saved' : 'Take photo',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: isVerified ? AppColors.emerald : AppColors.muted),
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isVerified
-                    ? AppColors.emerald.withValues(alpha: 0.1)
-                    : AppColors.background,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: isVerified ? AppColors.emerald : AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isVerified ? LucideIcons.checkCircle2 : LucideIcons.plus,
-                    size: 13,
-                    color: isVerified ? AppColors.emerald : AppColors.ink,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isVerified ? 'Saved' : 'Add',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: isVerified ? AppColors.emerald : AppColors.ink,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return Semantics(
+        button: true,
+        label:
+            '$label, ${isVerified ? 'photo saved, replace photo' : 'add photo'}',
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: R.controlR,
+          child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: S.md),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(isVerified ? AppIcons.confirmed : AppIcons.camera,
+                    size: AppIconSize.navigation,
+                    color: isVerified
+                        ? AppColor.positiveStrong
+                        : AppColor.inkMuted),
+                const SizedBox(width: S.md),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(label, style: AppType.bodyStrong),
+                      const SizedBox(height: S.xs),
+                      Text(
+                          isVerified
+                              ? 'Photo saved · tap to replace'
+                              : 'Tap to add a dashboard photo',
+                          style: AppType.secondary),
+                    ])),
+                const Icon(AppIcons.next,
+                    color: AppColor.inkMuted, size: AppIconSize.control),
+              ])),
+        ));
   }
 
   void _handleCapturePhoto(BuildContext context, AppState appState,

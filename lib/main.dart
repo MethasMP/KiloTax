@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
+import 'core/theme/app_theme.dart';
 import 'state/app_state.dart';
 import 'ui/screens/onboarding/onboarding_flow_screen.dart';
 import 'ui/screens/home/main_scaffold_screen.dart';
@@ -28,19 +29,12 @@ class KiloTaxApp extends StatelessWidget {
   const KiloTaxApp({super.key});
 
   Widget _resolveRootScreen(AppState appState) {
-    // 1. Configured vehicle exists (Guest local mode or Authenticated) -> Main Dashboard
     if (appState.hasVehicle) {
       return const MainScaffoldScreen();
     }
-    // 2. Vehicle chosen, but still needs to complete Value-First Gate or GPS setup
-    if (appState.primaryVehicle != null && !appState.hasVehicle) {
-      return const OnboardingFlowScreen(initialStep: 2);
-    }
-    // 3. Has already seen intro slides but no vehicle yet -> Value-First Vehicle Setup (Step 1)
     if (appState.hasSeenOnboarding) {
       return const OnboardingFlowScreen(initialStep: 1);
     }
-    // 4. Fresh first-time launch -> Onboarding slides (Step 0)
     return const OnboardingFlowScreen(initialStep: 0);
   }
 
@@ -58,15 +52,7 @@ class KiloTaxApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        fontFamily: 'Inter',
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.deepNavy,
-          surface: AppColors.background,
-        ),
-        scaffoldBackgroundColor: AppColors.background,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
           builder: (context) => Consumer<AppState>(

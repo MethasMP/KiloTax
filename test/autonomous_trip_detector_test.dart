@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:kilotax/data/models/trip.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -212,6 +213,9 @@ void main() {
       // TRIP SEALED RETROACTIVELY!
       expect(detector.state, equals(AutonomousDetectorState.finalized));
       expect(detector.finalizedTrip, isNotNull);
+      expect(detector.finalizedTrip!.classification,
+          TripClassification.unclassified);
+      expect(detector.finalizedTrip!.purpose, '');
       expect(detector.finalizedTrip!.distanceKm,
           equals(14.2)); // Road-Snapped distance!
     });
@@ -276,6 +280,148 @@ void main() {
       // RESET TO IDLE! Bus pattern rejected
       expect(detector.state, equals(AutonomousDetectorState.idle));
       expect(detector.finalizedTrip, isNull);
+    });
+    test('5. Trade POI Auto-Detect: Populates detectedPoi and purpose at Trade store arrival', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'code': 'Ok',
+            'routes': [
+              {
+                'distance': 12000.0,
+                'duration': 720.0,
+                'geometry': 'route_polyline_bunnings_sample',
+              }
+            ]
+          }),
+          200,
+        );
+      });
+      final routing = RoadSnapRoutingService(client: mockClient);
+
+      final detector = AutonomousTripDetector(
+        sustainedSpeedThresholdDuration: const Duration(seconds: 10),
+        minDrivingSpeedKmh: 20.0,
+        ghostAnchorTimeout: const Duration(seconds: 60),
+        routingService: routing,
+      );
+
+      DateTime simTime = DateTime(2026, 11, 13, 8, 0, 0);
+
+      // Start Driving
+      await detector.processFix(
+        createMockFix(lat: -33.8688, lon: 151.2093, speedKmh: 40, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+      simTime = simTime.add(const Duration(seconds: 15));
+      await detector.processFix(
+        createMockFix(lat: -33.8800, lon: 151.2150, speedKmh: 45, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+
+      expect(detector.state, equals(AutonomousDetectorState.activeDriving));
+
+      // Arrive and park at Bunnings Warehouse
+      simTime = simTime.add(const Duration(seconds: 30));
+      await detector.processFix(
+        createMockFix(lat: -33.9050, lon: 151.2200, speedKmh: 0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+
+      expect(detector.state, equals(AutonomousDetectorState.ghostAnchorPending));
+
+      // Dwell for 65 seconds (> ghostAnchorTimeout 60s)
+      simTime = simTime.add(const Duration(seconds: 65));
+      await detector.processFix(
+        createMockFix(lat: -33.9050, lon: 151.2200, speedKmh: 0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+
+      expect(detector.state, equals(AutonomousDetectorState.finalized));
+      final trip = detector.finalizedTrip;
+      expect(trip, isNotNull);
+      expect(trip!.routePolyline, equals('route_polyline_bunnings_sample'));
+      expect(trip.distanceKm, equals(12.0));
+    });
+
+    test('6. Fast-Path Promotion: Bluetooth Car connection triggers instant activeDriving at lower speed', () async {
+      final detector = AutonomousTripDetector(
+        routingService: mockRoutingService,
+        minDrivingSpeedKmh: 20.0,
+      );
+
+      final now = DateTime(2026, 11, 13, 8, 0, 0);
+
+      // Stationary fix in driveway with car bluetooth connected
+      await detector.processFix(
+        createMockFix(lat: -33.8688, lon: 151.2093, speedKmh: 0.0, timestamp: now),
+        isBluetoothCarConnected: true,
+      );
+      expect(detector.state, equals(AutonomousDetectorState.idle));
+
+      // Moving at 10 km/h (below default 20 km/h threshold, but car BT is connected)
+      final movingFix = createMockFix(
+        lat: -33.8689,
+        lon: 151.2094,
+        speedKmh: 10.0,
+        timestamp: now.add(const Duration(seconds: 4)),
+      );
+      final state = await detector.processFix(
+        movingFix,
+        isBluetoothCarConnected: true,
+      );
+
+      // Promoted directly to activeDriving via Bluetooth Car fast-path!
+      expect(state, equals(AutonomousDetectorState.activeDriving));
+      expect(detector.activeTripPath.length, greaterThanOrEqualTo(2));
+    });
+
+    test('7. Traffic Light Trap: Stationary for 7 minutes with Car Bluetooth connected does NOT finalize trip', () async {
+      final detector = AutonomousTripDetector(
+        routingService: mockRoutingService,
+        minDrivingSpeedKmh: 20.0,
+        ghostAnchorTimeout: const Duration(minutes: 5), // default timeout is 5 min
+      );
+
+      var simTime = DateTime(2026, 11, 13, 8, 0, 0);
+
+      // Start driving with car bluetooth connected
+      await detector.processFix(
+        createMockFix(lat: -33.8688, lon: 151.2093, speedKmh: 40.0, timestamp: simTime),
+        simulatedNow: simTime,
+        isBluetoothCarConnected: true,
+      );
+      expect(detector.state, equals(AutonomousDetectorState.activeDriving));
+
+      // Stop at a long red light (stationary fix)
+      simTime = simTime.add(const Duration(seconds: 30));
+      await detector.processFix(
+        createMockFix(lat: -33.8700, lon: 151.2100, speedKmh: 0.0, timestamp: simTime),
+        simulatedNow: simTime,
+        isBluetoothCarConnected: true,
+      );
+      expect(detector.state, equals(AutonomousDetectorState.ghostAnchorPending));
+
+      // 7 minutes pass at red light (> standard 5 min timeout, but car bluetooth is connected)
+      simTime = simTime.add(const Duration(minutes: 7));
+      final stateAt7Min = await detector.processFix(
+        createMockFix(lat: -33.8700, lon: 151.2100, speedKmh: 0.0, timestamp: simTime),
+        simulatedNow: simTime,
+        isBluetoothCarConnected: true,
+      );
+
+      // Must NOT be finalized! Remains ghostAnchorPending because timeout extended to 10 min
+      expect(stateAt7Min, equals(AutonomousDetectorState.ghostAnchorPending));
+      expect(detector.finalizedTrip, isNull);
+
+      // Light turns green and car drives again -> seamlessly resumes activeDriving
+      simTime = simTime.add(const Duration(seconds: 10));
+      final resumedState = await detector.processFix(
+        createMockFix(lat: -33.8720, lon: 151.2120, speedKmh: 35.0, timestamp: simTime),
+        simulatedNow: simTime,
+        isBluetoothCarConnected: true,
+      );
+      expect(resumedState, equals(AutonomousDetectorState.activeDriving));
     });
   });
 }

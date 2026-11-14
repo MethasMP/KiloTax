@@ -1,5 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart' as sqlite;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
+import 'package:kilotax/services/receipts/receipt_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kilotax/core/constants/app_constants.dart';
@@ -10,37 +14,67 @@ import 'package:kilotax/services/auth/supabase_auth_service.dart';
 import 'package:kilotax/services/storage/local_storage_service.dart';
 import 'package:kilotax/state/app_state.dart';
 
+class ConfirmedDeletionAuth extends SupabaseAuthService {
+  @override
+  Future<bool> deleteAccount() async => true;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  ffi.sqfliteFfiInit();
+  sqlite.databaseFactory = ffi.databaseFactoryFfi;
 
   group('Category 2: Store Compliance & Security Suite', () {
     late LocalStorageService storageService;
     late AppState appState;
+    late Directory receiptRoot;
 
     setUp(() async {
+      receiptRoot =
+          await Directory.systemTemp.createTemp('receipt_account_cleanup');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/path_provider'),
+              (call) async => receiptRoot.path);
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       storageService = LocalStorageService(prefs);
 
       appState = AppState(
         storageService: storageService,
+        authService: ConfirmedDeletionAuth(),
       );
       await appState.init();
     });
 
-    test('1. iOS Info.plist does not declare external-accessory but retains location, processing, bluetooth-central', () {
+    tearDown(() async {
+      final db = await ReceiptDatabase.open(
+          '${receiptRoot.path}/receipt_inbox.sqlite');
+      await db.database.close();
+      await receiptRoot.delete(recursive: true);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/path_provider'), null);
+    });
+
+    test(
+        '1. iOS Info.plist does not declare external-accessory but retains location, processing, bluetooth-central',
+        () {
       final infoPlistFile = File('ios/Runner/Info.plist');
       expect(infoPlistFile.existsSync(), isTrue);
 
       final content = infoPlistFile.readAsStringSync();
       expect(content.contains('<string>external-accessory</string>'), isFalse,
-          reason: 'Apple Guideline 2.5.4: external-accessory must not be declared without MFi');
+          reason:
+              'Apple Guideline 2.5.4: external-accessory must not be declared without MFi');
       expect(content.contains('<string>location</string>'), isTrue);
       expect(content.contains('<string>processing</string>'), isTrue);
       expect(content.contains('<string>bluetooth-central</string>'), isTrue);
     });
 
-    test('2. In-App Account Deletion (Apple Guideline 5.1.1(v)) clears storage, memory state, and resets onboarding', () async {
+    test(
+        '2. In-App Account Deletion (Apple Guideline 5.1.1(v)) clears storage, memory state, and resets onboarding',
+        () async {
       // Setup state with mock vehicle, trip, expense, and onboarding
       await appState.completeOnboarding();
       expect(appState.hasSeenOnboarding, isTrue);
@@ -86,10 +120,13 @@ void main() {
       expect(appState.expenses.isEmpty, isTrue);
       expect(appState.hasVehicle, isFalse);
       expect(appState.hasSeenOnboarding, isFalse,
-          reason: 'Account deletion must wipe onboarding seen flag so app resets to clean welcome state');
+          reason:
+              'Account deletion must wipe onboarding seen flag so app resets to clean welcome state');
     });
 
-    test('2b. Guest Mode Data Reset clears all local storage, memory state, and resets onboarding', () async {
+    test(
+        '2b. Guest Mode Data Reset clears all local storage, memory state, and resets onboarding',
+        () async {
       await appState.completeOnboarding();
       expect(appState.hasSeenOnboarding, isTrue);
 
@@ -124,18 +161,25 @@ void main() {
       expect(appState.expenses.isEmpty, isTrue);
       expect(appState.hasVehicle, isFalse);
       expect(appState.hasSeenOnboarding, isFalse,
-          reason: 'Local data reset must wipe onboarding seen flag so app resets to clean welcome state');
+          reason:
+              'Local data reset must wipe onboarding seen flag so app resets to clean welcome state');
     });
 
-    test('3. Android Release Signing is configured with key.properties support and example template exists', () {
+    test(
+        '3. Android Release Signing is configured with key.properties support and example template exists',
+        () {
       final gradleFile = File('android/app/build.gradle.kts');
       expect(gradleFile.existsSync(), isTrue);
 
       final content = gradleFile.readAsStringSync();
       expect(content.contains('keystorePropertiesFile'), isTrue);
       expect(content.contains('signingConfigs.getByName("release")'), isTrue);
-      expect(content.contains('signingConfig = signingConfigs.getByName("debug")\n        }'), isFalse,
-          reason: 'Hardcoded debug signing for release build must be replaced with dynamic configuration');
+      expect(
+          content.contains(
+              'signingConfig = signingConfigs.getByName("debug")\n        }'),
+          isFalse,
+          reason:
+              'Hardcoded debug signing for release build must be replaced with dynamic configuration');
 
       final exampleFile = File('android/key.properties.example');
       expect(exampleFile.existsSync(), isTrue);
@@ -159,7 +203,9 @@ void main() {
       }
     });
 
-    test('5. Sync Gating: triggerSyncToCloud and restoreFromCloud abort when unauthenticated', () async {
+    test(
+        '5. Sync Gating: triggerSyncToCloud and restoreFromCloud abort when unauthenticated',
+        () async {
       // Ensure appState has unauthenticated state
       expect(appState.isAuthenticated, isFalse);
       expect(appState.currentUser, isNull);
@@ -186,19 +232,25 @@ void main() {
       expect(appState.syncStatus, equals(SyncStatus.idle));
     });
 
-    test('6. Apple Privacy Manifest PrivacyInfo.xcprivacy and Legal URLs exist', () {
+    test('6. Apple Privacy Manifest PrivacyInfo.xcprivacy and Legal URLs exist',
+        () {
       final privacyManifestFile = File('ios/Runner/PrivacyInfo.xcprivacy');
       expect(privacyManifestFile.existsSync(), isTrue);
 
       final content = privacyManifestFile.readAsStringSync();
-      expect(content.contains('NSPrivacyAccessedAPICategoryUserDefaults'), isTrue);
+      expect(
+          content.contains('NSPrivacyAccessedAPICategoryUserDefaults'), isTrue);
       expect(content.contains('CA92.1'), isTrue);
-      expect(content.contains('NSPrivacyAccessedAPICategoryFileTimestamp'), isTrue);
-      expect(content.contains('NSPrivacyAccessedAPICategorySystemBootTime'), isTrue);
+      expect(content.contains('NSPrivacyAccessedAPICategoryFileTimestamp'),
+          isTrue);
+      expect(content.contains('NSPrivacyAccessedAPICategorySystemBootTime'),
+          isTrue);
       expect(content.contains('NSPrivacyAccessedAPICategoryDiskSpace'), isTrue);
 
-      expect(AppConstants.privacyPolicyUrl, equals('https://methasmp.github.io/KiloTax/legal/#privacy'));
-      expect(AppConstants.termsOfServiceUrl, equals('https://methasmp.github.io/KiloTax/legal/#terms'));
+      expect(AppConstants.privacyPolicyUrl,
+          equals('https://methasmp.github.io/KiloTax/legal/#privacy'));
+      expect(AppConstants.termsOfServiceUrl,
+          equals('https://methasmp.github.io/KiloTax/legal/#terms'));
     });
   });
 }

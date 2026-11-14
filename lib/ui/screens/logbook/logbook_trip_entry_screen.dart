@@ -1,23 +1,31 @@
+import '../../../services/tracking/odometer_gap_reconciler.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../data/models/vehicle.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_space.dart';
+import 'widgets/logbook_design.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/trip.dart';
 import '../../../state/app_state.dart';
 import '../trips/widgets/logbook_odometer_card.dart';
 import '../trips/widgets/trip_purpose_selector.dart';
-import '../trips/widgets/tax_savings_ticker_dialog.dart';
 
 /// Dedicated Trip Entry Screen for Logbook Method (TR 97/11)
 /// 100% Focused on Gapless Continuous Odometer & Statutory Business/Personal Ratio.
 class LogbookTripEntryScreen extends StatefulWidget {
   final AppState appState;
   final Trip? detectedTrip;
+  final OdometerGap? odometerGap;
 
   const LogbookTripEntryScreen({
     super.key,
     required this.appState,
     this.detectedTrip,
+    this.odometerGap,
   });
 
   @override
@@ -25,7 +33,9 @@ class LogbookTripEntryScreen extends StatefulWidget {
 }
 
 class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
-  String _selectedPurpose = 'Client / Job';
+  String _selectedPurpose = '';
+  late DateTime _tripDate;
+  bool _dateConfirmed = true;
   late TextEditingController _distanceController;
   late TextEditingController _originController;
   late TextEditingController _destinationController;
@@ -35,7 +45,15 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
   @override
   void initState() {
     super.initState();
-    _currentDistance = widget.detectedTrip?.distanceKm ?? 0.0;
+    final detected = widget.detectedTrip;
+    final gap = widget.odometerGap;
+    _dateConfirmed = gap == null;
+    _tripDate = detected?.date ?? DateTime.now();
+    _selectedPurpose = detected?.classification == TripClassification.personal
+        ? 'Personal'
+        : detected?.purpose ?? '';
+    if (gap != null) _selectedPurpose = '';
+    _currentDistance = gap?.distance ?? widget.detectedTrip?.distanceKm ?? 0.0;
     _distanceController = TextEditingController(
       text: _currentDistance > 0 ? _currentDistance.toStringAsFixed(1) : '',
     );
@@ -45,8 +63,9 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     _destinationController = TextEditingController(
       text: widget.detectedTrip?.destinationAddress ?? '',
     );
-    _customStartOdo =
-        widget.detectedTrip?.startOdometer ?? widget.appState.currentOdometer;
+    _customStartOdo = gap?.startOdo ??
+        widget.detectedTrip?.startOdometer ??
+        widget.appState.currentOdometer;
   }
 
   @override
@@ -57,11 +76,27 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     super.dispose();
   }
 
-  void _saveTrip() {
+  Future<void> _saveTrip() async {
+    if (widget.appState.primaryVehicle == null && widget.detectedTrip == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Choose a vehicle before adding a trip.')));
+      return;
+    }
+    if (_selectedPurpose.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Choose a trip purpose before saving.')));
+      return;
+    }
+    if (!_dateConfirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Choose the actual trip date. The odometer does not tell us when you travelled.')));
+      return;
+    }
     HapticFeedback.heavyImpact();
     final parsedDist =
         double.tryParse(_distanceController.text.trim()) ?? _currentDistance;
-    if (parsedDist <= 0) {
+    if (!parsedDist.isFinite || parsedDist <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -74,7 +109,23 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
 
     final startOdo = _customStartOdo;
     final endOdo = startOdo + parsedDist;
-    final isPersonal = _selectedPurpose == 'Personal';
+    final gap = widget.odometerGap;
+    if (gap != null &&
+        (widget.appState.primaryVehicle?.id != gap.vehicleId ||
+            !widget.appState.isUnrecordedOdometerSpan(
+                vehicleId: gap.vehicleId,
+                startOdo: startOdo,
+                endOdo: endOdo,
+                legacyTripId: gap.legacyTripId) ||
+            (gap.legacyTripId != null &&
+                ((startOdo - gap.startOdo).abs() > 0.01 ||
+                    (endOdo - gap.endOdo).abs() > 0.01)))) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'The trip must fit the current unrecorded span. Return to the odometer record if it has changed.')));
+      return;
+    }
+    bool isPersonal = _selectedPurpose == 'Personal';
     final origin = _originController.text.trim().isNotEmpty
         ? _originController.text.trim()
         : (isPersonal ? '[Private Journey]' : 'Work Site / Depot');
@@ -82,18 +133,15 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
         ? _destinationController.text.trim()
         : (isPersonal ? '[Private Journey]' : 'Client Job Location');
 
-    // Gapless Odometer Protection: If user advanced startOdo beyond currentOdometer,
-    // automatically bridge the gap as Personal Travel so the ATO continuous chain remains intact.
-    final odoGap = widget.appState.detectOdometerGap(startOdo);
-    if (odoGap > 0.1) {
-      widget.appState.fillOdometerGap(
-        gapEndOdometer: startOdo,
-        isBusiness: false,
-        purpose: 'Personal travel (Bridging)',
-      );
+    if (!isPersonal &&
+        (_originController.text.trim().isEmpty ||
+            _destinationController.text.trim().isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Enter the starting place and destination for this business trip.')));
+      return;
     }
-
-    // Home-to-Work Compliance Guard (TR 2021/1)
+    // Home-to-Work Compliance Guard (TR 2021/1 & TR 95/34)
     final isBulkyTools = _selectedPurpose == 'Heavy Tools & Equipment' ||
         _selectedPurpose == 'Carrying Heavy Tools' ||
         _selectedPurpose == 'Work Site (Bulky Tools Carried)';
@@ -106,23 +154,54 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
         isBulkyToolsCarried: isBulkyTools,
       );
       if (!isCompliant && warning != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.amber,
-            content: Text(warning),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        final confirmPersonal = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+                  title: const Text('Review travel type'),
+                  content: const Text(
+                      'This route is flagged by the app’s commute check. Review the route and purpose, or choose to record it as personal travel.'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Review details')),
+                    FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Save as personal')),
+                  ],
+                ));
+        if (!mounted || confirmPersonal != true) return;
+        isPersonal = true;
+        _selectedPurpose = 'Personal';
       }
     }
 
-    final trip = Trip(
-      id: widget.detectedTrip?.id ??
-          'logbook_trip_${DateTime.now().millisecondsSinceEpoch}',
-      vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
+    if (gap != null &&
+        !widget.appState.isUnrecordedOdometerSpan(
+            vehicleId: gap.vehicleId,
+            startOdo: startOdo,
+            endOdo: endOdo,
+            legacyTripId: gap.legacyTripId)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'This gap has changed. Return to the latest odometer record.')));
+      return;
+    }
+    final baseTrip = widget.detectedTrip ??
+        Trip(
+          id: 'logbook_trip_${DateTime.now().microsecondsSinceEpoch}',
+          vehicleId: widget.appState.primaryVehicle!.id,
+          date: _tripDate,
+          purpose: _selectedPurpose,
+          taxMethod: TaxMethod.logbook,
+          evidenceSource:
+              gap == null ? 'manual_retroactive' : 'manual_gap_resolution',
+        );
+    final trip = baseTrip.copyWith(
+      evidenceSource: gap?.legacyTripId != null
+          ? 'user_confirmed_auto_gap'
+          : baseTrip.evidenceSource,
       distanceKm: parsedDist,
-      date: widget.detectedTrip?.date ?? DateTime.now(),
+      date: _tripDate,
       purpose: _selectedPurpose,
       startOdometer: startOdo,
       endOdometer: endOdo,
@@ -134,230 +213,145 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     );
 
     widget.appState.recordTrip(trip);
-    Navigator.of(context).pop();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    navigator.pop();
 
-    if (!isPersonal) {
-      TaxSavingsTickerDialog.show(
-        context,
-        tripDistanceKm: parsedDist,
-        appState: widget.appState,
-        bulkyToolsCarried: isBulkyTools,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.muted,
-          content: Text(
-              'Personal drive recorded: ${startOdo.toStringAsFixed(0)} → ${endOdo.toStringAsFixed(0)} km'),
-        ),
-      );
-    }
+    messenger.showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      content: Text(
+          '${isPersonal ? 'Personal' : 'Business'} trip saved · ${Formatters.date(_tripDate)} · ${parsedDist.toStringAsFixed(1)} km'),
+    ));
+  }
+
+  Future<void> _chooseDate() async {
+    final now = DateTime.now();
+    final chosen = await showDatePicker(
+        context: context,
+        initialDate: _tripDate,
+        firstDate: DateTime(2000),
+        lastDate: _tripDate.isAfter(now) ? _tripDate : now);
+    if (!mounted || chosen == null) return;
+    setState(() {
+      _tripDate = DateTime(chosen.year, chosen.month, chosen.day,
+          _tripDate.hour, _tripDate.minute);
+      _dateConfirmed = true;
+    });
+  }
+
+  Future<void> _chooseTime() async {
+    final chosen = await showTimePicker(
+        context: context, initialTime: TimeOfDay.fromDateTime(_tripDate));
+    if (!mounted || chosen == null) return;
+    setState(() => _tripDate = DateTime(_tripDate.year, _tripDate.month,
+        _tripDate.day, chosen.hour, chosen.minute));
   }
 
   @override
   Widget build(BuildContext context) {
     final endOdo = _customStartOdo + _currentDistance;
-    final tripDate = widget.detectedTrip?.date ?? DateTime.now();
-    final isWeekend = tripDate.weekday == DateTime.saturday ||
-        tripDate.weekday == DateTime.sunday;
-
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: AppColors.ink),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Log Logbook Drive (TR 97/11)',
-            style: AppTextStyles.cardPrimary),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Weekend Audit Trap Shield Banner
-            if (isWeekend) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.amberLight,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: AppColors.amberDark.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(LucideIcons.alertTriangle,
-                        size: 20, color: AppColors.amberDark),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Weekend Trip Audit Flag (TR 97/11)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.amberDark,
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'ATO audits scrutinize weekend drives. Ensure you select a distinct business purpose or mark as Personal if private.',
-                            style:
-                                TextStyle(fontSize: 11.5, color: AppColors.ink),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // 1. Distance & Suburb Route Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: AppColor.canvas,
+      appBar: logbookAppBar(
+          context, widget.detectedTrip == null ? 'Add trip' : 'Review trip'),
+      bottomNavigationBar:
+          LogbookFooter(label: 'Save trip', onPressed: _saveTrip),
+      body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(S.xl),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Trip Distance (km)',
-                      style: AppTextStyles.caption),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _distanceController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    autofocus: widget.detectedTrip == null,
-                    style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.deepNavy),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      hintText: '0.0',
-                      contentPadding: EdgeInsets.symmetric(vertical: 4),
-                      border: UnderlineInputBorder(
-                          borderSide:
-                              BorderSide(color: AppColors.deepNavy, width: 2)),
-                      suffixText: 'km',
-                      suffixStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.muted),
-                    ),
-                    onChanged: (val) {
-                      setState(() {
-                        _currentDistance = double.tryParse(val.trim()) ?? 0.0;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 12),
-
-                  // Origin field
-                  Row(
-                    children: [
-                      const Icon(LucideIcons.mapPin,
-                          size: 15, color: AppColors.muted),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _originController,
-                          style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            hintText:
-                                'Start suburb / depot (TR 97/11 Required)',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Destination field
-                  Row(
-                    children: [
-                      const Icon(LucideIcons.navigation,
-                          size: 15, color: AppColors.emerald),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _destinationController,
-                          style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            hintText:
-                                'End suburb / destination (TR 97/11 Required)',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // 2. Purpose Selector (Includes Mandatory Personal Option for Logbook Ratio)
-            TripPurposeSelector(
-              selectedPurpose: _selectedPurpose,
-              isLogbook: true,
-              onPurposeSelected: (p) => setState(() => _selectedPurpose = p),
-            ),
-            const SizedBox(height: 18),
-
-            // 3. Continuous Odometer Card
-            LogbookOdometerCard(
-              appState: widget.appState,
-              startOdometer: _customStartOdo,
-              endOdometer: endOdo,
-              onStartOdometerChanged: (val) =>
-                  setState(() => _customStartOdo = val),
-            ),
-            const SizedBox(height: 24),
-
-            // 4. Save Button
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.deepNavy,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _saveTrip,
-              child: const Text('Save Audit Record',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-            ),
-          ],
-        ),
-      ),
+                  Text(
+                      widget.odometerGap == null
+                          ? 'Trip details'
+                          : 'Add confirmed travel',
+                      style: AppType.title),
+                  const SizedBox(height: S.sm),
+                  const Text(
+                      'Check the route, distance and purpose for your logbook.',
+                      style: AppType.body),
+                  const SizedBox(height: S.xxl),
+                  if (widget.odometerGap != null) ...[
+                    Text(
+                        'Unrecorded span: ${Formatters.odometer(widget.odometerGap!.startOdo)}–${Formatters.odometer(widget.odometerGap!.endOdo)} km. Only save travel you can confirm.',
+                        style: AppType.secondary),
+                    const SizedBox(height: S.lg),
+                  ],
+                  LogbookPanel(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                        const Text('WHEN', style: AppType.eyebrow),
+                        const SizedBox(height: S.sm),
+                        Wrap(spacing: S.sm, runSpacing: S.sm, children: [
+                          TextButton.icon(
+                              key: const ValueKey('trip-date'),
+                              onPressed: _chooseDate,
+                              style: TextButton.styleFrom(
+                                  foregroundColor: AppColor.ink,
+                                  minimumSize: const Size(48, 48)),
+                              icon: const Icon(AppIcons.calendar,
+                                  size: AppIconSize.control),
+                              label: Text(_dateConfirmed
+                                  ? Formatters.date(_tripDate)
+                                  : 'Choose actual trip date')),
+                          TextButton(
+                              key: const ValueKey('trip-time'),
+                              onPressed: _chooseTime,
+                              style: TextButton.styleFrom(
+                                  foregroundColor: AppColor.ink,
+                                  minimumSize: const Size(48, 48)),
+                              child: Text(TimeOfDay.fromDateTime(_tripDate)
+                                  .format(context))),
+                        ]),
+                        const Divider(height: S.xxl, color: AppColor.hairline),
+                        const Text('DISTANCE', style: AppType.eyebrow),
+                        const SizedBox(height: S.md),
+                        TextField(
+                            controller: _distanceController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            style: AppType.metric
+                                .copyWith(fontSize: AppType.title.fontSize),
+                            decoration: logbookInput('Trip distance',
+                                hint: '0.0', suffix: 'km'),
+                            onChanged: (val) => setState(() =>
+                                _currentDistance =
+                                    double.tryParse(val.trim()) ?? 0.0)),
+                        const SizedBox(height: S.xl),
+                        TextField(
+                            controller: _originController,
+                            style: AppType.body,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: logbookInput('From',
+                                hint: 'Starting suburb or depot')),
+                        const SizedBox(height: S.md),
+                        TextField(
+                            controller: _destinationController,
+                            style: AppType.body,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: logbookInput('To',
+                                hint: 'Destination suburb or address')),
+                      ])),
+                  const SizedBox(height: S.xxl),
+                  TripPurposeSelector(
+                      selectedPurpose: _selectedPurpose,
+                      isLogbook: true,
+                      onPurposeSelected: (p) =>
+                          setState(() => _selectedPurpose = p)),
+                  const SizedBox(height: S.xxl),
+                  LogbookOdometerCard(
+                      appState: widget.appState,
+                      startOdometer: _customStartOdo,
+                      endOdometer: endOdo,
+                      onStartOdometerChanged: (val) =>
+                          setState(() => _customStartOdo = val)),
+                  const SizedBox(height: S.xxl),
+                ]),
+          )),
     );
   }
 }

@@ -1,20 +1,32 @@
 import '../../data/models/vehicle_expense.dart';
 
 class ReceiptOcrResult {
+  final String? currency;
+  final String? invoiceNumber;
+  final DateTime? parsedDate;
+  final bool hasMixedItems;
+  final List<Map<String, dynamic>> lineObservations;
   final String merchant;
   final double amount;
   final double? gstAmount;
   final String? abn;
   final DateTime date;
+  final bool dateNeedsReview;
   final ExpenseCategory category;
   final double confidence;
   final List<String> evidence;
   final String rawText;
 
   const ReceiptOcrResult({
+    this.currency,
+    this.invoiceNumber,
+    this.parsedDate,
+    this.hasMixedItems = false,
+    this.lineObservations = const [],
     required this.merchant,
     required this.amount,
     required this.date,
+    this.dateNeedsReview = false,
     required this.category,
     required this.confidence,
     required this.evidence,
@@ -24,7 +36,12 @@ class ReceiptOcrResult {
   });
 
   bool get isHighConfidence =>
-      confidence >= 0.78 && amount > 0 && merchant.isNotEmpty;
+      confidence >= 0.78 &&
+      currency == 'AUD' &&
+      !hasMixedItems &&
+      !dateNeedsReview &&
+      amount > 0 &&
+      merchant.isNotEmpty;
 }
 
 class ReceiptIntelligenceService {
@@ -45,9 +62,24 @@ class ReceiptIntelligenceService {
       discount: discountCandidate,
     );
 
+    final currencyCodes = RegExp(r'\b(AUD|USD|NZD|CAD|EUR|GBP|THB|JPY|SGD)\b',
+            caseSensitive: false)
+        .allMatches(rawText)
+        .map((m) => m.group(1)!.toUpperCase())
+        .toSet();
+    final currency = currencyCodes.length == 1 ? currencyCodes.single : null;
+    final invoice = RegExp(
+            r'(?:invoice|receipt)\s*(?:number|no\.?|#)\s*[:#]?\s*([A-Z0-9][A-Z0-9-]*)',
+            caseSensitive: false)
+        .firstMatch(rawText)
+        ?.group(1);
+    final mixed = RegExp(
+            r'\b(chocolate|grocery|groceries|milk|bread|coffee|sandwich|snack|chips|drink|cigarettes|tobacco|confectionery)\b',
+            caseSensitive: false)
+        .hasMatch(rawText);
     final amount = consensus.amount;
     final merchant = _extractMerchant(sanitizedRaw, normalized);
-    final parsedDate = _extractDate(normalized);
+    final parsedDate = _extractDateTime(normalized, sanitizedRaw);
     final now = DateTime.now();
     DateTime date;
     if (parsedDate != null) {
@@ -62,6 +94,11 @@ class ReceiptIntelligenceService {
       date = fallbackDate ?? now;
     }
     final evidence = <String>[
+      if (mixed) 'mixed_items',
+      if (currency == null) 'currency_unknown',
+      if (parsedDate == null) 'purchase_date_missing',
+      if (parsedDate != null && date != parsedDate)
+        'purchase_date_rejected:${parsedDate.toIso8601String()}',
       ...categoryMatch.evidence,
       ...consensus.evidence,
       if (amount > 0) 'total:${amount.toStringAsFixed(2)}',
@@ -84,11 +121,20 @@ class ReceiptIntelligenceService {
         : confidence;
 
     return ReceiptOcrResult(
+      currency: currency,
+      invoiceNumber: invoice,
+      parsedDate: parsedDate,
+      hasMixedItems: mixed,
+      lineObservations: rawText
+          .split(RegExp(r'\r?\n'))
+          .map((line) => <String, dynamic>{'text': line})
+          .toList(),
       merchant: merchant,
       amount: amount,
       gstAmount: gstCandidate,
       abn: abnCandidate,
       date: date,
+      dateNeedsReview: parsedDate == null || date != parsedDate,
       category: categoryMatch.category,
       confidence: auditedConfidence,
       evidence: evidence,
@@ -172,13 +218,12 @@ class ReceiptIntelligenceService {
   /// Extracts Australian GST with variations (e.g. "includes gst $14.25", "10% gst a $4.95")
   double? _extractGstAmount(String text) {
     final gstPatterns = [
-      // 1. Explicit GST line with optional category letter: "10% gst a $ 4.95", "gst a $ 4.95" (not preceded by includes)
+      RegExp(
+          r'\bgst\s+(?:included|inclusive|incl)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       RegExp(
           r'(?<!includes\s+)\bgst(?:\s+[a-z])?\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
-      // 2. GST amount / tax line
       RegExp(
           r'(?:gst\s+amount|tax\s+amount)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
-      // 3. Fallback: "includes gst $X" (only if NOT preceded by "total")
       RegExp(
           r'(?<!total\s+)includes?\s+gst\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       RegExp(r'\b10%\s+tax\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
@@ -188,7 +233,7 @@ class ReceiptIntelligenceService {
       final match = pattern.firstMatch(text);
       if (match != null) {
         final val = double.tryParse(match.group(1)!);
-        if (val != null && val > 0) return val;
+        if (val != null && val >= 0) return val;
       }
     }
     return null;
@@ -230,7 +275,6 @@ class ReceiptIntelligenceService {
     final candidates = <_AmountCandidate>[];
     final evidence = <String>[];
 
-    // 1. Bottom-up Line Inspection with Fuzzy Settlement Detection
     final reversedLines = lines.reversed.toList(growable: false);
     for (int i = 0; i < reversedLines.length; i++) {
       final line = reversedLines[i];
@@ -284,7 +328,6 @@ class ReceiptIntelligenceService {
           amount: 0.0, isCrossValidated: false, evidence: []);
     }
 
-    // 2. GST Invariant Cross-Validation (Total ≈ GST * 11 in Australia)
     bool gstCrossValidated = false;
     if (gst != null && gst > 0) {
       final expectedTotal = gst * 11.0;
@@ -298,7 +341,6 @@ class ReceiptIntelligenceService {
       }
     }
 
-    // 3. Discount Reconciliation (Subtotal - Discount == Net Total)
     if (discount != null && discount > 0) {
       evidence.add('discount_detected:${discount.toStringAsFixed(2)}');
       for (final lower in candidates) {
@@ -378,9 +420,7 @@ class ReceiptIntelligenceService {
     return v1[t.length];
   }
 
-  /// 100% Brand-Agnostic Spatial Supplier Extraction:
-  /// Scans physical header lines before statutory invoice markers (Tax Invoice / ABN / Date / Tel).
-  /// Works across all 80+ Servo brands and 25,000+ independent mechanical repair shops.
+  /// Proposes a merchant from header lines; this heuristic does not establish identity.
   String _extractMerchant(String rawText, String normalized) {
     final lines = rawText
         .split(RegExp(r'\r?\n'))
@@ -428,8 +468,65 @@ class ReceiptIntelligenceService {
     return cleaned;
   }
 
+  DateTime? _extractDateTime(String normalized, String rawText) {
+    final date = _extractDate(normalized);
+    if (date == null) return null;
+
+    final time = _extractTime(rawText) ?? _extractTime(normalized);
+    if (time == null) return date;
+
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
+
+  ({int hour, int minute, int second})? _extractTime(String text) {
+    // 1. Matches 12-hour format with AM/PM (e.g., "10:42 AM", "2:15pm", "08:30:15 PM")
+    final amPmPattern = RegExp(
+      r'\b([01]?\d):([0-5]\d)(?::([0-5]\d))?\s*([ap]\.?m\.?)\b',
+      caseSensitive: false,
+    );
+    final amPmMatch = amPmPattern.firstMatch(text);
+    if (amPmMatch != null) {
+      var hour = int.parse(amPmMatch.group(1)!);
+      final minute = int.parse(amPmMatch.group(2)!);
+      final second =
+          amPmMatch.group(3) != null ? int.parse(amPmMatch.group(3)!) : 0;
+      final modifier = amPmMatch.group(4)!.toLowerCase().replaceAll('.', '');
+
+      if (modifier == 'pm' && hour < 12) {
+        hour += 12;
+      } else if (modifier == 'am' && hour == 12) {
+        hour = 0;
+      }
+      if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+        return (hour: hour, minute: minute, second: second);
+      }
+    }
+
+    // 2. Matches 24-hour military/POS format (e.g., "TIME 14:42", "14:42:10", "AT 09:15")
+    final pos24Pattern = RegExp(
+      r'(?:time|at|\s)\s*([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b',
+      caseSensitive: false,
+    );
+    final posMatch = pos24Pattern.firstMatch(text);
+    if (posMatch != null) {
+      final hour = int.parse(posMatch.group(1)!);
+      final minute = int.parse(posMatch.group(2)!);
+      final second =
+          posMatch.group(3) != null ? int.parse(posMatch.group(3)!) : 0;
+      return (hour: hour, minute: minute, second: second);
+    }
+
+    return null;
+  }
+
   DateTime? _extractDate(String text) {
-    // 1. Text Month Format: "19 Oct 2023", "19-Oct-2023", "19 October 2023", "19 Oct 23"
     final textMonthPattern = RegExp(
       r'\b(\d{1,2})[\s\.-]+(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s\.-]+(\d{2,4})\b',
       caseSensitive: false,
@@ -457,13 +554,10 @@ class ReceiptIntelligenceService {
       final month = months[monthStr];
       if (day != null && month != null && year != null) {
         if (year < 100) year += 2000;
-        return DateTime.tryParse(
-          '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}',
-        );
+        return _validDate(year, month, day);
       }
     }
 
-    // 2. ISO Format: "2023-10-19", "2023/10/19"
     final isoPattern = RegExp(r'\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b');
     final isoMatch = isoPattern.firstMatch(text);
     if (isoMatch != null) {
@@ -471,13 +565,10 @@ class ReceiptIntelligenceService {
       final month = int.tryParse(isoMatch.group(2)!);
       final day = int.tryParse(isoMatch.group(3)!);
       if (year != null && month != null && day != null) {
-        return DateTime.tryParse(
-          '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}',
-        );
+        return _validDate(year, month, day);
       }
     }
 
-    // 3. Numeric Australian standard: DD/MM/YYYY or DD/MM/YY (e.g. "19/10/23")
     final slash =
         RegExp(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b').firstMatch(text);
     if (slash == null) return null;
@@ -486,8 +577,14 @@ class ReceiptIntelligenceService {
     var year = int.tryParse(slash.group(3)!);
     if (day == null || month == null || year == null) return null;
     if (year < 100) year += 2000;
-    return DateTime.tryParse(
-        '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}');
+    return _validDate(year, month, day);
+  }
+
+  DateTime? _validDate(int year, int month, int day) {
+    final value = DateTime(year, month, day);
+    return value.year == year && value.month == month && value.day == day
+        ? value
+        : null;
   }
 
   List<_ReceiptSignal> _signals(String text, List<_ReceiptSignal> signals) {
@@ -564,7 +661,7 @@ class _ReceiptSignal {
       : pattern = RegExp(pattern);
 }
 
-/// 100% Brand-Agnostic Signals: Pure Domain Actions & Physical Products
+/// Keyword evidence used to propose an expense category.
 final _fuelSignals = [
   _ReceiptSignal(
       'fuel product',
@@ -596,7 +693,7 @@ final _evSignals = [
 final _maintenanceSignals = [
   _ReceiptSignal(
       'service invoice',
-      r'\b(service|servicing|logbook service|mechanic|labour|labor|repair)\b',
+      r'\b(service(?! station)|servicing|logbook service|mechanic|labour|labor|repair)\b',
       2.0),
   _ReceiptSignal('engine oil context',
       r'\b(engine oil|motor oil|oil filter|oil change)\b', 2.6),

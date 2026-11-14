@@ -11,7 +11,7 @@ void main() {
   group('ReceiptPreDbValidator - Date Integrity Rules (ATO FY Compliance)', () {
     test('Accepts valid date within current Australian Financial Year', () {
       final ocr = ReceiptOcrResult(
-        merchant: 'Ampol Retail',
+        merchant: 'Ampol Retail', currency: 'AUD',
         amount: 85.50,
         gstAmount: 7.77,
         abn: '64 000 175 342',
@@ -152,7 +152,7 @@ void main() {
           isTrue);
     });
 
-    test('WARNS when GST exceeds standard ATO 1/11th threshold', () {
+    test('Preserves observed GST without inventing a replacement amount', () {
       final ocr = ReceiptOcrResult(
         merchant: 'Supercheap Auto',
         amount: 110.00,
@@ -168,10 +168,8 @@ void main() {
           ocrResult: ocr, currentSystemTime: mockNow);
       expect(result.isValid, isTrue); // Not fatal error, but needs review
       expect(result.severity, equals(ValidationSeverity.needsReview));
-      expect(
-          result.warningMessages
-              .any((w) => w.contains('exceeds standard ATO 1/11th rate')),
-          isTrue);
+      expect(result.sanitizedGstAmount, 25.00);
+      expect(result.recommendedCappedGst, isNull);
     });
   });
 

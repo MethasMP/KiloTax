@@ -1,11 +1,13 @@
+import '../../../../core/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_space.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../services/notifications/notification_service.dart';
 import '../../../../state/app_state.dart';
 import '../../notifications/notifications_dropdown.dart';
+import '../../../../core/theme/app_color.dart';
 
 class HomeHeaderBar extends StatelessWidget {
   final AppState appState;
@@ -75,205 +77,205 @@ class HomeHeaderBar extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 1. Left: Squircle Avatar (Displays Google profile image or initials)
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onAccountTap();
-              },
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.deepNavy.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+            Semantics(
+              button: true,
+              label: appState.isAuthenticated
+                  ? 'Account and settings'
+                  : 'Local mode, tap to link cloud backup',
+              excludeSemantics: true,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onAccountTap();
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: appState.isAuthenticated
+                          ? AppColors.border
+                          : AppColor.line,
+                      width: 1.2,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
-                      ? Image.network(
-                          user.avatarUrl!,
-                          width: 46,
-                          height: 46,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _buildInitialAvatar(user, greetingName),
-                        )
-                      : _buildInitialAvatar(user, greetingName),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.deepNavy.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: appState.isAuthenticated
+                        ? (user?.avatarUrl != null &&
+                                user!.avatarUrl!.isNotEmpty
+                            ? Image.network(
+                                user.avatarUrl!,
+                                width: 46,
+                                height: 46,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildInitialAvatar(user, greetingName),
+                              )
+                            : _buildInitialAvatar(user, greetingName))
+                        : _buildGuestAvatar(),
+                  ),
                 ),
               ),
             ),
-
-            const SizedBox(width: 12),
-
-            // 2. Center Column: Unified Greeting + Car Icon + Clean Brand Name
+            const SizedBox(width: S.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    fullGreeting,
-                    style: const TextStyle(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+                    appState.isAuthenticated ? fullGreeting : timeGreeting,
+                    style: AppType.cardTitle.copyWith(
+                      fontWeight: FontWeight.w600,
                       color: AppColors.ink,
                       height: 1.2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.border,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Custom crisp Australian Ute/Car Vector Asset instead of cheap generic icon
-                        SvgPicture.asset(
-                          vehicle?.effectiveVehicleType.svgAssetPath ??
-                              'assets/vehicles/ute.svg',
-                          width: 16,
-                          height: 12,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.ink,
-                            BlendMode.srcIn,
+                  const SizedBox(height: S.labelGap),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: S.sm, vertical: S.xs),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: R.chipR,
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            vehicleBrandTitle,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              vehicle?.effectiveVehicleType.iconData ??
+                                  AppIcons.vehicle,
+                              size: AppIconSize.inline,
                               color: AppColors.ink,
-                              letterSpacing: -0.2,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                vehicleBrandTitle,
+                                style: AppType.secondary.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.ink,
+                                  letterSpacing: 0,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (streak > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: S.sm, vertical: S.xs),
+                          decoration: BoxDecoration(
+                            color: AppColor.attention.withValues(alpha: 0.1),
+                            borderRadius: R.chipR,
+                            border: Border.all(
+                              color: AppColor.attention.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '🔥 $streak d',
+                                style: AppType.eyebrow.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColor.attention,
+                                  fontFeatures: AppType.tabular,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (vehicle != null && vehicle.hasRegoPlate) ...[
-                          const SizedBox(width: 5),
-                          Container(
-                            width: 3,
-                            height: 3,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF94A3B8),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            vehicle.regoPlate.trim().toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.muted,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                        if (streak > 0) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            width: 3,
-                            height: 3,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF94A3B8),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            '🔥$streak',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFC2410C),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                    ],
                   ),
                 ],
               ),
             ),
-
             const SizedBox(width: 10),
-
-            // 3. Right: Tactile Notification Bell Card with Unread Badge
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                if (notifService != null) {
-                  NotificationsDropdown.show(
-                    context,
-                    notificationService: notifService,
-                  );
-                }
-              },
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.deepNavy.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Center(
-                      child: Icon(
-                        LucideIcons.bell,
-                        size: 19,
-                        color: AppColors.ink,
+            Semantics(
+              button: true,
+              label: unreadCount > 0
+                  ? 'Notifications, $unreadCount unread'
+                  : 'Notifications',
+              excludeSemantics: true,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  if (notifService != null) {
+                    NotificationsDropdown.show(
+                      context,
+                      notificationService: notifService,
+                    );
+                  }
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border, width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.deepNavy.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: 9,
-                        right: 10,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.amber,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: AppColors.card, width: 1.5),
-                          ),
+                    ],
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Center(
+                        child: Icon(
+                          AppIcons.notifications,
+                          size: 19,
+                          color: AppColors.ink,
                         ),
                       ),
-                  ],
+                      if (unreadCount > 0)
+                        Positioned(
+                          top: 9,
+                          right: 10,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppColors.amber,
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: AppColors.card, width: 1.5),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -284,30 +286,60 @@ class HomeHeaderBar extends StatelessWidget {
   }
 
   Widget _buildInitialAvatar(dynamic user, String greetingName) {
+    final initial = user != null &&
+            user.displayName != null &&
+            user.displayName!.trim().isNotEmpty
+        ? user.displayName!.trim()[0].toUpperCase()
+        : (greetingName.isNotEmpty ? greetingName[0].toUpperCase() : 'T');
+
     return Center(
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
           color: AppColors.deepNavy,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: R.controlR,
         ),
         child: Center(
           child: Text(
-            user != null &&
-                    user.displayName != null &&
-                    user.displayName!.isNotEmpty
-                ? user.displayName![0].toUpperCase()
-                : (greetingName.isNotEmpty
-                    ? greetingName[0].toUpperCase()
-                    : 'M'),
-            style: const TextStyle(
+            initial,
+            style: AppType.bodyStrong.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGuestAvatar() {
+    return Container(
+      width: 48,
+      height: 48,
+      color: AppColor.surfaceMuted,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Icon(
+            AppIcons.personal,
+            size: AppIconSize.control,
+            color: AppColors.ink,
+          ),
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: AppColor.line,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

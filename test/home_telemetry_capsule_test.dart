@@ -5,13 +5,24 @@ import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/state/app_state.dart';
 import 'package:kilotax/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
 import 'package:kilotax/ui/screens/trips/trip_live_tracking_screen.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/services.dart';
+import 'package:kilotax/ui/screens/tracking/tracking_setup_screen.dart';
 
 void main() {
   group('HomeTelemetryCapsule Tests', () {
     late AppState appState;
 
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const location = MethodChannel('flutter.baseflow.com/geolocator');
+    var permission = 2;
     setUp(() {
+      permission = 2;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(location, (call) async {
+        if (call.method == 'isLocationServiceEnabled') return true;
+        if (call.method == 'checkPermission') return permission;
+        return null;
+      });
       appState = AppState();
       appState.addVehicle(
         Vehicle(
@@ -23,6 +34,12 @@ void main() {
           bluetoothDeviceName: 'Tesla Model Y BT',
         ),
       );
+    });
+
+    tearDown(() {
+      appState.dispose();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(location, null);
     });
 
     Widget createTestWidget() {
@@ -37,43 +54,49 @@ void main() {
     }
 
     testWidgets(
-        'Renders Armed state with Bluetooth device name and Start Drive button',
+        'Paired car with foreground access still requires background setup',
         (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Auto-Track Armed'), findsOneWidget);
-      expect(find.text('Linked to Tesla Model Y BT'), findsOneWidget);
+      expect(find.text('Location setup incomplete'), findsOneWidget);
+      expect(find.text('Background location access is needed'), findsOneWidget);
+      expect(find.text('Auto-Track Armed'), findsNothing);
     });
 
-    testWidgets(
-        'Renders Pair Bluetooth tactile button when no bluetooth device is paired',
+    testWidgets('Unpaired car offers an actionable Bluetooth setup tile',
         (tester) async {
       appState.updatePrimaryVehicleBluetoothDevice(null);
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Auto-Track Trips'), findsOneWidget);
-      expect(find.text('Set up'), findsOneWidget);
+      expect(find.text('Automatic recording is off'), findsOneWidget);
+      expect(find.text("Connect to your car's Bluetooth"), findsOneWidget);
+      expect(tester.getSize(find.byType(ListTile)).height,
+          greaterThanOrEqualTo(48));
     });
 
     testWidgets(
-        'Transitions to Dynamic Island Driving state with live deduction counter',
+        'Active drive shows GPS distance and defers deduction until review',
         (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Trigger active drive
+      // Captured distance is provisional until the trip is reviewed.
       appState.startLiveDrive();
-      appState.updateLiveDriveDistance(5.0); // 5 km * 0.91 = $4.55
+      appState.updateLiveDriveDistance(5.0);
       await tester.pump();
 
-      expect(find.text('Recording in background'), findsOneWidget);
+      expect(find.text('RECORDING YOUR DRIVE'), findsOneWidget);
       expect(find.text('5.0 km'), findsOneWidget);
-      expect(find.text('+\$4.55'), findsOneWidget);
+      expect(find.text('+\$4.55'), findsNothing);
+      expect(find.textContaining('Your deduction is calculated after review.'),
+          findsOneWidget);
+      expect(find.text('Finish & review'), findsOneWidget);
     });
 
-    testWidgets('Tapping Start Drive navigates to TripLiveTrackingScreen',
+    testWidgets(
+        'Open tracking navigates from the active drive to TripLiveTrackingScreen',
         (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
@@ -82,7 +105,7 @@ void main() {
       appState.startLiveDrive();
       await tester.pump();
 
-      await tester.tap(find.text('Recording in background'));
+      await tester.tap(find.text('Open tracking'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -90,31 +113,31 @@ void main() {
     });
 
     testWidgets(
-        'Tapping Pair Bluetooth opens Hardware Bluetooth modal sheet with scanner',
+        'Setup opens permission-aware tracking setup before car pairing',
         (tester) async {
       appState.updatePrimaryVehicleBluetoothDevice(null);
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      await tester.tap(find.text('Set up'));
+      await tester.tap(find.text('Automatic recording is off'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Hardware Bluetooth Link'), findsOneWidget);
+      expect(find.byType(TrackingSetupScreen), findsOneWidget);
+      expect(find.text('1. Location access'), findsOneWidget);
       expect(find.text('LINK BY BLUETOOTH NAME'), findsNothing);
     });
 
-    testWidgets(
-        'Renders Bluetooth Disconnected honest state when bluetooth is unlinked',
+    testWidgets('With background access an unlinked car shows waiting state',
         (tester) async {
+      permission = 3;
+      await appState.refreshLocationPermission();
       appState.toggleBluetoothLink(false);
       await tester.pumpWidget(createTestWidget());
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Bluetooth Disconnected'), findsOneWidget);
-      expect(find.text('Tesla Model Y BT not in range • Tap to start'),
-          findsOneWidget);
-      expect(find.byIcon(LucideIcons.bluetoothOff), findsOneWidget);
+      expect(find.text('Waiting for car connection'), findsOneWidget);
+      expect(find.text('Tesla Model Y BT not connected'), findsOneWidget);
     });
   });
 }

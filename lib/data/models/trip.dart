@@ -46,10 +46,33 @@ class Trip {
   final String?
       jobReference; // Evidence Link: Client site, Job ID, or Invoice ref
 
+  final String? jobId;
+  final Map<String, dynamic> review;
+  final String? routePolyline;
+  final Map<String, dynamic>? detectedPoi;
+  final bool isPassengerUnverified;
+
+  /// Full captured distance is retained; only confirmed business distance is counted.
+  double get businessDistanceKm {
+    if (!isBusiness || isDeleted) return 0;
+    final value = review['businessKm'];
+    return value is num && value.isFinite
+        ? value.toDouble().clamp(0.0, distanceKm)
+        : distanceKm;
+  }
+
+  bool get isMixed => isBusiness && businessDistanceKm < distanceKm;
+  String get useLabel => isMixed
+      ? 'Mixed'
+      : isBusiness
+          ? 'Business'
+          : classification.displayName;
+  bool get shareRoute => isBusiness && !isMixed;
+
   Trip({
     required this.id,
     required this.vehicleId,
-    required this.distanceKm,
+    double distanceKm = 0.0,
     required this.date,
     required this.purpose,
     this.startOdometer = 0.0,
@@ -63,7 +86,13 @@ class Trip {
     this.taxMethod = TaxMethod.centsPerKm,
     this.evidenceSource = 'auto_telemetry',
     this.jobReference,
-  })  : assert(distanceKm >= 0, 'Trip distance cannot be negative'),
+    this.jobId,
+    this.routePolyline,
+    this.detectedPoi,
+    this.isPassengerUnverified = false,
+    Map<String, dynamic> review = const {},
+  })  : review = Map.unmodifiable(review),
+        distanceKm = distanceKm < 0.0 ? 0.0 : distanceKm,
         assert(
           (startOdometer == 0.0 && endOdometer == 0.0) ||
               endOdometer >= startOdometer,
@@ -91,6 +120,12 @@ class Trip {
     TaxMethod? taxMethod,
     String? evidenceSource,
     String? jobReference,
+    String? jobId,
+    bool clearJob = false,
+    String? routePolyline,
+    Map<String, dynamic>? detectedPoi,
+    bool? isPassengerUnverified,
+    Map<String, dynamic>? review,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -108,7 +143,22 @@ class Trip {
       deletedAt: deletedAt ?? this.deletedAt,
       taxMethod: taxMethod ?? this.taxMethod,
       evidenceSource: evidenceSource ?? this.evidenceSource,
-      jobReference: jobReference ?? this.jobReference,
+      jobReference: clearJob ? null : (jobReference ?? this.jobReference),
+      jobId: clearJob ? null : (jobId ?? this.jobId),
+      routePolyline: routePolyline ?? this.routePolyline,
+      detectedPoi: detectedPoi ?? this.detectedPoi,
+      isPassengerUnverified: isPassengerUnverified ?? this.isPassengerUnverified,
+      review: review ??
+          (this.review.isNotEmpty &&
+                  classification != null &&
+                  classification != this.classification
+              ? {
+                  ...this.review,
+                  'businessKm': classification == TripClassification.business
+                      ? distanceKm ?? this.distanceKm
+                      : 0.0
+                }
+              : this.review),
     );
   }
 
@@ -132,6 +182,11 @@ class Trip {
       'taxMethod': taxMethod.name,
       'evidenceSource': evidenceSource,
       'jobReference': jobReference,
+      'jobId': jobId,
+      'routePolyline': routePolyline,
+      'detectedPoi': detectedPoi,
+      'isPassengerUnverified': isPassengerUnverified,
+      'review': review,
     };
   }
 
@@ -146,19 +201,26 @@ class Trip {
       );
     }
 
+    final rawDist =
+        ((json['distanceKm'] ?? json['distance_km']) as num?)?.toDouble() ??
+            0.0;
+    final clampedDist = rawDist < 0.0 ? 0.0 : rawDist;
+
+    final startOdo = ((json['startOdometer'] ?? json['start_odometer']) as num?)
+            ?.toDouble() ??
+        0.0;
+    final endOdo =
+        ((json['endOdometer'] ?? json['end_odometer']) as num?)?.toDouble() ??
+            0.0;
+
     return Trip(
       id: json['id'] as String,
       vehicleId: (json['vehicleId'] ?? json['vehicle_id']) as String,
-      distanceKm:
-          ((json['distanceKm'] ?? json['distance_km']) as num).toDouble(),
+      distanceKm: clampedDist,
       date: DateTime.parse(json['date'] as String),
       purpose: json['purpose'] as String? ?? '',
-      startOdometer: ((json['startOdometer'] ?? json['start_odometer']) as num?)
-              ?.toDouble() ??
-          0.0,
-      endOdometer:
-          ((json['endOdometer'] ?? json['end_odometer']) as num?)?.toDouble() ??
-              0.0,
+      startOdometer: startOdo,
+      endOdometer: endOdo,
       classification: TripClassification.values.firstWhere(
         (c) => c.name == json['classification'],
         orElse: () => TripClassification.business,
@@ -183,6 +245,16 @@ class Trip {
           json['evidence_source'] ??
           'auto_telemetry') as String,
       jobReference: (json['jobReference'] ?? json['job_reference']) as String?,
+      jobId: (json['jobId'] ?? json['job_id']) as String?,
+      routePolyline:
+          (json['routePolyline'] ?? json['route_polyline']) as String?,
+      detectedPoi: (json['detectedPoi'] ?? json['detected_poi']) != null
+          ? Map<String, dynamic>.from(
+              (json['detectedPoi'] ?? json['detected_poi']) as Map)
+          : null,
+      isPassengerUnverified:
+          (json['isPassengerUnverified'] ?? json['is_passenger_unverified']) as bool? ?? false,
+      review: Map<String, dynamic>.from((json['review'] as Map?) ?? const {}),
     );
   }
 }

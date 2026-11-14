@@ -21,6 +21,9 @@ class NativeHardwareTelemetryBridge {
       await _channel.invokeMethod('setTargetBluetoothName', bluetoothName);
       debugPrint(
           '[NativeTelemetryBridge] Synced vehicle Bluetooth to iOS Native: $bluetoothName');
+    } on MissingPluginException {
+      // Graceful fallback during tests, simulator runs, or unattached channels.
+      return;
     } catch (e) {
       debugPrint('[NativeTelemetryBridge] Warning syncing target Bluetooth: $e');
     }
@@ -37,6 +40,9 @@ class NativeHardwareTelemetryBridge {
       if (raw == null || raw.isEmpty) return [];
 
       return raw.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } on MissingPluginException {
+      // Graceful fallback during tests or simulator runs without native host
+      return [];
     } catch (e) {
       debugPrint('[NativeTelemetryBridge] Error fetching completed native trips: $e');
       return [];

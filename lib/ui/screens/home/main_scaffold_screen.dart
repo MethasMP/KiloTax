@@ -9,10 +9,6 @@ import 'widgets/quick_capture_bottom_sheet.dart';
 import 'widgets/scaffold_bottom_nav_bar.dart';
 import 'widgets/trips_ledger_tab.dart';
 
-/// Spec #16 & UI.png Master Navigation Scaffold:
-/// Adaptive Architecture:
-/// - CPK (3 tabs): Dashboard (0), Trips Ledger (1), Tax D1 (2)
-/// - Logbook (4 tabs + center FAB): Home (0), Trips (1), Expenses (2), Tax (3)
 class MainScaffoldScreen extends StatefulWidget {
   const MainScaffoldScreen({super.key});
 
@@ -21,7 +17,41 @@ class MainScaffoldScreen extends StatefulWidget {
 }
 
 class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
-  int _currentIndex = 0;
+  String _destination = 'home';
+  late final AppLifecycleListener _lifecycle;
+  bool _checkingReview = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _checkWeeklyReview);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkWeeklyReview());
+  }
+
+  Future<void> _checkWeeklyReview() async {
+    if (!mounted || _checkingReview) return;
+    _checkingReview = true;
+    try {
+      try {
+        await context.read<AppState>().refreshLocationPermission();
+      } catch (error) {
+        debugPrint('Could not refresh location status: $error');
+      }
+      if (!mounted) return;
+      await context.read<AppState>().evaluateWeeklyEvidenceReview();
+      if (mounted) setState(() {});
+    } catch (error) {
+      debugPrint('Could not prepare weekly review: $error');
+    } finally {
+      _checkingReview = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +61,7 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
     final isCpk = taxMethod == TaxMethod.centsPerKm;
 
     void switchToTripsTab() {
-      setState(() => _currentIndex = 1);
+      setState(() => _destination = 'trips');
     }
 
     // Polymorphic screen lists:
@@ -50,11 +80,13 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
             const TaxSummaryScreen(),
           ];
 
-    // Ensure index bounds safety if switching vehicles
-    final safeIndex = _currentIndex.clamp(0, screens.length - 1);
+    final destinations =
+        isCpk ? ['home', 'trips', 'tax'] : ['home', 'trips', 'expenses', 'tax'];
+    if (!destinations.contains(_destination)) _destination = 'home';
+    final safeIndex = destinations.indexOf(_destination);
 
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       body: IndexedStack(
         index: safeIndex,
         children: screens,
@@ -62,7 +94,8 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
       bottomNavigationBar: ScaffoldBottomNavBar(
         currentIndex: safeIndex,
         taxMethod: taxMethod,
-        onTabSelected: (index) => setState(() => _currentIndex = index),
+        onTabSelected: (index) =>
+            setState(() => _destination = destinations[index]),
         onCenterActionTap: () =>
             QuickCaptureBottomSheet.show(context, appState),
       ),

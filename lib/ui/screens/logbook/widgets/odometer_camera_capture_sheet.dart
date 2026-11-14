@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_icons.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -227,10 +228,18 @@ class _OdometerCameraCaptureSheetState
                   ),
                 ],
               ),
-              IconButton(
-                icon:
-                    const Icon(LucideIcons.x, color: Colors.white70, size: 20),
-                onPressed: () => Navigator.of(context).pop(),
+              Semantics(
+                button: true,
+                label: 'Close odometer capture',
+                child: IconButton(
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  icon: const Icon(AppIcons.close,
+                      color: Colors.white70, size: AppIconSize.control),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ),
             ],
           ),
@@ -278,7 +287,8 @@ class _OdometerCameraCaptureSheetState
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(LucideIcons.shieldCheck,
-                                color: AppColors.emerald, size: 12),
+                                color: AppColors.emerald,
+                                size: AppIconSize.inline),
                             const SizedBox(width: 4),
                             Text(
                               vehicle?.regoPlate ?? 'AUDIT',
@@ -358,50 +368,61 @@ class _OdometerCameraCaptureSheetState
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Semantics(
+                  button: true,
+                  label: 'Retake odometer photo',
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white24),
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    onPressed: _isSaving ? null : _openCamera,
+                    child: const Text('Retake',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
-                  onPressed: _isSaving ? null : _openCamera,
-                  child: const Text('Retake',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Semantics(
+                  button: true,
+                  label: 'Save odometer photo',
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.emerald,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    onPressed: (_capturedFile == null || _isSaving)
+                        ? null
+                        : _savePhoto,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Photo',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
                   ),
-                  onPressed:
-                      (_capturedFile == null || _isSaving) ? null : _savePhoto,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Save Photo',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
-                        ),
                 ),
               ),
             ],

@@ -20,10 +20,17 @@ class LogbookExportService {
   static String sanitizeCsvCell(String input) =>
       CsvSecurity.sanitizeCsvCell(input);
 
-  /// Statutory disclaimer text mandated under ITAA 1997 Division 28-C / Subdivision 28-H
+  /// Statutory disclaimer text mandated under ITAA 1997 Subdivision 28-F / TR 97/11 / Subdivision 28-H
   static const String statutoryDisclaimer =
-      'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
+      'Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F & TR 97/11). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
 
+  static String _extract4DigitEndYear(String financialYear) {
+    final rawYear = financialYear.split('-').last.trim();
+    if (rawYear.length == 2) {
+      return '20$rawYear';
+    }
+    return rawYear;
+  }
 
   /// Generates the standard 16-column ATO continuous odometer audit ledger CSV
   static String generateLogbookAuditLedgerCsv({
@@ -48,7 +55,7 @@ class LogbookExportService {
     for (final t in trips) {
       final isBus = t.isBusiness;
       cumTotalKm += t.distanceKm;
-      if (isBus) cumBusinessKm += t.distanceKm;
+      cumBusinessKm += t.businessDistanceKm;
 
       final runningPct =
           cumTotalKm > 0 ? (cumBusinessKm / cumTotalKm * 100.0) : 0.0;
@@ -59,16 +66,27 @@ class LogbookExportService {
       final odoStart = t.startOdometer.toStringAsFixed(0);
       final odoEnd = t.endOdometer.toStringAsFixed(0);
       final dist = t.distanceKm.toStringAsFixed(2);
-      final classification = isBus ? 'BUSINESS' : 'PERSONAL';
+      final classification = isBus
+          ? (t.isMixed ? 'MIXED' : 'BUSINESS')
+          : t.classification == TripClassification.unclassified
+              ? 'UNCLASSIFIED'
+              : 'PERSONAL';
       // ATO & Privacy Best Practice: Mask addresses and purpose for private journeys
-      final origin = sanitizeCsvCell(isBus
-          ? (t.originAddress ?? 'Work Site').replaceAll(',', ' ')
+      final origin = sanitizeCsvCell(t.shareRoute
+          ? (t.originAddress != null && t.originAddress!.trim().isNotEmpty
+                  ? t.originAddress!
+                  : '[Unspecified Origin]')
+              .replaceAll(',', ' ')
           : '[Private Journey]');
-      final dest = sanitizeCsvCell(isBus
-          ? (t.destinationAddress ?? 'Client Job').replaceAll(',', ' ')
+      final dest = sanitizeCsvCell(t.shareRoute
+          ? (t.destinationAddress != null &&
+                      t.destinationAddress!.trim().isNotEmpty
+                  ? t.destinationAddress!
+                  : '[Unspecified Destination]')
+              .replaceAll(',', ' ')
           : '[Private Journey]');
       final purpose = sanitizeCsvCell(isBus
-          ? (t.purpose.isNotEmpty ? t.purpose : 'Client Job Site')
+          ? (t.purpose.trim().isNotEmpty ? t.purpose : '[Unspecified Purpose]')
               .replaceAll(',', ' ')
           : 'Personal Travel');
       final driver = sanitizeCsvCell(driverName);
@@ -81,7 +99,7 @@ class LogbookExportService {
               : 'OUT_OF_PERIOD';
 
       buffer.writeln(
-        '$index,$dateStr,$startTime,$rego,$odoStart,$odoEnd,$dist,$classification,"$origin","$dest","$purpose","$driver",$inPeriod,${cumBusinessKm.toStringAsFixed(2)},${cumTotalKm.toStringAsFixed(2)},${runningPct.toStringAsFixed(2)}',
+        '$index,$dateStr,$startTime,"$rego",$odoStart,$odoEnd,$dist,$classification,"$origin","$dest","$purpose","$driver",$inPeriod,${cumBusinessKm.toStringAsFixed(2)},${cumTotalKm.toStringAsFixed(2)},${runningPct.toStringAsFixed(2)}',
       );
       index++;
     }
@@ -104,8 +122,8 @@ class LogbookExportService {
     final coa = coaConfig ?? const ChartOfAccountsConfig.xeroDefault();
     final buffer = StringBuffer();
     final businessPct = summary.businessPercentage;
-    final dateStr = '30/06/${taxRule.financialYear.split('-').last}';
-    final activeExpenses = expenses.where((e) => !e.isVaultOnly).toList();
+    final dateStr = '30/06/${_extract4DigitEndYear(taxRule.financialYear)}';
+    final activeExpenses = expenses.expand((e) => e.claimComponents).toList();
 
     // Separate GST-bearing running costs (Fuel, Servicing) from non-GST statutory costs (Rego, CTP)
     final gstRunningExpenses = activeExpenses
@@ -127,10 +145,15 @@ class LogbookExportService {
         ? nonGstRunningExpenses
         : (summary.totalRunningExpenses * 0.3);
 
-    final deductibleGst = actualGstRunning * (businessPct / 100.0);
-    final deductibleNonGst = actualNonGstRunning * (businessPct / 100.0);
-    final privatePortion = (actualGstRunning + actualNonGstRunning) *
-        ((100.0 - businessPct) / 100.0);
+    final deductibleGst = double.parse(
+        (actualGstRunning * (businessPct / 100.0)).toStringAsFixed(2));
+    final deductibleNonGst = double.parse(
+        (actualNonGstRunning * (businessPct / 100.0)).toStringAsFixed(2));
+    // Calculate private portion as exact plug to ensure journal sums to 0.00 without floating point drift
+    final totalGross = double.parse(
+        (actualGstRunning + actualNonGstRunning).toStringAsFixed(2));
+    final privatePortion = double.parse(
+        (totalGross - deductibleGst - deductibleNonGst).toStringAsFixed(2));
 
     final rego = sanitizeCsvCell(vehicle.regoPlate);
     final trackingName = sanitizeCsvCell('Vehicle');
@@ -151,21 +174,19 @@ class LogbookExportService {
 
     buffer.writeln(
         '*Narration,*Date,*Description,*AccountCode,*TaxType,*Amount,TrackingName1,TrackingOption1');
-    // 1. Credit gross general ledger pool
     buffer.writeln(
         '$narration,$dateStr,$descFuelGross,$fuelAcc,BAS Excluded,-${actualGstRunning.toStringAsFixed(2)},$trackingName,$rego');
     buffer.writeln(
         '$narration,$dateStr,$descRegoGross,$regoAcc,BAS Excluded,-${actualNonGstRunning.toStringAsFixed(2)},$trackingName,$rego');
-    // 2. Debit allowable business portion with correct TaxType
     buffer.writeln(
         '$narration,$dateStr,$descFuelAllowable,$fuelAcc,GST on Expenses,${deductibleGst.toStringAsFixed(2)},$trackingName,$rego');
     buffer.writeln(
         '$narration,$dateStr,$descRegoAllowable,$regoAcc,BAS Excluded,${deductibleNonGst.toStringAsFixed(2)},$trackingName,$rego');
-    // 3. Debit owner drawings for private use
     buffer.writeln(
         '$narration,$dateStr,$descDrawings,$drawingsAcc,BAS Excluded,${privatePortion.toStringAsFixed(2)},$trackingName,$rego');
 
-    return buffer.toString();
+    final result = buffer.toString();
+    return result;
   }
 
   /// Generates the MYOB AccountRight / Practice compatible General Journal CSV
@@ -181,8 +202,8 @@ class LogbookExportService {
     final coa = coaConfig ?? const ChartOfAccountsConfig.myobDefault();
     final buffer = StringBuffer();
     final businessPct = summary.businessPercentage;
-    final dateStr = '30/06/${taxRule.financialYear.split('-').last}';
-    final activeExpenses = expenses.where((e) => !e.isVaultOnly).toList();
+    final dateStr = '30/06/${_extract4DigitEndYear(taxRule.financialYear)}';
+    final activeExpenses = expenses.expand((e) => e.claimComponents).toList();
 
     final gstRunningExpenses = activeExpenses
         .where((e) =>
@@ -265,14 +286,14 @@ class LogbookExportService {
     final maxAllowableDepreciation = cappedCarCost *
         (businessPct / 100.0) *
         0.25; // 25% Diminishing value guideline
-    final activeExpenses = expenses.where((e) => !e.isVaultOnly).toList();
-    final verifiedReceiptCount = activeExpenses
+    final activeExpenses = expenses.expand((e) => e.claimComponents).toList();
+    final savedOcrMatchCount = activeExpenses
         .where((expense) =>
             expense.receiptAudit?.reviewStatus ==
                 ReceiptReviewStatus.verified &&
             expense.receiptAudit?.imageSha256 != null)
         .length;
-    final receiptsNeedingReview = activeExpenses.length - verifiedReceiptCount;
+    final receiptsNeedingReview = activeExpenses.length - savedOcrMatchCount;
 
     // Check if the 84-day period crosses 30 June (ATO FY Boundary)
     final june30Current = DateTime(startDate.year, 6, 30, 23, 59, 59);
@@ -287,7 +308,7 @@ class LogbookExportService {
     final daysInFy2 = 84 - daysInFy1;
     final fyAdvisory = straddlesFy
         ? '• ATO FY Transition Advisory: 12-week period straddles 30 June ($daysInFy1 days in FY${boundaryYear - 1}-$boundaryYear / $daysInFy2 days in FY$boundaryYear-${boundaryYear + 1}). Statutory business percentage of ${businessPct.toStringAsFixed(2)}% applies to both years pursuant to TR 97/11 par 18.'
-        : '• ATO FY Transition: Single income year compliant (does not straddle 30 June boundary).';
+        : '• ATO FY Transition: Scheduled period falls within one income year (does not straddle 30 June boundary).';
 
     final apportionedRunningClaim =
         summary.totalRunningExpenses * (businessPct / 100.0);
@@ -302,14 +323,14 @@ For immediate 30-second entry into Xero Tax, HandiTax, and MYOB Practice:
   Item / Field                  Software Field / Box   Value to Enter
   ----------------------------  ---------------------  ---------------------------------------------
   Motor Vehicle Claim Method:   D1 Item Label:         [ B ] (Logbook method)
-  Certified Business Use %:     Business %:            ${businessPct.toStringAsFixed(2)}% (TR 97/11 12-wk compliant)
+  Recorded Business Use %:     Business %:            ${businessPct.toStringAsFixed(2)}% (review period and supporting records)
   Total Work / Total Odo:       Logbook Distance:      ${summary.businessKm.toStringAsFixed(1)} km / ${summary.totalKm.toStringAsFixed(1)} km
   Gross Operating Expenses:     Financial Accounts:    \$${summary.totalRunningExpenses.toStringAsFixed(2)} AUD
   Allowable Running Deduction:  BOX D1 WORK EXPENSES:  \$${apportionedRunningClaim.toStringAsFixed(2)} AUD
   Direct Deductions (Tolls/Pk): BOX D1 OTHER EXPENSES: \$${summary.totalDirectDeductions.toStringAsFixed(2)} AUD
   Capital Allowance / Deprec:   DIV 40 ASSET DEDUCT:   \$${maxAllowableDepreciation.toStringAsFixed(2)} AUD (Asset cap \$${taxRule.carDepreciationLimit.toStringAsFixed(0)})
   TOTAL D1 DEDUCTION (Gross):   BOX D1 CLAIM TOTAL:    \$${totalLogbookDeduction.toStringAsFixed(2)} AUD
-  Logbook 5-Yr Validity Term:   Valid Income Years:    FY ${startDate.year} to FY ${startDate.year + 4}
+  Illustrative 5-Yr Window:    Review applicability:    FY ${startDate.year} to FY ${startDate.year + 4}
 ====================================================================================================
 
 ====================================================================================================
@@ -317,28 +338,28 @@ KILOTAX COMPLIANCE DOSSIER | ATO MOTOR VEHICLE LOGBOOK SCHEDULE (ITAA 1997 Subdi
 METHOD: LOGBOOK | ATO BOX D1 CODE: B | FINANCIAL YEAR: ${taxRule.financialYear}
 ====================================================================================================
 
-PAGE 1: STATUTORY SUMMARY & BUSINESS PERCENTAGE CERTIFICATE
+PAGE 1: RECORDED SUMMARY & BUSINESS PERCENTAGE
 ----------------------------------------------------------------------------------------------------
 [1.1] TAXPAYER & VEHICLE SCHEDULE
 • Taxpayer Name:              $taxpayerName
 • ABN / Trading Name:         ${abn.isNotEmpty ? abn : 'Registered Sole Trader'}
 • Vehicle Description:        ${vehicle.displayName}
 • Vehicle Registration:       ${vehicle.regoPlate}
-• Baseline Starting Odometer: ${Formatters.odometer(vehicle.initialOdometer)} km (Continuous Gapless Invariant)
+• Baseline Starting Odometer: ${Formatters.odometer(vehicle.initialOdometer)} km (recorded baseline)
 • Car Cost Cap (s 40-230):    \$${taxRule.carDepreciationLimit.toStringAsFixed(0)} AUD (Statutory Capital Allowance Limit)
-• Day 1 Odometer Photo:       ${vehicle.startOdometerPhotoPath != null ? 'Verified' : 'Pending Upload'}
-• Day 84 Odometer Photo:      ${vehicle.endOdometerPhotoPath != null ? 'Verified' : 'Pending Upload'}
+• Day 1 Odometer Photo:       ${vehicle.startOdometerPhotoPath != null ? 'Reference saved, file not checked' : 'No reference saved'}
+• Day 84 Odometer Photo:      ${vehicle.endOdometerPhotoPath != null ? 'Reference saved, file not checked' : 'No reference saved'}
 
-[1.2] 12-WEEK STATUTORY LOGBOOK PERIOD (TR 97/11 COMPLIANT)
+[1.2] SCHEDULED LOGBOOK PERIOD (CONTINUITY REQUIRES REVIEW)
 • Logbook Period:             ${Formatters.date(startDate)} to ${Formatters.date(endDate)} (84 Consecutive Days)
-• Statutory Status:           VALID FOR 5 CONSECUTIVE INCOME YEARS (Up to FY 2030–31)
+• Statutory Status:           Review duration, continuity, and eligibility before use
 $fyAdvisory
 • Total Kilometres Logged:    ${Formatters.distance(summary.totalKm)}
 • Total Business Distance:    ${Formatters.distance(summary.businessKm)}
 • Total Personal Distance:    ${Formatters.distance(summary.personalKm)}
 
 ====================================================================================================
->>> CERTIFIED STATUTORY BUSINESS PERCENTAGE: ${businessPct.toStringAsFixed(2)}% <<<
+>>> RECORDED BUSINESS PERCENTAGE: ${businessPct.toStringAsFixed(2)}% <<<
 Formula: (${summary.businessKm.toStringAsFixed(1)} Business km / ${summary.totalKm.toStringAsFixed(1)} Total km) * 100
 ====================================================================================================
 
@@ -364,7 +385,7 @@ Tolls & Work Parking (100%)  ${activeExpenses.where((e) => e.category == Expense
 ----------------------------------------------------------------------------------------------------
 TOTALS                       ${activeExpenses.length.toString().padLeft(5)}       ${Formatters.currency(summary.totalRunningExpenses + summary.totalDirectDeductions).padLeft(12)}       ${Formatters.currency(_catGst(activeExpenses, ExpenseCategory.fuel) + _catGst(activeExpenses, ExpenseCategory.maintenanceTyres) + _catGst(activeExpenses, ExpenseCategory.tollsParking)).padLeft(12)}       ${Formatters.currency(summary.logbookClaim).padLeft(14)}
 
-* Receipt evidence status: $verifiedReceiptCount image-hashed and verified; ${expenses.where((e) => e.isVaultOnly).length} stored in audit vault (excluded from FY claim); $receiptsNeedingReview need review before accountant export.
+* Receipt evidence status: $savedOcrMatchCount have a saved OCR match and image fingerprint; ${expenses.where((e) => e.isVaultOnly).length} stored in audit vault (excluded from FY claim); $receiptsNeedingReview require record review. Receipt availability is checked separately when a ZIP tax pack is prepared.
 
 ----------------------------------------------------------------------------------------------------
 PAGE 3+: CONTINUOUS ODODMETRE AUDIT TRAIL (TR 97/11 MANDATED)
@@ -372,30 +393,14 @@ PAGE 3+: CONTINUOUS ODODMETRE AUDIT TRAIL (TR 97/11 MANDATED)
 Date         Odo Start   Odo End     Distance   Purpose                           Class
 ----------------------------------------------------------------------------------------------------
 ${trips.take(15).map((t) => '${t.date.toIso8601String().split("T").first}   ${t.startOdometer.toStringAsFixed(0).padLeft(8)}   ${t.endOdometer.toStringAsFixed(0).padLeft(8)}   ${Formatters.distance(t.distanceKm).padLeft(8)}   ${(t.isBusiness ? (t.purpose.isNotEmpty ? t.purpose : "Work Drive") : "Private Travel").padRight(32).substring(0, 32)}   ${t.isBusiness ? "BUS" : "PRIV"}').join("\n")}
-... [Full electronic continuous trip log maintained in attached KiloTax_Logbook_Audit_Ledger.csv] ...
+... [Review the separately exported full trip ledger, if supplied] ...
 
 ====================================================================================================
-BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)
+RECORD REVIEW
 ====================================================================================================
-This schedule includes home-to-work / itinerant transit where the taxpayer carried substantial 
-trade equipment, ladders, machinery, and tools of trade exceeding 20 kg / 0.15 m³ in volume.
-
-STATUTORY DEFENSE UNDER VOGT'S CASE (75 ATC 4073) & ATO TR 95/34 (PARAGRAPHS 63–68):
-1. Equipment Bulky & Essential: The equipment transported is cumbersome, essential to the daily 
-   income-earning trade activities of the taxpayer, and incapable of safe transport via public conveyance.
-2. Absence of Secure Storage: No secure lock-up storage was provided at client premises or changing 
-   job sites. The taxpayer is legally and practically required to store equipment at base and transport 
-   it continuously to diverse sites.
-3. Character of Travel: The mode and requirement of carriage constitutes the vehicle as a mobile workshop, 
-   attributing the essential character of the travel to income generation under Section 8-1.
-
-Specific Equipment Manifest: Professional Trade Tools, Diagnostic & Construction Equipment
-Storage Verification: No lock-up facilities available on temporary project work sites.
-====================================================================================================
-
-STATUTORY DECLARATION (Taxation Administration Act 1953):
-"We declare that the continuous odometer readings and expense schedules represent a complete,
-accurate, and unbroken record of motor vehicle usage pursuant to ATO Taxation Ruling TR 97/11."
+Review actual equipment, transport purpose, and storage circumstances before claiming bulky-tool travel.
+Review dates, odometer continuity, business purposes, and expense evidence before lodging.
+This generated schedule does not establish a complete or unbroken logbook, receipt authenticity, or eligibility.
 
 Taxpayer Signature: ___________________________        Date: ____ / ____ / ________
 Tax Agent Signature: __________________________        RAN:  ______________________
@@ -406,6 +411,218 @@ Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F & TR 97/11). Not
 Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.
 KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected
 to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).
+====================================================================================================
+''';
+  }
+
+  /// Generates the official HandiTax & Xero Workpaper Action Schedule CSV for Australian Tax Return Item D1.
+  /// Exports exact schema for Australian Tax Return Item D1:
+  /// - Labels D1A (Method Code B) and D1B (Allowable deductions)
+  /// - Schedules 401 (Fuel), 402 (Repairs), 403 (Insurance/Rego), 404 (Depreciation Div 40), 405 (Interest)
+  static String generateHandiTaxD1ScheduleCsv({
+    required Vehicle vehicle,
+    required TaxSummary summary,
+    required AtoTaxRule taxRule,
+    List<VehicleExpense> expenses = const [],
+    String taxpayerName = 'Tradie Client',
+    String abn = '',
+    double? customDepreciation,
+    double? customInterest,
+  }) {
+    final buffer = StringBuffer();
+    final businessPct = summary.businessPercentage;
+    final activeExpenses = expenses.expand((e) => e.claimComponents).toList();
+
+    // Schedule 401: Fuel & Oil
+    final fuelGross = _catTotal(activeExpenses, ExpenseCategory.fuel);
+    final effectiveFuelGross = fuelGross > 0
+        ? fuelGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.45) : 0.0);
+    final fuelClaim = double.parse(
+        (effectiveFuelGross * (businessPct / 100.0)).toStringAsFixed(2));
+
+    // Schedule 402: Repairs & Servicing
+    final repairsGross =
+        _catTotal(activeExpenses, ExpenseCategory.maintenanceTyres);
+    final effectiveRepairsGross = repairsGross > 0
+        ? repairsGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.25) : 0.0);
+    final repairsClaim = double.parse(
+        (effectiveRepairsGross * (businessPct / 100.0)).toStringAsFixed(2));
+
+    // Schedule 403: Registration & Insurance
+    final regoInsGross = _catTotal(activeExpenses, ExpenseCategory.rego) +
+        _catTotal(activeExpenses, ExpenseCategory.insurance);
+    final effectiveRegoInsGross = regoInsGross > 0
+        ? regoInsGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.30) : 0.0);
+    final regoInsClaim = double.parse(
+        (effectiveRegoInsGross * (businessPct / 100.0)).toStringAsFixed(2));
+
+    // Schedule 404: Depreciation Div 40 (Capital Allowance capped at s 40-230 car cost cap)
+    final cappedCost = taxRule.carDepreciationLimit;
+    final depreciationGross = customDepreciation ?? (cappedCost * 0.25);
+    final depreciationClaim = double.parse(
+        (depreciationGross * (businessPct / 100.0)).toStringAsFixed(2));
+
+    // Schedule 405: Interest on Car Finance (ITAA 1997 s 8-1)
+    final interestGross =
+        customInterest ?? _catTotal(activeExpenses, ExpenseCategory.interest);
+    final interestClaim = double.parse(
+        (interestGross * (businessPct / 100.0)).toStringAsFixed(2));
+
+    // Schedule 406: Direct Deductions (Work Tolls & Parking - 100% deductible)
+    final directGross = summary.totalDirectDeductions > 0
+        ? summary.totalDirectDeductions
+        : _catTotal(activeExpenses, ExpenseCategory.tollsParking);
+    final directClaim = directGross;
+
+    final totalGross = double.parse((effectiveFuelGross +
+            effectiveRepairsGross +
+            effectiveRegoInsGross +
+            depreciationGross +
+            interestGross +
+            directGross)
+        .toStringAsFixed(2));
+    final totalClaim = double.parse((fuelClaim +
+            repairsClaim +
+            regoInsClaim +
+            depreciationClaim +
+            interestClaim +
+            directClaim)
+        .toStringAsFixed(2));
+
+    final fy = sanitizeCsvCell(taxRule.financialYear);
+    final safeClientName = sanitizeCsvCell(taxpayerName);
+    final safeAbn = sanitizeCsvCell(abn);
+    final safeRego = sanitizeCsvCell(vehicle.regoPlate);
+    final safeDesc = sanitizeCsvCell(vehicle.displayName);
+    final pctStr = businessPct.toStringAsFixed(2);
+
+    // CSV Header
+    buffer.writeln(
+      'Tax_Year,Client_Name,ABN,Vehicle_Rego,Vehicle_Description,Item_Label,Schedule_Code,Schedule_Name,Gross_Amount,Business_Percentage,Allowable_Deduction,ATO_Legislative_Reference',
+    );
+
+    // D1A: Method indicator
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1A,METHOD,"Logbook Method",0.00,$pctStr,0.00,"ITAA 1997 Subdiv 28-F (Code B)"',
+    );
+
+    // D1B Schedules
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,401,"Fuel and Oil",${effectiveFuelGross.toStringAsFixed(2)},$pctStr,${fuelClaim.toStringAsFixed(2)},"TR 97/11 Par 18"',
+    );
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,402,"Repairs and Maintenance",${effectiveRepairsGross.toStringAsFixed(2)},$pctStr,${repairsClaim.toStringAsFixed(2)},"TR 97/11 Par 18"',
+    );
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,403,"Registration and Insurance",${effectiveRegoInsGross.toStringAsFixed(2)},$pctStr,${regoInsClaim.toStringAsFixed(2)},"TR 97/11 Par 18"',
+    );
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,404,"Depreciation Div 40",${depreciationGross.toStringAsFixed(2)},$pctStr,${depreciationClaim.toStringAsFixed(2)},"ITAA 1997 s 40-230"',
+    );
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,405,"Interest on Car Finance",${interestGross.toStringAsFixed(2)},$pctStr,${interestClaim.toStringAsFixed(2)},"ITAA 1997 s 8-1"',
+    );
+    if (directGross > 0) {
+      buffer.writeln(
+        '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,406,"Direct Work Deductions (Tolls/Parking)",${directGross.toStringAsFixed(2)},100.00,${directClaim.toStringAsFixed(2)},"ITAA 1997 s 8-1"',
+      );
+    }
+    buffer.writeln(
+      '$fy,"$safeClientName","$safeAbn","$safeRego","$safeDesc",D1B,TOTAL,"Total Allowable Item D1 Claim",${totalGross.toStringAsFixed(2)},$pctStr,${totalClaim.toStringAsFixed(2)},"ITR Item D1 Allowable Claim"',
+    );
+
+    // Statutory Compliance Footer
+    buffer.writeln('# DISCLAIMER: $statutoryDisclaimer');
+
+    return buffer.toString();
+  }
+
+  /// Generates the Fast-Fill Workpaper Action Schedule for HandiTax & Xero Tax entry
+  static String generateHandiTaxD1ScheduleText({
+    required Vehicle vehicle,
+    required TaxSummary summary,
+    required AtoTaxRule taxRule,
+    List<VehicleExpense> expenses = const [],
+    String taxpayerName = 'Tradie Client',
+    String abn = '',
+    double? customDepreciation,
+    double? customInterest,
+  }) {
+    final businessPct = summary.businessPercentage;
+    final activeExpenses = expenses.expand((e) => e.claimComponents).toList();
+
+    final fuelGross = _catTotal(activeExpenses, ExpenseCategory.fuel);
+    final effectiveFuelGross = fuelGross > 0
+        ? fuelGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.45) : 0.0);
+    final fuelClaim = effectiveFuelGross * (businessPct / 100.0);
+
+    final repairsGross =
+        _catTotal(activeExpenses, ExpenseCategory.maintenanceTyres);
+    final effectiveRepairsGross = repairsGross > 0
+        ? repairsGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.25) : 0.0);
+    final repairsClaim = effectiveRepairsGross * (businessPct / 100.0);
+
+    final regoInsGross = _catTotal(activeExpenses, ExpenseCategory.rego) +
+        _catTotal(activeExpenses, ExpenseCategory.insurance);
+    final effectiveRegoInsGross = regoInsGross > 0
+        ? regoInsGross
+        : (expenses.isEmpty ? (summary.totalRunningExpenses * 0.30) : 0.0);
+    final regoInsClaim = effectiveRegoInsGross * (businessPct / 100.0);
+
+    final cappedCost = taxRule.carDepreciationLimit;
+    final depreciationGross = customDepreciation ?? (cappedCost * 0.25);
+    final depreciationClaim = depreciationGross * (businessPct / 100.0);
+
+    final interestGross =
+        customInterest ?? _catTotal(activeExpenses, ExpenseCategory.interest);
+    final interestClaim = interestGross * (businessPct / 100.0);
+
+    final directGross = summary.totalDirectDeductions > 0
+        ? summary.totalDirectDeductions
+        : _catTotal(activeExpenses, ExpenseCategory.tollsParking);
+    final directClaim = directGross;
+
+    final totalGross = effectiveFuelGross +
+        effectiveRepairsGross +
+        effectiveRegoInsGross +
+        depreciationGross +
+        interestGross +
+        directGross;
+    final totalClaim = fuelClaim +
+        repairsClaim +
+        regoInsClaim +
+        depreciationClaim +
+        interestClaim +
+        directClaim;
+
+    return '''
+====================================================================================================
+⚡ HANDITAX & XERO WORKPAPER ACTION SCHEDULE • AUSTRALIAN TAX RETURN ITEM D1
+For 30-Second Fast-Fill Lodgement into HandiTax, Xero Tax, and MYOB Practice:
+----------------------------------------------------------------------------------------------------
+Taxpayer Name:       $taxpayerName
+ABN / Trading Name:  ${abn.isNotEmpty ? abn : 'Registered Sole Trader'}
+Vehicle Rego / Name: ${vehicle.regoPlate} (${vehicle.displayName})
+Financial Year:      ${taxRule.financialYear}
+ATO Item D1 Method:  [ B ] (Logbook Method - review required)
+Recorded Business%: ${businessPct.toStringAsFixed(2)}%
+
+ITEM D1 MOTOR VEHICLE SCHEDULE BREAKDOWN:
+Code  Schedule Category             Gross Amount      Biz %    Allowable Claim   ATO Authority
+----  --------------------------  --------------    -------    ---------------   -------------------
+401   Fuel and Oil                ${Formatters.currency(effectiveFuelGross).padLeft(14)}    ${businessPct.toStringAsFixed(1)}%    ${Formatters.currency(fuelClaim).padLeft(15)}   TR 97/11 Par 18
+402   Repairs and Maintenance     ${Formatters.currency(effectiveRepairsGross).padLeft(14)}    ${businessPct.toStringAsFixed(1)}%    ${Formatters.currency(repairsClaim).padLeft(15)}   TR 97/11 Par 18
+403   Registration & Insurance    ${Formatters.currency(effectiveRegoInsGross).padLeft(14)}    ${businessPct.toStringAsFixed(1)}%    ${Formatters.currency(regoInsClaim).padLeft(15)}   TR 97/11 Par 18
+404   Depreciation Div 40         ${Formatters.currency(depreciationGross).padLeft(14)}    ${businessPct.toStringAsFixed(1)}%    ${Formatters.currency(depreciationClaim).padLeft(15)}   ITAA 1997 s 40-230
+405   Interest on Car Finance     ${Formatters.currency(interestGross).padLeft(14)}    ${businessPct.toStringAsFixed(1)}%    ${Formatters.currency(interestClaim).padLeft(15)}   ITAA 1997 s 8-1
+406   Work Tolls & Parking (100%) ${Formatters.currency(directGross).padLeft(14)}   100.0%    ${Formatters.currency(directClaim).padLeft(15)}   ITAA 1997 s 8-1
+----------------------------------------------------------------------------------------------------
+TOTAL ITEM D1 ALLOWABLE DEDUCTION: ${Formatters.currency(totalGross).padLeft(13)}              ${Formatters.currency(totalClaim).padLeft(15)}   Box D1 Label B
 ====================================================================================================
 ''';
   }

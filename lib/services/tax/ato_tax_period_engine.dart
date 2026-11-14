@@ -47,17 +47,20 @@ class AtoFinancialYear {
   /// 1 July 00:00:00
   DateTime get startDate => DateTime(startYear, 7, 1);
 
-  /// 30 June 23:59:59 (Last second to incur an expense)
-  DateTime get expenseCutoffDate => DateTime(endYear, 6, 30, 23, 59, 59);
+  /// 30 June 23:59:59.999999 (Last microsecond to incur an expense)
+  DateTime get expenseCutoffDate =>
+      DateTime(endYear, 6, 30, 23, 59, 59, 999, 999);
 
   /// 1 July 00:00:00 (Tax lodgment season opens)
   DateTime get lodgmentOpenDate => DateTime(endYear, 7, 1);
 
-  /// 31 October 23:59:59 (Strict deadline for self-lodgers via myGov)
-  DateTime get selfLodgeDeadline => DateTime(endYear, 10, 31, 23, 59, 59);
+  /// 31 October 23:59:59.999999 (Strict deadline for self-lodgers via myGov)
+  DateTime get selfLodgeDeadline =>
+      DateTime(endYear, 10, 31, 23, 59, 59, 999, 999);
 
-  /// 15 May 23:59:59 (Extended deadline when registered with a Tax Agent)
-  DateTime get taxAgentDeadline => DateTime(endYear + 1, 5, 15, 23, 59, 59);
+  /// 15 May 23:59:59.999999 (Extended deadline when registered with a Tax Agent)
+  DateTime get taxAgentDeadline =>
+      DateTime(endYear + 1, 5, 15, 23, 59, 59, 999, 999);
 
   bool containsExpenseDate(DateTime date) {
     return (date.isAfter(startDate) || date.isAtSameMomentAs(startDate)) &&
@@ -104,19 +107,16 @@ class AtoTaxPeriodEngine {
     required DateTime systemDate,
     bool hasRegisteredTaxAgent = false,
   }) {
-    // 1. Prevent future dates
     if (receiptDate.isAfter(systemDate.add(const Duration(minutes: 5)))) {
       return ReceiptRoutingDecision.rejectedFutureDate;
     }
 
     final currentFy = forDate(systemDate);
 
-    // 2. Receipt belongs to current active spending year
     if (currentFy.containsExpenseDate(receiptDate)) {
       return ReceiptRoutingDecision.saveToCurrentFinancialYear;
     }
 
-    // 3. Receipt belongs to prior year, but we are currently in tax season for that prior year
     final priorFy = AtoFinancialYear(currentFy.startYear - 1);
     if (priorFy.containsExpenseDate(receiptDate)) {
       final priorPhase = determinePhase(
@@ -130,7 +130,6 @@ class AtoTaxPeriodEngine {
       }
     }
 
-    // 4. Stale receipt from 2+ years ago or closed period
     return ReceiptRoutingDecision.rejectedStalePriorYear;
   }
 

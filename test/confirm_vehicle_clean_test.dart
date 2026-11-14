@@ -32,8 +32,8 @@ void main() {
     await tester.tap(rangerCard);
     await tester.pumpAndSettle();
 
-    // Verify stage 2 "Your Vehicle" is shown
-    expect(find.text('Your Vehicle'), findsOneWidget);
+    // Verify stage 2 "Confirm Details" is shown
+    expect(find.text('Confirm Details'), findsOneWidget);
 
     // Verify card header does NOT contain 2024
     expect(find.text('Ford Ranger 2024'), findsNothing);
@@ -43,20 +43,16 @@ void main() {
     expect(find.text('Model Year'), findsNothing);
     expect(find.text('Optional for Tax'), findsNothing);
 
-    // Rego plate section exists cleanly with 1-tap state selector chips
-    expect(find.text('Rego Plate'), findsOneWidget);
-    expect(find.text('Next: Choose Tax Method'), findsOneWidget);
+    // Evidence fields are directly available, with an integrated state selector.
+    expect(find.text('Vehicle details'), findsOneWidget);
+    expect(find.text('Number plate'), findsOneWidget);
+    expect(find.text('Opening odometer'), findsOneWidget);
+    expect(find.text('NSW'), findsWidgets);
 
-    // Verify 1-Tap State chips (VIC, NSW, QLD, WA, etc.)
-    expect(find.text('VIC'), findsWidgets);
-    expect(find.text('QLD'), findsWidgets);
-    expect(find.text('WA'), findsWidgets);
-
-    // Tap 'VIC' chip
-    await tester.tap(find.text('VIC').first);
+    // Vehicle details remain optional and the user can reach method selection.
+    await tester.ensureVisible(find.text('Save & Continue'));
+    await tester.tap(find.text('Save & Continue'));
     await tester.pumpAndSettle();
-
-    // Verify plate badge updates to VIC
-    expect(find.text('VIC'), findsWidgets);
+    expect(find.text('Tax Method'), findsOneWidget);
   });
 }

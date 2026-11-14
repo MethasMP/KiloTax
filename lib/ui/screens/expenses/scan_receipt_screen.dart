@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../services/ocr/receipt_intelligence_service.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../services/scanner/document_scanner_service.dart';
 import '../../../state/app_state.dart';
 import 'expense_detail_screen.dart';
+import 'receipt_inbox_screen.dart';
 
 /// Screen 9: Add Expense (Scan Receipt)
 /// Mission-critical hardware-accelerated document scanning interface with
-/// 4-point perspective de-skewing, contrast enhancement, and resilient fallbacks.
+/// 4-point perspective de-skewing, contrast enhancement, resilient fallbacks,
+/// and high-volume batch scanning support.
 class ScanReceiptScreen extends StatefulWidget {
   final AppState appState;
   final DocumentScannerService? documentScanner;
@@ -34,11 +35,9 @@ class ScanReceiptScreen extends StatefulWidget {
 }
 
 class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
-  bool _isFlashOn = false;
   bool _isProcessing = false;
+  final String _processingStatus = 'Enhancing & reading receipt evidence...';
   late final DocumentScannerService _scanner;
-  final ReceiptIntelligenceService _receiptIntelligence =
-      const ReceiptIntelligenceService();
 
   @override
   void initState() {
@@ -46,49 +45,28 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
     _scanner = widget.documentScanner ?? DocumentScannerService();
   }
 
-  Future<void> _processScannedImage(String imagePath) async {
-    setState(() => _isProcessing = true);
-    ReceiptOcrResult? ocrResult;
-    try {
-      final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final recognized = await recognizer.processImage(
-        InputImage.fromFilePath(imagePath),
-      );
-      await recognizer.close();
-      ocrResult = _receiptIntelligence.analyseText(recognized.text);
-    } catch (e, stack) {
-      debugPrint(
-          '[ScanReceiptScreen] Warning analyzing receipt OCR: $e\n$stack');
-      // Preserve the receipt image and require manual review if OCR extraction encounters errors.
-    }
-
+  Future<void> _processBatchImages(List<String> imagePaths) async {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ExpenseDetailScreen(
-          appState: widget.appState,
-          merchant: ocrResult?.merchant ?? '',
-          amount: ocrResult?.amount ?? 0.0,
-          categoryName: ocrResult?.category.displayName ?? 'Materials',
-          receiptDate: ocrResult?.date ?? DateTime.now(),
-          receiptImagePath: imagePath,
-          receiptOcrResult: ocrResult,
-        ),
-      ),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) =>
+          ReceiptInboxScreen(appState: widget.appState, imagePaths: imagePaths),
+    ));
+    if (mounted) setState(() => _isProcessing = false);
   }
 
   Future<void> _scanReceipt() async {
     HapticFeedback.mediumImpact();
     try {
-      final imagePath =
-          await _scanner.scanDocument(allowFallbackToCamera: true);
+      final imagePaths = await _scanner.scanBatchDocuments(
+        maxPages: 20,
+        allowFallbackToCamera: true,
+      );
 
       if (!mounted) return;
 
-      if (imagePath != null && imagePath.isNotEmpty) {
+      if (imagePaths.isNotEmpty) {
         HapticFeedback.heavyImpact();
-        await _processScannedImage(imagePath);
+        await _processBatchImages(imagePaths);
       }
     } catch (e, stack) {
       debugPrint(
@@ -101,12 +79,12 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   Future<void> _pickFromGallery() async {
     HapticFeedback.selectionClick();
     try {
-      final imagePath = await _scanner.pickFromGallery();
+      final imagePaths = await _scanner.pickMultipleFromGallery();
       if (!mounted) return;
 
-      if (imagePath != null && imagePath.isNotEmpty) {
+      if (imagePaths.isNotEmpty) {
         HapticFeedback.heavyImpact();
-        await _processScannedImage(imagePath);
+        await _processBatchImages(imagePaths);
       }
     } catch (e, stack) {
       debugPrint(
@@ -133,205 +111,197 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColor.canvas,
+      appBar: AppBar(
+        title: const Text('Receipt Scanner'),
+        backgroundColor: AppColor.canvas,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+      ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top Camera Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      _isFlashOn ? LucideIcons.zap : LucideIcons.zapOff,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    onPressed: () => setState(() => _isFlashOn = !_isFlashOn),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(LucideIcons.sparkles,
-                            color: Colors.white, size: 13),
-                        SizedBox(width: 4),
-                        Text('Receipt Scanner',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white, size: 24),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextButton.icon(
+                onPressed:
+                    _isProcessing ? null : () => _processBatchImages(const []),
+                icon: const Icon(Icons.inbox_outlined),
+                label: const Text('Open saved receipt drafts'),
               ),
-            ),
-
-            // Viewfinder Interface
-            Expanded(
-              child: Center(
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  height: MediaQuery.of(context).size.height * 0.55,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2), width: 1.5),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Viewfinder Corners
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _ViewfinderCornerPainter(),
+              // Hero Viewfinder / Scanner Illustration Surface
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: AppColor.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColor.line, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.ink.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Concentric inner target area (Outer radius 20 = inner 12 + padding 8)
+                    Container(
+                      width: 130,
+                      height: 130,
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceMuted,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColor.hairline,
+                          width: 1,
                         ),
                       ),
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      child: Center(
+                        child: Icon(
+                          LucideIcons.scanLine,
+                          size: 54,
+                          color: AppColor.brand,
+                        ),
+                      ),
+                    ),
+                    // Live OCR / Auto-link badge
+                    Positioned(
+                      bottom: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColor.brandTint,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: AppColor.brandTintStrong,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(LucideIcons.scanLine,
-                                  color: Colors.white70, size: 36),
+                            Icon(
+                              LucideIcons.sparkles,
+                              size: 13,
+                              color: AppColor.brand,
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Position receipt within frame',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
+                            const SizedBox(width: 5),
                             Text(
-                              'Auto-crops edges & removes shadows.',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 12,
+                              'ATO Smart Match & Multi-scan',
+                              style: AppType.eyebrow.copyWith(
+                                color: AppColor.brand,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            if (_isProcessing)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Column(
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 10),
-                    Text('Enhancing & reading receipt evidence...',
-                        style: TextStyle(color: Colors.white)),
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(height: 28),
 
-            // Bottom Shutter & Controls
-            Padding(
-              padding: const EdgeInsets.fromLTRB(30, 20, 30, 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(LucideIcons.image,
-                        color: Colors.white, size: 26),
-                    tooltip: 'Choose from gallery',
-                    onPressed: _isProcessing ? null : _pickFromGallery,
+              // Title and Description with refined typography hierarchy
+              const Text(
+                'Scan receipt evidence',
+                style: AppType.title,
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: const Text(
+                  'Photograph physical fuel and material dockets or upload photos. Text recognition extracts merchant, amount, GST, and auto-links eligible trips.',
+                  style: AppType.secondary,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Actions or Processing Feedback
+              if (_isProcessing) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColor.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColor.line, width: 1),
                   ),
-                  // Shutter Button
-                  GestureDetector(
-                    onTap: _isProcessing ? null : _scanReceipt,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                  child: Column(
+                    children: [
+                      const ClipRRect(
+                        borderRadius: BorderRadius.all(Radius.circular(999)),
+                        child: LinearProgressIndicator(
+                          minHeight: 6,
+                          backgroundColor: AppColor.hairline,
+                          color: AppColor.brand,
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _processingStatus,
+                        style: AppType.bodyStrong.copyWith(
+                          fontFeatures: AppType.tabular,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Primary Action: Camera Scanner (Single primary filled button per view)
+                FilledButton.icon(
+                  onPressed: _scanReceipt,
+                  icon: const Icon(LucideIcons.camera, size: 20),
+                  label: const Text('Open camera scanner'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColor.brand,
+                    foregroundColor: AppColor.onNavy,
+                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _isProcessing ? null : _navigateToManual,
-                    child: const Text(
-                      'Manual',
-                      style: TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+
+                // Secondary Action: Choose from gallery (Subtle neutral surface)
+                OutlinedButton.icon(
+                  onPressed: _pickFromGallery,
+                  icon: const Icon(LucideIcons.image, size: 20),
+                  label: const Text('Choose from gallery'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColor.ink,
+                    side: const BorderSide(color: AppColor.line, width: 1),
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+                const SizedBox(height: 12),
+
+                // Tertiary Action: Manual Entry
+                TextButton(
+                  onPressed: _navigateToManual,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColor.inkMuted,
+                    minimumSize: const Size(double.infinity, 48),
+                    textStyle: AppType.bodyStrong,
+                  ),
+                  child: const Text('Enter details manually'),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _ViewfinderCornerPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.emerald
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    const len = 24.0;
-    // Top-left
-    canvas.drawLine(const Offset(0, 0), const Offset(len, 0), paint);
-    canvas.drawLine(const Offset(0, 0), const Offset(0, len), paint);
-
-    // Top-right
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - len, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
-
-    // Bottom-left
-    canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
-    canvas.drawLine(
-        Offset(0, size.height), Offset(0, size.height - len), paint);
-
-    // Bottom-right
-    canvas.drawLine(Offset(size.width, size.height),
-        Offset(size.width - len, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height),
-        Offset(size.width, size.height - len), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

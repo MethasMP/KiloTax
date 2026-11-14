@@ -52,6 +52,30 @@ class AustralianVehicleCatalog {
     'NT'
   ];
 
+  /// Distinct popular vehicle makes in Australia for fast autocomplete
+  static const List<String> popularMakes = [
+    'Toyota',
+    'Ford',
+    'Isuzu',
+    'Mitsubishi',
+    'Kia',
+    'Hyundai',
+    'Mazda',
+    'Nissan',
+    'Volkswagen',
+    'BYD',
+    'GWM',
+    'LDV',
+    'Tesla',
+    'Subaru',
+    'Mercedes-Benz',
+    'RAM',
+    'Chevrolet',
+    'MG',
+    'Renault',
+    'Polestar',
+  ];
+
   /// Top 5 Most Popular Tradie Work Vehicles in Australia (>80% of Market)
   /// Ordered strictly by validated VFACTS / Commercial registration market share
   static final List<AustralianVehicleCatalogEntry> popularTradieVehicles = [
@@ -176,12 +200,41 @@ class AustralianVehicleCatalog {
         model: 'Cannon',
         vehicleType: VehicleType.ute,
         fuelType: 'Diesel'),
-    // LDV T60
+    // LDV T60 / T60 Max
     const AustralianVehicleCatalogEntry(
         make: 'LDV',
         model: 'T60',
         vehicleType: VehicleType.ute,
         fuelType: 'Diesel'),
+    const AustralianVehicleCatalogEntry(
+        make: 'LDV',
+        model: 'T60 Max',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
+    // Kia Tasman
+    const AustralianVehicleCatalogEntry(
+        make: 'Kia',
+        model: 'Tasman',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Diesel'),
+    // Ford Ranger PHEV
+    const AustralianVehicleCatalogEntry(
+        make: 'Ford',
+        model: 'Ranger PHEV',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Hybrid'),
+    // BYD Shark 6
+    const AustralianVehicleCatalogEntry(
+        make: 'BYD',
+        model: 'Shark 6',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Hybrid'),
+    // GWM Cannon Alpha
+    const AustralianVehicleCatalogEntry(
+        make: 'GWM',
+        model: 'Cannon Alpha',
+        vehicleType: VehicleType.ute,
+        fuelType: 'Hybrid'),
     // Toyota RAV4
     const AustralianVehicleCatalogEntry(
         make: 'Toyota',

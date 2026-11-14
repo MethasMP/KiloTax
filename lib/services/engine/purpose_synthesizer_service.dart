@@ -4,7 +4,38 @@ import '../tracking/trade_poi_resolver.dart';
 /// Keeps UI descriptions clean & human (Apple standard) while generating rigorous,
 /// context-rich legal narratives for accountants and tax auditors (ITAA 1997).
 class PurposeSynthesizerService {
+  /// Words or phrases rejected as vague or non-compliant under ATO audit standards
+  /// unless sufficiently contextualized.
+  static const Set<String> _vaguePurposes = {
+    'work',
+    'business',
+    'job',
+    'client',
+    'meeting',
+    'drive',
+    'site visit',
+    'errand',
+  };
+
+  /// Anti-vagueness validator: checks whether a purpose string meets ATO audit specificity.
+  /// Rejects strings that are shorter than 5 characters or match vague keywords.
+  static bool isValidBusinessPurpose(String purpose) {
+    final trimmed = purpose.trim();
+    if (trimmed.length < 5) {
+      return false;
+    }
+
+    final lower = trimmed.toLowerCase();
+    if (_vaguePurposes.contains(lower)) {
+      return false;
+    }
+
+    return true;
+  }
+
   /// Converts a front-end choice and destination into a legally substantiated ATO purpose description.
+  /// Automatically connects to [TradePoiResolver] if a merchant (Bunnings, Reece, Middy's, Mitre 10, etc.)
+  /// is matched either in the destination or purpose input.
   static String synthesize({
     required String selectedPurpose,
     required String? destination,
@@ -19,13 +50,13 @@ class PurposeSynthesizerService {
         ? ' [Ref: ${jobReference.trim()}]'
         : '';
 
-    // 1. Check for Australian Trade Merchant POI match
-    final poiMatch = TradePoiResolver.resolve(dest);
+    // Auto-resolve merchant from destination or purpose input
+    final poiMatch = TradePoiResolver.resolve(dest) ??
+        TradePoiResolver.resolve(selectedPurpose);
 
     // Normalize purpose selection
     final normalized = selectedPurpose.toLowerCase();
 
-    // 2. Heavy Tools & Equipment (ITAA 1997 s 8-1 Exemption)
     if (bulkyToolsCarried ||
         normalized.contains('tool') ||
         normalized.contains('heavy') ||
@@ -33,7 +64,6 @@ class PurposeSynthesizerService {
       return 'Transit with essential heavy trade equipment (>20kg) to $dest per ITAA 1997 s 8-1$jobSuffix';
     }
 
-    // 3. Trade Supplies & Consumables Run
     if (normalized.contains('suppl') ||
         normalized.contains('bunning') ||
         normalized.contains('material') ||
@@ -44,7 +74,6 @@ class PurposeSynthesizerService {
       return 'Procurement of trade materials and consumables for $dest$jobSuffix';
     }
 
-    // 4. Client / Job Site Visit (TR 95/34 Itinerant Schedule)
     if (normalized.contains('client') ||
         normalized.contains('job') ||
         normalized.contains('site') ||
@@ -52,7 +81,6 @@ class PurposeSynthesizerService {
       return 'Client site visit & contract trade works at $dest (TR 95/34)$jobSuffix';
     }
 
-    // 5. Personal Drive
     if (normalized.contains('personal') || normalized.contains('private')) {
       return 'Personal journey';
     }

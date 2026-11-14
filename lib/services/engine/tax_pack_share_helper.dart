@@ -1,211 +1,143 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../core/constants/app_constants.dart';
-import '../../core/utils/export_file_name_helper.dart';
-import '../../core/utils/formatters.dart';
-import '../../data/models/vehicle.dart';
-import '../../data/models/trip.dart';
-import '../../data/models/tax_summary.dart';
+
 import '../../state/app_state.dart';
-import 'cpk_export_service.dart';
-import 'logbook_export_service.dart';
-import 'pdf_export_service.dart';
+import '../../data/models/vehicle.dart';
+import '../../ui/screens/logbook/logbook_progress_screen.dart';
+import '../../ui/screens/feedback/feedback_screen.dart';
 import 'tax_email_dispatch_service.dart';
+import 'tax_pack_builder.dart';
+import '../receipts/receipt_inbox_service.dart';
 
-/// Single source of truth for generating & dispatching the complete ATO Tax Pack.
-/// Creates a 1-page ATO Box D1 Summary PDF + 14-Column Ledger CSV and triggers
-/// the native OS share sheet (Email, AirDrop, Files) with pre-filled summary.
 class TaxPackShareHelper {
-  static Future<void> shareTaxPack(
-      BuildContext context, AppState appState) async {
+  static Future<void> shareTaxPack(BuildContext context, AppState appState,
+      {bool allowDraftWithGaps = false}) async {
+    final vehicle = appState.primaryVehicle;
+    if (vehicle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Add a vehicle before preparing a tax pack.')),
+      );
+      return;
+    }
+    if (!allowDraftWithGaps &&
+        vehicle.taxMethod == TaxMethod.logbook &&
+        appState.pendingOdometerGaps.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text(
+            'Review the unrecorded odometer travel before preparing this tax pack.'),
+        action: SnackBarAction(
+            label: 'Review',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const LogbookProgressScreen()))),
+      ));
+      return;
+    }
+    final trips = appState.trips;
+    final expenses = appState.expenses;
+    final rule = appState.activeTaxRule;
     HapticFeedback.mediumImpact();
-
-    final engine = appState.createEvidenceEngine();
-    final summary = appState.taxSummary;
-    final vehicle = appState.primaryVehicle ?? engine.vehicle;
-    final isCpk = vehicle.taxMethod == TaxMethod.centsPerKm;
-    final taxRule = appState.activeTaxRule;
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: const [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
+      const SnackBar(
+          content: Text('Preparing ZIP with records and receipt files…')),
+    );
+    TaxPackArtifact? pack;
+    try {
+      final inbox = await ReceiptInboxService.open(
+          appState.currentUser?.id ?? 'guest', vehicle.id);
+      final pendingDraftCount = inbox
+          .load()
+          .where((draft) =>
+              draft.expense.vehicleId == vehicle.id &&
+              draft.state != ReceiptDraftState.recorded)
+          .length;
+      pack = await const TaxPackBuilder().build(
+        pendingDraftCount: pendingDraftCount,
+        vehicle: vehicle,
+        taxRule: rule,
+        trips: trips,
+        expenses: expenses,
+        jobs: appState.jobSites,
+        hasOdometerGaps: appState.pendingOdometerGaps.isNotEmpty,
+        outputDirectory: await getTemporaryDirectory(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      final preparedPack = pack;
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(preparedPack.issueCount == 0
+              ? 'Tax pack ready for review'
+              : 'Draft tax pack ready'),
+          content: Text(
+            '${preparedPack.report.trips.length} trips, ${preparedPack.report.expenses.length} expenses, '
+            'and ${preparedPack.receiptCount} receipt files.\n\n'
+            '${preparedPack.issueCount} review items are listed in the ZIP. '
+            'Receipt files are included as recorded. Their accuracy and tax eligibility are not verified. '
+            'Review the files before lodging a claim.',
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(preparedPack.issueCount == 0
+                  ? 'Share ZIP'
+                  : 'Share draft ZIP'),
             ),
-            SizedBox(width: 12),
-            Text('Preparing Tax Pack (PDF + CSV)…'),
           ],
         ),
-        backgroundColor: AppColors.deepNavy,
-        duration: const Duration(seconds: 4),
-      ),
-    );
-
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final fyLabel = taxRule.financialYear;
-      final regoLabel =
-          vehicle.regoPlate.isNotEmpty ? vehicle.regoPlate : 'NoRego';
-      final methodLabel = isCpk ? 'CPK' : 'Logbook';
-
-      // 1. Generate PDF offloaded to background isolate via compute() to maintain 60fps UI
-      final pdfBytes = await compute(_generatePdfTask, (
-        vehicle: vehicle,
-        trips: engine.trips,
-        summary: summary,
-        taxRule: taxRule,
-      ));
-
-      final pdfFileName = ExportFileNameHelper.buildFileName(
-        method: methodLabel,
-        fy: fyLabel,
-        taxpayerName: 'TaxSummary',
-        rego: regoLabel,
-        documentType: ExportFileNameHelper.boxD1LodgementSlip,
-        extension: 'pdf',
       );
-      final pdfFile = File('${tempDir.path}/$pdfFileName');
-      await pdfFile.writeAsBytes(pdfBytes);
-
-      // 2. Generate CSV
-      final csvText = isCpk
-          ? CpkExportService.generateCpkTripLedgerCsv(
-              vehicle: vehicle,
-              trips: engine.trips,
-              taxRule: taxRule,
-            )
-          : LogbookExportService.generateLogbookAuditLedgerCsv(
-              vehicle: vehicle,
-              trips: engine.trips,
-            );
-
-      final csvFileName = ExportFileNameHelper.buildFileName(
-        method: methodLabel,
-        fy: fyLabel,
-        taxpayerName: 'TripLedger',
-        rego: regoLabel,
-        documentType: isCpk
-            ? ExportFileNameHelper.cpkTripLedger
-            : ExportFileNameHelper.continuousOdometerLedger,
-        extension: 'csv',
-      );
-      final csvFile = File('${tempDir.path}/$csvFileName');
-      await csvFile.writeAsString(csvText);
-
-      // 3. Open Share Sheet / Mail
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        HapticFeedback.lightImpact();
-
-        final claimAmount =
-            isCpk ? summary.centsPerKmClaim : summary.logbookClaim;
-        final shareText = isCpk
-            ? 'Hi,\n\nPlease find my FY$fyLabel vehicle tax records attached.\n\n'
-                'Box D1 Summary:\n'
-                '  • Method: Code S — Cents-per-kilometre\n'
-                '  • Vehicle: $regoLabel\n'
-                '  • Work KM: ${summary.businessKm.toStringAsFixed(1)} km\n'
-                '  • Total Deduction: ${Formatters.currency(claimAmount)}\n\n'
-                'Files attached:\n'
-                '  1. $pdfFileName — 1-page Box D1 summary\n'
-                '  2. $csvFileName — 14-column ATO audit ledger\n\n'
-                'Generated by KiloTax.'
-            : 'Hi,\n\nPlease find my FY$fyLabel vehicle logbook records attached.\n\n'
-                'Box D1 Summary:\n'
-                '  • Method: Code B — Logbook\n'
-                '  • Vehicle: $regoLabel\n'
-                '  • Business Use: ${summary.businessPercentage.toStringAsFixed(1)}%\n'
-                '  • Work KM: ${summary.businessKm.toStringAsFixed(1)} km\n'
-                '  • Total Deduction: ${Formatters.currency(claimAmount)}\n\n'
-                'Files attached:\n'
-                '  1. $pdfFileName — Box D1 summary\n'
-                '  2. $csvFileName — Odometer audit ledger\n\n'
-                'Generated by KiloTax.';
-
-        final emailSubject =
-            'FY$fyLabel Vehicle Tax Summary (Box D1) — $regoLabel';
-
-        // Calculate safe popover anchor origin for iPadOS
-        Rect? shareOrigin;
-        final renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox != null && renderBox.hasSize) {
-          final size = renderBox.size;
-          final offset = renderBox.localToGlobal(Offset.zero);
-          shareOrigin =
-              Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
-        }
-
-        final dispatchResult =
-            await TaxEmailDispatchService.dispatchTaxPackEmail(
-          attachmentPaths: [pdfFile.path, csvFile.path],
-          subject: emailSubject,
-          body: shareText,
-          sharePositionOrigin: shareOrigin,
-        );
-
-        if (context.mounted) {
-          if (dispatchResult == EmailDispatchResult.fallbackToShareSheet) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'No active email app found on device. Opened system share sheet.',
-                  style: TextStyle(fontSize: 13),
-                ),
-                backgroundColor: AppColors.workBlue,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          } else if (dispatchResult == EmailDispatchResult.failed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to open email composer or share sheet.'),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-          }
-        }
+      if (proceed != true || !context.mounted) return;
+      Rect? shareOrigin;
+      final renderBox = context.findRenderObject();
+      if (renderBox is RenderBox && renderBox.hasSize) {
+        shareOrigin = renderBox.localToGlobal(Offset.zero) & renderBox.size;
       }
-    } catch (e) {
+      final dispatchResult = await TaxEmailDispatchService.dispatchTaxPackEmail(
+        attachmentPaths: [pack.file.path],
+        subject:
+            'FY${rule.financialYear} Vehicle Records for Review - ${vehicle.regoPlate}',
+        body: pack.description,
+        sharePositionOrigin: shareOrigin,
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(switch (dispatchResult) {
+          EmailDispatchResult.sentViaMailApp =>
+            'Tax pack handed to the email app. Delivery is not confirmed.',
+          EmailDispatchResult.fallbackToShareSheet =>
+            'Tax pack handed to the system share sheet.',
+          EmailDispatchResult.failed =>
+            'Could not open the email app or share sheet.',
+        }),
+        action: SnackBarAction(
+          label: 'Feedback',
+          onPressed: () => FeedbackScreen.show(context),
+        ),
+      ));
+    } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        final errStr = e.toString();
-        final isPluginMissing = errStr.contains('MissingPluginException');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isPluginMissing
-                  ? 'Native plugin updated: Please Stop & Re-run app (Full Rebuild) to register share_plus on iOS.'
-                  : 'Could not prepare Tax Pack: $errStr',
-            ),
-            backgroundColor: AppColors.crimson,
-            duration: const Duration(seconds: 6),
-          ),
+          const SnackBar(
+              content: Text(
+                  'Could not prepare the tax pack. Check that this year has records and try again.')),
         );
+      }
+    } finally {
+      if (pack != null) {
+        try {
+          await pack.directory.delete(recursive: true);
+        } on FileSystemException {
+          // The operating system may have already removed temporary files.
+        }
       }
     }
   }
-}
-
-Future<List<int>> _generatePdfTask(
-    ({
-      Vehicle vehicle,
-      List<Trip> trips,
-      TaxSummary summary,
-      AtoTaxRule taxRule,
-    }) params) {
-  return PdfExportService.generateBoxD1SummaryPdf(
-    vehicle: params.vehicle,
-    trips: params.trips,
-    summary: params.summary,
-    taxRule: params.taxRule,
-  );
 }

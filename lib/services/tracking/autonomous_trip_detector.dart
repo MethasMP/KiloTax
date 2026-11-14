@@ -2,9 +2,11 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../data/models/trip.dart';
+import '../../data/models/user_profile.dart';
 import 'wgs84_geodesic_engine.dart';
 import 'road_snap_routing_service.dart';
 import 'geocoding_service.dart';
+import 'trade_poi_resolver.dart';
 
 /// Detection States of the Autonomous Telemetry Engine
 enum AutonomousDetectorState {
@@ -40,6 +42,9 @@ class AutonomousTripDetector {
   final Duration ghostAnchorTimeout;
 
   final RoadSnapRoutingService _routingService;
+  final double Function()? odometerProvider;
+  final String Function()? vehicleIdProvider;
+  final UserProfile Function()? userProfileProvider;
   final Queue<Position> _ringBuffer = Queue<Position>();
   final List<Position> _activeTripPath = [];
 
@@ -47,6 +52,8 @@ class AutonomousTripDetector {
   DateTime? _firstSpeedExceededTime;
   GhostAnchor? _ghostAnchor;
   Trip? _finalizedTrip;
+  bool _isOriginHome = false;
+  bool _isDestinationHome = false;
 
   // Transit Discrimination (Bus-Stop Signature Tracker)
   int _consecutiveShortHops = 0;
@@ -58,12 +65,17 @@ class AutonomousTripDetector {
     this.minDrivingSpeedKmh = 20.0,
     this.ghostAnchorTimeout = const Duration(minutes: 5),
     RoadSnapRoutingService? routingService,
+    this.odometerProvider,
+    this.vehicleIdProvider,
+    this.userProfileProvider,
   }) : _routingService = routingService ?? RoadSnapRoutingService();
 
   AutonomousDetectorState get state => _state;
   GhostAnchor? get ghostAnchor => _ghostAnchor;
   Trip? get finalizedTrip => _finalizedTrip;
   List<Position> get activeTripPath => List.unmodifiable(_activeTripPath);
+  bool get isOriginHome => _isOriginHome;
+  bool get isDestinationHome => _isDestinationHome;
 
   void reset() {
     _ringBuffer.clear();
@@ -72,20 +84,43 @@ class AutonomousTripDetector {
     _firstSpeedExceededTime = null;
     _ghostAnchor = null;
     _finalizedTrip = null;
+    _isOriginHome = false;
+    _isDestinationHome = false;
     _consecutiveShortHops = 0;
     _lastHopStopPosition = null;
   }
 
   /// Ingests a new continuous GPS fix from device hardware stream
-  Future<AutonomousDetectorState> processFix(Position fix,
-      {DateTime? simulatedNow}) async {
-    final now = simulatedNow ?? DateTime.now();
+  Future<AutonomousDetectorState> processFix(
+    Position fix, {
+    DateTime? simulatedNow,
+    bool allowMockLocations = false,
+    bool isBluetoothCarConnected = false,
+  }) async {
+    // Ignore spoofed/mocked GPS fixes to prevent simulated trips
+    if (fix.isMocked && !allowMockLocations) {
+      return _state;
+    }
+
+    final now = simulatedNow ?? fix.timestamp;
     final speedKmh = fix.speed > 0.5 ? (fix.speed * 3.6) : 0.0;
 
     switch (_state) {
       case AutonomousDetectorState.idle:
         _maintainRingBuffer(fix);
-        if (speedKmh >= minDrivingSpeedKmh) {
+        // Fast-path: If verified car Bluetooth is connected, start verifying departure with low threshold (8 km/h)
+        // or trigger driving immediately once movement is confirmed!
+        if (isBluetoothCarConnected && speedKmh >= 8.0) {
+          _state = AutonomousDetectorState.activeDriving;
+          _activeTripPath.clear();
+          if (_ringBuffer.isNotEmpty) {
+            _activeTripPath.addAll(_ringBuffer);
+          } else {
+            _activeTripPath.add(fix);
+          }
+          _lastHopStopPosition = _activeTripPath.first;
+          _firstSpeedExceededTime = null;
+        } else if (speedKmh >= minDrivingSpeedKmh) {
           _state = AutonomousDetectorState.verifyingDeparture;
           _firstSpeedExceededTime = now;
         }
@@ -93,7 +128,18 @@ class AutonomousTripDetector {
 
       case AutonomousDetectorState.verifyingDeparture:
         _maintainRingBuffer(fix);
-        if (speedKmh < (minDrivingSpeedKmh * 0.7)) {
+        if (isBluetoothCarConnected && speedKmh >= 8.0) {
+          // Accelerated promotion: Bluetooth confirms car presence
+          _state = AutonomousDetectorState.activeDriving;
+          _activeTripPath.clear();
+          if (_ringBuffer.isNotEmpty) {
+            _activeTripPath.addAll(_ringBuffer);
+          } else {
+            _activeTripPath.add(fix);
+          }
+          _lastHopStopPosition = _activeTripPath.first;
+          _firstSpeedExceededTime = null;
+        } else if (speedKmh < (minDrivingSpeedKmh * 0.7)) {
           // Speed dropped before sustained duration -> Abort false start
           _state = AutonomousDetectorState.idle;
           _firstSpeedExceededTime = null;
@@ -160,9 +206,14 @@ class AutonomousTripDetector {
           _state = AutonomousDetectorState.activeDriving;
         }
         // Scenario B: Vehicle remains stationary past Ghost Anchor timeout (True Destination Reached)
-        else if (_ghostAnchor != null &&
+        // Dynamic Adaptive Timeout: If Car Bluetooth is still connected, vehicle is likely idling in traffic/red light -> extend to 10 mins
+        final effectiveGhostAnchorTimeout = isBluetoothCarConnected
+            ? const Duration(minutes: 10)
+            : ghostAnchorTimeout;
+
+        if (_ghostAnchor != null &&
             now.difference(_ghostAnchor!.stationarySince) >=
-                ghostAnchorTimeout) {
+                effectiveGhostAnchorTimeout) {
           await _sealTripRetroactively(
               _ghostAnchor!.position, _ghostAnchor!.stationarySince);
           _state = AutonomousDetectorState.finalized;
@@ -190,7 +241,6 @@ class AutonomousTripDetector {
 
     final startFix = _activeTripPath.first;
 
-    // 1. Calculate Road-Snapped Asphalt Driving Distance
     final routeResult = await _routingService.calculateRoadDistanceKm(
       startLat: startFix.latitude,
       startLon: startFix.longitude,
@@ -198,7 +248,6 @@ class AutonomousTripDetector {
       endLon: endFix.longitude,
     );
 
-    // 2. Resolve Suburb Names
     final originName = await GeocodingService.reverseGeocode(
       startFix.latitude,
       startFix.longitude,
@@ -208,17 +257,65 @@ class AutonomousTripDetector {
       endFix.longitude,
     );
 
+    final startOdo = odometerProvider?.call() ?? 0.0;
+    final endOdo = startOdo + routeResult.roadDistanceKm;
+    final vehicleId = vehicleIdProvider?.call() ?? 'primary_vehicle';
+    final profile = userProfileProvider?.call();
+
+    if (profile != null && profile.hasHomeCoordinates) {
+      final startDist = Geolocator.distanceBetween(
+        startFix.latitude,
+        startFix.longitude,
+        profile.homeLatitude!,
+        profile.homeLongitude!,
+      );
+      final endDist = Geolocator.distanceBetween(
+        endFix.latitude,
+        endFix.longitude,
+        profile.homeLatitude!,
+        profile.homeLongitude!,
+      );
+      _isOriginHome = startDist <= profile.homeRadiusMeters;
+      _isDestinationHome = endDist <= profile.homeRadiusMeters;
+    } else {
+      final origLower = originName.trim().toLowerCase();
+      final destLower = destName.trim().toLowerCase();
+      _isOriginHome =
+          origLower.contains('home') || origLower.contains('residence');
+      _isDestinationHome =
+          destLower.contains('home') || destLower.contains('residence');
+    }
+
+    // Evaluate Trade POI Match at destination stop
+    final poiMatch = TradePoiResolver.resolve(destName);
+    Map<String, dynamic>? detectedPoi;
+    String initialPurpose = '';
+    TripClassification initialClassification = TripClassification.unclassified;
+
+    if (poiMatch != null) {
+      detectedPoi = {
+        'merchantName': poiMatch.merchantName,
+        'keywordMatched': poiMatch.keywordMatched,
+        'suggestedPurpose': poiMatch.suggestedPurpose,
+        'auditCategory': poiMatch.auditCategory,
+      };
+      initialPurpose = poiMatch.suggestedPurpose;
+      initialClassification = TripClassification.business;
+    }
+
     _finalizedTrip = Trip(
       id: 'auto_trip_${endTime.millisecondsSinceEpoch}',
-      vehicleId: 'primary_vehicle',
+      vehicleId: vehicleId,
       distanceKm: routeResult.roadDistanceKm,
       date: startFix.timestamp,
-      purpose: 'Client / Job Site Visit',
-      startOdometer: 0.0,
-      endOdometer: 0.0,
+      purpose: initialPurpose,
+      startOdometer: startOdo,
+      endOdometer: endOdo,
       originAddress: originName,
       destinationAddress: destName,
-      classification: TripClassification.business,
+      classification: initialClassification,
+      routePolyline: routeResult.geometryPolyline,
+      detectedPoi: detectedPoi,
     );
   }
 }

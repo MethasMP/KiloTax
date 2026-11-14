@@ -164,12 +164,12 @@ void main() {
 
       expect(text, contains('⚡ TAX AGENT FAST-FILL BOX'));
       expect(text, contains('[ B ] (Logbook method)'));
-      expect(text, contains('80.00% (TR 97/11 12-wk compliant)'));
+      expect(text, contains('80.00% (review period and supporting records)'));
       expect(text, contains('8000.0 km / 10000.0 km'));
       expect(text, contains('BOX D1 WORK EXPENSES:  \$4800.00 AUD'));
       expect(text, contains('BOX D1 OTHER EXPENSES: \$500.00 AUD'));
       expect(text, contains('DIV 40 ASSET DEDUCT:'));
-      expect(text, contains('Valid Income Years:    FY 2026 to FY 2030'));
+      expect(text, contains('Review applicability:    FY 2026 to FY 2030'));
     });
   });
 
@@ -342,7 +342,7 @@ void main() {
     });
 
     test(
-        'Section 4 of CPK and Logbook text dossiers include statutory substantiation clause',
+        'CPK and Logbook dossiers request evidence review without inventing equipment declarations',
         () {
       final vehicle = Vehicle(
         id: 'v_dossier',
@@ -375,12 +375,9 @@ void main() {
       expect(
           cpkText,
           contains(
-              'BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
-      expect(
-          cpkText,
-          contains(
-              'STATUTORY DEFENSE UNDER VOGT\'S CASE (75 ATC 4073) & ATO TR 95/34'));
-      expect(cpkText, contains('Absence of Secure Storage'));
+              'Review actual equipment, transport purpose, and storage circumstances before claiming.'));
+      expect(cpkText, isNot(contains('No lock-up facilities available')));
+      expect(cpkText, isNot(contains('Verified by KiloTax Engine')));
 
       final logbookText = LogbookExportService.generateLogbookAuditDossierText(
         vehicle: vehicle,
@@ -393,8 +390,9 @@ void main() {
       expect(
           logbookText,
           contains(
-              'BULKY EQUIPMENT SUBSTANTIATION DECLARATION (ITAA 1997 s 8-1, TR 95/34 & FC OF T v VOGT)'));
-      expect(logbookText, contains('Character of Travel'));
+              'Review actual equipment, transport purpose, and storage circumstances before claiming'));
+      expect(logbookText, isNot(contains('No lock-up facilities available')));
+      expect(logbookText, isNot(contains('CERTIFIED STATUTORY BUSINESS')));
     });
   });
 
@@ -561,7 +559,9 @@ void main() {
   });
 
   group('6. Statutory Disclaimers & Non-Affiliation Compliance', () {
-    test('CPK and Logbook CSV exports contain explicit statutory disclaimer footer', () {
+    test(
+        'CPK and Logbook CSV exports contain explicit statutory disclaimer footer',
+        () {
       final vehicleCpk = Vehicle(
         id: 'v_cpk_disc',
         make: 'Toyota',
@@ -596,11 +596,13 @@ void main() {
       expect(
         lbCsv,
         contains(
-            '# DISCLAIMER: Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.'),
+            '# DISCLAIMER: Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F & TR 97/11). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.'),
       );
     });
 
-    test('CPK and Logbook dossiers contain TPB advice notice and ATO non-affiliation', () {
+    test(
+        'CPK and Logbook dossiers contain TPB advice notice and ATO non-affiliation',
+        () {
       final vehicle = Vehicle(
         id: 'v_dos_disc',
         make: 'Isuzu',
@@ -627,9 +629,16 @@ void main() {
         summary: summary,
         taxRule: AppConstants.activeTaxRule,
       );
-      expect(cpkSlip, contains('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice)'));
-      expect(cpkSlip, contains('Retain for 5 years per Subdivision 28-H / Section 900-165.'));
-      expect(cpkSlip, contains('NOT affiliated with, endorsed by, or connected'));
+      expect(
+          cpkSlip,
+          contains(
+              'STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice)'));
+      expect(
+          cpkSlip,
+          contains(
+              'Retain for 5 years per Subdivision 28-H / Section 900-165.'));
+      expect(
+          cpkSlip, contains('NOT affiliated with, endorsed by, or connected'));
 
       final lbDossier = LogbookExportService.generateLogbookAuditDossierText(
         vehicle: vehicle,
@@ -638,9 +647,107 @@ void main() {
         summary: summary,
         taxRule: AppConstants.activeTaxRule,
       );
-      expect(lbDossier, contains('STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Subdivision 28-F / TPB Notice)'));
-      expect(lbDossier, contains('Retain for 5 years per Subdivision 28-H / Section 900-165.'));
-      expect(lbDossier, contains('NOT affiliated with, endorsed by, or connected'));
+      expect(
+          lbDossier,
+          contains(
+              'STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Subdivision 28-F / TPB Notice)'));
+      expect(
+          lbDossier,
+          contains(
+              'Retain for 5 years per Subdivision 28-H / Section 900-165.'));
+      expect(lbDossier,
+          contains('NOT affiliated with, endorsed by, or connected'));
+    });
+  });
+
+  group('7. Accountant Email / 1-Tap Handoff Substantiation Alignment', () {
+    test(
+        'generateAccountantEmailText includes business %, opening/closing odometer and limited odometer check for Logbook',
+        () {
+      final vehicle = Vehicle(
+        id: 'v_acc_lb',
+        make: 'Ford',
+        model: 'Ranger',
+        regoPlate: 'TRADIE-1',
+        initialOdometer: 50000.0,
+        taxMethod: TaxMethod.logbook,
+      );
+      final summary = TaxSummary(
+        totalKm: 12000.0,
+        businessKm: 9600.0,
+        personalKm: 2400.0,
+        businessPercentage: 80.0,
+        totalRunningExpenses: 5000.0,
+        totalDirectDeductions: 0.0,
+        centsPerKmClaim: 4550.0,
+        logbookClaim: 4000.0,
+      );
+
+      final emailText = AtoReportService.generateAccountantEmailText(
+        vehicle: vehicle,
+        summary: summary,
+        tripCount: 142,
+        expenseCount: 28,
+        taxRule: AppConstants.activeTaxRule,
+        openingOdometer: 50000.0,
+        closingOdometer: 62000.0,
+        isGaplessAuditProof: true,
+      );
+
+      expect(emailText, contains('Recorded Business Percentage: 80.00%'));
+      expect(
+          emailText,
+          contains(
+              '• Odometer Period: 50000 km (Opening) to 62000 km (Closing)'));
+      expect(
+          emailText,
+          contains(
+              '• Odometer Check: No odometer gaps detected; other evidence still requires review'));
+      expect(
+          emailText, contains('Final Box D1 Deductible Claim: \$4000.00 AUD'));
+    });
+
+    test(
+        'generateAccountantEmailText produces CPK summary with capped claim and recorded-source review',
+        () {
+      final vehicle = Vehicle(
+        id: 'v_acc_cpk',
+        make: 'Toyota',
+        model: 'Corolla',
+        regoPlate: 'CPK-99',
+        taxMethod: TaxMethod.centsPerKm,
+      );
+      final summary = TaxSummary(
+        totalKm: 6000.0,
+        businessKm: 5000.0,
+        personalKm: 1000.0,
+        businessPercentage: 83.33,
+        totalRunningExpenses: 0.0,
+        totalDirectDeductions: 0.0,
+        centsPerKmClaim: 4550.0,
+        logbookClaim: 0.0,
+      );
+
+      final emailText = AtoReportService.generateAccountantEmailText(
+        vehicle: vehicle,
+        summary: summary,
+        tripCount: 65,
+        expenseCount: 0,
+        taxRule: AppConstants.activeTaxRule,
+        isGaplessAuditProof: true,
+      );
+
+      expect(emailText, contains('Claim Method: Box D1 Code S (Cents per km)'));
+      expect(
+          emailText,
+          contains(
+              'Total Claimable Distance: 5000.0 km (Capped at 5,000 km per s 28-25)'));
+      expect(
+          emailText,
+          contains(
+              'Odometer Check: No reported odometer gaps; review recorded trip sources'));
+      expect(
+          emailText, contains('Final Box D1 Deductible Claim: \$4550.00 AUD'));
     });
   });
 }

@@ -2,10 +2,10 @@ import '../../data/models/trip.dart';
 import '../tracking/trade_poi_resolver.dart';
 
 enum ConfidenceTier {
-  /// Trips during normal trade hours to trade POIs or client sites
+  /// Reserved for a future evidence-backed, user-authorized review rule.
   highConfidenceWork,
 
-  /// Trips on weekends, late nights, or ambiguous routes requiring explicit user sign-off
+  /// Trips requiring explicit confirmation of purpose and business use.
   requiresUserDecision,
 }
 
@@ -27,87 +27,52 @@ class ClassifiedTripAssessment {
   bool get isHighConfidence => tier == ConfidenceTier.highConfidenceWork;
 }
 
-/// Sentinel Risk Gatekeeper & Trip Confidence Classifier
-/// Distinguishes safe-to-bundle routine trade travel from high-audit-risk drives (ITAA 1997 s 28-25 / TR 97/11).
+/// Suggests review context, never tax eligibility from a place name or time.
+/// The current Trip model has no confirmed commute/exception evidence, so
+/// unresolved trips must stay in individual review rather than preselected batches.
 class TripConfidenceClassifier {
   static ClassifiedTripAssessment assess(Trip trip) {
-    final tripDate = trip.date;
-    final isWeekend = tripDate.weekday == DateTime.saturday ||
-        tripDate.weekday == DateTime.sunday;
-    final hour = tripDate.hour;
-    final isAfterHours = hour < 6 ||
-        hour >= 19; // Typical Australian tradie hours 6:00 AM - 7:00 PM
+    final destination = trip.destinationAddress ?? '';
+    final poi = TradePoiResolver.resolve(destination);
+    final destinationLower = destination.toLowerCase();
+    final isSite = destinationLower.contains('site') ||
+        destinationLower.contains('job') ||
+        destinationLower.contains('client');
+    final originLower = (trip.originAddress ?? '').toLowerCase();
+    final touchesHome = originLower.contains('home') ||
+        originLower.contains('residence') ||
+        destinationLower.contains('home') ||
+        destinationLower.contains('residence');
 
-    final dest = trip.destinationAddress ?? '';
-    final orig = trip.originAddress ?? '';
-    final destLower = dest.toLowerCase();
-    final origLower = orig.toLowerCase();
-
-    final poiMatch = TradePoiResolver.resolve(dest);
-    final isTradeMerchant = poiMatch != null;
-    final isSiteVisit = destLower.contains('site') ||
-        destLower.contains('job') ||
-        destLower.contains('client');
-    final isHomeDeparture =
-        origLower.contains('home') || origLower.contains('residence');
-
-    // 1. Weekend Travel Sentinel Guard
-    if (isWeekend) {
-      return ClassifiedTripAssessment(
-        trip: trip,
-        tier: ConfidenceTier.requiresUserDecision,
-        suggestedPurpose: isTradeMerchant ? 'Supplies Run' : 'Client Site',
-        suggestedBulkyTools: true,
-        decisionReason:
-            'Weekend drive requires explicit trade confirmation to avoid ATO audit penalties.',
-      );
+    final String reason;
+    if (trip.classification == TripClassification.personal) {
+      reason = 'Marked personal. Keep private travel out of business claims.';
+    } else if (touchesHome) {
+      reason =
+          'Travel involving home needs review. Confirm the business reason '
+          'and any applicable exception before claiming.';
+    } else if (poi != null) {
+      reason = 'Possible supplies stop at ${poi.merchantName}. Confirm what '
+          'this journey was for; a merchant location alone does not establish business use.';
+    } else if (isSite) {
+      reason = 'Possible job site visit. Confirm the job and business reason; '
+          'a place name alone does not establish business use.';
+    } else {
+      reason = 'Confirm whether this journey was business, personal, or mixed.';
     }
 
-    // 2. Late Night Travel Guard
-    if (isAfterHours && !isTradeMerchant) {
-      return ClassifiedTripAssessment(
-        trip: trip,
-        tier: ConfidenceTier.requiresUserDecision,
-        suggestedPurpose: 'Emergency Trade Callout',
-        suggestedBulkyTools: true,
-        decisionReason:
-            'After-hours drive. Please confirm if this was an emergency job or personal journey.',
-      );
-    }
-
-    // 3. Trade Merchant Run (High Confidence: Mon-Fri 6AM-7PM)
-    if (isTradeMerchant) {
-      return ClassifiedTripAssessment(
-        trip: trip,
-        tier: ConfidenceTier.highConfidenceWork,
-        suggestedPurpose: 'Supplies Run',
-        suggestedBulkyTools: false,
-        decisionReason:
-            'Trade supplies procurement at ${poiMatch.merchantName}.',
-      );
-    }
-
-    // 4. Jobsite / Client Site (High Confidence)
-    if (isSiteVisit) {
-      return ClassifiedTripAssessment(
-        trip: trip,
-        tier: ConfidenceTier.highConfidenceWork,
-        suggestedPurpose: isHomeDeparture ? 'Tool Transport' : 'Client Site',
-        suggestedBulkyTools: isHomeDeparture,
-        decisionReason: isHomeDeparture
-            ? 'Home-to-work transit with trade gear.'
-            : 'Contract trade works at client site.',
-      );
-    }
-
-    // 5. Default ambiguous travel
     return ClassifiedTripAssessment(
       trip: trip,
       tier: ConfidenceTier.requiresUserDecision,
-      suggestedPurpose: 'Client Site',
-      suggestedBulkyTools: isHomeDeparture,
-      decisionReason:
-          'Destination not yet cataloged. Quick tap to confirm work vs private.',
+      suggestedPurpose: trip.classification == TripClassification.personal
+          ? 'Personal'
+          : poi != null
+              ? 'Supplies Run'
+              : isSite
+                  ? 'Client Site'
+                  : '',
+      suggestedBulkyTools: false,
+      decisionReason: reason,
     );
   }
 }

@@ -8,12 +8,14 @@ class RoadRouteResult {
   final double straightLineDistanceKm;
   final bool isRoadSnapped;
   final double durationSeconds;
+  final String? geometryPolyline;
 
   const RoadRouteResult({
     required this.roadDistanceKm,
     required this.straightLineDistanceKm,
     required this.isRoadSnapped,
     required this.durationSeconds,
+    this.geometryPolyline,
   });
 
   /// Winding factor (Detour Ratio): Real Road Distance / Straight Line Distance
@@ -39,8 +41,8 @@ class RoadSnapRoutingService {
     required double startLon,
     required double endLat,
     required double endLon,
+    bool includeGeometry = true,
   }) async {
-    // 1. Calculate WGS-84 Geodesic straight-line baseline
     final straightMeters = Wgs84GeodesicEngine.calculateDistanceMeters(
       lat1: startLat,
       lon1: startLon,
@@ -49,10 +51,10 @@ class RoadSnapRoutingService {
     );
     final straightKm = straightMeters / 1000.0;
 
-    // 2. Query OSRM Graph-Theory Road Network
     try {
+      final overviewParam = includeGeometry ? 'full' : 'false';
       final uri = Uri.parse(
-        'https://router.project-osrm.org/route/v1/driving/$startLon,$startLat;$endLon,$endLat?overview=false',
+        'https://router.project-osrm.org/route/v1/driving/$startLon,$startLat;$endLon,$endLat?overview=$overviewParam&geometries=polyline',
       );
 
       final response = await _client.get(
@@ -72,6 +74,7 @@ class RoadSnapRoutingService {
             final roadMeters = (bestRoute['distance'] as num).toDouble();
             final durationSec =
                 (bestRoute['duration'] as num?)?.toDouble() ?? 0.0;
+            final geometry = bestRoute['geometry'] as String?;
 
             final roadKm =
                 double.parse((roadMeters / 1000.0).toStringAsFixed(2));
@@ -82,6 +85,7 @@ class RoadSnapRoutingService {
                   double.parse(straightKm.toStringAsFixed(2)),
               isRoadSnapped: true,
               durationSeconds: durationSec,
+              geometryPolyline: geometry,
             );
           }
         }
@@ -90,12 +94,12 @@ class RoadSnapRoutingService {
       debugPrint('[RoadSnapRoutingService] Offline fallback engaged: $e');
     }
 
-    // 3. Fallback to WGS-84 Straight-line when offline
     return RoadRouteResult(
       roadDistanceKm: double.parse(straightKm.toStringAsFixed(2)),
       straightLineDistanceKm: double.parse(straightKm.toStringAsFixed(2)),
       isRoadSnapped: false,
       durationSeconds: 0.0,
+      geometryPolyline: null,
     );
   }
 }

@@ -169,5 +169,94 @@ void main() {
 
       tempDir.deleteSync(recursive: true);
     });
+
+    test('uploadExpenseReceiptWithHash computes SHA-256 and uploads receipt', () async {
+      final tempDir = Directory.systemTemp.createTempSync('receipt_hash_upload_');
+      final localFile = File('${tempDir.path}/test_upload.webp');
+      const content = 'IMMUTABLE_RECEIPT_BYTES_FOR_ATO_TR9711';
+      localFile.writeAsStringSync(content);
+      final expectedSha = ReceiptStorageService.computeSha256(utf8.encode(content));
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/object/receipts/user-123/exp-999.webp')) {
+          return http.Response('', 200);
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      final service = ReceiptStorageService(
+        supabaseUrl: 'https://test.supabase.co',
+        anonKey: 'test_anon',
+        httpClient: mockClient,
+      );
+
+      final result = await service.uploadExpenseReceiptWithHash(
+        file: localFile,
+        userId: 'user-123',
+        expenseId: 'exp-999',
+      );
+
+      expect(result.remotePath, equals('user-123/exp-999.webp'));
+      expect(result.sha256Hash, equals(expectedSha));
+
+      tempDir.deleteSync(recursive: true);
+    });
+
+    test('downloadAndCacheReceipt with expectedSha256 validates hash and rejects corrupted payload', () async {
+      final tempDir = Directory.systemTemp.createTempSync('tamper_test_');
+      final targetFile = '${tempDir.path}/valid.webp';
+      const validContent = 'LEGIT_RECEIPT_BINARY_DATA';
+      final validHash = ReceiptStorageService.computeSha256(utf8.encode(validContent));
+
+      final mockClient = MockClient((request) async {
+        return http.Response.bytes(utf8.encode('TAMPERED_OR_CORRUPTED_BYTES'), 200);
+      });
+
+      final service = ReceiptStorageService(
+        supabaseUrl: 'https://test.supabase.co',
+        anonKey: 'test_anon',
+        httpClient: mockClient,
+      );
+
+      final cached = await service.downloadAndCacheReceipt(
+        remotePath: 'u1/exp_tampered.webp',
+        targetLocalPath: targetFile,
+        expectedSha256: validHash,
+      );
+
+      expect(cached, isNull, reason: 'Corrupted payload must be rejected when SHA-256 does not match');
+      expect(File(targetFile).existsSync(), isFalse);
+
+      tempDir.deleteSync(recursive: true);
+    });
+
+    test('getCachedReceiptFile uses SHA-256 filename for offline resilience', () {
+      final cacheDir = Directory('/dummy/cache');
+      final hashFile = ReceiptStorageService.getCachedReceiptFile(
+        cacheDirectory: cacheDir,
+        sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        fallbackId: 'exp-123',
+      );
+      expect(hashFile.path, equals('/dummy/cache/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.webp'));
+
+      final fallbackFile = ReceiptStorageService.getCachedReceiptFile(
+        cacheDirectory: cacheDir,
+        sha256Hash: null,
+        fallbackId: 'exp-123',
+      );
+      expect(fallbackFile.path, equals('/dummy/cache/exp-123.webp'));
+    });
+
+    test('getPublicReceiptUrl returns compliant Supabase public URL', () {
+      final service = ReceiptStorageService(
+        supabaseUrl: 'https://abc.supabase.co',
+        bucket: 'receipts',
+      );
+      final url = service.getPublicReceiptUrl(
+        vehicleId: 'veh_hilux_01',
+        expenseId: 'exp_fuel_99',
+      );
+      expect(url, equals('https://abc.supabase.co/storage/v1/object/public/receipts/veh_hilux_01/exp_fuel_99.webp'));
+    });
   });
 }

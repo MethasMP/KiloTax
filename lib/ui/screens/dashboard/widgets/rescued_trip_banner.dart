@@ -5,6 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../data/models/in_flight_trip.dart';
 import '../../../../services/tracking/geocoding_service.dart';
 import '../../../../state/app_state.dart';
+import '../../../../core/theme/app_color.dart';
 
 /// Banner widget displayed at the top of Dashboard when an in-flight trip
 /// has been resurrected after an unexpected iOS app kill or crash.
@@ -80,12 +81,14 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
           backgroundColor: AppColors.deepNavy,
           content: Row(
             children: [
-              const Icon(LucideIcons.checkCircle2, color: AppColors.emerald, size: 18),
+              const Icon(LucideIcons.checkCircle2,
+                  color: AppColors.emerald, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Trip saved to Logbook! +${widget.orphanedTrip.distanceKm.toStringAsFixed(1)} km added for ATO.',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -96,9 +99,42 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
     }
   }
 
-  Future<void> _discardTrip() async {
+  Future<void> _confirmAndDiscardTrip() async {
     HapticFeedback.lightImpact();
-    await widget.appState.discardOrphanedTrip();
+    final bool? confirm = await showAdaptiveDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogCtx) => AlertDialog.adaptive(
+        title: const Text(
+          'Discard Rescued Drive?',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'This will permanently discard this ${widget.orphanedTrip.distanceKm.toStringAsFixed(1)} km drive. You will not be able to claim this tax deduction data for your ATO logbook.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Keep Trip'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.crimson,
+            ),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: const Text(
+              'Discard',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      HapticFeedback.mediumImpact();
+      await widget.appState.discardOrphanedTrip();
+    }
   }
 
   @override
@@ -110,15 +146,15 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB), // Warm amber background
+        color: AppColor.attentionTintSoft, // Warm amber background
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFFDE68A), // Amber highlight border
+          color: AppColor.attentionTintStrong, // Amber highlight border
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD97706).withValues(alpha: 0.12),
+            color: AppColor.attentionStrong.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -136,21 +172,23 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B),
+                        color: AppColor.attentionStrong,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Row(
                         children: [
-                          Icon(LucideIcons.shieldCheck, size: 13, color: Colors.white),
+                          Icon(LucideIcons.shieldCheck,
+                              size: 13, color: Colors.white),
                           SizedBox(width: 5),
                           Text(
                             'RESCUED IN-FLIGHT DRIVE',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 10,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 0.6,
                             ),
                           ),
@@ -162,19 +200,27 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
                       '${trip.distanceKm.toStringAsFixed(1)} km',
                       style: const TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.deepNavy,
                       ),
                     ),
                   ],
                 ),
-                IconButton(
-                  onPressed: _discardTrip,
-                  icon: const Icon(LucideIcons.x, size: 16, color: AppColors.muted),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 16,
-                  tooltip: 'Discard',
+                Semantics(
+                  button: true,
+                  label: 'Dismiss rescued trip banner',
+                  child: IconButton(
+                    onPressed: _confirmAndDiscardTrip,
+                    icon: const Icon(LucideIcons.x,
+                        size: 18, color: AppColors.muted),
+                    padding: const EdgeInsets.all(12),
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    splashRadius: 24,
+                    tooltip: 'Discard',
+                  ),
                 ),
               ],
             ),
@@ -185,7 +231,7 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
               'Your previous drive was interrupted when the app closed. KiloTax protected your tax deduction data.',
               style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF92400E),
+                color: AppColor.attentionInk,
                 height: 1.35,
                 fontWeight: FontWeight.w500,
               ),
@@ -198,7 +244,7 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFEF3C7)),
+                border: Border.all(color: AppColor.attentionTint),
               ),
               child: Row(
                 children: [
@@ -208,11 +254,14 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
                       children: [
                         Row(
                           children: [
-                            const Icon(LucideIcons.mapPin, size: 12, color: AppColors.muted),
+                            const Icon(LucideIcons.mapPin,
+                                size: 12, color: AppColors.muted),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                _isResolvingAddresses ? 'Resolving route...' : '$_startAddress → $_endAddress',
+                                _isResolvingAddresses
+                                    ? 'Resolving route...'
+                                    : '$_startAddress → $_endAddress',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -229,7 +278,8 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.emerald.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -238,7 +288,7 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
                       '+\$${taxDeductionAud.toStringAsFixed(2)} Tax Claim',
                       style: const TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.emerald,
                       ),
                     ),
@@ -252,58 +302,75 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isClaiming ? null : _claimTrip,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.deepNavy,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  child: Semantics(
+                    button: true,
+                    label: 'Save rescued trip to ATO Logbook',
+                    child: ElevatedButton(
+                      onPressed: _isClaiming ? null : _claimTrip,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.deepNavy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: _isClaiming
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(LucideIcons.fileCheck, size: 14),
-                              SizedBox(width: 6),
-                              Text(
-                                'Save to ATO Logbook',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                      child: _isClaiming
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
-                            ],
-                          ),
+                            )
+                          : const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.fileCheck, size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Save to ATO Logbook',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: _discardTrip,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF92400E),
-                    side: const BorderSide(color: Color(0xFFFDE68A)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Semantics(
+                  button: true,
+                  label: 'Discard rescued trip',
+                  child: OutlinedButton(
+                    onPressed: _isClaiming ? null : _confirmAndDiscardTrip,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColor.attentionInk,
+                      side:
+                          const BorderSide(color: AppColor.attentionTintStrong),
+                      minimumSize: const Size(64, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  ),
-                  child: const Text(
-                    'Discard',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                    child: const Text(
+                      'Discard',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

@@ -80,7 +80,7 @@ void main() {
     });
 
     test(
-        'Audit Dossier contains Odometer Photo Verification status and masks private purpose',
+        'Audit Dossier contains saved Odometer Photo reference status and masks private purpose',
         () {
       final summary = TaxSummary(
         totalKm: 40.0,
@@ -106,7 +106,7 @@ void main() {
 
       expect(dossier, contains('• Day 1 Odometer Photo:'));
       expect(dossier, contains('• Day 84 Odometer Photo:'));
-      expect(dossier, contains('Verified'));
+      expect(dossier, contains('Reference saved, file not checked'));
       expect(dossier, contains('Private Travel'));
     });
   });

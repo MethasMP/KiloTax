@@ -10,16 +10,28 @@ void main() {
       final fy = engine.forDate(DateTime(2026, 9, 13));
       expect(fy.label, equals('FY 2026–27'));
       expect(fy.startDate, equals(DateTime(2026, 7, 1)));
-      expect(fy.expenseCutoffDate, equals(DateTime(2027, 6, 30, 23, 59, 59)));
+      expect(fy.expenseCutoffDate,
+          equals(DateTime(2027, 6, 30, 23, 59, 59, 999, 999)));
       expect(fy.lodgmentOpenDate, equals(DateTime(2027, 7, 1)));
-      expect(fy.selfLodgeDeadline, equals(DateTime(2027, 10, 31, 23, 59, 59)));
-      expect(fy.taxAgentDeadline, equals(DateTime(2028, 5, 15, 23, 59, 59)));
+      expect(fy.selfLodgeDeadline,
+          equals(DateTime(2027, 10, 31, 23, 59, 59, 999, 999)));
+      expect(fy.taxAgentDeadline,
+          equals(DateTime(2028, 5, 15, 23, 59, 59, 999, 999)));
     });
 
     test('January belongs to current FY ending in June', () {
       // 15 Jan 2027 belongs to FY 2026-27 (which started 1 Jul 2026)
       final fy = engine.forDate(DateTime(2027, 1, 15));
       expect(fy.label, equals('FY 2026–27'));
+    });
+
+    test('30 June 23:59:59.999999 boundary inclusion check', () {
+      final fy = engine.forDate(DateTime(2026, 9, 13));
+      final lastMicrosecond = DateTime(2027, 6, 30, 23, 59, 59, 999, 999);
+      final nextFiscalYearStart = DateTime(2027, 7, 1, 0, 0, 0);
+
+      expect(fy.containsExpenseDate(lastMicrosecond), isTrue);
+      expect(fy.containsExpenseDate(nextFiscalYearStart), isFalse);
     });
   });
 

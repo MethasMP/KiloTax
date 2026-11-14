@@ -32,15 +32,20 @@ class TaxEmailDispatchService {
     bool isHTML = false,
     Rect? sharePositionOrigin,
   }) async {
-    // 1. Validate attachments exist on disk
     final validAttachmentPaths = <String>[];
     for (final path in attachmentPaths) {
-      if (File(path).existsSync()) {
+      try {
+        if (!await File(path).exists() || await File(path).length() == 0) {
+          return EmailDispatchResult.failed;
+        }
         validAttachmentPaths.add(path);
+      } on FileSystemException {
+        return EmailDispatchResult.failed;
       }
     }
 
-    // 2. Try Tier 1: Native Mail Composer (MFMailComposeViewController / Android Intent)
+    if (validAttachmentPaths.isEmpty) return EmailDispatchResult.failed;
+
     try {
       final email = Email(
         body: body,
@@ -66,7 +71,6 @@ class TaxEmailDispatchService {
           '[TaxEmailDispatchService] Unexpected error on native email sender: $e');
     }
 
-    // 3. Tier 2 Fallback: System Share Sheet via SharePlus (with iPad safe origin)
     try {
       final xFiles = validAttachmentPaths.map((p) => XFile(p)).toList();
       await SharePlus.instance.share(

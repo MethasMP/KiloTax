@@ -5,10 +5,13 @@ import '../storage/receipt_image_optimization_service.dart';
 
 class EvidenceVaultService {
   final ReceiptImageOptimizationService _optimizer;
+  final Directory? _vaultDirectory;
 
   EvidenceVaultService({
     ReceiptImageOptimizationService? optimizer,
-  }) : _optimizer = optimizer ?? ReceiptImageOptimizationService();
+    Directory? vaultDirectory,
+  })  : _optimizer = optimizer ?? ReceiptImageOptimizationService(),
+        _vaultDirectory = vaultDirectory;
 
   /// Processes raw captured photo:
   /// 1. Optimizes/compresses image first to eliminate local bloat
@@ -23,13 +26,11 @@ class EvidenceVaultService {
     Map<String, dynamic>? watermarkMetadata,
   }) async {
     try {
-      // 1. Compress & optimize first (Red Flag 2 resolved)
       final optResult = await _optimizer.optimizeReceipt(rawFile);
       final finalFile = optResult.file;
       final hash = optResult.sha256Hash;
       final bytes = await finalFile.readAsBytes();
 
-      // 3. Offline Anti-Fraud Check: Disallow identical image reuse within vehicle evidence
       final isDuplicate = existingEvidence.any((e) => e.imageSha256 == hash);
       if (isDuplicate) {
         return (
@@ -76,7 +77,7 @@ class EvidenceVaultService {
   /// Purges all local cached images and documents in the evidence vault
   Future<void> clearLocalVault() async {
     try {
-      final vaultDir = await _optimizer.getEvidenceVaultDirectory();
+      final vaultDir = _vaultDirectory ?? await _optimizer.getEvidenceVaultDirectory();
       if (await vaultDir.exists()) {
         final entities = vaultDir.listSync(recursive: true);
         for (final entity in entities) {
@@ -94,4 +95,3 @@ class EvidenceVaultService {
     }
   }
 }
-

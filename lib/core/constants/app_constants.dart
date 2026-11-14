@@ -1,64 +1,36 @@
 import 'package:flutter/material.dart';
+import '../theme/app_color.dart';
 
+/// Compatibility names backed by the shared theme palette.
 class AppColors {
-  // Precision Utility Core Palette (Pacific Cyber-Navy & Electric Ultramarine Standard)
-  static const Color deepNavy = Color(
-      0xFF0B132B); // Deep Cyber-Navy 950: Rich oceanic foundation, zero flat pitch black
-  static const Color ink = Color(
-      0xFF090E1A); // High-contrast crisp Obsidian Ink (WCAG AAA 15:1)
-  static const Color background = Color(
-      0xFFF4F6FB); // Ice Slate Canvas: Anti-glare outdoor resilience
-  static const Color card = Color(0xFFFFFFFF); // Pure white card surface
-  static const Color border = Color(
-      0xFFE2E8F0); // Hairline boundary Slate 200
-  static const Color borderSubtle = Color(
-      0xFFEDF2F7); // Subtle 0.5px internal separator
-  static const Color muted = Color(
-      0xFF4B5565); // Slate 600: High-readability secondary labels (WCAG AAA)
-
-  // Primary Brand & Electric Accents (Linear / Stripe fintech luxury)
-  static const Color brandPrimary = Color(
-      0xFF1E40AF); // Ultramarine 800: Deep tactile primary CTA
-  static const Color brandElectric = Color(
-      0xFF2563EB); // Electric Blue 600: Dynamic active states, telemetry pulse
-  static const Color brandElectricLight = Color(
-      0xFFEFF6FF); // Electric Blue 50: Pill highlights
-  static final Color brandGlow = const Color(
-      0xFF2563EB).withValues(alpha: 0.28); // Ambient CTA drop aura
-  static final Color anchorGlow = const Color(
-      0xFF0B132B).withValues(alpha: 0.12); // Floating island drop aura
-
-  // Status & Utility Accents (Contextual Value Only)
-  static const Color amber = Color(
-      0xFFD97706); // Amber 600: Action required, needs attention
-  static const Color amberLight = Color(0xFFFEF3C7); // Amber 100
-  static const Color amberDark = Color(
-      0xFFB45309); // Amber 700: High-contrast progress bars
-
-  static const Color emerald = Color(
-      0xFF059669); // Emerald 600: Tax-ready, audit verified, cash savings
-  static const Color emeraldLight = Color(0xFFECFDF5); // Emerald 50
-
-  static const Color crimson = Color(
-      0xFFDC2626); // Red 600: Critical issues, duplicates
-  static const Color crimsonLight = Color(0xFFFEF2F2); // Red 50
-
-  static const Color workBlue = Color(
-      0xFF1E40AF); // Ultramarine Primary
-  static const Color workBlueLight = Color(0xFFEFF6FF);
-
-  // Dark Theme / HUD Surface Accents (Slate High-Contrast)
-  static const Color darkSurface = Color(0xFF1E293B); // Slate 800
-  static const Color darkBorder = Color(0xFF334155); // Slate 700
-  static const Color textSecondaryDark = Color(0xFF94A3B8); // Slate 400
-
-  // Telemetry Ambient States
-  static const Color telemetryReady = Color(
-      0xFF2563EB); // Blue 600: Armed and standing by
-  static const Color telemetryReadyLight = Color(0xFFEFF6FF); // Blue 50
-  static const Color telemetryLive = Color(
-      0xFF059669); // Emerald 600: Live tracking
-  static const Color telemetryLiveLight = Color(0xFFECFDF5);
+  static const Color deepNavy = AppColor.surfaceNavy;
+  static const Color ink = AppColor.ink;
+  static const Color background = AppColor.canvas;
+  static const Color card = AppColor.surface;
+  static const Color border = AppColor.line;
+  static const Color borderSubtle = AppColor.hairline;
+  static const Color muted = AppColor.inkMuted;
+  static const Color brandPrimary = AppColor.brand;
+  static const Color brandElectric = AppColor.brandBright;
+  static const Color brandElectricLight = AppColor.brandTint;
+  static const Color amber = AppColor.attention;
+  static const Color amberLight = AppColor.attentionTint;
+  static const Color amberDark = AppColor.attentionStrong;
+  static const Color emerald = AppColor.positive;
+  static const Color emeraldLight = AppColor.positiveTint;
+  static const Color crimson = AppColor.critical;
+  static const Color crimsonLight = AppColor.criticalTint;
+  static const Color workBlue = AppColor.surfaceNavy;
+  static const Color workBlueLight = AppColor.surfaceMuted;
+  static const Color darkSurface = AppColor.navyRaised;
+  static const Color darkBorder = AppColor.navyLine;
+  static const Color textSecondaryDark = AppColor.navy300;
+  static const Color telemetryReady = AppColor.brand;
+  static const Color telemetryReadyLight = AppColor.brandTint;
+  static const Color telemetryLive = AppColor.positive;
+  static const Color telemetryLiveLight = AppColor.positiveTint;
+  static final Color brandGlow = AppColor.brand.withValues(alpha: 0.12);
+  static final Color anchorGlow = AppColor.surfaceNavy.withValues(alpha: 0.08);
 }
 
 /// Versioned ATO Tax Legislation Rules (Income Year Aligned)

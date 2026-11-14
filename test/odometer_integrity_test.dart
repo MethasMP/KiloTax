@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/data/models/trip.dart';
+import 'package:kilotax/data/models/annual_odometer.dart';
+import 'package:kilotax/services/tax/ato_tax_period_engine.dart';
 import 'package:kilotax/state/app_state.dart';
 
 void main() {
@@ -124,12 +126,12 @@ void main() {
       expect(appState.hasVehicle, true);
       expect(appState.trips.length, 1);
 
-      // Sign out while keeping local cache on trusted device
+      // Sign out clears in-memory state (PR-06 memory cleanup / OWASP session zeroization)
       await appState.signOut(wipeLocalData: false);
 
       expect(appState.isAuthenticated, false);
-      expect(appState.hasVehicle, true); // preserved
-      expect(appState.trips.length, 1); // preserved
+      expect(appState.hasVehicle, false);
+      expect(appState.trips.length, 0);
     });
 
     test('Sign out with wipeLocalData=true purges local data', () async {
@@ -269,7 +271,63 @@ void main() {
       expect(appState.trips.length, 2);
       expect(appState.trips.last.classification, TripClassification.personal);
       expect(appState.trips.last.distanceKm, 30.0);
+      expect(appState.trips.last.purpose, 'Weekend personal driving');
       expect(appState.isOdometerChainGapless, true);
+
+      // Now bridge a subsequent 25km gap as Business / Work
+      appState.fillOdometerGap(
+        gapEndOdometer: 100105.0,
+        isBusiness: true,
+        purpose: 'Client site emergency callout',
+      );
+
+      expect(appState.currentOdometer, 100105.0);
+      expect(appState.trips.length, 3);
+      expect(appState.trips.last.classification, TripClassification.business);
+      expect(appState.trips.last.distanceKm, 25.0);
+      expect(appState.trips.last.purpose, 'Client site emergency callout');
+      expect(appState.isOdometerChainGapless, true);
+    });
+
+    test('AnnualVehicleOdometer (s 28-125) recording and requirement checks', () {
+      // Vehicle in logbook mode with start date set
+      final now = DateTime.now();
+      expect(appState.primaryVehicle, isNotNull);
+
+      // Vehicle started logbook 1 year ago
+      appState.startLogbookPeriod(
+        startDate: now.subtract(const Duration(days: 365)),
+        startingOdometer: 95000.0,
+      );
+
+      // June date check (near EOFY) -> required if no record exists
+      final juneDate = DateTime(now.year, 6, 25);
+      expect(appState.isAnnualOdometerRequired(date: juneDate), true);
+
+      // Normal non-EOFY month check (e.g., March) -> false
+      final marchDate = DateTime(now.year, 3, 15);
+      expect(appState.isAnnualOdometerRequired(date: marchDate), false);
+
+      final vehId = appState.primaryVehicle!.id;
+      // Record annual odometer closing reading
+      final periodEngine = const AtoTaxPeriodEngine();
+      final fy = periodEngine.forDate(juneDate);
+      final record = AnnualVehicleOdometer(
+        id: 'annual_${vehId}_${fy.shortLabel}',
+        vehicleId: vehId,
+        financialYear: fy.shortLabel,
+        openingDate: DateTime(fy.startYear, 7, 1),
+        openingOdometer: 95000.0,
+        closingDate: DateTime(fy.endYear, 6, 30),
+        closingOdometer: 100105.0,
+      );
+      appState.recordAnnualOdometer(record);
+
+      expect(appState.annualOdometers.length, 1);
+      expect(appState.getAnnualOdometer(vehId, fy.shortLabel)?.closingOdometer, 100105.0);
+
+      // Now with closing recorded, requirement is satisfied
+      expect(appState.isAnnualOdometerRequired(date: juneDate), false);
     });
 
     test(
@@ -284,7 +342,7 @@ void main() {
       );
 
       expect(isCompliant, false);
-      expect(warning, contains('heavy or bulky equipment'));
+      expect(warning, contains('heavy trade tools'));
 
       // Home to site WITH bulky tools -> compliant
       final (isCompliantWithTools, warningTools) =

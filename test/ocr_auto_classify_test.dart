@@ -39,6 +39,7 @@ void main() {
       expect(find.text('142.50'), findsOneWidget);
 
       // 2. Open Category Picker and verify 3 Core Pillars are rendered
+      await tester.ensureVisible(find.text('Fuel & Oil').first);
       await tester.tap(find.text('Fuel & Oil').first);
       await tester.pumpAndSettle();
 

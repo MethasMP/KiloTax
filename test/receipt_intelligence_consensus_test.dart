@@ -97,7 +97,7 @@ EFTPOS                \$105.00
       expect(result.merchant, startsWith('7-Eleven'));
     });
 
-    test('5. ReceiptAuditService tags gst_split_verified into audit trail',
+    test('5. ReceiptAuditService preserves GST observations without claiming verification',
         () async {
       final ocrResult = ReceiptOcrResult(
         merchant: 'Ampol',
@@ -119,7 +119,8 @@ EFTPOS                \$105.00
       );
 
       expect(auditTrail.ocrGstAmount, equals(10.00));
-      expect(auditTrail.ocrEvidence, contains('gst_split_verified'));
+      expect(auditTrail.ocrEvidence, contains('gst_invariant_match'));
+      expect(auditTrail.reviewStatus, ReceiptReviewStatus.needsReview);
     });
   });
 }

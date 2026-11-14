@@ -97,7 +97,7 @@ void main() {
       );
 
       expect(compliant, false);
-      expect(warning, contains('heavy or bulky equipment'));
+      expect(warning, contains('heavy trade tools'));
     });
   });
 }

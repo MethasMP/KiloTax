@@ -1,6 +1,11 @@
+import '../../../core/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/app_space.dart';
+import 'widgets/logbook_design.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../state/app_state.dart';
@@ -29,10 +34,9 @@ class _LogbookSetupScreenState extends State<LogbookSetupScreen> {
   @override
   void initState() {
     super.initState();
-    final initialOdo =
-        widget.appState.primaryVehicle?.initialOdometer ?? 82421.0;
-    _odometerController =
-        TextEditingController(text: initialOdo.toStringAsFixed(0));
+    final initialOdo = widget.appState.primaryVehicle?.initialOdometer ?? 0.0;
+    _odometerController = TextEditingController(
+        text: initialOdo > 0 ? initialOdo.toStringAsFixed(0) : '');
     _startDate = DateTime.now();
   }
 
@@ -69,8 +73,7 @@ class _LogbookSetupScreenState extends State<LogbookSetupScreen> {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.emerald,
-        content: Text(
-            '✓ 12-Week Logbook activated! Valid until ${DateTime.now().year + 5}.'),
+        content: Text('Logbook started. Review each trip as you go.'),
       ),
     );
   }
@@ -78,208 +81,97 @@ class _LogbookSetupScreenState extends State<LogbookSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final vehicle = widget.appState.primaryVehicle;
-    final vehicleName =
-        vehicle != null ? '${vehicle.make} ${vehicle.model}' : 'Toyota HiAce';
-    final rego = vehicle?.regoPlate ?? 'TRADIE-1';
+    final vehicleName = vehicle != null
+        ? '${vehicle.make} ${vehicle.model}'
+        : 'Choose a vehicle';
+    final rego = vehicle?.regoPlate ?? 'No vehicle selected';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Set Up Your Logbook',
-            style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
-                color: AppColors.ink)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.ink, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Vehicle Summary Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
+      backgroundColor: AppColor.canvas,
+      appBar: logbookAppBar(context, 'Set up logbook'),
+      bottomNavigationBar: LogbookFooter(
+          label: 'Start 12-week logbook',
+          onPressed: vehicle == null ? null : _confirmStartLogbook),
+      body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(S.xl),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.workBlueLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(LucideIcons.truck,
-                        color: AppColors.workBlue, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
+                  const Text('Start your logbook', style: AppType.title),
+                  const SizedBox(height: S.md),
+                  const Text(
+                      'Start with your dashboard reading. Then keep a record of both business and personal trips.',
+                      style: AppType.body),
+                  const SizedBox(height: S.xxl),
+                  LogbookPanel(
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Container(
+                            padding: const EdgeInsets.all(S.md),
+                            decoration: BoxDecoration(
+                                color: AppColor.brandTint,
+                                borderRadius: R.controlR),
+                            child: const Icon(AppIcons.vehicle,
+                                color: AppColor.ink,
+                                size: AppIconSize.navigation)),
+                        const SizedBox(width: S.md),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              const Text('YOUR VEHICLE',
+                                  style: AppType.eyebrow),
+                              const SizedBox(height: S.xs),
+                              Text(vehicleName, style: AppType.cardTitle),
+                              const SizedBox(height: S.xs),
+                              Text(rego, style: AppType.secondary),
+                            ])),
+                      ])),
+                  const SizedBox(height: S.xxl),
+                  const LogbookSection('Starting odometer',
+                      subtitle: 'Use the reading currently on your dashboard.'),
+                  TextField(
+                      controller: _odometerController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      style: AppType.titleSmall
+                          .copyWith(fontFeatures: AppType.tabular),
+                      decoration: logbookInput('Odometer reading',
+                          hint: 'e.g. 42,150', suffix: 'km')),
+                  const SizedBox(height: S.xxl),
+                  const LogbookSection('Your 12-week period'),
+                  LogbookPanel(
+                      child: Column(children: [
+                    _PeriodRow(
+                        label: 'Starts',
+                        value: Formatters.date(_startDate),
+                        icon: LucideIcons.calendar),
+                    const Divider(height: S.xxxl, color: AppColor.hairline),
+                    _PeriodRow(
+                        label: 'Ends',
+                        value: Formatters.date(_endDate),
+                        icon: LucideIcons.flag),
+                  ])),
+                  const SizedBox(height: S.lg),
+                  const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('VEHICLE ASSIGNED',
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.muted,
-                                letterSpacing: 0.5)),
-                        Text(vehicleName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 16,
-                                color: AppColors.ink)),
-                        Text(rego,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.muted)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.emeraldLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('ATO Compliant',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.emerald)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Starting Odometer Input
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Starting Odometer Reading',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: AppColors.ink)),
-                  const SizedBox(height: 4),
-                  const Text(
-                      'Record the odometer currently showing on your dashboard.',
-                      style: TextStyle(fontSize: 12, color: AppColors.muted)),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _odometerController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.ink),
-                    decoration: InputDecoration(
-                      suffixText: 'km',
-                      suffixStyle: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          color: AppColors.muted),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.border)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Statutory Period Specification
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  const _PeriodRow(
-                    label: 'Logbook Period',
-                    value: '12 Continuous Weeks',
-                    caption: 'ATO minimum statutory requirement',
-                    icon: LucideIcons.calendar,
-                  ),
-                  const Divider(height: 24, color: AppColors.border),
-                  _PeriodRow(
-                    label: 'Starts',
-                    value: Formatters.date(_startDate),
-                    caption: 'Beginning of representative driving',
-                    icon: LucideIcons.playCircle,
-                  ),
-                  const Divider(height: 24, color: AppColors.border),
-                  _PeriodRow(
-                    label: 'Ends',
-                    value: Formatters.date(_endDate),
-                    caption: 'Continuous 84 days period completion',
-                    icon: LucideIcons.flag,
-                  ),
-                  const Divider(height: 24, color: AppColors.border),
-                  _PeriodRow(
-                    label: 'Statutory Validity',
-                    value: '5 Years (until ${DateTime.now().year + 5})',
-                    caption: 'Can be re-used if pattern stays similar',
-                    icon: LucideIcons.shieldCheck,
-                    valueColor: AppColors.emerald,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // Start Logbook CTA
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.workBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
-              onPressed: _confirmStartLogbook,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.compass, size: 20),
-                  SizedBox(width: 8),
-                  Text('Start 12-Week Logbook',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                        Icon(AppIcons.info,
+                            size: AppIconSize.control,
+                            color: AppColor.inkMuted),
+                        SizedBox(width: S.sm),
+                        Expanded(
+                            child: Text(
+                                'Choose a period that reflects your usual driving pattern. You can review your progress at any time.',
+                                style: AppType.secondary)),
+                      ]),
+                  const SizedBox(height: S.xxl),
+                ]),
+          )),
     );
   }
 }
@@ -287,46 +179,20 @@ class _LogbookSetupScreenState extends State<LogbookSetupScreen> {
 class _PeriodRow extends StatelessWidget {
   final String label;
   final String value;
-  final String caption;
   final IconData icon;
-  final Color? valueColor;
-
-  const _PeriodRow({
-    required this.label,
-    required this.value,
-    required this.caption,
-    required this.icon,
-    this.valueColor,
-  });
-
+  const _PeriodRow(
+      {required this.label, required this.value, required this.icon});
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppColors.muted),
-        const SizedBox(width: 12),
+  Widget build(BuildContext context) =>
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, size: AppIconSize.control, color: AppColor.inkMuted),
+        const SizedBox(width: S.md),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: AppColors.ink)),
-              Text(caption,
-                  style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-            ],
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 13.5,
-              color: valueColor ?? AppColors.ink),
-        ),
-      ],
-    );
-  }
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: AppType.secondary),
+          const SizedBox(height: S.xs),
+          Text(value, style: AppType.bodyStrong),
+        ])),
+      ]);
 }
