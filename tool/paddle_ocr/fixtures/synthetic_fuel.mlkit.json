@@ -1,0 +1,140 @@
+{
+  "engine": "mlkit",
+  "version": "google_mlkit_text_recognition/0.17.1;native-version-unreported;reading-order/1",
+  "text": "SYNTHETIC FUEL SHOP\nTAX INVOICE\nABN 12 345 678 901\n10/11/2026\nUnleaded fuel  $60.50\nGST included  $5.50\nTOTAL AUD  $60.50\nPAID VISA  $60.50",
+  "extractedAt": "2026-11-14T10:03:53.182626Z",
+  "blocks": [
+    {
+      "page": 1,
+      "text": "SYNTHETIC FUEL SHOP",
+      "bounds": [
+        58.0,
+        66.0,
+        533.0,
+        99.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "TAX INVOICE",
+      "bounds": [
+        56.0,
+        164.0,
+        324.0,
+        201.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "ABN 12 345 678 901",
+      "bounds": [
+        56.0,
+        267.0,
+        506.0,
+        298.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "10/11/2026",
+      "bounds": [
+        58.0,
+        362.0,
+        306.0,
+        404.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "Unleaded fuel",
+      "bounds": [
+        58.0,
+        467.0,
+        380.0,
+        498.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "GST included",
+      "bounds": [
+        57.0,
+        567.0,
+        353.0,
+        598.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "TOTAL AUD",
+      "bounds": [
+        56.0,
+        666.0,
+        279.0,
+        699.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "PAID VISA",
+      "bounds": [
+        58.0,
+        763.0,
+        280.0,
+        803.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "$60.50",
+      "bounds": [
+        438.0,
+        465.0,
+        584.0,
+        504.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "$5.50",
+      "bounds": [
+        463.0,
+        564.0,
+        583.0,
+        605.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "$60.50",
+      "bounds": [
+        438.0,
+        667.0,
+        583.0,
+        703.0
+      ],
+      "score": null
+    },
+    {
+      "page": 1,
+      "text": "$60.50",
+      "bounds": [
+        436.0,
+        757.0,
+        584.0,
+        808.0
+      ],
+      "score": null
+    }
+  ]
+}
