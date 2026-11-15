@@ -147,8 +147,7 @@ class _EvidenceReviewScreenState extends State<EvidenceReviewScreen> {
     setState(() => _sharing = true);
     widget.appState.selectVehicle(_vehicle!.id);
     try {
-      await TaxPackShareHelper.shareTaxPack(context, widget.appState,
-          allowDraftWithGaps: true);
+      await TaxPackShareHelper.shareTaxPack(context, widget.appState);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -305,10 +304,8 @@ class _EvidenceReviewScreenState extends State<EvidenceReviewScreen> {
                   : _share,
               icon: const Icon(Icons.ios_share),
               label: Text(_sharing
-                  ? 'Preparing records…'
-                  : report.isComplete
-                      ? 'Share records'
-                      : 'Share draft records'),
+                  ? 'Preparing accountant pack…'
+                  : 'Send to accountant'),
             ),
         ],
       ),

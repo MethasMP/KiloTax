@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../state/app_state.dart';
+import '../../../../services/engine/tax_pack_share_helper.dart';
 import '../../evidence/evidence_review_screen.dart';
 
 class TaxReadinessCard extends StatelessWidget {
   final AppState appState;
   final bool embedded;
+  final bool showAction;
 
   const TaxReadinessCard(
-      {super.key, required this.appState, this.embedded = false});
+      {super.key,
+      required this.appState,
+      this.embedded = false,
+      this.showAction = true});
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +42,8 @@ class TaxReadinessCard extends StatelessWidget {
     final detail = !report.hasRecords
         ? 'Add your trips and receipts. We’ll help you check the details.'
         : needsReview
-            ? 'Check the missing details before sharing with your accountant.'
-            : 'Check your records and receipt files, then share with your accountant.';
+            ? 'These details stay visible in your accountant pack for review.'
+            : 'Your summary, spreadsheet and available receipts are prepared together.';
 
     return Container(
       padding: EdgeInsets.all(embedded ? 0 : 16),
@@ -89,29 +94,32 @@ class TaxReadinessCard extends StatelessWidget {
           Text(detail,
               style: const TextStyle(
                   fontSize: 14, height: 1.45, color: AppColor.inkMuted)),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColor.brand,
-                minimumSize: const Size(48, 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                textStyle: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+          if (showAction) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColor.brand,
+                  minimumSize: const Size(48, 48),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  textStyle: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                onPressed: () => needsReview || !report.hasRecords
+                    ? EvidenceReviewScreen.show(context, appState: appState)
+                    : TaxPackShareHelper.shareTaxPack(context, appState),
+                child: Text(needsReview
+                    ? 'Review missing details'
+                    : report.hasRecords
+                        ? 'Send to accountant'
+                        : 'Open evidence checklist'),
               ),
-              onPressed: () =>
-                  EvidenceReviewScreen.show(context, appState: appState),
-              child: Text(needsReview
-                  ? 'Review missing details'
-                  : report.hasRecords
-                      ? 'Review & share'
-                      : 'Open evidence checklist'),
             ),
-          ),
+          ],
         ],
       ),
     );

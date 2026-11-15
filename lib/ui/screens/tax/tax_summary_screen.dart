@@ -13,7 +13,7 @@ import '../../../state/app_state.dart';
 import '../compliance/compliance_center_screen.dart';
 import '../trips/trip_detection_screen.dart';
 import '../trips/trip_quick_resolve_sheet.dart';
-import '../evidence/evidence_review_screen.dart';
+import '../../../services/engine/tax_pack_share_helper.dart';
 import '../workflow/workflow_screen.dart';
 import '../../../core/theme/app_color.dart';
 import '../dashboard/widgets/tax_readiness_card.dart';
@@ -26,7 +26,9 @@ import '../home/widgets/trips_ledger_tab.dart';
 /// 3. Genuine Audit-Readiness: Real legal substantiation steps with zero false 100% inflation.
 /// 4. 1-Tap Accountant Flywheel: Fast export and sharing designed for both Tradies & Tax Agents.
 class TaxSummaryScreen extends StatelessWidget {
-  const TaxSummaryScreen({super.key});
+  final Future<void> Function(BuildContext, AppState) onSend;
+  const TaxSummaryScreen(
+      {super.key, this.onSend = TaxPackShareHelper.shareTaxPack});
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +50,15 @@ class TaxSummaryScreen extends StatelessWidget {
           child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: FilledButton.icon(
-                onPressed: () =>
-                    EvidenceReviewScreen.show(context, appState: appState),
+                onPressed: appState.evidenceReview.canExport
+                    ? () => onSend(context, appState)
+                    : null,
                 style: FilledButton.styleFrom(
                     backgroundColor: AppColor.ink,
                     foregroundColor: AppColor.onNavy,
                     minimumSize: const Size(48, 48)),
                 icon: const Icon(Icons.ios_share, size: 20),
-                label: const Text('Review & share'),
+                label: const Text('Send to accountant'),
               ))),
       body: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -69,7 +72,9 @@ class TaxSummaryScreen extends StatelessWidget {
                 isCpk: isCpk,
                 primaryVehicle: vehicle),
             const SizedBox(height: 20),
-            TaxReadinessCard(appState: appState),
+            TaxReadinessCard(
+                appState: appState,
+                showAction: appState.evidenceReview.items.isNotEmpty),
             const SizedBox(height: 20),
             OutlinedButton.icon(
                 onPressed: () => WorkflowScreen.show(context, appState),
@@ -79,7 +84,7 @@ class TaxSummaryScreen extends StatelessWidget {
             const Text('Before sharing', style: AppType.section),
             const SizedBox(height: 8),
             const Text(
-                'Review your records and available receipt files. The sharing flow lets you check the pack before sending it.',
+                'We collect your summary, spreadsheet and available receipts into one accountant pack. You can check it before sending.',
                 style: AppType.body),
             const SizedBox(height: 16),
             ExpansionTile(

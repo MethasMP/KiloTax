@@ -131,6 +131,12 @@ class AppState extends ChangeNotifier {
       _authService.currentAccessToken ?? _currentUser?.accessToken;
   bool get isGuestMode => _isGuestMode;
 
+  bool isAccountantExportSessionCurrent(String? owner, String? token) =>
+      !_disposed &&
+      !_accountTransitionInProgress &&
+      _currentUser?.id == owner &&
+      (owner == null || currentAccessToken == token);
+
   Future<void> setGuestMode(bool isGuest) async {
     _isGuestMode = isGuest;
     await _storageService?.setGuestMode(isGuest);

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:archive/archive.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
@@ -15,6 +16,19 @@ import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/services/receipts/receipt_inbox_service.dart';
 import 'package:kilotax/services/engine/tax_pack_share_helper.dart';
 import 'package:kilotax/state/app_state.dart';
+import 'package:kilotax/services/auth/supabase_auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
+
+class AccountantTestAuth extends SupabaseAuthService {
+  final events = StreamController<AuthState>.broadcast();
+  @override
+  AuthUser? getCurrentUser() => const AuthUser(
+      id: 'owner-A', email: '', provider: 'test', accessToken: 'test-token');
+  @override
+  String? get currentAccessToken => 'test-token';
+  @override
+  Stream<AuthState> get onAuthStateChange => events.stream;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -78,8 +92,9 @@ void main() {
     await documents.delete(recursive: true);
   });
 
-  Future<AppState> fixture({bool gap = false}) async {
-    final state = AppState();
+  Future<AppState> fixture({bool gap = false, AccountantTestAuth? auth}) async {
+    final state = AppState(authService: auth);
+    if (auth != null) await state.init();
     await state.addVehicle(Vehicle(
       id: 'v1',
       make: 'Toyota',
@@ -160,16 +175,19 @@ void main() {
             body: Builder(
       builder: (context) => FilledButton(
         onPressed: () {
-          operation = TaxPackShareHelper.shareTaxPack(context, state);
+          operation = Future.wait([
+            TaxPackShareHelper.shareTaxPack(context, state),
+            TaxPackShareHelper.shareTaxPack(context, state)
+          ]).then((_) {});
         },
         child: const Text('Prepare'),
       ),
     ))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Draft tax pack ready'));
+    await waitFor(tester, find.text('Ready for your accountant'));
     expect(sentNames, isEmpty);
     expect(find.text('Preview report'), findsOneWidget);
-    expect(find.textContaining('Open Report.pdf'), findsOneWidget);
+    expect(find.textContaining('Your summary, spreadsheet'), findsOneWidget);
     await tester.tap(find.text('Preview report'));
     await waitFor(tester, find.text('Report preview'));
     await tester.pumpAndSettle();
@@ -180,7 +198,7 @@ void main() {
     expect(preview.allowPrinting, isFalse);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Share draft ZIP'));
+    await tester.tap(find.text('Send to accountant'));
     await tester.pumpAndSettle();
     await finish(tester, operation!);
     await tester.pumpAndSettle();
@@ -211,7 +229,7 @@ void main() {
       ),
     ))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Draft tax pack ready'));
+    await waitFor(tester, find.text('Ready for your accountant'));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     await finish(tester, operation!);
@@ -219,7 +237,8 @@ void main() {
     expect(await tester.runAsync(() => temp.list().toList()), isEmpty);
   });
 
-  testWidgets('existing odometer-gap safeguard prevents package dispatch',
+  testWidgets(
+      'odometer gaps use the same accountant handoff and remain visible for review',
       (tester) async {
     final state = await fixture(gap: true);
     addTearDown(state.dispose);
@@ -235,11 +254,91 @@ void main() {
       ),
     ))));
     await tester.tap(find.text('Prepare'));
+    await waitFor(tester, find.text('Ready for your accountant'));
+    expect(find.textContaining('Unexplained odometer distance'), findsWidgets);
+    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(sentNames, isEmpty);
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    await operation;
-    expect(find.textContaining('Review the unrecorded odometer travel'),
-        findsOneWidget);
+    await finish(tester, operation!);
+    expect(await tester.runAsync(() => temp.list().toList()), isEmpty);
+  });
+  testWidgets(
+      'session change hides a prepared preview and prevents sharing another account snapshot',
+      (tester) async {
+    final auth = AccountantTestAuth();
+    final state = await fixture(auth: auth);
+    addTearDown(state.dispose);
+    addTearDown(auth.events.close);
+    expect(state.isAccountantExportSessionCurrent('owner-A', 'test-token'),
+        isTrue);
+    expect(state.isAccountantExportSessionCurrent('other-owner', 'test-token'),
+        isFalse);
+    expect(state.isAccountantExportSessionCurrent('owner-A', 'other-token'),
+        isFalse);
+    Future<void>? operation;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => FilledButton(
+                    onPressed: () {
+                      operation =
+                          TaxPackShareHelper.shareTaxPack(context, state);
+                    },
+                    child: const Text('Prepare'))))));
+    await tester.tap(find.text('Prepare'));
+    await waitFor(tester, find.text('Ready for your accountant'));
+    await tester.tap(find.text('Preview report'));
+    await waitFor(tester, find.text('Report preview'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PdfPreview), findsOneWidget);
+    auth.events.add(AuthState(AuthChangeEvent.signedOut, null));
+    await tester.pumpAndSettle();
+    expect(find.byType(PdfPreview), findsNothing);
+    expect(
+        find.text('Your session changed. Prepare a new pack.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Preparation cancelled'), findsOneWidget);
+    expect(find.text('Send to accountant'), findsNothing);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    await finish(tester, operation!);
     expect(sentNames, isEmpty);
     expect(await tester.runAsync(() => temp.list().toList()), isEmpty);
+  });
+
+  testWidgets(
+      'single default handoff remains usable on a narrow screen at large text scale',
+      (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final state = await fixture(gap: true);
+    addTearDown(state.dispose);
+    Future<void>? operation;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => FilledButton(
+                    onPressed: () {
+                      operation =
+                          TaxPackShareHelper.shareTaxPack(context, state);
+                    },
+                    child: const Text('Prepare'))))));
+    await tester.tap(find.text('Prepare'));
+    await waitFor(tester, find.text('Ready for your accountant'));
+    await tester.pumpAndSettle();
+    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(find.text('Share ZIP'), findsNothing);
+    expect(find.text('Share draft ZIP'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    await finish(tester, operation!);
+    expect(sentNames, isEmpty);
   });
 }

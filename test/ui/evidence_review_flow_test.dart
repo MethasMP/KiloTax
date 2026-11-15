@@ -64,7 +64,7 @@ void main() {
         find.text(
             'No outstanding record checks. Your records are ready to share for review.'),
         findsOneWidget);
-    expect(find.text('Share records'), findsOneWidget);
+    expect(find.text('Send to accountant'), findsOneWidget);
   });
 
   testWidgets('saving an empty business purpose leaves the review item pending',

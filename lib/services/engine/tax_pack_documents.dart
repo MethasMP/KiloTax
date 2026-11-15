@@ -53,7 +53,7 @@ class TaxPackDocuments {
       'and final tax treatment are outside this report. Taxpayer type and method eligibility are not assessed.';
   static const evidenceNote =
       'Receipt files are included as recorded; check that all pages are legible. '
-      'Missing files are listed in Review. Remote files are not downloaded. '
+      'Files are collected from this device or, when available, authenticated private storage. Unavailable files are listed in Review. '
       'Keep source evidence for the applicable retention period; this ZIP is not a restorable application backup.';
   static const calculationNote =
       'Workbook scenario only, not an adopted annual percentage or final deduction. '

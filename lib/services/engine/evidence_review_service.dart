@@ -232,7 +232,10 @@ class EvidenceReviewService {
               .any((line) => line.purpose == AllocationPurpose.unresolved)) {
         reasons.add(ExpenseReviewReason.allocationReview);
       }
-      if (expense.receiptPath == null || expense.receiptPath!.trim().isEmpty) {
+      if ((expense.receiptPath == null ||
+              expense.receiptPath!.trim().isEmpty) &&
+          receiptFiles[expense.id]?.status != ReceiptFileStatus.available &&
+          receiptFiles[expense.id]?.status != ReceiptFileStatus.changed) {
         reasons.add(ExpenseReviewReason.missingPhoto);
       } else {
         final status =

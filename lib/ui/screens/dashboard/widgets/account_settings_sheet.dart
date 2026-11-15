@@ -932,7 +932,7 @@ class AccountSettingsSheet {
                     Icon(LucideIcons.fileSpreadsheet, size: 18),
                     SizedBox(width: 8),
                     Text(
-                      'Export Tax Pack First',
+                      'Send to accountant',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

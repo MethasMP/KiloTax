@@ -173,7 +173,7 @@ void main() {
       await tester.pumpWidget(wrap(const TaxSummaryScreen()));
       expect(find.text('Tax Summary'), findsOneWidget);
       expect(find.text('Evidence check'), findsOneWidget);
-      expect(find.text('Review & share'), findsOneWidget);
+      expect(find.text('Send to accountant'), findsOneWidget);
     });
 
     testWidgets('Screen 13: Logbook Setup Screen renders 12-week schedule',
@@ -208,15 +208,18 @@ void main() {
       expect(find.text('Recorded details'), findsOneWidget);
     });
 
-    testWidgets('Screen 18: Sharing starts with a review of records and files',
+    testWidgets('Screen 18: one primary action starts the accountant handoff',
         (tester) async {
-      await tester.pumpWidget(wrap(const TaxSummaryScreen()));
-      expect(
-          find.widgetWithText(FilledButton, 'Review & share'), findsOneWidget);
-      await tester.tap(find.widgetWithText(FilledButton, 'Review & share'));
+      AppState? sentState;
+      await tester.pumpWidget(wrap(TaxSummaryScreen(onSend: (_, state) async {
+        sentState = state;
+      })));
+      final action = find.widgetWithText(FilledButton, 'Send to accountant');
+      expect(action, findsOneWidget);
+      await tester.tap(action);
       await tester.pumpAndSettle();
-      expect(find.byType(EvidenceReviewScreen), findsOneWidget);
-      expect(find.text('Review evidence'), findsOneWidget);
+      expect(sentState, same(appState));
+      expect(find.byType(EvidenceReviewScreen), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

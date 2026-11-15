@@ -18,6 +18,7 @@ import '../../data/models/vehicle_expense.dart';
 import 'tax_pack_documents.dart';
 import 'evidence_review_service.dart';
 import 'tax_calculator_service.dart';
+import 'receipt_export_resolver.dart';
 
 class TaxPackArtifact {
   final Directory directory;
@@ -25,6 +26,7 @@ class TaxPackArtifact {
   final EvidenceReviewReport report;
   final int receiptCount;
   final int issueCount;
+  final List<List<String>> reviewGroups;
 
   File get reportFile => File('${directory.path}/Report.pdf');
 
@@ -34,6 +36,7 @@ class TaxPackArtifact {
     required this.report,
     required this.receiptCount,
     required this.issueCount,
+    this.reviewGroups = const [],
   });
 
   String get description =>
@@ -60,6 +63,7 @@ class TaxPackBuilder {
     UserProfile profile = const UserProfile(),
     List<AnnualVehicleOdometer> annualOdometers = const [],
     List<LogbookPeriod> logbookPeriods = const [],
+    ReceiptExportResolver? receiptResolver,
   }) async {
     const reviewer = EvidenceReviewService();
     final snapshot = reviewer.evaluate(
@@ -91,41 +95,32 @@ class TaxPackBuilder {
     }
     for (final entry in receiptExpenses.indexed) {
       final expense = entry.$2;
-      final audit = expense.receiptAudit;
-      final recordedPages = audit?.currentFields['pagePaths'];
-      final paths = recordedPages is List && recordedPages.isNotEmpty
-          ? recordedPages.whereType<String>().toList()
-          : [if (expense.receiptPath != null) expense.receiptPath!];
-      final hashes = audit?.currentFields['pageHashes'];
+      final document =
+          await (receiptResolver ?? ReceiptExportResolver()).resolve(expense);
+      if (document.issue != null) {
+        extraIssues.add(['expense', expense.id, document.issue!]);
+      }
       final pages = <Map<String, dynamic>>[];
-      var missing = paths.isEmpty;
+      var missing = document.pages.isEmpty;
       var changed = false;
       String? firstDigest;
-      for (var pageIndex = 0; pageIndex < paths.length; pageIndex++) {
-        Uint8List? bytes;
-        try {
-          bytes = await File(paths[pageIndex]).readAsBytes();
-        } on FileSystemException {
-          bytes = null;
-        }
-        final savedDigest = hashes is List && pageIndex < hashes.length
-            ? hashes[pageIndex] as String?
-            : hashes is Map
-                ? hashes[paths[pageIndex]] as String?
-                : pageIndex == 0
-                    ? audit?.extractionImageSha256 ?? audit?.imageSha256
-                    : null;
+      for (var pageIndex = 0; pageIndex < document.pages.length; pageIndex++) {
+        final resolved = document.pages[pageIndex];
+        final bytes = resolved.bytes;
+        final savedDigest = resolved.savedSha256;
         if (bytes == null || bytes.isEmpty) {
           missing = true;
           pages.add({
             'page': pageIndex + 1,
             'status': 'missing',
-            'savedSha256': savedDigest
+            'savedSha256': savedDigest,
+            'source': resolved.source,
           });
           extraIssues.add([
             'expense',
             expense.id,
             'Receipt page ${pageIndex + 1} is unavailable.'
+                '${resolved.issue == null ? '' : ' ${resolved.issue}'}'
           ]);
           continue;
         }
@@ -143,7 +138,8 @@ class TaxPackBuilder {
           'archivePath': name,
           'sha256': digest,
           'savedSha256': savedDigest,
-          'status': pageChanged ? 'changed' : 'available'
+          'status': pageChanged ? 'changed' : 'available',
+          'source': resolved.source
         });
         if (pageChanged || extension == 'bin') {
           extraIssues.add([
@@ -288,7 +284,9 @@ class TaxPackBuilder {
           file: file,
           report: report,
           receiptCount: receiptCount,
-          issueCount: documents.reviewGroups.length);
+          issueCount: documents.reviewGroups.length,
+          reviewGroups: List.unmodifiable(documents.reviewGroups
+              .map((row) => List<String>.unmodifiable(row))));
     } catch (_) {
       await directory.delete(recursive: true);
       rethrow;

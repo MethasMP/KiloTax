@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/services/engine/tax_pack_share_helper.dart';
 import 'package:kilotax/ui/screens/logbook/logbook_progress_screen.dart';
 
 AppState gapState() {
@@ -108,28 +107,6 @@ void main() {
         findsOneWidget);
   });
 
-  testWidgets('tax pack stops before native export when travel is unresolved',
-      (tester) async {
-    final s = gapState();
-    await tester.pumpWidget(ChangeNotifierProvider.value(
-        value: s,
-        child: MaterialApp(
-            home: Builder(
-                builder: (context) => Scaffold(
-                    body: TextButton(
-                        onPressed: () =>
-                            TaxPackShareHelper.shareTaxPack(context, s),
-                        child: const Text('Export')))))));
-    await tester.tap(find.text('Export'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Review the unrecorded odometer travel'),
-        findsOneWidget);
-    expect(find.textContaining('Preparing Tax Pack'), findsNothing);
-    await tester.tap(find.text('Review'));
-    await tester.pumpAndSettle();
-    expect(find.text('Logbook overview'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
   testWidgets(
       'missing travel requires an actual date, even after selecting personal',
       (tester) async {

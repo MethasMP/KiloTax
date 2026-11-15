@@ -107,7 +107,7 @@ void main() {
     expect(find.text('Review evidence'), findsOneWidget);
     expect(find.textContaining('2 items need attention'), findsOneWidget);
     expect(find.textContaining('Attach a receipt'), findsOneWidget);
-    expect(find.text('Share draft records'), findsOneWidget);
+    expect(find.text('Send to accountant'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'review-evidence');
   });

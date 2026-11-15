@@ -9,7 +9,7 @@ import '../cpk/cpk_trip_entry_screen.dart';
 import '../logbook/logbook_trip_entry_screen.dart';
 import '../trips/trip_detection_screen.dart';
 import '../expenses/expense_detail_screen.dart';
-import '../evidence/evidence_review_screen.dart';
+import '../../../services/engine/tax_pack_share_helper.dart';
 import 'workflow_trip_editor.dart';
 
 class WorkflowScreen extends StatefulWidget {
@@ -284,14 +284,13 @@ class _WorkflowScreenState extends State<WorkflowScreen> {
                   '${report.trips.length} trips · ${report.expenses.length} receipt records'),
               const SizedBox(height: 12),
               const Text(
-                  'Review missing evidence, then prepare a ZIP containing the summary PDF, ledgers, job connections, review history and available receipt files. Unresolved items remain visible in a draft pack.'),
+                  'Your summary, spreadsheet and available receipts are collected together. Any missing details stay visible for your accountant.'),
               const SizedBox(height: 16),
               FilledButton(
-                  onPressed: state.primaryVehicle == null
+                  onPressed: !report.canExport
                       ? null
-                      : () =>
-                          EvidenceReviewScreen.show(context, appState: state),
-                  child: const Text('Review & prepare accountant pack')),
+                      : () => TaxPackShareHelper.shareTaxPack(context, state),
+                  child: const Text('Send to accountant')),
             ],
           ]),
         );

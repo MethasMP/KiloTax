@@ -189,6 +189,41 @@ void main() {
     expect(job().containsCoordinate(lat: 0, lng: 0), isFalse);
   });
 
+  testWidgets(
+      'empty vehicle can capture records before accountant sending is enabled',
+      (tester) async {
+    state.deleteTrip('t');
+    await tester.pumpWidget(MaterialApp(home: WorkflowScreen(appState: state)));
+    expect(
+        tester
+            .widget<OutlinedButton>(
+                find.widgetWithText(OutlinedButton, 'Tracking settings'))
+            .onPressed,
+        isNotNull);
+    expect(
+        tester
+            .widget<OutlinedButton>(
+                find.widgetWithText(OutlinedButton, 'Add trip'))
+            .onPressed,
+        isNotNull);
+    await tester.tap(find.text('3. Receipts'));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Add receipt manually'))
+            .onPressed,
+        isNotNull);
+    await tester.tap(find.text('4. Pack'));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Send to accountant'))
+            .onPressed,
+        isNull);
+  });
+
   testWidgets('review form saves actual mixed distance and returns to workflow',
       (tester) async {
     await tester.pumpWidget(MaterialApp(home: WorkflowScreen(appState: state)));

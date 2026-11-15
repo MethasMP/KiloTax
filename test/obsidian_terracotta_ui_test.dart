@@ -163,7 +163,7 @@ void main() {
     final state = await seed(records: false);
     final key = await render(tester, state);
     expect(find.text('Your evidence starts here'), findsOneWidget);
-    expect(find.text('Review & share'), findsNothing);
+    expect(find.text('Send to accountant'), findsNothing);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'evidence-empty');
   });
@@ -173,7 +173,7 @@ void main() {
     final state = await seed(missing: false);
     final key = await render(tester, state);
     expect(find.text('Review before sharing'), findsOneWidget);
-    expect(find.text('Review & share'), findsOneWidget);
+    expect(find.text('Send to accountant'), findsOneWidget);
     expect(find.textContaining('ATO'), findsNothing);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'evidence-review');
