@@ -132,10 +132,10 @@ void main({bool nativeStorage = false}) {
         final bytes = await pack.file.readAsBytes();
         expect(bytes.take(2), [80, 75]);
         final zip = ZipDecoder().decodeBytes(bytes);
-        expect(zip.findFile('manifest.json'), isNotNull);
-        expect(zip.findFile('expenses.csv'), isNotNull);
+        expect(zip.findFile('Supporting/record-history.json'), isNotNull);
+        expect(zip.findFile('Details.xlsx'), isNotNull);
         expect(
-            zip.findFile('summary.pdf')!.content.take(5), [37, 80, 68, 70, 45]);
+            zip.findFile('Report.pdf')!.content.take(5), [37, 80, 68, 70, 45]);
         expect(pack.receiptCount, 0,
             reason:
                 'A manual expense without an image remains missing evidence in the actual accountant handoff.');
