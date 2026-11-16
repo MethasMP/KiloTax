@@ -1,0 +1,131 @@
+{
+  "screen": "navigation_cpk",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 219 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/cpk/cpk_home_body.dart:82:19\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#fedc1 relayoutBoundary=up22 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=237.6, 0.0<=h<=Infinity)\n  size: Size(237.6, 37.6)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 290 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/cpk/cpk_home_body.dart:208:19\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#f4da3 relayoutBoundary=up22 OVERFLOWING:\n  parentData: offset=Offset(0.0, 160.3); flex=null; fit=null (can\n    use size)\n  constraints: BoxConstraints(0.0<=w<=237.6, 0.0<=h<=Infinity)\n  size: Size(237.6, 41.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "Good afternoon",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "ATO DEDUCTION • 91¢/KM",
+    "ESTIMATE",
+    "$16.74",
+    "18.4 km of 5,000 km claimed",
+    "0%",
+    "OF CAP",
+    "ATO 5,000 km annual ceiling",
+    "4982 km remaining",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "1 drive needs your sign-off",
+    "1-Tap batch claim your work deduction",
+    "Review",
+    "Auto-Track Trips",
+    "Connect to your car's Bluetooth",
+    "Set up",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "+$16.74",
+    "Dashboard",
+    "Trips",
+    "Tax"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 252.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 820.6689537606067,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 820.6689537606067,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 820.6689537606067,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 29.2,
+      "y": 745.2,
+      "labels": "Dashboard"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 29.2,
+      "y": 745.2,
+      "labels": "Dashboard"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 116.4,
+      "y": 745.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 116.4,
+      "y": 745.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 203.6,
+      "y": 745.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 63.6,
+      "x": 203.6,
+      "y": 745.2,
+      "labels": "Tax"
+    }
+  ]
+}

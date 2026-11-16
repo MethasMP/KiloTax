@@ -1,0 +1,52 @@
+{
+  "screen": "compliance",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "FY 2026-27",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "Recorded details",
+    "Vehicle",
+    "Toyota HiLux (DEMO)",
+    "Tax method",
+    "Cents per Kilometre",
+    "Trips recorded",
+    "3",
+    "Expenses recorded",
+    "2",
+    "Items to review",
+    "These checks help organise your records. Your accountant can review eligibility and any missing evidence.",
+    "Review records and files",
+    "Record checks"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 515.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 515.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 37.0,
+      "y": 515.0,
+      "labels": "Fix now"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "product_tests_passed": 450,
+  "product_tests_failed": 10,
+  "all_failures_reproduced_before_changes": true,
+  "failing_tests": [
+    "differentiation_moat_test.dart: KiloTax Strategic Differentiation & Moat Tests MoneyLeftOnTableCard shows method arbitrage opportunity and switches to Logbook",
+    "home_recent_activity_test.dart",
+    "trip_confidence_classifier_test.dart: TripConfidenceClassifier (Sentinel Risk Gatekeeper) Weekend travel strictly held for user decision (Sentinel Guard)",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: BulkyToolsSuggestionEngine Heuristics detects Bunnings hardware supplier stop",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: BulkyToolsSuggestionEngine Heuristics detects Middy electrical trade wholesaler stop",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: TripQuickResolveSheet Smart Auto-Suggestion allows tradie to toggle off suggested Bulky Tools with 1 tap",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: TripQuickResolveSheet Smart Auto-Suggestion meets thumb reach ergonomics with tap targets >= 48x48 pt",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: TripQuickResolveSheet Smart Auto-Suggestion pre-highlights Bulky Tools chip with ambient suggested badge for Bunnings stop",
+    "ui/screens/trips/trip_quick_resolve_sheet_test.dart: TripQuickResolveSheet Smart Auto-Suggestion resolves trip with Bulky Tools in 1 tap when pre-suggested",
+    "ui/screens/trips/widgets/bulky_tools_toggle_chip_test.dart: BulkyToolsToggleChip renders ambient suggested state with sparkles icon and suggestionLabel"
+  ],
+  "ui_regression_contracts": 14,
+  "render_cases": 66,
+  "render_errors": 0,
+  "domain_services_modified": false,
+  "focused_tests_passed": 54,
+  "focused_tests_failed": 0,
+  "render_states": 33,
+  "render_status": "pass",
+  "analyzer": "No issues found",
+  "regression_tests_failed": 0
+}

@@ -1,0 +1,63 @@
+{
+  "screen": "onboarding",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Keep your work trips together",
+    "Record where you went and why. Review missing details while the trip is still fresh.",
+    "Step 1 of 3",
+    "Continue",
+    "Skip"
+  ],
+  "targets": [
+    {
+      "type": "FilledButton",
+      "width": 280.0,
+      "height": 74.0,
+      "x": 20.0,
+      "y": 716.0,
+      "labels": "Continue"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 74.0,
+      "x": 20.0,
+      "y": 716.0,
+      "labels": "Continue"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 74.0,
+      "x": 20.0,
+      "y": 716.0,
+      "labels": "Continue"
+    },
+    {
+      "type": "TextButton",
+      "width": 77.62120383126395,
+      "height": 48.0,
+      "x": 242.37879616873605,
+      "y": 51.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "InkWell",
+      "width": 77.62120383126395,
+      "height": 40.0,
+      "x": 242.37879616873605,
+      "y": 55.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 77.62120383126395,
+      "height": 40.0,
+      "x": 242.37879616873605,
+      "y": 55.0,
+      "labels": "Skip"
+    }
+  ]
+}

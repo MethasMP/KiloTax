@@ -1,0 +1,70 @@
+{
+  "screen": "notifications",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Open audit surface",
+    "Activity & Alerts",
+    "All caught up!",
+    "Trip detections and tax reminders will appear here."
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 289.6636003766741,
+      "height": 48.0,
+      "x": 15.168199811662959,
+      "y": 398.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "InkWell",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "IconButton",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 33.2,
+      "y": 218.2,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 33.2,
+      "y": 218.2,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 24.0,
+      "height": 24.0,
+      "x": 41.2,
+      "y": 226.2,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 24.0,
+      "height": 24.0,
+      "x": 41.2,
+      "y": 226.2,
+      "labels": ""
+    }
+  ]
+}

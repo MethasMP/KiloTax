@@ -1,0 +1,18 @@
+{
+  "screen": "onboarding_gps",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Automatic trip tracking",
+    "Record work kilometres in the background, then review your trips and evidence.",
+    "Toyota HiLux (DEMO)",
+    "Cents per kilometre (Up to 5,000 km)",
+    "Low battery impact",
+    "•",
+    "Private & device-stored",
+    "Enable automatic tracking",
+    "Add trips manually instead"
+  ],
+  "targets": []
+}

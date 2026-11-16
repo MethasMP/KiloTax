@@ -1,0 +1,118 @@
+{
+  "screen": "trip_detail",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "8 Nov · 7:27 PM",
+    "+$16.74 ATO Claim",
+    "Bunnings Trade",
+    "Alexandria NSW",
+    "Smith renovation",
+    "Bondi NSW",
+    "18.4 km",
+    "Business",
+    "Personal",
+    "Purpose",
+    "Deliver timber to Smith renovation",
+    "Vehicle",
+    "Toyota HiLux (DEMO)",
+    "Tax Method",
+    "Cents-per-km (91¢/km)",
+    "Notes",
+    "No note added",
+    "Done",
+    "Trip detail",
+    "Edit"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 234.0,
+      "height": 56.0,
+      "x": 43.0,
+      "y": 614.0,
+      "labels": "Business"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 234.0,
+      "height": 56.0,
+      "x": 43.0,
+      "y": 678.0,
+      "labels": "Personal"
+    },
+    {
+      "type": "InkWell",
+      "width": 242.0,
+      "height": 158.0,
+      "x": 39.0,
+      "y": 762.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 242.0,
+      "height": 158.0,
+      "x": 39.0,
+      "y": 762.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 77.2386703491211,
+      "height": 48.0,
+      "x": 234.7613296508789,
+      "y": 51.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 77.2386703491211,
+      "height": 40.0,
+      "x": 234.7613296508789,
+      "y": 55.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 77.2386703491211,
+      "height": 40.0,
+      "x": 234.7613296508789,
+      "y": 55.0,
+      "labels": "Edit"
+    }
+  ]
+}

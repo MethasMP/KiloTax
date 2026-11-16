@@ -1,0 +1,182 @@
+{
+  "screen": "navigation_logbook",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Good evening",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "12-WEEK LOGBOOK",
+    "DEMO",
+    "Your logbook starts here",
+    "Build a clear record of your driving.",
+    "12 weeks · one driving record",
+    "Vehicle Odometer",
+    "42,032 km",
+    "Recorded trips · business share",
+    "56.8%",
+    "1 trip needs review",
+    "Start your logbook",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "Work Drive",
+    "Home",
+    "Trips",
+    "Expenses",
+    "Tax"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 64.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 64.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 187.01703098842074,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 521.0,
+      "labels": "Start your logbook"
+    },
+    {
+      "type": "InkWell",
+      "width": 187.01703098842074,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 521.0,
+      "labels": "Start your logbook"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 187.01703098842074,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 521.0,
+      "labels": "Start your logbook"
+    },
+    {
+      "type": "TextButton",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 711.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 711.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 711.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 96.58906555175781,
+      "height": 44.0,
+      "x": 273.4109344482422,
+      "y": 790.0,
+      "labels": "View all (3)"
+    },
+    {
+      "type": "InkWell",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 29.2,
+      "y": 731.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 29.2,
+      "y": 731.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 95.52000000000001,
+      "y": 731.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 95.52000000000001,
+      "y": 731.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.0,
+      "height": 52.0,
+      "x": 169.0,
+      "y": 744.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 228.16000000000003,
+      "y": 731.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 228.16000000000003,
+      "y": 731.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "InkWell",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 294.48,
+      "y": 731.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 66.32000000000001,
+      "height": 77.6,
+      "x": 294.48,
+      "y": 731.2,
+      "labels": "Tax"
+    }
+  ]
+}

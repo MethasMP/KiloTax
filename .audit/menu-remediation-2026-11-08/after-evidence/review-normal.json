@@ -1,0 +1,127 @@
+{
+  "screen": "review",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Toyota HiLux (DEMO)",
+    "FY 2026-27",
+    "All pending",
+    "This week",
+    "3 items need attention",
+    "1 unclassified trips · 2 receipts to review",
+    "Trip · 8 Nov · 7:27 PM",
+    "Choose business or personal. Add a business purpose",
+    "Work Tolls & Parking · $24.50",
+    "Attach a receipt. Confirm the expense details",
+    "Fuel & Oil · $96.35",
+    "Share draft records",
+    "Review evidence"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 134.12544795445035,
+      "height": 38.0,
+      "x": 20.0,
+      "y": 188.0,
+      "labels": "All pending"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.12544795445035,
+      "height": 38.0,
+      "x": 20.0,
+      "y": 188.0,
+      "labels": "All pending"
+    },
+    {
+      "type": "InkWell",
+      "width": 106.20288630894252,
+      "height": 38.0,
+      "x": 162.12544795445035,
+      "y": 188.0,
+      "labels": "This week"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 106.20288630894252,
+      "height": 38.0,
+      "x": 162.12544795445035,
+      "y": 188.0,
+      "labels": "This week"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 357.0,
+      "labels": "Trip · 8 Nov · 7:27 PM | Choose business or personal. Add a business purpose"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 357.0,
+      "labels": "Trip · 8 Nov · 7:27 PM | Choose business or personal. Add a business purpose"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 479.0,
+      "labels": "Work Tolls & Parking · $24.50 | Attach a receipt. Confirm the expense details"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 479.0,
+      "labels": "Work Tolls & Parking · $24.50 | Attach a receipt. Confirm the expense details"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 601.0,
+      "labels": "Fuel & Oil · $96.35 | Attach a receipt. Confirm the expense details"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 114.0,
+      "x": 24.0,
+      "y": 601.0,
+      "labels": "Fuel & Oil · $96.35 | Attach a receipt. Confirm the expense details"
+    },
+    {
+      "type": "FilledButton",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 739.0,
+      "labels": "Share draft records"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 739.0,
+      "labels": "Share draft records"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 739.0,
+      "labels": "Share draft records"
+    }
+  ]
+}

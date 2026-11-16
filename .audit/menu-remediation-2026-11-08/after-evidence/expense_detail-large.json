@@ -1,0 +1,112 @@
+{
+  "screen": "expense_detail",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "MANUAL ENTRY • REVIEW REQUIRED",
+    "Attach a clear receipt and confirm every field before tax export.",
+    "Merchant / Supplier",
+    "Review before export",
+    "Amount (AUD)",
+    "0.00",
+    "$ ",
+    "Amount entered",
+    "8 Nov 2026",
+    "• Tap to change date",
+    "GST component",
+    "Auto 10%",
+    "Category",
+    "Work Tolls & Parking",
+    "Payment method",
+    "Not specified",
+    "Vehicle",
+    "Toyota",
+    "Linked Trip",
+    "None (Tap to link)",
+    "Claim type",
+    "Confirm business use",
+    "Notes (e.g. Tools, Materials, Client job site)",
+    "Tax Receipt Evidence",
+    "Receipt photo needed",
+    "Attach receipt",
+    "ATO Evidence Checklist",
+    "Supplier / Merchant",
+    "✓ Valid",
+    "Expense Amount",
+    "Date & Time",
+    "Business Category",
+    "Receipt Photo Attached",
+    "Missing",
+    "I checked the amount, date, category and receipt",
+    "Saving without confirmation keeps this expense in review.",
+    "Update Expense Record",
+    "Expense detail"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 237.19522094726562,
+      "height": 43.0,
+      "x": 41.0,
+      "y": 781.0,
+      "labels": "Amount entered"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 237.19522094726562,
+      "height": 43.0,
+      "x": 41.0,
+      "y": 781.0,
+      "labels": "Amount entered"
+    },
+    {
+      "type": "InkWell",
+      "width": 217.09765625,
+      "height": 83.0,
+      "x": 41.0,
+      "y": 836.0,
+      "labels": "8 Nov 2026 | • Tap to change date"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 217.09765625,
+      "height": 83.0,
+      "x": 41.0,
+      "y": 836.0,
+      "labels": "8 Nov 2026 | • Tap to change date"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

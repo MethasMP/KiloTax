@@ -1,0 +1,62 @@
+{
+  "screen": "compliance",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "ATO AUDIT READINESS",
+    "92% Tax-Ready",
+    "Your evidence chain is complete and ready for instant accountant submission.",
+    "Compliance Checklist",
+    "Vehicle Configured",
+    "Toyota HiLux (DEMO)",
+    "Tax Method Selected",
+    "Cents per Kilometre",
+    "Reasonable Estimate Basis",
+    "Contemporaneous travel pattern substantiated (3 trips)",
+    "Trips Classified & Purpose",
+    "1 trips missing explicit purpose",
+    "1 trips need purpose",
+    "Expense Receipts",
+    "Statutory 91¢/km rate covers all fuel, rego & maintenance",
+    "Statutory Rate",
+    "Resolve Trip Records (1 left)",
+    "Review Receipts (2 pending photo)",
+    "Export & Share Tax Pack with Accountant",
+    "Tax Compliance Center"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "screen": "navigation_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Good evening",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "12-WEEK LOGBOOK",
+    "DEMO",
+    "Your logbook starts here",
+    "Build a clear record of your driving.",
+    "12 weeks · one driving record",
+    "Vehicle Odometer",
+    "42,032 km",
+    "Recorded trips · business share",
+    "56.8%",
+    "1 trip needs review",
+    "Start your logbook",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "Work Drive",
+    "Home",
+    "Trips",
+    "Expenses",
+    "Tax",
+    "Add record"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 252.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 587.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 587.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 587.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 587.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 667.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 667.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 667.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 667.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "TextButton",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    },
+    {
+      "type": "InkWell",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    }
+  ]
+}

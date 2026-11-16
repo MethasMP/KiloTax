@@ -1,0 +1,23 @@
+{
+  "description": "EDE Architectural Invariants Configuration",
+  "rules": [
+    {
+      "id": "RULE_01_UI_NO_RAW_BUSINESS_ARITHMETIC",
+      "target_dir": "lib/ui",
+      "forbidden_patterns": [
+        "(km|distance|cents|claim|deduction)\\s*\\*\\s*0\\.(85|88|90|78)",
+        "businessKm\\s*/\\s*totalKm"
+      ],
+      "message": "Direct business/tax calculation found in presentation layer. Delegate to core engine (Tier C)."
+    },
+    {
+      "id": "RULE_02_UI_NO_DIRECT_DB_OR_SUPABASE",
+      "target_dir": "lib/ui",
+      "forbidden_patterns": [
+        "supabase\\.from\\(",
+        "database\\.rawQuery\\("
+      ],
+      "message": "Direct database query found in presentation layer. Delegate to repository/service layer."
+    }
+  ]
+}

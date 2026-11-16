@@ -1,0 +1,182 @@
+{
+  "screen": "entry_cpk",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Trip details",
+    "Record the distance and work purpose for this trip. Estimate uses 91¢/km.",
+    "Trip distance",
+    "0.0",
+    "km",
+    "Estimated deduction",
+    "+$0.00",
+    "4982 km remaining of 5,000 km annual ATO quota",
+    "Route",
+    "Trip locations",
+    "From",
+    "To",
+    "Client Job Site",
+    "Bunnings Warehouse",
+    "Reece Plumbing",
+    "Total Tools",
+    "Job or client reference (optional)",
+    "Work purpose",
+    "Choose the reason",
+    "Client Site",
+    "Contract trade works & client visits",
+    "Supplies Run",
+    "Bunnings, tools, timber & materials",
+    "Tool Transport",
+    "Carried heavy gear (>20kg) with no secure lockup",
+    "Save Work Trip",
+    "Not a work drive",
+    "Add trip"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 125.25390625,
+      "height": 33.0,
+      "x": 39.0,
+      "y": 521.0,
+      "labels": "Client Job Site"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 125.25390625,
+      "height": 33.0,
+      "x": 39.0,
+      "y": 521.0,
+      "labels": "Client Job Site"
+    },
+    {
+      "type": "InkWell",
+      "width": 164.4988250732422,
+      "height": 33.0,
+      "x": 172.25390625,
+      "y": 521.0,
+      "labels": "Bunnings Warehouse"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 164.4988250732422,
+      "height": 33.0,
+      "x": 172.25390625,
+      "y": 521.0,
+      "labels": "Bunnings Warehouse"
+    },
+    {
+      "type": "InkWell",
+      "width": 135.0863265991211,
+      "height": 33.0,
+      "x": 344.7527313232422,
+      "y": 521.0,
+      "labels": "Reece Plumbing"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 135.0863265991211,
+      "height": 33.0,
+      "x": 344.7527313232422,
+      "y": 521.0,
+      "labels": "Reece Plumbing"
+    },
+    {
+      "type": "InkWell",
+      "width": 104.8707046508789,
+      "height": 33.0,
+      "x": 487.8390579223633,
+      "y": 521.0,
+      "labels": "Total Tools"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 104.8707046508789,
+      "height": 33.0,
+      "x": 487.8390579223633,
+      "y": 521.0,
+      "labels": "Total Tools"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 679.0,
+      "labels": "Client Site | Contract trade works & client visits"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 679.0,
+      "labels": "Client Site | Contract trade works & client visits"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 744.0,
+      "labels": "Supplies Run | Bunnings, tools, timber & materials"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 744.0,
+      "labels": "Supplies Run | Bunnings, tools, timber & materials"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 78.0,
+      "x": 21.0,
+      "y": 809.0,
+      "labels": "Tool Transport | Carried heavy gear (>20kg) with no secure lockup"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 78.0,
+      "x": 21.0,
+      "y": 809.0,
+      "labels": "Tool Transport | Carried heavy gear (>20kg) with no secure lockup"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

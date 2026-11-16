@@ -1,0 +1,119 @@
+{
+  "screen": "vehicle",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "What do you drive?",
+    "Search or select your primary work vehicle.",
+    "Search make or model",
+    "Common models in Australia",
+    "Ford Ranger",
+    "Ute",
+    "Toyota HiLux",
+    "Isuzu D-Max",
+    "Toyota HiAce",
+    "Van",
+    "Mitsubishi Triton",
+    "Vehicle not listed? Enter manually",
+    "Add Vehicle"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 294.0,
+      "labels": "Ford Ranger | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 294.0,
+      "labels": "Ford Ranger | Ute"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 379.0,
+      "labels": "Toyota HiLux | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 379.0,
+      "labels": "Toyota HiLux | Ute"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 464.0,
+      "labels": "Isuzu D-Max | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 464.0,
+      "labels": "Isuzu D-Max | Ute"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 549.0,
+      "labels": "Toyota HiAce | Van"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 549.0,
+      "labels": "Toyota HiAce | Van"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 634.0,
+      "labels": "Mitsubishi Triton | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 84.0,
+      "x": 20.0,
+      "y": 634.0,
+      "labels": "Mitsubishi Triton | Ute"
+    },
+    {
+      "type": "InkWell",
+      "width": 254.28555297851562,
+      "height": 35.0,
+      "x": 67.85722351074219,
+      "y": 738.0,
+      "labels": "Vehicle not listed? Enter manually"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 254.28555297851562,
+      "height": 35.0,
+      "x": 67.85722351074219,
+      "y": 738.0,
+      "labels": "Vehicle not listed? Enter manually"
+    }
+  ]
+}

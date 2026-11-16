@@ -1,0 +1,20 @@
+00:00 +0: loading /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart
+00:00 +0: /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart: (setUpAll)
+00:00 +0: /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart: action, content and semantic text pairs meet AA
+00:00 +1: /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart: missing evidence stays actionable at 320px and 200% text
+00:08 +2: /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart: missing evidence stays actionable at 320px and 200% text
+00:08 +3: /Users/methas/Desktop/DriveLog/test/obsidian_terracotta_ui_test.dart: missing evidence stays actionable at 320px and 200% text
+00:08 +4: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:09 +5: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:09 +6: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:09 +7: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:09 +8: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:10 +9: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:10 +10: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: editing a trip purpose clears only its scoped review item
+00:11 +11: /Users/methas/Desktop/DriveLog/test/cpk_gestalt_ux_test.dart: CPK Gestalt UX & Visual Structure Tests (Poteto-Mode) Quick Batch Claim Banner has 1-tap entire card hit area opening review sheet
+00:11 +12: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: saving an empty business purpose leaves the review item pending
+00:12 +13: /Users/methas/Desktop/DriveLog/test/cpk_gestalt_ux_test.dart: CPK Gestalt UX & Visual Structure Tests (Poteto-Mode) CpkTripEntryScreen provides unified Common Regions and live reactive dollar claim
+00:13 +14: /Users/methas/Desktop/DriveLog/test/cpk_gestalt_ux_test.dart: CPK Gestalt UX & Visual Structure Tests (Poteto-Mode) CpkTripEntryScreen provides unified Common Regions and live reactive dollar claim
+00:14 +15: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: existing expense confirmation, no-op save and replacement preserve its identity
+00:15 +16: /Users/methas/Desktop/DriveLog/test/ui/evidence_review_flow_test.dart: existing expense confirmation, no-op save and replacement preserve its identity
+00:27 +17: All tests passed!

@@ -1,0 +1,10 @@
+{
+  "cases": 66,
+  "states": 33,
+  "errors": 0,
+  "profiles": [
+    "390px / 100%",
+    "320px / 200%"
+  ],
+  "status": "pass"
+}

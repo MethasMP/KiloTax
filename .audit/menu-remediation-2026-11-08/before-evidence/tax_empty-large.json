@@ -1,0 +1,102 @@
+{
+  "screen": "tax_empty",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 211 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/tax/tax_summary_screen.dart:181:17\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#25053 relayoutBoundary=up16 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=100.3, 0.0<=h<=Infinity)\n  size: Size(100.3, 32.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 152 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/tax/tax_summary_screen.dart:461:11\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#c0608 relayoutBoundary=up15 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=238.0, 0.0<=h<=Infinity)\n  size: Size(238.0, 80.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 60 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/tax/tax_summary_screen.dart:513:11\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#6e8d1 relayoutBoundary=up15 OVERFLOWING:\n  parentData: offset=Offset(0.0, 113.0); flex=null; fit=null (can\n    use size)\n  constraints: BoxConstraints(0.0<=w<=238.0, 0.0<=h<=Infinity)\n  size: Size(238.0, 36.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "ATO Cents/KM (91¢)",
+    "• DEMO",
+    "Tax Deduction Subtotal",
+    "$0.00",
+    "RECORD DETAIL CHECKS",
+    "Start your records",
+    "50%",
+    "Awaiting initial drive logs",
+    "Vehicle Profile",
+    "Toyota HiLux (DEMO)",
+    "Edit",
+    "ATO Tax Method",
+    "Cents per KM (91¢/km)",
+    "Active",
+    "Reasonable estimate basis established",
+    "Log drive",
+    "Business trip details",
+    "Awaiting drive logs to substantiate",
+    "Awaiting Drives",
+    "Accountant Hand-off",
+    "Email ATO Tax Pack (PDF + CSV) in 1 tap",
+    "Share with Accountant",
+    "Tax Summary",
+    "FY 2026-27 • ATO Schedule D1"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 238.0,
+      "height": 184.0,
+      "x": 41.0,
+      "y": 527.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 238.0,
+      "height": 184.0,
+      "x": 41.0,
+      "y": 527.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 238.0,
+      "height": 184.0,
+      "x": 41.0,
+      "y": 721.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 238.0,
+      "height": 184.0,
+      "x": 41.0,
+      "y": 721.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

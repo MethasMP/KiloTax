@@ -1,0 +1,1 @@
+Tax implementation integrated by root. Consolidated readiness card, contextual sticky action, actual receipt inspection with retry and cached unchanged expenses, scoped trip navigation. Tax calculation and draft share flow unchanged. Final tests and render evidence pending.

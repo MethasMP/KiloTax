@@ -1,0 +1,154 @@
+{
+  "screen": "tax_empty",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "ATO Cents/KM (91¢)",
+    "• DEMO",
+    "Tax Deduction Subtotal",
+    "$0.00",
+    "RECORD DETAIL CHECKS",
+    "Start your records",
+    "50%",
+    "Awaiting initial drive logs",
+    "Vehicle Profile",
+    "Toyota HiLux (DEMO)",
+    "Edit",
+    "ATO Tax Method",
+    "Cents per KM (91¢/km)",
+    "Active",
+    "Reasonable estimate basis established",
+    "Log drive",
+    "Business trip details",
+    "Awaiting drive logs to substantiate",
+    "Awaiting Drives",
+    "Accountant Hand-off",
+    "Email ATO Tax Pack (PDF + CSV) in 1 tap",
+    "Share with Accountant",
+    "Tax Summary",
+    "FY 2026-27 • ATO Schedule D1"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 328.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 328.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 64.0,
+      "x": 41.0,
+      "y": 438.0,
+      "labels": "Reasonable estimate basis established | Awaiting initial drive logs | Log drive"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 64.0,
+      "x": 41.0,
+      "y": 438.0,
+      "labels": "Reasonable estimate basis established | Awaiting initial drive logs | Log drive"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 62.0,
+      "x": 41.0,
+      "y": 512.0,
+      "labels": "Business trip details | Awaiting drive logs to substantiate | Awaiting Drives"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 62.0,
+      "x": 41.0,
+      "y": 512.0,
+      "labels": "Business trip details | Awaiting drive logs to substantiate | Awaiting Drives"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 308.0,
+      "height": 48.0,
+      "x": 41.0,
+      "y": 686.0,
+      "labels": "Share with Accountant"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 44.0,
+      "x": 41.0,
+      "y": 688.0,
+      "labels": "Share with Accountant"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 44.0,
+      "x": 41.0,
+      "y": 688.0,
+      "labels": "Share with Accountant"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 338.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 338.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 342.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 342.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

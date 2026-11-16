@@ -1,0 +1,172 @@
+{
+  "screen": "entry_logbook",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Trip details",
+    "Check the route, distance and purpose for your logbook.",
+    "WHEN",
+    "8 Nov 2026",
+    "7:27 PM",
+    "DISTANCE",
+    "Trip distance",
+    "0.0",
+    "km",
+    "From",
+    "Starting suburb or depot",
+    "To",
+    "Destination suburb or address",
+    "What was this trip for?",
+    "Client Site",
+    "Supplies Run",
+    "Tool Transport",
+    "Personal",
+    "Odometer",
+    "Edit start",
+    "Start",
+    "42032 km",
+    "Calculated end",
+    "End reading = starting odometer + trip distance.",
+    "Add trip",
+    "Save trip"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 137.96107700892856,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 272.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "InkWell",
+      "width": 137.96107700892856,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 272.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 137.96107700892856,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 272.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "TextButton",
+      "width": 80.92681285313198,
+      "height": 48.0,
+      "x": 185.96107700892856,
+      "y": 272.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "InkWell",
+      "width": 80.92681285313198,
+      "height": 48.0,
+      "x": 185.96107700892856,
+      "y": 272.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 80.92681285313198,
+      "height": 48.0,
+      "x": 185.96107700892856,
+      "y": 272.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 649.6790027618408,
+      "labels": "Client Site"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 649.6790027618408,
+      "labels": "Client Site"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 713.6790027618408,
+      "labels": "Supplies Run"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 713.6790027618408,
+      "labels": "Supplies Run"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 777.6790027618408,
+      "labels": "Tool Transport"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 777.6790027618408,
+      "labels": "Tool Transport"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 841.6790027618408,
+      "labels": "Personal"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 54.0,
+      "x": 20.0,
+      "y": 841.6790027618408,
+      "labels": "Personal"
+    },
+    {
+      "type": "FilledButton",
+      "width": 350.0,
+      "height": 56.0,
+      "x": 20.0,
+      "y": 742.0,
+      "labels": "Save trip"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 56.0,
+      "x": 20.0,
+      "y": 742.0,
+      "labels": "Save trip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 56.0,
+      "x": 20.0,
+      "y": 742.0,
+      "labels": "Save trip"
+    }
+  ]
+}

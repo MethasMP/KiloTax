@@ -1,0 +1,160 @@
+{
+  "screen": "expense_detail",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "MANUAL ENTRY • REVIEW REQUIRED",
+    "Attach a clear receipt and confirm every field before tax export.",
+    "Merchant / Supplier",
+    "Review before export",
+    "Amount (AUD)",
+    "0.00",
+    "$ ",
+    "Ready for tax",
+    "8 Nov 2026",
+    "• Tap to change date",
+    "GST component",
+    "Auto 10%",
+    "Category",
+    "Work Tolls & Parking",
+    "Payment method",
+    "Business Account",
+    "Vehicle",
+    "Toyota",
+    "Linked Trip",
+    "None (Tap to link)",
+    "Claim type",
+    "100% Direct Business Claim",
+    "Notes (e.g. Tools, Materials, Client job site)",
+    "Tax Receipt Evidence",
+    "Receipt photo needed",
+    "Attach receipt",
+    "ATO Evidence Checklist",
+    "Supplier / Merchant",
+    "✓ Valid",
+    "Expense Amount",
+    "Date & Time",
+    "Business Category",
+    "Receipt Photo Attached",
+    "Missing",
+    "I checked the amount, date, category and receipt",
+    "Saving without confirmation keeps this expense in review.",
+    "Update Expense Record",
+    "Expense detail"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 112.09013366699219,
+      "height": 27.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "Ready for tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 112.09013366699219,
+      "height": 27.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "Ready for tax"
+    },
+    {
+      "type": "InkWell",
+      "width": 198.529296875,
+      "height": 25.0,
+      "x": 41.0,
+      "y": 422.0,
+      "labels": "8 Nov 2026 | • Tap to change date"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 198.529296875,
+      "height": 25.0,
+      "x": 41.0,
+      "y": 422.0,
+      "labels": "8 Nov 2026 | • Tap to change date"
+    },
+    {
+      "type": "InkWell",
+      "width": 69.75078201293945,
+      "height": 26.0,
+      "x": 264.24921798706055,
+      "y": 469.0,
+      "labels": "Auto 10%"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 69.75078201293945,
+      "height": 26.0,
+      "x": 264.24921798706055,
+      "y": 469.0,
+      "labels": "Auto 10%"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 48.0,
+      "x": 21.0,
+      "y": 543.0,
+      "labels": "Category | Work Tolls & Parking"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 48.0,
+      "x": 21.0,
+      "y": 543.0,
+      "labels": "Category | Work Tolls & Parking"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 48.0,
+      "x": 21.0,
+      "y": 690.0,
+      "labels": "Linked Trip | None (Tap to link)"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 48.0,
+      "x": 21.0,
+      "y": 690.0,
+      "labels": "Linked Trip | None (Tap to link)"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

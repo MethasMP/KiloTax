@@ -1,0 +1,169 @@
+{
+  "screen": "settings",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Open audit surface",
+    "Offline Mode",
+    "Trips and receipts saved on this phone",
+    "Cloud Backup",
+    "Keep your trip logs and tax deductions safe",
+    "Apple ID",
+    "Google",
+    "Export Backup File",
+    "Save a copy to Files or iCloud Drive",
+    "Product feedback",
+    "Save a note or preview it before sharing",
+    "Reset Local Data",
+    "Privacy Policy",
+    "•",
+    "Terms of Service"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 159.9317910330636,
+      "height": 48.0,
+      "x": 115.0341044834682,
+      "y": 398.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "InkWell",
+      "width": 159.9317910330636,
+      "height": 40.0,
+      "x": 115.0341044834682,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 159.9317910330636,
+      "height": 40.0,
+      "x": 115.0341044834682,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 41.0,
+      "y": 448.0,
+      "labels": "Apple ID"
+    },
+    {
+      "type": "InkWell",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 41.0,
+      "y": 448.0,
+      "labels": "Apple ID"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 41.0,
+      "y": 448.0,
+      "labels": "Apple ID"
+    },
+    {
+      "type": "OutlinedButton",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 200.0,
+      "y": 448.0,
+      "labels": "Google"
+    },
+    {
+      "type": "InkWell",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 200.0,
+      "y": 448.0,
+      "labels": "Google"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 149.0,
+      "height": 42.0,
+      "x": 200.0,
+      "y": 448.0,
+      "labels": "Google"
+    },
+    {
+      "type": "InkWell",
+      "width": 340.0,
+      "height": 63.0,
+      "x": 25.0,
+      "y": 520.0,
+      "labels": "Export Backup File | Save a copy to Files or iCloud Drive"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 340.0,
+      "height": 63.0,
+      "x": 25.0,
+      "y": 520.0,
+      "labels": "Export Backup File | Save a copy to Files or iCloud Drive"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 82.0,
+      "x": 24.0,
+      "y": 619.0,
+      "labels": "Product feedback | Save a note or preview it before sharing"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 82.0,
+      "x": 24.0,
+      "y": 619.0,
+      "labels": "Product feedback | Save a note or preview it before sharing"
+    },
+    {
+      "type": "TextButton",
+      "width": 134.4000015258789,
+      "height": 48.0,
+      "x": 127.79999923706055,
+      "y": 709.0,
+      "labels": "Reset Local Data"
+    },
+    {
+      "type": "InkWell",
+      "width": 134.4000015258789,
+      "height": 40.0,
+      "x": 127.79999923706055,
+      "y": 713.0,
+      "labels": "Reset Local Data"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.4000015258789,
+      "height": 40.0,
+      "x": 127.79999923706055,
+      "y": 713.0,
+      "labels": "Reset Local Data"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 79.0082015991211,
+      "height": 17.0,
+      "x": 96.17988276481628,
+      "y": 767.0,
+      "labels": "Privacy Policy"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 95.9820327758789,
+      "height": 17.0,
+      "x": 197.8380844593048,
+      "y": 767.0,
+      "labels": "Terms of Service"
+    }
+  ]
+}

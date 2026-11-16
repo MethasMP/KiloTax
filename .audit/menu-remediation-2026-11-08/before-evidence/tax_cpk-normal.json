@@ -1,0 +1,146 @@
+{
+  "screen": "tax_cpk",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "ATO Cents/KM (91¢)",
+    "• DEMO",
+    "Tax Deduction Subtotal",
+    "$16.74",
+    "RECORD DETAIL CHECKS",
+    "Details up to date",
+    "92%",
+    "3 items need attention",
+    "Review all",
+    "Vehicle Profile",
+    "Toyota HiLux (DEMO)",
+    "Edit",
+    "ATO Tax Method",
+    "Cents per KM (91¢/km)",
+    "Active",
+    "Reasonable estimate basis established",
+    "3 drives recorded",
+    "View",
+    "1 Trips Need Work Purpose",
+    "ATO requires clear business justification",
+    "Resolve Now",
+    "LOGBOOK ADVANTAGE DETECTED",
+    "+$62.47 extra",
+    "Switching to the Logbook method will unlock an estimated +$62.47 extra deductions from actual fuel, servicing and depreciation.",
+    "Cents / KM (Current)",
+    "Logbook (Optimal)",
+    "$79.22",
+    "Accountant Hand-off",
+    "Email ATO Tax Pack (PDF + CSV) in 1 tap",
+    "Share with Accountant",
+    "Tax Summary",
+    "FY 2026-27 • ATO Schedule D1"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 60.053466796875,
+      "height": 18.0,
+      "x": 288.946533203125,
+      "y": 290.0,
+      "labels": "Review all"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 328.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 328.0,
+      "labels": "Vehicle Profile | Toyota HiLux (DEMO) | Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 45.0,
+      "x": 41.0,
+      "y": 383.0,
+      "labels": "ATO Tax Method | Cents per KM (91¢/km) | Active"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 64.0,
+      "x": 41.0,
+      "y": 438.0,
+      "labels": "Reasonable estimate basis established | 3 drives recorded | View"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 64.0,
+      "x": 41.0,
+      "y": 438.0,
+      "labels": "Reasonable estimate basis established | 3 drives recorded | View"
+    },
+    {
+      "type": "InkWell",
+      "width": 308.0,
+      "height": 81.0,
+      "x": 41.0,
+      "y": 512.0,
+      "labels": "1 Trips Need Work Purpose | ATO requires clear business justification | Resolve Now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 308.0,
+      "height": 81.0,
+      "x": 41.0,
+      "y": 512.0,
+      "labels": "1 Trips Need Work Purpose | ATO requires clear business justification | Resolve Now"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 338.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 338.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 342.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 342.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

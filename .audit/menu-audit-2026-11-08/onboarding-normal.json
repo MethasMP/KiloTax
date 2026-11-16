@@ -1,0 +1,56 @@
+{
+  "screen": "onboarding",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "+$9,140 Claim Unlocked",
+    "ATO SHORTCUT",
+    "$4,400",
+    "Capped at 5k km",
+    "VS",
+    "YOUR REAL COSTS",
+    "$13,540",
+    "Fuel + Ute Maint",
+    "Estimates based on ATO logbook rules",
+    "ATO 1-Tonne Rule",
+    "Don't leave $9,140\non the table with the ATO.",
+    "The ATO's 5,000 km shortcut burns cash on commercial utes. KiloTax claims your actual fuel, tyres, and finance automatically.",
+    "See My Full Claim",
+    "Skip"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 732.0,
+      "labels": "See My Full Claim"
+    },
+    {
+      "type": "TextButton",
+      "width": 64.0,
+      "height": 48.0,
+      "x": 314.0,
+      "y": 51.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "InkWell",
+      "width": 64.0,
+      "height": 40.0,
+      "x": 314.0,
+      "y": 55.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 64.0,
+      "height": 40.0,
+      "x": 314.0,
+      "y": 55.0,
+      "labels": "Skip"
+    }
+  ]
+}

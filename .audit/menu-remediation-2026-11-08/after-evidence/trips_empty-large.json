@@ -1,0 +1,72 @@
+{
+  "screen": "trips_empty",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "FY 2026-27",
+    "No trips yet",
+    "Add a trip to start your driving record.",
+    "Add a trip",
+    "Trips Ledger",
+    "Toyota HiLux (DEMO)"
+  ],
+  "targets": [
+    {
+      "type": "FilledButton",
+      "width": 272.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 351.0,
+      "labels": "Add a trip"
+    },
+    {
+      "type": "InkWell",
+      "width": 272.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 355.0,
+      "labels": "Add a trip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 272.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 355.0,
+      "labels": "Add a trip"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

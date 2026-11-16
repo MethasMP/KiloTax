@@ -1,0 +1,126 @@
+{
+  "screen": "navigation_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Good afternoon",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "12-WEEK LOGBOOK",
+    "DEMO",
+    "Your logbook starts here",
+    "Build a clear record of your driving.",
+    "12 weeks · one driving record",
+    "Vehicle Odometer",
+    "42,032 km",
+    "Business use",
+    "56.8%",
+    "1 trip needs review",
+    "Start your logbook",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "Work Drive",
+    "Home",
+    "Trips",
+    "Expenses",
+    "Tax"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 252.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 29.2,
+      "y": 745.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 29.2,
+      "y": 745.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 81.52000000000001,
+      "y": 745.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 81.52000000000001,
+      "y": 745.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.0,
+      "height": 52.0,
+      "x": 134.0,
+      "y": 751.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 186.16000000000003,
+      "y": 745.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 186.16000000000003,
+      "y": 745.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "InkWell",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 238.48000000000002,
+      "y": 745.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 52.32000000000001,
+      "height": 63.6,
+      "x": 238.48000000000002,
+      "y": 745.2,
+      "labels": "Tax"
+    }
+  ]
+}

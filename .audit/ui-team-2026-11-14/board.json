@@ -1,0 +1,86 @@
+{
+  "mode": "shared checkout, disjoint file ownership",
+  "integrator": "root",
+  "cards": [
+    {
+      "id": "home",
+      "owner": "design_home",
+      "state": "review",
+      "scope": "task_home_body.dart and home widgets",
+      "acceptance": [
+        "Next action before estimate",
+        "Real data and tracking states",
+        "Focused widget tests"
+      ],
+      "handoff": "/tmp/drivelog-home-handoff.md",
+      "evidence": [
+        "34 affected tests passed on final verification; 30 other relevant tests passed in regression run",
+        "Static analysis: no issues",
+        "390px actual Flutter render captures; 200% text checks",
+        "Scoped diff whitespace check passed"
+      ],
+      "gate": "passed"
+    },
+    {
+      "id": "trips",
+      "owner": "design_trips",
+      "state": "review",
+      "scope": "trips_ledger_tab.dart and trip widgets",
+      "acceptance": [
+        "Clear review reasons",
+        "Correct empty filters",
+        "Vehicle/FY scoped navigation"
+      ],
+      "handoff": "/tmp/drivelog-trips-handoff.md",
+      "evidence": [
+        "34 affected tests passed on final verification; 30 other relevant tests passed in regression run",
+        "Static analysis: no issues",
+        "390px actual Flutter render captures; 200% text checks",
+        "Scoped diff whitespace check passed"
+      ],
+      "gate": "passed"
+    },
+    {
+      "id": "tax",
+      "owner": "design_tax",
+      "state": "review",
+      "scope": "tax_summary_screen.dart and tax widgets",
+      "acceptance": [
+        "Single readiness section",
+        "Contextual primary action",
+        "Draft sharing preserved"
+      ],
+      "handoff": "/tmp/drivelog-tax-handoff.md",
+      "evidence": [
+        "34 affected tests passed on final verification; 30 other relevant tests passed in regression run",
+        "Static analysis: no issues",
+        "390px actual Flutter render captures; 200% text checks",
+        "Scoped diff whitespace check passed"
+      ],
+      "gate": "passed"
+    },
+    {
+      "id": "integration",
+      "owner": "root",
+      "state": "review",
+      "scope": "scaffold and home wrappers, integrated render/navigation tests",
+      "acceptance": [
+        "Tab navigation preserves context",
+        "390dp render screenshots",
+        "Analyze and regression gates"
+      ],
+      "evidence": [
+        "34 affected tests passed on final verification; 30 other relevant tests passed in regression run",
+        "Static analysis: no issues",
+        "390px actual Flutter render captures; 200% text checks",
+        "Scoped diff whitespace check passed"
+      ],
+      "gate": "passed"
+    }
+  ],
+  "merge_gate": "Static analysis, focused and relevant regression tests, rendered screenshot inspection",
+  "integration": "Changes combined in current checkout; no commits or branch merges performed.",
+  "result": "All three menu changes integrated into the existing working checkout; review gates passed. No Git commit, merge, or deployment requested.",
+  "blockers": [],
+  "reusable_skill_candidates": []
+}

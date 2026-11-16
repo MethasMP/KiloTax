@@ -1,0 +1,61 @@
+{
+  "screen": "trips_empty",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 226 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/home/widgets/trips_ledger_tab.dart:300:37\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#16af2 relayoutBoundary=up17 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=70.8, 0.0<=h<=Infinity)\n  size: Size(70.8, 28.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 78 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/home/widgets/trips_ledger_tab.dart:444:41\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#b1994 relayoutBoundary=up18 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=180.0, 0.0<=h<=Infinity)\n  size: Size(180.0, 30.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "FY25 AUDIT-PROOF LEDGER",
+    "$0.00",
+    "91¢ / KM",
+    "0.0 / 5,000 km",
+    "TELEMETRY STANDBY",
+    "Automated Trip Substantiation",
+    "1. Threshold Trigger (15 km/h)",
+    "WGS-84 sensor fusion captures coordinate fixes in background.",
+    "2. Tamper-Proof Ledger Seal",
+    "Locks arrival coordinates and start/end odometer readings.",
+    "3. Instant 91¢/km Substantiation",
+    "Accrues into your tax dossier ready for accountant sign-off.",
+    "Add Trip (+91¢/km)",
+    "Compliant with ITAA 1997 Subdiv 28-B • Continuous GPS evidence chain",
+    "Trips Ledger",
+    "Toyota HiLux (DEMO)"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

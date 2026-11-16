@@ -1,0 +1,40 @@
+{
+  "screen": "notifications",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 4.2 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/notifications/notifications_sheet.dart:75:22\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#a7e44 relayoutBoundary=up13 OVERFLOWING:\n  parentData: offset=Offset(20.0, 4.0) (can use size)\n  constraints: BoxConstraints(w=280.0, 0.0<=h<=Infinity)\n  size: Size(280.0, 52.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "Open audit surface",
+    "Activity & Alerts",
+    "All caught up!",
+    "Trip detections and tax reminders will appear here."
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 289.6636003766741,
+      "height": 48.0,
+      "x": 15.168199811662959,
+      "y": 398.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "InkWell",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    }
+  ]
+}

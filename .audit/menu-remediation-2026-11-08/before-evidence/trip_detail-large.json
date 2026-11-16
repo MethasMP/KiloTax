@@ -1,0 +1,122 @@
+{
+  "screen": "trip_detail",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 199 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/trips/trip_detail_screen.dart:285:19\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#1f107 relayoutBoundary=up15 OVERFLOWING:\n  parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use\n    size)\n  constraints: BoxConstraints(0.0<=w<=242.0, 0.0<=h<=Infinity)\n  size: Size(242.0, 45.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 19 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/trips/trip_detail_screen.dart:516:38\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#80217 relayoutBoundary=up22 OVERFLOWING:\n  parentData: offset=Offset(0.0, 9.0) (can use size)\n  constraints: BoxConstraints(w=117.0, 0.0<=h<=Infinity)\n  size: Size(117.0, 38.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 12 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/trips/trip_detail_screen.dart:567:38\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#ca377 relayoutBoundary=up22 OVERFLOWING:\n  parentData: offset=Offset(0.0, 9.0) (can use size)\n  constraints: BoxConstraints(w=117.0, 0.0<=h<=Infinity)\n  size: Size(117.0, 38.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "8 Nov · 4:54 PM",
+    "+$16.74 ATO Claim",
+    "Bunnings Trade",
+    "Alexandria NSW",
+    "Smith renovation",
+    "Bondi NSW",
+    "18.4 km",
+    "Business",
+    "Personal",
+    "Purpose",
+    "Deliver timber to Smith renovation",
+    "Vehicle",
+    "Toyota HiLux (DEMO)",
+    "Tax Method",
+    "Cents-per-km (91¢/km)",
+    "Notes",
+    "No note added",
+    "Done",
+    "Trip detail",
+    "Edit"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 117.0,
+      "height": 56.0,
+      "x": 43.0,
+      "y": 498.0,
+      "labels": "Business"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 117.0,
+      "height": 56.0,
+      "x": 160.0,
+      "y": 498.0,
+      "labels": "Personal"
+    },
+    {
+      "type": "InkWell",
+      "width": 242.0,
+      "height": 86.0,
+      "x": 39.0,
+      "y": 582.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 242.0,
+      "height": 86.0,
+      "x": 39.0,
+      "y": 582.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 77.2386703491211,
+      "height": 48.0,
+      "x": 234.7613296508789,
+      "y": 51.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 77.2386703491211,
+      "height": 40.0,
+      "x": 234.7613296508789,
+      "y": 55.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 77.2386703491211,
+      "height": 40.0,
+      "x": 234.7613296508789,
+      "y": 55.0,
+      "labels": "Edit"
+    }
+  ]
+}

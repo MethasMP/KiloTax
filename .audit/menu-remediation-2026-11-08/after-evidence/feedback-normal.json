@@ -1,0 +1,86 @@
+{
+  "screen": "feedback",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Tell us what got in the way",
+    "Feedback is optional. Save a draft on this phone or preview it before you choose to share. No records are attached.",
+    "What was difficult?",
+    "Something else",
+    "If you shared records with your accountant",
+    "Not shared yet",
+    "What would help?",
+    "Leave out names, addresses and tax details.",
+    "0/1000",
+    "Preview feedback",
+    "Save on this phone",
+    "Product feedback"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 283.0,
+      "labels": "A missed trip | Business or personal classification | Trip purpose | Receipts | Exporting records | Information requested by my accountant | Something else"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 381.0,
+      "labels": "Not shared yet | Waiting for a response | No extra information requested | More information requested"
+    },
+    {
+      "type": "FilledButton",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 585.0,
+      "labels": "Preview feedback"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 40.0,
+      "x": 20.0,
+      "y": 589.0,
+      "labels": "Preview feedback"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 40.0,
+      "x": 20.0,
+      "y": 589.0,
+      "labels": "Preview feedback"
+    },
+    {
+      "type": "TextButton",
+      "width": 350.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 633.0,
+      "labels": "Save on this phone"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 40.0,
+      "x": 20.0,
+      "y": 637.0,
+      "labels": "Save on this phone"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 40.0,
+      "x": 20.0,
+      "y": 637.0,
+      "labels": "Save on this phone"
+    }
+  ]
+}

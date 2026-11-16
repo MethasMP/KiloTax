@@ -1,0 +1,147 @@
+{
+  "screen": "expenses_empty",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Toyota HiLux (DEMO)",
+    "All",
+    "Vehicle",
+    "Business",
+    "$0.00",
+    "Recorded expenses in this filter",
+    "Scan",
+    "Add Expense",
+    "Expenses · FY 2026-27"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 96.0,
+      "height": 54.0,
+      "x": 16.0,
+      "y": 191.0,
+      "labels": "All"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 96.0,
+      "height": 54.0,
+      "x": 112.0,
+      "y": 191.0,
+      "labels": "Vehicle"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 96.0,
+      "height": 92.0,
+      "x": 208.0,
+      "y": 172.0,
+      "labels": "Business"
+    },
+    {
+      "type": "InkWell",
+      "width": 134.7464828491211,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 458.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.7464828491211,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 458.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 288.0,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 514.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "InkWell",
+      "width": 288.0,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 514.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 288.0,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 514.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 224.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 224.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 228.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 228.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 272.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 272.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 276.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 276.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

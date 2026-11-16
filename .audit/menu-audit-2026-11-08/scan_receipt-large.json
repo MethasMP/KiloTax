@@ -1,0 +1,144 @@
+{
+  "screen": "scan_receipt",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 30 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/expenses/scan_receipt_screen.dart:334:22\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#1bb5b relayoutBoundary=up4 OVERFLOWING:\n  parentData: offset=Offset(20.0, 12.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=280.0, 0.0<=h<=Infinity)\n  size: Size(280.0, 48.0)\n  direction: horizontal\n  mainAxisAlignment: spaceBetween\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "Receipt Scanner",
+    "Position receipt within frame",
+    "Auto-crops edges & removes shadows.",
+    "Manual"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 282.0029296875,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 282.0029296875,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 282.0029296875,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 282.0029296875,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 72.0,
+      "height": 72.0,
+      "x": 90.34701374598912,
+      "y": 714.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 115.30597250802177,
+      "height": 48.0,
+      "x": 174.69402749197823,
+      "y": 726.0,
+      "labels": "Manual"
+    },
+    {
+      "type": "InkWell",
+      "width": 115.30597250802177,
+      "height": 48.0,
+      "x": 174.69402749197823,
+      "y": 726.0,
+      "labels": "Manual"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 115.30597250802177,
+      "height": 48.0,
+      "x": 174.69402749197823,
+      "y": 726.0,
+      "labels": "Manual"
+    }
+  ]
+}

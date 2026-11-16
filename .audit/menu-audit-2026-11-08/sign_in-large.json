@@ -1,0 +1,78 @@
+{
+  "screen": "sign_in",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 331 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/auth/sign_in_screen.dart:150:38\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#e35db relayoutBoundary=up19 OVERFLOWING:\n  parentData: offset=Offset(13.0, 7.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=254.0, 0.0<=h<=Infinity)\n  size: Size(254.0, 30.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: min\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 119 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/auth/sign_in_screen.dart:264:38\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#e61c9 relayoutBoundary=up1 OVERFLOWING:\n  parentData: offset=Offset(0.0, 5.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=215.5, 0.0<=h<=52.0)\n  size: Size(215.5, 42.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 141 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/auth/sign_in_screen.dart:347:38\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#37cdd relayoutBoundary=up1 OVERFLOWING:\n  parentData: offset=Offset(0.0, 5.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=215.5, 0.0<=h<=52.0)\n  size: Size(215.5, 42.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 80 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/auth/sign_in_screen.dart:386:33\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#feecb relayoutBoundary=up19 OVERFLOWING:\n  parentData: offset=Offset(0.0, 130.0); flex=null; fit=null (can\n    use size)\n  constraints: BoxConstraints(w=237.8, 0.0<=h<=Infinity)\n  size: Size(237.8, 32.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 96 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/auth/sign_in_screen.dart:424:44\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#e4981 relayoutBoundary=up1 OVERFLOWING:\n  parentData: offset=Offset(0.0, 5.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=215.5, 0.0<=h<=52.0)\n  size: Size(215.5, 42.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "ATO COMPLIANT · 100% TAX DEDUCTIBLE LOGBOOK",
+    "Turn work into\ntax-ready evidence",
+    "Track trips, capture receipts, and keep records audit-proof for Australian tradies & sole traders.",
+    "Continue with Apple",
+    "Continue with Google",
+    "OR CONTINUE PRIVATELY",
+    "Continue as Guest",
+    "No account required. Trips saved 100% locally on device.",
+    "By continuing, you agree to our ",
+    "Terms of Service",
+    " and ",
+    "Privacy Policy",
+    ".",
+    "Skip for now"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 72.0,
+      "height": 72.0,
+      "x": 124.0,
+      "y": 111.0,
+      "labels": ""
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 237.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 800.1,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "InkWell",
+      "width": 237.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 800.1,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 237.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 800.1,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "InkWell",
+      "width": 198.0474639892578,
+      "height": 51.6,
+      "x": 105.9525360107422,
+      "y": 49.2,
+      "labels": "Skip for now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 198.0474639892578,
+      "height": 51.6,
+      "x": 105.9525360107422,
+      "y": 49.2,
+      "labels": "Skip for now"
+    }
+  ]
+}

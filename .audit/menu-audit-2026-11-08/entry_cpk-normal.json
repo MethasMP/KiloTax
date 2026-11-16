@@ -1,0 +1,152 @@
+{
+  "screen": "entry_cpk",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Weekend Drive • Select your work purpose below for ATO compliance",
+    "TAX DEDUCTION VALUE",
+    "91¢ / km (ATO Rate)",
+    "+$0.00",
+    "AUD deduction",
+    "DISTANCE TRAVELED",
+    "Tap number to edit",
+    "0.0",
+    "KM",
+    "4982 km remaining of 5,000 km annual ATO quota",
+    "TRIP ROUTE & EVIDENCE",
+    "ATO Substantiation",
+    "Start location (e.g. Home Depot / Base)",
+    "Destination (e.g. Client Site)",
+    "Client Job Site",
+    "Bunnings Warehouse",
+    "Reece Plumbing",
+    "Total Tools",
+    "Job / Client Ref (Optional, e.g. Job #402)",
+    "Trade Purpose",
+    "ATO Tax Claim",
+    "Client Site",
+    "Contract trade works & client visits",
+    "Supplies Run",
+    "Bunnings, tools, timber & materials",
+    "Tool Transport",
+    "Carried heavy gear (>20kg) with no secure lockup",
+    "Save Work Trip",
+    "Not a work drive",
+    "Review Work Drive (CPK)"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 125.25390625,
+      "height": 33.0,
+      "x": 39.0,
+      "y": 637.0,
+      "labels": "Client Job Site"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 125.25390625,
+      "height": 33.0,
+      "x": 39.0,
+      "y": 637.0,
+      "labels": "Client Job Site"
+    },
+    {
+      "type": "InkWell",
+      "width": 164.4988250732422,
+      "height": 33.0,
+      "x": 172.25390625,
+      "y": 637.0,
+      "labels": "Bunnings Warehouse"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 164.4988250732422,
+      "height": 33.0,
+      "x": 172.25390625,
+      "y": 637.0,
+      "labels": "Bunnings Warehouse"
+    },
+    {
+      "type": "InkWell",
+      "width": 135.0863265991211,
+      "height": 33.0,
+      "x": 344.7527313232422,
+      "y": 637.0,
+      "labels": "Reece Plumbing"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 135.0863265991211,
+      "height": 33.0,
+      "x": 344.7527313232422,
+      "y": 637.0,
+      "labels": "Reece Plumbing"
+    },
+    {
+      "type": "InkWell",
+      "width": 104.8707046508789,
+      "height": 33.0,
+      "x": 487.8390579223633,
+      "y": 637.0,
+      "labels": "Total Tools"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 104.8707046508789,
+      "height": 33.0,
+      "x": 487.8390579223633,
+      "y": 637.0,
+      "labels": "Total Tools"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 795.0,
+      "labels": "Client Site | Contract trade works & client visits"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 65.0,
+      "x": 21.0,
+      "y": 795.0,
+      "labels": "Client Site | Contract trade works & client visits"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "screen": "vehicle",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 183 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/vehicle/vehicle_setup_flow.dart:498:30\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#48655 relayoutBoundary=up21 OVERFLOWING:\n  parentData: offset=Offset(14.0, 8.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=252.0, 0.0<=h<=Infinity)\n  size: Size(252.0, 38.0)\n  direction: horizontal\n  mainAxisAlignment: start\n  mainAxisSize: min\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "What do you drive?",
+    "Search or select your primary work vehicle.",
+    "Search make or model",
+    "Common models in Australia",
+    "Ford Ranger",
+    "Ute",
+    "Toyota HiLux",
+    "Isuzu D-Max",
+    "Toyota HiAce",
+    "Van",
+    "Mitsubishi Triton",
+    "Vehicle not listed? Enter manually",
+    "Add Vehicle"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 154.0,
+      "x": 20.0,
+      "y": 576.0,
+      "labels": "Ford Ranger | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 154.0,
+      "x": 20.0,
+      "y": 576.0,
+      "labels": "Ford Ranger | Ute"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 154.0,
+      "x": 20.0,
+      "y": 731.0,
+      "labels": "Toyota HiLux | Ute"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 154.0,
+      "x": 20.0,
+      "y": 731.0,
+      "labels": "Toyota HiLux | Ute"
+    }
+  ]
+}

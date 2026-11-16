@@ -1,0 +1,61 @@
+{
+  "screen": "onboarding",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 60 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/widgets/tactile_primary_button.dart:147:18\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#9ee78 relayoutBoundary=up11 OVERFLOWING:\n  parentData: offset=Offset(20.0, 0.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=232.0, h=54.0)\n  size: Size(232.0, 54.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 27 pixels on the right.\n\nThe relevant error-causing widget was:\n  Row\n  Row:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/onboarding/onboarding_slides_screen.dart:460:34\n\nThe overflowing RenderFlex has an orientation of Axis.horizontal.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#1e30d relayoutBoundary=up9 OVERFLOWING:\n  parentData: offset=Offset(0.0, 7.5) (can use size)\n  constraints: BoxConstraints(w=277.6, 0.0<=h<=Infinity)\n  size: Size(277.6, 35.0)\n  direction: horizontal\n  mainAxisAlignment: center\n  mainAxisSize: max\n  crossAxisAlignment: center\n  textDirection: ltr\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 179 pixels on the bottom.\n\nThe relevant error-causing widget was:\n  Column\n  Column:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/onboarding/onboarding_slides_screen.dart:444:20\n\nThe overflowing RenderFlex has an orientation of Axis.vertical.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#83167 relayoutBoundary=up4 OVERFLOWING:\n  parentData: offset=Offset(1.2, 1.2) (can use size)\n  constraints: BoxConstraints(w=277.6, 0.0<=h<=232.6)\n  size: Size(277.6, 232.6)\n  direction: vertical\n  mainAxisAlignment: start\n  mainAxisSize: min\n  crossAxisAlignment: center\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n",
+    "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞══════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 451 pixels on the bottom.\n\nThe relevant error-causing widget was:\n  Column\n  Column:file:///Users/methas/Desktop/DriveLog/lib/ui/screens/onboarding/onboarding_slides_screen.dart:300:28\n\nThe overflowing RenderFlex has an orientation of Axis.vertical.\nThe edge of the RenderFlex that is overflowing has been marked in\nthe rendering with a yellow and black striped pattern. This is\nusually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget)\nto force the children of the RenderFlex to fit within the\navailable space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that\nthere is content that cannot be seen. If the content is\nlegitimately bigger than the available space, consider clipping\nit with a ClipRect widget before putting it in the flex, or using\na scrollable container rather than a Flex, like a ListView.\nThe specific RenderFlex in question is: RenderFlex#3d92e relayoutBoundary=up5 OVERFLOWING:\n  parentData: <none> (can use size)\n  constraints: BoxConstraints(0.0<=w<=280.0, h=280.5)\n  size: Size(280.0, 280.5)\n  direction: vertical\n  mainAxisAlignment: start\n  mainAxisSize: min\n  crossAxisAlignment: center\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n═════════════════════════════════════════════════════════════════\n"
+  ],
+  "texts": [
+    "+$9,140 Claim Unlocked",
+    "ATO SHORTCUT",
+    "$4,400",
+    "Capped at 5k km",
+    "VS",
+    "YOUR REAL COSTS",
+    "$13,540",
+    "Fuel + Ute Maint",
+    "Estimates based on ATO logbook rules",
+    "ATO 1-Tonne Rule",
+    "Don't leave $9,140\non the table with the ATO.",
+    "The ATO's 5,000 km shortcut burns cash on commercial utes. KiloTax claims your actual fuel, tyres, and finance automatically.",
+    "See My Full Claim",
+    "Skip"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 272.0,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 732.0,
+      "labels": "See My Full Claim"
+    },
+    {
+      "type": "TextButton",
+      "width": 87.01445388793945,
+      "height": 52.0,
+      "x": 220.98554611206055,
+      "y": 49.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.01445388793945,
+      "height": 52.0,
+      "x": 220.98554611206055,
+      "y": 49.0,
+      "labels": "Skip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.01445388793945,
+      "height": 52.0,
+      "x": 220.98554611206055,
+      "y": 49.0,
+      "labels": "Skip"
+    }
+  ]
+}

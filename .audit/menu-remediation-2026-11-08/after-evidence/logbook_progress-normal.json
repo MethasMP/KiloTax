@@ -1,0 +1,53 @@
+{
+  "screen": "logbook_progress",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "12-WEEK LOGBOOK",
+    "DEMO",
+    "Your logbook starts here",
+    "Build a clear record of your driving.",
+    "12 weeks · one driving record",
+    "Vehicle Odometer",
+    "42,032 km",
+    "Recorded trips · business share",
+    "56.8%",
+    "1 trip needs review",
+    "Review & activity",
+    "Keep the details of your driving up to date.",
+    "1 business trip this week",
+    "1 trip needs a purpose",
+    "Review the details before reporting.",
+    "Odometer record",
+    "Starting reading",
+    "42,000 km",
+    "Edit starting reading",
+    "Latest reading",
+    "No odometer gaps detected",
+    "Photo evidence",
+    "Keep dashboard photos alongside your readings.",
+    "Starting odometer",
+    "Tap to add a dashboard photo",
+    "Finishing odometer",
+    "Logbook overview"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 310.0,
+      "height": 72.0,
+      "x": 40.0,
+      "y": 663.0,
+      "labels": "1 trip needs a purpose | Review the details before reporting."
+    },
+    {
+      "type": "GestureDetector",
+      "width": 310.0,
+      "height": 72.0,
+      "x": 40.0,
+      "y": 663.0,
+      "labels": "1 trip needs a purpose | Review the details before reporting."
+    }
+  ]
+}

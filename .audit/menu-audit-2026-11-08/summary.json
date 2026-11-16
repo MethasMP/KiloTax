@@ -1,0 +1,99 @@
+{
+  "profiles": {
+    "normal": {
+      "states": 29,
+      "overflow_states": 0,
+      "overflow_events": 0,
+      "findings": []
+    },
+    "large": {
+      "states": 29,
+      "overflow_states": 16,
+      "overflow_events": 51,
+      "findings": [
+        {
+          "screen": "compliance",
+          "events": 2,
+          "maximum_pixels": 219.0
+        },
+        {
+          "screen": "entry_cpk",
+          "events": 6,
+          "maximum_pixels": 254.0
+        },
+        {
+          "screen": "expense_detail",
+          "events": 12,
+          "maximum_pixels": 279.0
+        },
+        {
+          "screen": "expenses_empty",
+          "events": 1,
+          "maximum_pixels": 164.0
+        },
+        {
+          "screen": "navigation_cpk",
+          "events": 2,
+          "maximum_pixels": 290.0
+        },
+        {
+          "screen": "notifications",
+          "events": 1,
+          "maximum_pixels": 4.2
+        },
+        {
+          "screen": "notifications_dropdown",
+          "events": 1,
+          "maximum_pixels": 86.0
+        },
+        {
+          "screen": "onboarding",
+          "events": 4,
+          "maximum_pixels": 451.0
+        },
+        {
+          "screen": "scan_receipt",
+          "events": 1,
+          "maximum_pixels": 30.0
+        },
+        {
+          "screen": "sign_in",
+          "events": 5,
+          "maximum_pixels": 331.0
+        },
+        {
+          "screen": "tax_cpk",
+          "events": 4,
+          "maximum_pixels": 328.0
+        },
+        {
+          "screen": "tax_empty",
+          "events": 3,
+          "maximum_pixels": 211.0
+        },
+        {
+          "screen": "tax_logbook",
+          "events": 3,
+          "maximum_pixels": 282.0
+        },
+        {
+          "screen": "trip_detail",
+          "events": 3,
+          "maximum_pixels": 199.0
+        },
+        {
+          "screen": "trips_empty",
+          "events": 2,
+          "maximum_pixels": 226.0
+        },
+        {
+          "screen": "vehicle",
+          "events": 1,
+          "maximum_pixels": 183.0
+        }
+      ]
+    }
+  },
+  "counterexample_tests": "5 expected UX-invariant failures; see contracts.log",
+  "method": "Synthetic records, actual Flutter widgets; this is an audit, not a passing accessibility certification."
+}

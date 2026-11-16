@@ -1,0 +1,166 @@
+{
+  "screen": "expenses",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "All",
+    "Vehicle",
+    "Business",
+    "$120.85",
+    "Total deductible expenses recorded",
+    "Wilson Parking",
+    "$24.50",
+    "Work Tolls & Parking • 8 Nov 2026",
+    "No photo",
+    "Scan",
+    "Add Expense",
+    "Expenses"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 90.66666666666667,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 126.0,
+      "labels": "All"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 90.66666666666667,
+      "height": 54.0,
+      "x": 114.66666666666667,
+      "y": 126.0,
+      "labels": "Vehicle"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 90.66666666666667,
+      "height": 92.0,
+      "x": 205.33333333333334,
+      "y": 107.0,
+      "labels": "Business"
+    },
+    {
+      "type": "InkWell",
+      "width": 288.0,
+      "height": 115.0,
+      "x": 16.0,
+      "y": 569.0,
+      "labels": "Wilson Parking | $24.50 | Work Tolls & Parking • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 288.0,
+      "height": 115.0,
+      "x": 16.0,
+      "y": 569.0,
+      "labels": "Wilson Parking | $24.50 | Work Tolls & Parking • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "InkWell",
+      "width": 118.7464828491211,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 672.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 118.7464828491211,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 672.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 159.2535171508789,
+      "height": 48.0,
+      "x": 144.7464828491211,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "InkWell",
+      "width": 159.2535171508789,
+      "height": 48.0,
+      "x": 144.7464828491211,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 159.2535171508789,
+      "height": 48.0,
+      "x": 144.7464828491211,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 224.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 224.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 228.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 228.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 272.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 272.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 276.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 276.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

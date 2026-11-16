@@ -1,0 +1,21 @@
+{
+  "screen": "onboarding_account",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Cents per Kilometre · FY 2026-27",
+    "Your vehicle is added",
+    "Keep your trip and expense details ready for review.",
+    "Toyota HiLux (DEMO)",
+    "Cents per Kilometre",
+    "Save your records across devices",
+    "Connect with Apple or Google for automatic cloud backup, or continue as a guest on this device.",
+    "Continue with Apple",
+    "Continue with Google",
+    "OR",
+    "Continue as Guest (Device Only)",
+    "Privacy Policy · Terms of Service"
+  ],
+  "targets": []
+}

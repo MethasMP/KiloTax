@@ -1,0 +1,136 @@
+{
+  "screen": "sign_in",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "ATO COMPLIANT · 100% TAX DEDUCTIBLE LOGBOOK",
+    "Turn work into\ntax-ready evidence",
+    "Track trips, capture receipts, and keep records audit-proof for Australian tradies & sole traders.",
+    "Continue with Apple",
+    "Continue with Google",
+    "OR CONTINUE PRIVATELY",
+    "Continue as Guest",
+    "No account required. Trips saved 100% locally on device.",
+    "By continuing, you agree to our ",
+    "Terms of Service",
+    " and ",
+    "Privacy Policy",
+    ".",
+    "Skip for now"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 72.0,
+      "height": 72.0,
+      "x": 159.0,
+      "y": 142.11999999999998,
+      "labels": ""
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 458.9,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "InkWell",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 458.9,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 458.9,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "OutlinedButton",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 520.9,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "InkWell",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 520.9,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 520.9,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "OutlinedButton",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 620.9,
+      "labels": "Continue as Guest"
+    },
+    {
+      "type": "InkWell",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 620.9,
+      "labels": "Continue as Guest"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 307.8,
+      "height": 52.0,
+      "x": 41.1,
+      "y": 620.9,
+      "labels": "Continue as Guest"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 96.8960952758789,
+      "height": 17.0,
+      "x": 221.65800857543945,
+      "y": 756.0,
+      "labels": "Terms of Service"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 80.0746078491211,
+      "height": 17.0,
+      "x": 153.28418040275574,
+      "y": 773.0,
+      "labels": "Privacy Policy"
+    },
+    {
+      "type": "InkWell",
+      "width": 119.7237335205078,
+      "height": 36.0,
+      "x": 254.2762664794922,
+      "y": 57.0,
+      "labels": "Skip for now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 119.7237335205078,
+      "height": 36.0,
+      "x": 254.2762664794922,
+      "y": 57.0,
+      "labels": "Skip for now"
+    }
+  ]
+}

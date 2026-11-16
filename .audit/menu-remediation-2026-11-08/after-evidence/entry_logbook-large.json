@@ -1,0 +1,108 @@
+{
+  "screen": "entry_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Trip details",
+    "Check the route, distance and purpose for your logbook.",
+    "WHEN",
+    "8 Nov 2026",
+    "7:27 PM",
+    "DISTANCE",
+    "Trip distance",
+    "0.0",
+    "km",
+    "From",
+    "Starting suburb or depot",
+    "To",
+    "Destination suburb or address",
+    "What was this trip for?",
+    "Client Site",
+    "Supplies Run",
+    "Tool Transport",
+    "Personal",
+    "Odometer",
+    "Edit start",
+    "Start",
+    "42032 km",
+    "Calculated end",
+    "End reading = starting odometer + trip distance.",
+    "Add trip",
+    "Save trip"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 199.779296875,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 515.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "InkWell",
+      "width": 199.779296875,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 515.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 199.779296875,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 515.0,
+      "labels": "8 Nov 2026"
+    },
+    {
+      "type": "TextButton",
+      "width": 130.55363028390067,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 571.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.55363028390067,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 571.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.55363028390067,
+      "height": 48.0,
+      "x": 40.0,
+      "y": 571.0,
+      "labels": "7:27 PM"
+    },
+    {
+      "type": "FilledButton",
+      "width": 280.0,
+      "height": 71.0,
+      "x": 20.0,
+      "y": 727.0,
+      "labels": "Save trip"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 71.0,
+      "x": 20.0,
+      "y": 727.0,
+      "labels": "Save trip"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 71.0,
+      "x": 20.0,
+      "y": 727.0,
+      "labels": "Save trip"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "screen": "quick_capture_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Open audit surface",
+    "Quick Capture",
+    "What do you want to add?",
+    "End of shift? Log final odometer or wrap up trips",
+    "Trip",
+    "Log drive with odometer tracking",
+    "Car Expense",
+    "Scan fuel, service, or insurance receipt",
+    "Odometer",
+    "Record dashboard reading (42032 km)",
+    "Cancel"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 289.6636003766741,
+      "height": 48.0,
+      "x": 15.168199811662959,
+      "y": 398.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "InkWell",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 289.6636003766741,
+      "height": 40.0,
+      "x": 15.168199811662959,
+      "y": 402.0,
+      "labels": "Open audit surface"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 179.0,
+      "x": 20.0,
+      "y": 319.0,
+      "labels": "Trip | Log drive with odometer tracking"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 179.0,
+      "x": 20.0,
+      "y": 319.0,
+      "labels": "Trip | Log drive with odometer tracking"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 260.0,
+      "x": 20.0,
+      "y": 508.0,
+      "labels": "Car Expense | Scan fuel, service, or insurance receipt"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 260.0,
+      "x": 20.0,
+      "y": 508.0,
+      "labels": "Car Expense | Scan fuel, service, or insurance receipt"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 214.0,
+      "x": 20.0,
+      "y": 778.0,
+      "labels": "Odometer | Record dashboard reading (42032 km)"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 214.0,
+      "x": 20.0,
+      "y": 778.0,
+      "labels": "Odometer | Record dashboard reading (42032 km)"
+    }
+  ]
+}

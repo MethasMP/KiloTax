@@ -1,0 +1,48 @@
+{
+  "screen": "sign_in",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "VEHICLE RECORDS FOR ACCOUNTANT REVIEW",
+    "Turn work into\ntax-ready evidence",
+    "Track trips, capture receipts, and prepare records for review with your accountant.",
+    "Continue with Apple",
+    "Continue with Google",
+    "OR CONTINUE PRIVATELY",
+    "Continue as Guest",
+    "No account required. Trips saved 100% locally on device.",
+    "By continuing, you agree to our ",
+    "Terms of Service",
+    " and ",
+    "Privacy Policy",
+    ".",
+    "Skip for now"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 72.0,
+      "height": 72.0,
+      "x": 124.0,
+      "y": 111.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 214.0474639892578,
+      "height": 51.6,
+      "x": 89.9525360107422,
+      "y": 49.2,
+      "labels": "Skip for now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 214.0474639892578,
+      "height": 51.6,
+      "x": 89.9525360107422,
+      "y": 49.2,
+      "labels": "Skip for now"
+    }
+  ]
+}

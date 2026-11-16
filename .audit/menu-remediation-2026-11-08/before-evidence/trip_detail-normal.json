@@ -1,0 +1,142 @@
+{
+  "screen": "trip_detail",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "8 Nov · 4:54 PM",
+    "+$16.74 ATO Claim",
+    "Bunnings Trade",
+    "Alexandria NSW",
+    "Smith renovation",
+    "Bondi NSW",
+    "18.4 km",
+    "Business",
+    "Personal",
+    "Purpose",
+    "Deliver timber to Smith renovation",
+    "Vehicle",
+    "Toyota HiLux (DEMO)",
+    "Tax Method",
+    "Cents-per-km (91¢/km)",
+    "Notes",
+    "No note added",
+    "Done",
+    "Trip detail",
+    "Edit"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 152.0,
+      "height": 37.0,
+      "x": 43.0,
+      "y": 381.0,
+      "labels": "Business"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 152.0,
+      "height": 37.0,
+      "x": 195.0,
+      "y": 381.0,
+      "labels": "Personal"
+    },
+    {
+      "type": "InkWell",
+      "width": 312.0,
+      "height": 44.0,
+      "x": 39.0,
+      "y": 446.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 312.0,
+      "height": 44.0,
+      "x": 39.0,
+      "y": 446.0,
+      "labels": "Purpose | Deliver timber to Smith renovation"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 350.0,
+      "height": 50.0,
+      "x": 20.0,
+      "y": 665.0,
+      "labels": "Done"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 50.0,
+      "x": 20.0,
+      "y": 665.0,
+      "labels": "Done"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 50.0,
+      "x": 20.0,
+      "y": 665.0,
+      "labels": "Done"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 73.9907648903983,
+      "height": 48.0,
+      "x": 308.0092351096017,
+      "y": 51.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "InkWell",
+      "width": 73.9907648903983,
+      "height": 40.0,
+      "x": 308.0092351096017,
+      "y": 55.0,
+      "labels": "Edit"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 73.9907648903983,
+      "height": 40.0,
+      "x": 308.0092351096017,
+      "y": 55.0,
+      "labels": "Edit"
+    }
+  ]
+}

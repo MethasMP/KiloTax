@@ -1,0 +1,104 @@
+{
+  "screen": "navigation_cpk",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Good evening",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "ATO DEDUCTION • 91¢/KM",
+    "ESTIMATE",
+    "$16.74",
+    "18.4 km of 5,000 km claimed",
+    "0%",
+    "OF CAP",
+    "ATO 5,000 km annual ceiling",
+    "4982 km remaining",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "1 drive needs your sign-off",
+    "1-Tap batch claim your work deduction",
+    "Review",
+    "Auto-Track Trips",
+    "Connect to your car's Bluetooth",
+    "Set up",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "+$16.74",
+    "Home",
+    "Trips",
+    "Tax"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 252.0,
+      "y": 101.5,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 29.2,
+      "y": 695.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 29.2,
+      "y": 695.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 116.4,
+      "y": 695.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 116.4,
+      "y": 695.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 203.6,
+      "y": 695.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.2,
+      "height": 113.6,
+      "x": 203.6,
+      "y": 695.2,
+      "labels": "Tax"
+    }
+  ]
+}

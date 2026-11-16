@@ -1,0 +1,67 @@
+{
+  "screen": "onboarding_gps",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Automatic trip tracking",
+    "Record work kilometres in the background, then review your trips and evidence.",
+    "Toyota HiLux (DEMO)",
+    "Cents per kilometre (Up to 5,000 km)",
+    "Low battery impact",
+    "•",
+    "Private & device-stored",
+    "Enable automatic tracking",
+    "Add trips manually instead"
+  ],
+  "targets": [
+    {
+      "type": "FilledButton",
+      "width": 342.0,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 674.0,
+      "labels": "Enable automatic tracking"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 674.0,
+      "labels": "Enable automatic tracking"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 54.0,
+      "x": 24.0,
+      "y": 674.0,
+      "labels": "Enable automatic tracking"
+    },
+    {
+      "type": "TextButton",
+      "width": 342.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 738.0,
+      "labels": "Add trips manually instead"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 742.0,
+      "labels": "Add trips manually instead"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 742.0,
+      "labels": "Add trips manually instead"
+    }
+  ]
+}

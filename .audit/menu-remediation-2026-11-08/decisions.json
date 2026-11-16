@@ -1,0 +1,53 @@
+[
+  {
+    "id": "menu-status",
+    "question": "How should pending evidence be represented?",
+    "selected": "Canonical evidence report with explicit tasks; no setup score presented as readiness",
+    "rejected": [
+      "Independent predicates per widget",
+      "Score >=90 implies ready"
+    ],
+    "evidence": [
+      "UX-01",
+      "pending evidence headline contract"
+    ]
+  },
+  {
+    "id": "menu-navigation",
+    "question": "How should changing vehicle methods affect tabs?",
+    "selected": "Semantic destinations with Home fallback",
+    "rejected": [
+      "Reuse numeric index"
+    ],
+    "evidence": [
+      "UX-03",
+      "Add-trip control above floating navigation"
+    ]
+  },
+  {
+    "id": "menu-controls",
+    "question": "How should primary controls support large text and assistive technology?",
+    "selected": "Material controls, onPrimary labels, responsive reflow",
+    "rejected": [
+      "Bare GestureDetector buttons",
+      "Cap text scaling to hide overflow"
+    ],
+    "evidence": [
+      "UX-04",
+      "UX-05",
+      "render JSON gate"
+    ]
+  },
+  {
+    "id": "menu-share",
+    "question": "Which existing path should Tax use?",
+    "selected": "Evidence review and receipt-file inspection before ZIP sharing; label drafts explicitly",
+    "rejected": [
+      "Parallel readiness language at each entry point"
+    ],
+    "evidence": [
+      "Draft wording contract",
+      "Existing share-flow tests"
+    ]
+  }
+]

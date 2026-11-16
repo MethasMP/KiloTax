@@ -1,0 +1,30 @@
+{
+  "screen": "feedback",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Tell us what got in the way",
+    "Feedback is optional. Save a draft on this phone or preview it before you choose to share. No records are attached.",
+    "What was difficult?",
+    "Something else",
+    "If you shared records with your accountant",
+    "Not shared yet",
+    "What would help?",
+    "Leave out names, addresses and tax details.",
+    "0/1000",
+    "Preview feedback",
+    "Save on this phone",
+    "Product feedback"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 60.2,
+      "x": 20.0,
+      "y": 707.0,
+      "labels": "A missed trip | Business or personal classification | Trip purpose | Receipts | Exporting records | Information requested by my accountant | Something else"
+    }
+  ]
+}

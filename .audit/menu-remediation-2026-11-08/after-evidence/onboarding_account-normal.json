@@ -1,0 +1,118 @@
+{
+  "screen": "onboarding_account",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Cents per Kilometre · FY 2026-27",
+    "Your vehicle is added",
+    "Keep your trip and expense details ready for review.",
+    "Toyota HiLux (DEMO)",
+    "Cents per Kilometre",
+    "Save your records across devices",
+    "Connect with Apple or Google for automatic cloud backup, or continue as a guest on this device.",
+    "Continue with Apple",
+    "Continue with Google",
+    "OR",
+    "Continue as Guest (Device Only)",
+    "Privacy Policy · Terms of Service"
+  ],
+  "targets": [
+    {
+      "type": "ElevatedButton",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 440.4,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 440.4,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 440.4,
+      "labels": "Continue with Apple"
+    },
+    {
+      "type": "OutlinedButton",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 504.4,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 504.4,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 52.0,
+      "x": 24.0,
+      "y": 504.4,
+      "labels": "Continue with Google"
+    },
+    {
+      "type": "TextButton",
+      "width": 342.0,
+      "height": 50.0,
+      "x": 24.0,
+      "y": 609.4,
+      "labels": "Continue as Guest (Device Only)"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 50.0,
+      "x": 24.0,
+      "y": 609.4,
+      "labels": "Continue as Guest (Device Only)"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 50.0,
+      "x": 24.0,
+      "y": 609.4,
+      "labels": "Continue as Guest (Device Only)"
+    },
+    {
+      "type": "TextButton",
+      "width": 209.9723183768136,
+      "height": 48.0,
+      "x": 90.0138408115932,
+      "y": 683.4,
+      "labels": "Privacy Policy · Terms of Service"
+    },
+    {
+      "type": "InkWell",
+      "width": 209.9723183768136,
+      "height": 40.0,
+      "x": 90.0138408115932,
+      "y": 687.4,
+      "labels": "Privacy Policy · Terms of Service"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 209.9723183768136,
+      "height": 40.0,
+      "x": 90.0138408115932,
+      "y": 687.4,
+      "labels": "Privacy Policy · Terms of Service"
+    }
+  ]
+}

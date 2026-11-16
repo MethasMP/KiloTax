@@ -1,0 +1,67 @@
+{
+  "screen": "review",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Toyota HiLux (DEMO)",
+    "FY 2026-27",
+    "All pending",
+    "This week",
+    "3 items need attention",
+    "1 unclassified trips · 2 receipts to review",
+    "Trip · 8 Nov · 4:55 PM",
+    "Choose business or personal. Add a business purpose",
+    "Review evidence"
+  ],
+  "targets": [
+    {
+      "type": "InkWell",
+      "width": 227.49374389648438,
+      "height": 57.0,
+      "x": 20.0,
+      "y": 271.0,
+      "labels": "All pending"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 227.49374389648438,
+      "height": 57.0,
+      "x": 20.0,
+      "y": 271.0,
+      "labels": "All pending"
+    },
+    {
+      "type": "InkWell",
+      "width": 172.44863891601562,
+      "height": 57.0,
+      "x": 20.0,
+      "y": 328.0,
+      "labels": "This week"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 172.44863891601562,
+      "height": 57.0,
+      "x": 20.0,
+      "y": 328.0,
+      "labels": "This week"
+    },
+    {
+      "type": "InkWell",
+      "width": 272.0,
+      "height": 488.0,
+      "x": 24.0,
+      "y": 625.0,
+      "labels": "Trip · 8 Nov · 4:55 PM | Choose business or personal. Add a business purpose"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 272.0,
+      "height": 488.0,
+      "x": 24.0,
+      "y": 625.0,
+      "labels": "Trip · 8 Nov · 4:55 PM | Choose business or personal. Add a business purpose"
+    }
+  ]
+}

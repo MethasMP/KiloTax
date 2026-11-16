@@ -1,0 +1,88 @@
+{
+  "screen": "scan_receipt",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Add a receipt",
+    "Open the camera scanner to photograph your receipt, choose an existing photo, or enter the details yourself.",
+    "Open camera scanner",
+    "Choose from gallery",
+    "Enter details manually",
+    "Receipt Scanner"
+  ],
+  "targets": [
+    {
+      "type": "FilledButton",
+      "width": 342.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 352.0,
+      "labels": "Open camera scanner"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 356.0,
+      "labels": "Open camera scanner"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 356.0,
+      "labels": "Open camera scanner"
+    },
+    {
+      "type": "OutlinedButton",
+      "width": 342.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 412.0,
+      "labels": "Choose from gallery"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 416.0,
+      "labels": "Choose from gallery"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 416.0,
+      "labels": "Choose from gallery"
+    },
+    {
+      "type": "TextButton",
+      "width": 342.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 472.0,
+      "labels": "Enter details manually"
+    },
+    {
+      "type": "InkWell",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 476.0,
+      "labels": "Enter details manually"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 342.0,
+      "height": 40.0,
+      "x": 24.0,
+      "y": 476.0,
+      "labels": "Enter details manually"
+    }
+  ]
+}

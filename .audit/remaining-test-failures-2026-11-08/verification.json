@@ -1,0 +1,25 @@
+{
+  "baseline_failures_resolved": 10,
+  "full_suite": {
+    "command": "flutter test --no-pub test/",
+    "passed": 478,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "final_focused": {
+    "passed": 31,
+    "failed": 0,
+    "exit_code": 0,
+    "note": "Includes final chip no-invented-default test added during broad suite run; reran all six affected files after final changes."
+  },
+  "static_analysis": {
+    "command": "flutter analyze --no-pub",
+    "issues": 0,
+    "exit_code": 0
+  },
+  "falsification_before_fix": {
+    "passed": 1,
+    "failed": 2
+  },
+  "unresolved_dissent": []
+}

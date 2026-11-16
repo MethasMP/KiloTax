@@ -1,0 +1,142 @@
+{
+  "screen": "scan_receipt",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Receipt Scanner",
+    "Position receipt within frame",
+    "Auto-crops edges & removes shadows.",
+    "Manual"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 59.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 30.0,
+      "y": 726.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 72.0,
+      "height": 72.0,
+      "x": 146.32350649152482,
+      "y": 714.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 73.35298701695034,
+      "height": 48.0,
+      "x": 286.64701298304965,
+      "y": 726.0,
+      "labels": "Manual"
+    },
+    {
+      "type": "InkWell",
+      "width": 73.35298701695034,
+      "height": 48.0,
+      "x": 286.64701298304965,
+      "y": 726.0,
+      "labels": "Manual"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 73.35298701695034,
+      "height": 48.0,
+      "x": 286.64701298304965,
+      "y": 726.0,
+      "labels": "Manual"
+    }
+  ]
+}

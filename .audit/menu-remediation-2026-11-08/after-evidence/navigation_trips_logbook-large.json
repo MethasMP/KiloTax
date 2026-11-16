@@ -1,0 +1,289 @@
+{
+  "screen": "navigation_trips_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "FY 2026-27",
+    "All",
+    "3",
+    "Needs review",
+    "1",
+    "Business",
+    "Personal",
+    "1 trip to review",
+    "Fast Review",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "Work Drive",
+    "Unclassified trip",
+    "9.8 km · 8 Nov",
+    "1-Tap Purpose",
+    "Trips Ledger",
+    "Toyota HiLux (DEMO)",
+    "Home",
+    "Trips",
+    "Expenses",
+    "Tax",
+    "Add record"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 98.34804725646973,
+      "height": 49.0,
+      "x": 20.0,
+      "y": 164.0,
+      "labels": "All | 3"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 219.5671901702881,
+      "height": 49.0,
+      "x": 142.34804725646973,
+      "y": 164.0,
+      "labels": "Needs review | 1"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 167.11562156677246,
+      "height": 49.0,
+      "x": 385.9152374267578,
+      "y": 164.0,
+      "labels": "Business | 1"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 163.71718406677246,
+      "height": 49.0,
+      "x": 577.0308589935303,
+      "y": 164.0,
+      "labels": "Personal | 1"
+    },
+    {
+      "type": "InkWell",
+      "width": 157.19393920898438,
+      "height": 65.0,
+      "x": 31.0,
+      "y": 306.0,
+      "labels": "Fast Review"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 157.19393920898438,
+      "height": 65.0,
+      "x": 31.0,
+      "y": 306.0,
+      "labels": "Fast Review"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 288.0,
+      "height": 245.0,
+      "x": 16.0,
+      "y": 409.0,
+      "labels": "Smith renovation | 18.4 km · 8 Nov | from Bunnings Trade | Work Drive"
+    },
+    {
+      "type": "InkWell",
+      "width": 286.0,
+      "height": 243.0,
+      "x": 17.0,
+      "y": 410.0,
+      "labels": "Smith renovation | 18.4 km · 8 Nov | from Bunnings Trade | Work Drive"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 286.0,
+      "height": 243.0,
+      "x": 17.0,
+      "y": 410.0,
+      "labels": "Smith renovation | 18.4 km · 8 Nov | from Bunnings Trade | Work Drive"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 288.0,
+      "height": 229.0,
+      "x": 16.0,
+      "y": 664.0,
+      "labels": "Unclassified trip | 9.8 km · 8 Nov | 1-Tap Purpose"
+    },
+    {
+      "type": "InkWell",
+      "width": 286.0,
+      "height": 227.0,
+      "x": 17.0,
+      "y": 665.0,
+      "labels": "Unclassified trip | 9.8 km · 8 Nov | 1-Tap Purpose"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 286.0,
+      "height": 227.0,
+      "x": 17.0,
+      "y": 665.0,
+      "labels": "Unclassified trip | 9.8 km · 8 Nov | 1-Tap Purpose"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 208.5720672607422,
+      "height": 66.0,
+      "x": 47.0,
+      "y": 814.0,
+      "labels": "1-Tap Purpose"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 216.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 216.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 220.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 220.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 264.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 268.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 587.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 587.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 587.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 587.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 667.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 29.2,
+      "y": 667.2,
+      "labels": "Expenses"
+    },
+    {
+      "type": "InkWell",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 667.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 130.8,
+      "height": 80.0,
+      "x": 160.0,
+      "y": 667.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "TextButton",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    },
+    {
+      "type": "InkWell",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 190.07421875,
+      "height": 56.0,
+      "x": 64.96289062500001,
+      "y": 747.2,
+      "labels": "Add record"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "screen": "expenses",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "All",
+    "Vehicle",
+    "Business",
+    "$120.85",
+    "Total deductible expenses recorded",
+    "Wilson Parking",
+    "$24.50",
+    "Work Tolls & Parking • 8 Nov 2026",
+    "No photo",
+    "Ampol Alexandria",
+    "$96.35",
+    "Fuel & Oil • 8 Nov 2026",
+    "Scan",
+    "Add Expense",
+    "Expenses"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 114.0,
+      "height": 48.0,
+      "x": 24.0,
+      "y": 107.0,
+      "labels": "All"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 114.0,
+      "height": 48.0,
+      "x": 138.0,
+      "y": 107.0,
+      "labels": "Vehicle"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 114.0,
+      "height": 48.0,
+      "x": 252.0,
+      "y": 107.0,
+      "labels": "Business"
+    },
+    {
+      "type": "InkWell",
+      "width": 358.0,
+      "height": 76.0,
+      "x": 16.0,
+      "y": 289.0,
+      "labels": "Wilson Parking | $24.50 | Work Tolls & Parking • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 358.0,
+      "height": 76.0,
+      "x": 16.0,
+      "y": 289.0,
+      "labels": "Wilson Parking | $24.50 | Work Tolls & Parking • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "InkWell",
+      "width": 358.0,
+      "height": 76.0,
+      "x": 16.0,
+      "y": 375.0,
+      "labels": "Ampol Alexandria | $96.35 | Fuel & Oil • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 358.0,
+      "height": 76.0,
+      "x": 16.0,
+      "y": 375.0,
+      "labels": "Ampol Alexandria | $96.35 | Fuel & Oil • 8 Nov 2026 | No photo"
+    },
+    {
+      "type": "InkWell",
+      "width": 87.17324256896973,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 672.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 87.17324256896973,
+      "height": 48.0,
+      "x": 16.0,
+      "y": 672.0,
+      "labels": "Scan"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 260.8267574310303,
+      "height": 48.0,
+      "x": 113.17324256896973,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "InkWell",
+      "width": 260.8267574310303,
+      "height": 48.0,
+      "x": 113.17324256896973,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 260.8267574310303,
+      "height": 48.0,
+      "x": 113.17324256896973,
+      "y": 672.0,
+      "labels": "Add Expense"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 294.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 294.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 298.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 298.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 342.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 342.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 346.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 346.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

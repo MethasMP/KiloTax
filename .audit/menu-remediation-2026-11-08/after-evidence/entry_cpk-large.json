@@ -1,0 +1,70 @@
+{
+  "screen": "entry_cpk",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Trip details",
+    "Record the distance and work purpose for this trip. Estimate uses 91¢/km.",
+    "Trip distance",
+    "0.0",
+    "km",
+    "Estimated deduction",
+    "+$0.00",
+    "4982 km remaining of 5,000 km annual ATO quota",
+    "Route",
+    "Trip locations",
+    "From",
+    "To",
+    "Client Job Site",
+    "Bunnings Warehouse",
+    "Reece Plumbing",
+    "Total Tools",
+    "Job or client reference (optional)",
+    "Work purpose",
+    "Choose the reason",
+    "Client Site",
+    "Contract trade works & client visits",
+    "Supplies Run",
+    "Bunnings, tools, timber & materials",
+    "Tool Transport",
+    "Carried heavy gear (>20kg) with no secure lockup",
+    "Save Work Trip",
+    "Not a work drive",
+    "Add trip"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 4.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 8.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

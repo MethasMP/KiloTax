@@ -1,0 +1,52 @@
+{
+  "screen": "logbook_setup",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Start your logbook",
+    "Start with your dashboard reading. Then keep a record of both business and personal trips.",
+    "YOUR VEHICLE",
+    "Toyota HiLux",
+    "DEMO",
+    "Starting odometer",
+    "Use the reading currently on your dashboard.",
+    "Odometer reading",
+    "e.g. 42,150",
+    "km",
+    "Your 12-week period",
+    "Starts",
+    "8 Nov 2026",
+    "Ends",
+    "31 Jan 2027",
+    "Choose a period that reflects your usual driving pattern. You can review your progress at any time.",
+    "Set up logbook",
+    "Start 12-week logbook"
+  ],
+  "targets": [
+    {
+      "type": "FilledButton",
+      "width": 280.0,
+      "height": 110.0,
+      "x": 20.0,
+      "y": 688.0,
+      "labels": "Start 12-week logbook"
+    },
+    {
+      "type": "InkWell",
+      "width": 280.0,
+      "height": 110.0,
+      "x": 20.0,
+      "y": 688.0,
+      "labels": "Start 12-week logbook"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 280.0,
+      "height": 110.0,
+      "x": 20.0,
+      "y": 688.0,
+      "labels": "Start 12-week logbook"
+    }
+  ]
+}

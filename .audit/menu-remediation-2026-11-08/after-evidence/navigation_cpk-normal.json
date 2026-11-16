@@ -1,0 +1,208 @@
+{
+  "screen": "navigation_cpk",
+  "width": 390.0,
+  "textScale": 1.0,
+  "errors": [],
+  "texts": [
+    "Good evening",
+    "Toyota HiLux",
+    "🔥 1 d",
+    "ATO DEDUCTION • 91¢/KM",
+    "ESTIMATE",
+    "$16.74",
+    "18.4 km of 5,000 km claimed",
+    "0%",
+    "OF CAP",
+    "ATO 5,000 km annual ceiling",
+    "4982 km remaining",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "1 drive needs your sign-off",
+    "1-Tap batch claim your work deduction",
+    "Review",
+    "Auto-Track Trips",
+    "Connect to your car's Bluetooth",
+    "Set up",
+    "Recent Activity",
+    "View all (3)",
+    "Smith renovation",
+    "18.4 km · 8 Nov",
+    "from Bunnings Trade",
+    "+$16.74",
+    "Home",
+    "Trips",
+    "Tax"
+  ],
+  "targets": [
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 20.0,
+      "y": 64.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 322.0,
+      "y": 64.0,
+      "labels": ""
+    },
+    {
+      "type": "TextButton",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 500.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 500.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 79.02997970581055,
+      "height": 48.0,
+      "x": 37.0,
+      "y": 500.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 350.0,
+      "height": 76.0,
+      "x": 20.0,
+      "y": 579.0,
+      "labels": "1 drive needs your sign-off | 1-Tap batch claim your work deduction | Review"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 350.0,
+      "height": 76.0,
+      "x": 20.0,
+      "y": 579.0,
+      "labels": "1 drive needs your sign-off | 1-Tap batch claim your work deduction | Review"
+    },
+    {
+      "type": "ElevatedButton",
+      "width": 70.4195327758789,
+      "height": 48.0,
+      "x": 282.5804672241211,
+      "y": 593.0,
+      "labels": "Review"
+    },
+    {
+      "type": "InkWell",
+      "width": 70.4195327758789,
+      "height": 40.0,
+      "x": 282.5804672241211,
+      "y": 597.0,
+      "labels": "Review"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 70.4195327758789,
+      "height": 40.0,
+      "x": 282.5804672241211,
+      "y": 597.0,
+      "labels": "Review"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 70.0,
+      "x": 21.0,
+      "y": 670.0,
+      "labels": "Auto-Track Trips | Connect to your car's Bluetooth | Set up"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 70.0,
+      "x": 21.0,
+      "y": 670.0,
+      "labels": "Auto-Track Trips | Connect to your car's Bluetooth | Set up"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 96.58906555175781,
+      "height": 44.0,
+      "x": 273.4109344482422,
+      "y": 767.0,
+      "labels": "View all (3)"
+    },
+    {
+      "type": "InkWell",
+      "width": 348.0,
+      "height": 80.0,
+      "x": 21.0,
+      "y": 822.0,
+      "labels": "Smith renovation | 18.4 km · 8 Nov | from Bunnings Trade | +$16.74"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 348.0,
+      "height": 80.0,
+      "x": 21.0,
+      "y": 822.0,
+      "labels": "Smith renovation | 18.4 km · 8 Nov | from Bunnings Trade | +$16.74"
+    },
+    {
+      "type": "InkWell",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 34.2,
+      "y": 731.2,
+      "labels": "Home"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 34.2,
+      "y": 731.2,
+      "labels": "Home"
+    },
+    {
+      "type": "InkWell",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 141.4,
+      "y": 731.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 141.4,
+      "y": 731.2,
+      "labels": "Trips"
+    },
+    {
+      "type": "InkWell",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 248.60000000000002,
+      "y": 731.2,
+      "labels": "Tax"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 107.2,
+      "height": 77.6,
+      "x": 248.60000000000002,
+      "y": 731.2,
+      "labels": "Tax"
+    }
+  ]
+}

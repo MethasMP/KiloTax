@@ -1,0 +1,46 @@
+{
+  "mode": "shared checkout with disjoint file ownership",
+  "cards": [
+    {
+      "owner": "design_home",
+      "task": "Direct scanner entry and OCR review routing",
+      "gate": "passed"
+    },
+    {
+      "owner": "design_tax",
+      "task": "Editable receipt review and inspectable photo",
+      "gate": "passed"
+    },
+    {
+      "owner": "design_trips",
+      "task": "Dedicated Scan action and Trips manual controls",
+      "gate": "passed"
+    },
+    {
+      "owner": "root",
+      "task": "Actual-state processing motion, integration, error recovery and regression checks",
+      "gate": "passed"
+    }
+  ],
+  "state": "Integrated in working checkout; no commit or deployment",
+  "verification": [
+    "17 scanner/service/motion/navigation tests passed",
+    "31 continuation/regression tests passed; one compact-photo assertion subsequently fixed",
+    "6 final receipt review/render tests passed",
+    "Static analysis clean; focused whitespace checks passed",
+    "Final expense guidance/suggestion/split verification: 9 passed",
+    "main.dart, scanner, expense detail and permission prompt static analysis: no issues"
+  ],
+  "reference": "Instagram CDN image could not be opened; no claim of reproducing its visual design",
+  "sources": [
+    "https://help.expensify.com/articles/new-expensify/reports-and-expenses/Track-Expenses",
+    "https://help.expensify.com/articles/new-expensify/reports-and-expenses/Troubleshoot-SmartScan-Issues",
+    "https://docs.flutter.dev/ui/accessibility"
+  ],
+  "limitations": [
+    "Native camera launch verified through injected scanner/channel tests; no physical camera session executed.",
+    "Full guest journey rerun encountered concurrent onboarding compile errors; missing palette references corrected without changing that flow. Final verification uses targeted receipt flows, not an assertion that the new onboarding journey passed."
+  ],
+  "new_shared_skill_candidates": [],
+  "final_polish": "Merchant full-width; compact receipt inspect/replace; readable GST editor and wrapping category/trip values; underlying calculation/save logic preserved."
+}

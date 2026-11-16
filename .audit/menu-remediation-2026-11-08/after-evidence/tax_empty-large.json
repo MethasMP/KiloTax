@@ -1,0 +1,91 @@
+{
+  "screen": "tax_empty",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "ATO Cents/KM (91¢)",
+    "• DEMO",
+    "Estimated deduction",
+    "$0.00",
+    "EVIDENCE CHECK",
+    "Your evidence starts here",
+    "Add your trips and receipts. We’ll help you check the details.",
+    "Fix now",
+    "Vehicle Profile",
+    "Toyota HiLux (DEMO)",
+    "Edit",
+    "ATO Tax Method",
+    "Cents per KM (91¢/km)",
+    "Active",
+    "Reasonable estimate basis established",
+    "Awaiting initial drive logs",
+    "Log drive",
+    "Business trip details",
+    "Awaiting drive logs to substantiate",
+    "Awaiting Drives",
+    "Accountant Hand-off",
+    "Review a ZIP of records and available receipts",
+    "Share with Accountant",
+    "Tax Summary",
+    "FY 2026-27 • ATO Schedule D1"
+  ],
+  "targets": [
+    {
+      "type": "TextButton",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 41.0,
+      "y": 824.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "InkWell",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 41.0,
+      "y": 824.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "GestureDetector",
+      "width": 134.7599639892578,
+      "height": 63.0,
+      "x": 41.0,
+      "y": 824.0,
+      "labels": "Fix now"
+    },
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

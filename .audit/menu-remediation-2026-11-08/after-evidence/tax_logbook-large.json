@@ -1,0 +1,71 @@
+{
+  "screen": "tax_logbook",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "ATO Logbook Claim",
+    "• DEMO",
+    "Estimated deduction",
+    "$103.72",
+    "EVIDENCE CHECK",
+    "3 items need attention",
+    "Check the missing details before sharing with your accountant.",
+    "Fix now",
+    "Vehicle Profile",
+    "Toyota HiLux (DEMO)",
+    "Edit",
+    "ATO Tax Method",
+    "Logbook Method (Actual Expenses)",
+    "Active",
+    "Starting Odometer",
+    "42000 km recorded",
+    "1 Unclassified Drives",
+    "Classify as Business or Personal for %",
+    "Review",
+    "2 Expenses Need Review",
+    "Confirm details and attach receipt photos",
+    "Fix",
+    "Logbook method active",
+    "Tracking actual running expenses multiplied by your business use %.",
+    "Accountant Hand-off",
+    "Review a ZIP of records and available receipts",
+    "Share with Accountant",
+    "Tax Summary",
+    "FY 2026-27 • ATO Schedule D1"
+  ],
+  "targets": [
+    {
+      "type": "IconButton",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "_IconButtonM3",
+      "width": 48.0,
+      "height": 48.0,
+      "x": 268.0,
+      "y": 51.0,
+      "labels": ""
+    },
+    {
+      "type": "InkWell",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    },
+    {
+      "type": "GestureDetector",
+      "width": 40.0,
+      "height": 40.0,
+      "x": 272.0,
+      "y": 55.0,
+      "labels": ""
+    }
+  ]
+}

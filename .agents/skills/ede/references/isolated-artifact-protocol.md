@@ -1,7 +1,12 @@
-# Isolated Artifact Protocol Specification (EDE v2.0)
+# Isolated Artifact Protocol Specification (EDE v3.0)
 
 ## Overview
 The **Isolated Artifact Protocol** solves the context-window explosion problem of multi-agent debate. Instead of running open-ended conversational meetings that cost 30k–60k tokens and produce sycophantic consensus, agents operate in **isolated context sandboxes** and communicate strictly via structured **Evidence Claim Sheets**.
+
+Under **EDE v3.0**, we integrate:
+1. **Multi-Model Blind Testing:** The Auditor and Implementer run on separate models/subagents to prevent shared cognitive bias.
+2. **Deterministic Red $\rightarrow$ Green Falsification:** A claim is verified ONLY when its test demonstrably fails before the patch and passes after.
+3. **Debt Ledger:** Any deferred technical debt is formally recorded with TTL.
 
 ---
 
@@ -14,12 +19,13 @@ The **Isolated Artifact Protocol** solves the context-window explosion problem o
 
 ## 2. Evidence Claim Sheet Schema
 
-Every claim filed in `.ede/claims/` MUST follow this exact schema (YAML / Frontmatter format):
+Every claim filed in `.ede/claims/` MUST follow this exact schema:
 
 ```yaml
 claim_id: "claim_<timestamp>_<short_hash>"
 timestamp: "YYYY-MM-DDTHH:mm:ssZ"
-author: "adversarial_auditor | architectural_defender"
+author: "tax-lawyer | cso | edge-breaker | concurrency"
+model_used: "model-identifier (e.g. gemini-pro, codex, claude)"
 target_invariant: "Tier A | Tier B | Tier C | Tier D"
 target_file: "path/to/target/file.dart"
 vulnerability: >
@@ -32,33 +38,38 @@ counterexample_test: |
       // Minimal test case proving the vulnerability
     });
   }
-verdict: "PENDING | FALSIFIED | DISPROVEN"
+verdict: "PENDING | FALSIFIED | DISPROVEN | RESOLVED"
 ```
 
 ---
 
-## 3. Subagent Briefing Templates
+## 3. Subagent Briefing Templates & Model Routing
 
-### Role A: The Adversarial Auditor Prompt
-```
-You are the EDE Adversarial Auditor. Your sole objective is FALSIFICATION.
-DO NOT praise the code. DO NOT propose cosmetic improvements.
-Your task: Find exactly ONE concrete scenario, edge-case, or regulatory edge (ATO / ITAA 1997) where the target code violates its system invariants.
-Output your finding strictly as an Evidence Claim Sheet. Include an executable Dart unit test that currently FAILS against this code.
-```
+### Strategy: Blind Cross-Model Routing
+- **Implementer (Feature author):** Primary coding model (e.g., Gemini / Claude).
+- **Auditor (Adversary):** Different model family or fresh isolated subagent context with adversarial temperature.
 
-### Role B: The Architectural Defender Prompt
+### Subagent Prompt (Auditor):
 ```
-You are the EDE Architectural Defender.
-You have been provided with an Evidence Claim Sheet and a failing test case.
-Your task: Either (1) demonstrate that the counterexample violates Tier A ground truth (disproving the attack), or (2) provide the minimal, surgical patch to make the test GREEN without regressing existing invariants.
+You are the EDE Adversarial Auditor [Role: <tax-lawyer|cso|edge-breaker>].
+Your sole objective is FALSIFICATION of the target file.
+DO NOT praise the code. DO NOT suggest cosmetic refactoring.
+Find ONE concrete, reproducible scenario that violates statutory rules (Tier A) or engine integrity (Tier C).
+Deliver your output as an Evidence Claim Sheet containing an executable Dart test that currently FAILS.
 ```
 
 ---
 
 ## 4. Test-as-Debate Ground Truth Arbiter
 When an Auditor submits a claim with a `counterexample_test`:
-1. The harness executes the test against the codebase.
-2. If the test **FAILS (Exit code != 0)** $\rightarrow$ The vulnerability is verified! Verdict = `FALSIFIED`.
-3. If the test **PASSES (Exit code == 0)** $\rightarrow$ The attack failed to break the system. Verdict = `DISPROVEN`.
-No human or AI debate is permitted to overrule this deterministic runtime outcome.
+1. **Red Phase (`--mode=falsify`):**
+   ```bash
+   dart run tool/ede/run_debate_falsification.dart .ede/claims/<claim>.yaml
+   ```
+   - Must return exit code 0 (`FALSIFIED`), meaning the test successfully broke the current implementation.
+2. **Patch Phase:** Implementer writes minimal surgical fix.
+3. **Green Phase (`--mode=verify-fix`):**
+   ```bash
+   dart run tool/ede/run_debate_falsification.dart .ede/claims/<claim>.yaml --mode=verify-fix
+   ```
+   - Must return exit code 0 (`RESOLVED`), confirming test passes cleanly.

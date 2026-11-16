@@ -1,0 +1,29 @@
+{
+  "screen": "preflight",
+  "width": 320.0,
+  "textScale": 2.0,
+  "errors": [],
+  "texts": [
+    "Toyota HiLux",
+    "DEMO • FY2026-27",
+    "Cents/KM",
+    "ESTIMATED BOX D1 DEDUCTION",
+    "$16.74",
+    "Calculated at 91c/km for 18.4 km (capped at 5,000 km)",
+    "Pre-flight Health Checklist",
+    "Trip Purpose Specificity",
+    "1 trips have unstated purpose (will be exported as [Unspecified])",
+    "Odometer Continuity",
+    "No unexplained odometer gaps detected",
+    "Accountant Deliverables (Exact 2 Files)",
+    "fixture-Tax_Report.pdf",
+    "ATO Box D1 Summary & Declaration (PDF)",
+    "0 KB",
+    "fixture-Trip_Ledger.csv",
+    "Continuous Travel Schedule (CSV)",
+    "Preview PDF",
+    "Send to Accountant",
+    "Pre-flight Tax Review"
+  ],
+  "targets": []
+}
