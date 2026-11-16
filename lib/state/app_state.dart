@@ -655,15 +655,17 @@ class AppState extends ChangeNotifier {
           .syncTargetBluetoothName(_primaryVehicle!.bluetoothDeviceName));
       NativeHardwareTelemetryBridge()
           .fetchCompletedNativeTrips()
-          .then((nativeTrips) {
+          .then((nativeTrips) async {
+        final ingestedIds = <String>[];
         for (final item in nativeTrips) {
           final dist = (item['distanceKm'] as num?)?.toDouble() ?? 0.0;
           if (dist > 0.1) {
             final startMs = item['startedAt'] as num? ??
                 DateTime.now().millisecondsSinceEpoch;
+            final tripId = item['id'] as String? ??
+                'native_${DateTime.now().millisecondsSinceEpoch}';
             final trip = Trip(
-              id: item['id'] as String? ??
-                  'native_${DateTime.now().millisecondsSinceEpoch}',
+              id: tripId,
               vehicleId: _primaryVehicle!.id,
               distanceKm: dist,
               date: DateTime.fromMillisecondsSinceEpoch(startMs.toInt()),
@@ -674,10 +676,15 @@ class AppState extends ChangeNotifier {
               endOdometer: currentOdometer + dist,
               evidenceSource: 'native_bluetooth_auto',
             );
-            recordTrip(trip);
+            await recordTrip(trip);
+            ingestedIds.add(tripId);
             debugPrint(
                 '[AppState] Auto-ingested native trip: $dist km from iOS background daemon.');
           }
+        }
+        if (ingestedIds.isNotEmpty) {
+          await NativeHardwareTelemetryBridge()
+              .acknowledgeNativeTripsIngested(ingestedIds);
         }
       }).catchError((e) {
         debugPrint('[AppState] Note querying completed native trips: $e');

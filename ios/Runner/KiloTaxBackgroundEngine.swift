@@ -70,12 +70,21 @@ import UserNotifications
         }
     }
 
-    /// Gets any trips completed natively while Flutter was completely dead
+    /// Gets any trips completed natively while Flutter was completely dead (Non-destructive read).
     @objc func getCompletedNativeTrips() -> [[String: Any]] {
         let defaults = UserDefaults.standard
-        let trips = defaults.array(forKey: userDefaultsKeyCompletedTrips) as? [[String: Any]] ?? []
-        defaults.removeObject(forKey: userDefaultsKeyCompletedTrips)
-        return trips
+        return defaults.array(forKey: userDefaultsKeyCompletedTrips) as? [[String: Any]] ?? []
+    }
+
+    /// Explicit two-phase commit: Flutter acknowledges successful persistence before clearing native buffer.
+    @objc func acknowledgeNativeTripsIngested(_ tripIds: [String]) {
+        let defaults = UserDefaults.standard
+        guard var trips = defaults.array(forKey: userDefaultsKeyCompletedTrips) as? [[String: Any]] else { return }
+        trips.removeAll { item in
+            guard let id = item["id"] as? String else { return false }
+            return tripIds.contains(id)
+        }
+        defaults.set(trips, forKey: userDefaultsKeyCompletedTrips)
     }
 
     // MARK: - CBCentralManagerDelegate
@@ -218,7 +227,7 @@ import UserNotifications
     private func sendTripNotification(distanceKm: Double) {
         let content = UNMutableNotificationContent()
         content.title = "KiloTax Auto-Log Complete"
-        content.body = String(format: "Recorded %.1f km business trip. 100%% compliant with ATO.", distanceKm)
+        content.body = String(format: "Recorded %.1f km trip. Ready for 1-tap review.", distanceKm)
         content.sound = .default
 
         let request = UNNotificationRequest(

@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../data/models/trade_persona.dart';
 import '../../data/models/trip.dart';
 import '../../data/models/user_profile.dart';
 import 'wgs84_geodesic_engine.dart';
@@ -54,6 +55,7 @@ class AutonomousTripDetector {
   Trip? _finalizedTrip;
   bool _isOriginHome = false;
   bool _isDestinationHome = false;
+  double? _departureOdometer;
 
   // Transit Discrimination (Bus-Stop Signature Tracker)
   int _consecutiveShortHops = 0;
@@ -86,6 +88,7 @@ class AutonomousTripDetector {
     _finalizedTrip = null;
     _isOriginHome = false;
     _isDestinationHome = false;
+    _departureOdometer = null;
     _consecutiveShortHops = 0;
     _lastHopStopPosition = null;
   }
@@ -112,6 +115,7 @@ class AutonomousTripDetector {
         // or trigger driving immediately once movement is confirmed!
         if (isBluetoothCarConnected && speedKmh >= 8.0) {
           _state = AutonomousDetectorState.activeDriving;
+          _departureOdometer = odometerProvider?.call();
           _activeTripPath.clear();
           if (_ringBuffer.isNotEmpty) {
             _activeTripPath.addAll(_ringBuffer);
@@ -122,6 +126,7 @@ class AutonomousTripDetector {
           _firstSpeedExceededTime = null;
         } else if (speedKmh >= minDrivingSpeedKmh) {
           _state = AutonomousDetectorState.verifyingDeparture;
+          _departureOdometer = odometerProvider?.call();
           _firstSpeedExceededTime = now;
         }
         break;
@@ -131,6 +136,7 @@ class AutonomousTripDetector {
         if (isBluetoothCarConnected && speedKmh >= 8.0) {
           // Accelerated promotion: Bluetooth confirms car presence
           _state = AutonomousDetectorState.activeDriving;
+          _departureOdometer ??= odometerProvider?.call();
           _activeTripPath.clear();
           if (_ringBuffer.isNotEmpty) {
             _activeTripPath.addAll(_ringBuffer);
@@ -142,6 +148,7 @@ class AutonomousTripDetector {
         } else if (speedKmh < (minDrivingSpeedKmh * 0.7)) {
           // Speed dropped before sustained duration -> Abort false start
           _state = AutonomousDetectorState.idle;
+          _departureOdometer = null;
           _firstSpeedExceededTime = null;
         } else if (_firstSpeedExceededTime != null &&
             now.difference(_firstSpeedExceededTime!) >=
@@ -149,6 +156,7 @@ class AutonomousTripDetector {
           // Sustained acceleration confirmed!
           // Retroactively recover departure point from earliest fix in ring buffer
           _state = AutonomousDetectorState.activeDriving;
+          _departureOdometer ??= odometerProvider?.call();
           _activeTripPath.clear();
           if (_ringBuffer.isNotEmpty) {
             _activeTripPath.addAll(_ringBuffer);
@@ -257,7 +265,7 @@ class AutonomousTripDetector {
       endFix.longitude,
     );
 
-    final startOdo = odometerProvider?.call() ?? 0.0;
+    final startOdo = _departureOdometer ?? (odometerProvider?.call() ?? 0.0);
     final endOdo = startOdo + routeResult.roadDistanceKm;
     final vehicleId = vehicleIdProvider?.call() ?? 'primary_vehicle';
     final profile = userProfileProvider?.call();
@@ -287,7 +295,7 @@ class AutonomousTripDetector {
     }
 
     // Evaluate Trade POI Match at destination stop
-    final poiMatch = TradePoiResolver.resolve(destName);
+    final poiMatch = TradePoiResolver.resolve(destName, persona: profile?.tradePersona);
     Map<String, dynamic>? detectedPoi;
     String initialPurpose = '';
     TripClassification initialClassification = TripClassification.unclassified;
@@ -300,7 +308,19 @@ class AutonomousTripDetector {
         'auditCategory': poiMatch.auditCategory,
       };
       initialPurpose = poiMatch.suggestedPurpose;
-      initialClassification = TripClassification.business;
+
+      // FLAW-2 GATE: ATO Taxation Ruling TR 2021/1 & ITAA 1997 s 8-1
+      // Trips originating from Home directly to a Trade Store (e.g. Home -> Bunnings)
+      // are ordinary commute/private unless substantiated by bulky trade equipment carriage.
+      final allowsHomeToWorkClaim =
+          profile?.tradePersona.defaultBulkyToolsCarried ?? false;
+
+      if (_isOriginHome && !allowsHomeToWorkClaim) {
+        // Unsubstantiated home-start journey: must remain unclassified for user review
+        initialClassification = TripClassification.unclassified;
+      } else {
+        initialClassification = TripClassification.business;
+      }
     }
 
     _finalizedTrip = Trip(

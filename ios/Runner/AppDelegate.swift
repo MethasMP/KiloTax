@@ -25,6 +25,10 @@ import UIKit
         case "getCompletedNativeTrips":
           let trips = KiloTaxBackgroundEngine.shared.getCompletedNativeTrips()
           result(trips)
+        case "acknowledgeNativeTripsIngested":
+          let tripIds = call.arguments as? [String] ?? []
+          KiloTaxBackgroundEngine.shared.acknowledgeNativeTripsIngested(tripIds)
+          result(true)
         default:
           result(FlutterMethodNotImplemented)
         }

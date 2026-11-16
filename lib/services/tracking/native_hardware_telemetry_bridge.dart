@@ -30,7 +30,7 @@ class NativeHardwareTelemetryBridge {
   }
 
   /// Retrieve any trips that were autonomously logged by the native Swift engine
-  /// while the Flutter process was completely dead.
+  /// while the Flutter process was completely dead (Non-destructive read).
   Future<List<Map<String, dynamic>>> fetchCompletedNativeTrips() async {
     if (!Platform.isIOS) return [];
 
@@ -46,6 +46,18 @@ class NativeHardwareTelemetryBridge {
     } catch (e) {
       debugPrint('[NativeTelemetryBridge] Error fetching completed native trips: $e');
       return [];
+    }
+  }
+
+  /// Two-Phase Commit Acknowledgement: Notifies native engine that Flutter has successfully
+  /// persisted the trips to SQLite, safely removing them from UserDefaults.
+  Future<void> acknowledgeNativeTripsIngested(List<String> tripIds) async {
+    if (!Platform.isIOS || tripIds.isEmpty) return;
+
+    try {
+      await _channel.invokeMethod<bool>('acknowledgeNativeTripsIngested', tripIds);
+    } catch (e) {
+      debugPrint('[NativeTelemetryBridge] Error acknowledging native trips: $e');
     }
   }
 }
