@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui' as ui;
 // Executable contracts for the menu remediation.
 import 'package:flutter/material.dart';
@@ -12,7 +11,7 @@ import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
 import 'package:kilotax/ui/screens/expenses/scan_receipt_screen.dart';
-import 'package:kilotax/ui/screens/tax/pre_flight_review_screen.dart';
+import 'package:kilotax/ui/screens/evidence/evidence_review_screen.dart';
 import 'package:kilotax/services/scanner/document_scanner_service.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/state/app_state.dart';
@@ -68,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Needs review'));
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsOneWidget,
+    expect(find.text('Review'), findsOneWidget,
         reason: 'The same record must remain visible in the review filter');
   });
 
@@ -212,25 +211,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('preflight calls incomplete records a draft', (tester) async {
+  testWidgets('evidence review calls incomplete records a draft',
+      (tester) async {
     final s = await fixtures.seed(TaxMethod.centsPerKm);
     addTearDown(s.dispose);
-    final dir = await tester.runAsync(() async {
-      final dir = await Directory.systemTemp.createTemp('kilotax-ui-package-');
-      await File('${dir.path}/fixture-Tax_Report.pdf')
-          .writeAsString('visual fixture');
-      await File('${dir.path}/fixture-Trip_Ledger.csv')
-          .writeAsString('Date,Distance');
-      return dir;
-    });
-    addTearDown(() => dir!.delete(recursive: true));
     await tester.pumpWidget(wrap(
         s,
-        PreFlightReviewScreen(
-            appState: s,
-            initialPackage: fixtures.package(s, directory: dir!.path))));
+        EvidenceReviewScreen(
+          appState: s,
+          vehicleId: s.primaryVehicle!.id,
+          financialYear: s.activeTaxRule.financialYear,
+        )));
     await tester.pumpAndSettle();
-    expect(find.text('Share draft for review'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Share draft records'), 300,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Share draft records'), findsOneWidget);
     expect(find.text('Send to Accountant'), findsNothing);
   });
 
@@ -341,10 +336,10 @@ void main() {
     addTearDown(s.dispose);
     await tester.pumpWidget(wrap(s, TripsLedgerTab(appState: s)));
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsOneWidget);
+    expect(find.text('Review'), findsOneWidget);
     s.resolveTripPurpose('pending', 'Deliver materials to Smith renovation');
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsNothing);
+    expect(find.text('Review'), findsNothing);
     expect(find.text('Unclassified trip'), findsNothing);
     expect(tester.takeException(), isNull);
   });

@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS public.trip_evidence_links (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     trip_id UUID NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
     job_site_id UUID REFERENCES public.job_sites(id) ON DELETE SET NULL,
-    expense_id UUID REFERENCES public.vehicle_expenses(id) ON DELETE CASCADE,
+    expense_id UUID REFERENCES public.expenses(id) ON DELETE CASCADE,
     evidence_id UUID REFERENCES public.audit_evidence(id) ON DELETE RESTRICT,
     confidence_score DOUBLE PRECISION NOT NULL DEFAULT 1.0,
     association_method TEXT NOT NULL, -- 'manual_user', 'spatial_geofence', 'temporal_proximity', 'ocr_abn_match'
@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS public.trip_evidence_links (
 CREATE INDEX IF NOT EXISTS idx_trip_evidence_trip ON public.trip_evidence_links (trip_id);
 CREATE INDEX IF NOT EXISTS idx_trip_evidence_job ON public.trip_evidence_links (job_site_id);
 CREATE INDEX IF NOT EXISTS idx_trip_evidence_expense ON public.trip_evidence_links (expense_id);
+CREATE INDEX IF NOT EXISTS idx_trip_evidence_evidence ON public.trip_evidence_links (evidence_id);
 
 -- 4. ROW LEVEL SECURITY (RLS) & PRIVILEGE HARDENING
 ALTER TABLE public.job_sites ENABLE ROW LEVEL SECURITY;
@@ -120,6 +121,12 @@ CREATE POLICY "trip_evidence_select_own" ON public.trip_evidence_links
 DROP POLICY IF EXISTS "trip_evidence_insert_own" ON public.trip_evidence_links;
 CREATE POLICY "trip_evidence_insert_own" ON public.trip_evidence_links
     FOR INSERT TO authenticated WITH CHECK (user_id = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS "trip_evidence_update_own" ON public.trip_evidence_links;
+CREATE POLICY "trip_evidence_update_own" ON public.trip_evidence_links
+    FOR UPDATE TO authenticated 
+    USING (user_id = (SELECT auth.uid()))
+    WITH CHECK (user_id = (SELECT auth.uid()));
 
 DROP POLICY IF EXISTS "trip_evidence_delete_own" ON public.trip_evidence_links;
 CREATE POLICY "trip_evidence_delete_own" ON public.trip_evidence_links

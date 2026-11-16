@@ -32,8 +32,13 @@ class KiloTaxApp extends StatelessWidget {
     if (appState.hasVehicle) {
       return const MainScaffoldScreen();
     }
+    // If not authenticated, always start at Welcome / Auth step (Step 0)
+    if (!appState.isAuthenticated && !appState.isGuestMode) {
+      return const OnboardingFlowScreen(initialStep: 0);
+    }
+    // If authenticated (or guest) but no vehicle yet, go to permission / vehicle step
     if (appState.hasSeenOnboarding) {
-      return const OnboardingFlowScreen(initialStep: 1);
+      return const OnboardingFlowScreen(initialStep: 2);
     }
     return const OnboardingFlowScreen(initialStep: 0);
   }

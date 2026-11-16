@@ -10,10 +10,12 @@ import '../storage/receipt_image_optimization_service.dart';
 /// with graceful zero-crash fallbacks for Simulators and older devices.
 /// Retains captured source bytes before OCR; derived images must not replace originals.
 class DocumentScannerService {
+  final bool reportCaptureErrors;
   final ImagePicker _picker;
   final ReceiptImageOptimizationService _optimizer;
 
   DocumentScannerService({
+    this.reportCaptureErrors = false,
     ImagePicker? picker,
     ReceiptImageOptimizationService? optimizer,
   })  : _picker = picker ?? ImagePicker(),
@@ -91,10 +93,15 @@ class DocumentScannerService {
         } catch (pickerError) {
           debugPrint(
               '[DocumentScannerService] Camera fallback failed: $pickerError');
+          if (reportCaptureErrors) {
+            throw StateError(
+                'Camera unavailable. Choose a receipt photo or enter details manually.');
+          }
           return [];
         }
       }
 
+      if (reportCaptureErrors) rethrow;
       return [];
     }
   }

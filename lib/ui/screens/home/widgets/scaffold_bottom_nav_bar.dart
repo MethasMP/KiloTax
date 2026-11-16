@@ -44,7 +44,7 @@ class ScaffoldBottomNavBar extends StatelessWidget {
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             for (var i = 0; i <= destinations.length; i++)
               if (i == 2)
-                Expanded(child: _capture())
+                Expanded(child: _scan())
               else
                 Expanded(
                     child: _destination(
@@ -88,10 +88,9 @@ class ScaffoldBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _capture() => Semantics(
-        label: taxMethod == TaxMethod.logbook
-            ? 'Capture a receipt or trip'
-            : 'Capture a trip',
+  Widget _scan() => Semantics(
+        label: 'Scan receipt',
+        onTap: onCenterActionTap,
         button: true,
         excludeSemantics: true,
         child: InkWell(
@@ -106,11 +105,11 @@ class ScaffoldBottomNavBar extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: AppColor.brand,
                     borderRadius: BorderRadius.circular(13)),
-                child: const Icon(Icons.document_scanner_outlined,
+                child: const Icon(Icons.camera_alt_outlined,
                     color: AppColor.onNavy, size: 24),
               ),
               const SizedBox(height: 4),
-              Text('Capture',
+              Text('Scan',
                   textAlign: TextAlign.center,
                   style: AppType.navLabel
                       .copyWith(height: 1.3, color: AppColor.brand)),

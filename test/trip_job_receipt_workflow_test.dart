@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:archive/archive.dart';
+import 'support/tax_pack_reader.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kilotax/services/sync/sync_engine_service.dart';
@@ -112,17 +113,14 @@ void main() {
           jobs: storage.loadJobSites(),
           outputDirectory: receiptDir);
       final archive = ZipDecoder().decodeBytes(await pack.file.readAsBytes());
-      String content(String name) =>
-          utf8.decode(archive.findFile(name)!.content as List<int>);
-      expect(content('job-connections.csv'), contains('Smith renovation'));
-      expect(content('job-connections.csv'), contains('15.00'));
-      expect(content('trip-review-history.csv'), contains('business'));
-      expect(content('trips.csv'), contains('MIXED'));
-      expect(content('trips.csv'), isNot(contains('PRIVATE_ROUTE_SENTINEL')));
-      expect(
-          content('expenses.csv'), isNot(contains('PRIVATE_ROUTE_SENTINEL')));
-      expect(content('01_Executive_Tax_Workpaper.md'), contains('15.0 km'));
-      expect(archive.files.where((f) => f.name.startsWith('receipts/')),
+      final result = TaxPackReader(archive);
+      expect(result.rows('Trips').single['Job name'], 'Smith renovation');
+      expect(result.rows('Trips').single['Business km'], 15);
+      expect(result.rows('Trip changes').last['Classification'], 'business');
+      expect(result.rows('Trips').single['Classification'], 'MIXED');
+      expect(result.searchableText, isNot(contains('PRIVATE_ROUTE_SENTINEL')));
+      expect(result.summaryValue('Business km'), 15);
+      expect(archive.files.where((f) => f.name.startsWith('Receipts/')),
           hasLength(1));
       await state.removeJobSite('job');
       expect(state.jobSites.single.isActive, isFalse);

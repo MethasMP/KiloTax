@@ -3,10 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../services/ocr/receipt_intelligence_service.dart';
+import '../../../services/ocr/receipt_ocr_engine.dart';
+import '../../../services/receipts/receipt_inbox_service.dart';
 import '../../../services/scanner/document_scanner_service.dart';
 import '../../../state/app_state.dart';
 import 'expense_detail_screen.dart';
 import 'receipt_inbox_screen.dart';
+import 'widgets/receipt_processing_view.dart';
 
 /// Screen 9: Add Expense (Scan Receipt)
 /// Mission-critical hardware-accelerated document scanning interface with
@@ -14,18 +18,28 @@ import 'receipt_inbox_screen.dart';
 /// and high-volume batch scanning support.
 class ScanReceiptScreen extends StatefulWidget {
   final AppState appState;
+  final bool autoStartScanner;
   final DocumentScannerService? documentScanner;
+  final ReceiptOcrEngine? ocrEngine;
+  final ReceiptIntelligenceService? intelligenceService;
+  final ReceiptInboxService? receiptInboxService;
 
   const ScanReceiptScreen({
     super.key,
     required this.appState,
+    this.autoStartScanner = false,
     this.documentScanner,
+    this.ocrEngine,
+    this.intelligenceService,
+    this.receiptInboxService,
   });
 
-  static Future<void> show(BuildContext context, AppState appState) {
+  static Future<void> show(BuildContext context, AppState appState,
+      {bool openCamera = true}) {
     return Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ScanReceiptScreen(appState: appState),
+        builder: (_) =>
+            ScanReceiptScreen(appState: appState, autoStartScanner: openCamera),
       ),
     );
   }
@@ -36,65 +50,165 @@ class ScanReceiptScreen extends StatefulWidget {
 
 class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   bool _isProcessing = false;
-  final String _processingStatus = 'Enhancing & reading receipt evidence...';
+  bool _isAcquiring = false;
+  String? _processingImagePath;
+  String? _acquisitionError;
+  bool get _isBusy => _isProcessing || _isAcquiring;
+  String _processingStatus = 'Reading receipt details…';
   late final DocumentScannerService _scanner;
+  late final ReceiptIntelligenceService _intelligence;
 
   @override
   void initState() {
     super.initState();
-    _scanner = widget.documentScanner ?? DocumentScannerService();
+    _scanner = widget.documentScanner ??
+        DocumentScannerService(reportCaptureErrors: true);
+    _intelligence =
+        widget.intelligenceService ?? const ReceiptIntelligenceService();
+    if (widget.autoStartScanner) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scanReceipt(autoLaunch: true);
+      });
+    }
   }
 
   Future<void> _processBatchImages(List<String> imagePaths) async {
-    if (!mounted) return;
+    if (!mounted || _isProcessing) return;
+
+    if (imagePaths.length == 1) {
+      // Single Shot Mode: instant OCR & direct navigation to ExpenseDetailScreen
+      setState(() {
+        _isProcessing = true;
+        _processingStatus = 'Reading receipt details…';
+        _processingImagePath = imagePaths.first;
+      });
+
+      final imagePath = imagePaths.first;
+      try {
+        final engine = widget.ocrEngine ?? ReceiptOcrEngineFactory.create();
+        final extraction = await engine.recognizeFile(imagePath);
+        final ocr = _intelligence.analyseText(extraction.text);
+
+        if (!mounted) return;
+
+        // If confidence >= 0.90 or successful high confidence read, allow instant quick confirm
+        final isHighConfidence = ocr.confidence >= 0.90 || ocr.isHighConfidence;
+        debugPrint(
+            '[ScanReceiptScreen] Single-shot OCR complete. Confidence: ${ocr.confidence}, isHighConfidence: $isHighConfidence');
+
+        await _openReview(ExpenseDetailScreen(
+          appState: widget.appState,
+          merchant: ocr.merchant,
+          amount: ocr.amount,
+          categoryName: ocr.category.displayName,
+          receiptDate: ocr.parsedDate ?? ocr.date,
+          receiptImagePath: imagePath,
+          receiptOcrResult: ocr,
+          purchaseDateUnknown: ocr.dateNeedsReview,
+        ));
+      } catch (e, stack) {
+        debugPrint(
+            '[ScanReceiptScreen] Single-shot OCR failed, falling back: $e\n$stack');
+        if (!mounted) return;
+        // Fallback to manual entry or inbox
+        await _openReview(ExpenseDetailScreen(
+          appState: widget.appState,
+          merchant: '',
+          amount: 0.0,
+          categoryName: 'Materials',
+          receiptDate: DateTime.now(),
+          receiptImagePath: imagePath,
+          purchaseDateUnknown: true,
+        ));
+      } finally {
+        if (mounted) setState(() => _isProcessing = false);
+      }
+      return;
+    }
+
+    // Shoebox / Multi Mode (or empty imagePaths for drafts inbox)
+    setState(() {
+      _isProcessing = true;
+      _processingStatus = 'Opening your receipt inbox…';
+    });
+
     await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) =>
-          ReceiptInboxScreen(appState: widget.appState, imagePaths: imagePaths),
+      builder: (_) => ReceiptInboxScreen(
+        appState: widget.appState,
+        imagePaths: imagePaths,
+        inbox: widget.receiptInboxService,
+        engine: widget.ocrEngine,
+      ),
     ));
     if (mounted) setState(() => _isProcessing = false);
   }
 
-  Future<void> _scanReceipt() async {
+  Future<void> _openReview(ExpenseDetailScreen screen) async {
+    final route = MaterialPageRoute<void>(builder: (_) => screen);
+    if (widget.autoStartScanner) {
+      await Navigator.of(context).pushReplacement(route);
+    } else {
+      await Navigator.of(context).push(route);
+    }
+  }
+
+  Future<void> _scanReceipt({bool autoLaunch = false}) async {
+    if (_isBusy) return;
+    setState(() {
+      _isAcquiring = true;
+      _acquisitionError = null;
+    });
     HapticFeedback.mediumImpact();
     try {
       final imagePaths = await _scanner.scanBatchDocuments(
         maxPages: 20,
         allowFallbackToCamera: true,
       );
-
       if (!mounted) return;
-
       if (imagePaths.isNotEmpty) {
         HapticFeedback.heavyImpact();
         await _processBatchImages(imagePaths);
+      } else if (autoLaunch && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
       }
     } catch (e, stack) {
-      debugPrint(
-          '[ScanReceiptScreen] Warning scanning receipt document: $e\n$stack');
-      if (!mounted) return;
-      _navigateToManual();
+      debugPrint('[ScanReceiptScreen] Camera scan failed: $e\n$stack');
+      if (mounted) {
+        setState(() => _acquisitionError =
+            'Couldn’t open the camera. Try again, choose a photo, or enter details manually.');
+      }
+    } finally {
+      if (mounted) setState(() => _isAcquiring = false);
     }
   }
 
   Future<void> _pickFromGallery() async {
+    if (_isBusy) return;
+    setState(() {
+      _isAcquiring = true;
+      _acquisitionError = null;
+    });
     HapticFeedback.selectionClick();
     try {
       final imagePaths = await _scanner.pickMultipleFromGallery();
       if (!mounted) return;
-
       if (imagePaths.isNotEmpty) {
         HapticFeedback.heavyImpact();
         await _processBatchImages(imagePaths);
       }
     } catch (e, stack) {
-      debugPrint(
-          '[ScanReceiptScreen] Warning picking receipt from gallery: $e\n$stack');
-      if (!mounted) return;
-      _navigateToManual();
+      debugPrint('[ScanReceiptScreen] Gallery selection failed: $e\n$stack');
+      if (mounted) {
+        setState(() => _acquisitionError =
+            'Couldn’t open your photos. Try again or enter details manually.');
+      }
+    } finally {
+      if (mounted) setState(() => _isAcquiring = false);
     }
   }
 
   void _navigateToManual() {
+    if (_isBusy) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => ExpenseDetailScreen(
@@ -120,187 +234,173 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         centerTitle: false,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextButton.icon(
-                onPressed:
-                    _isProcessing ? null : () => _processBatchImages(const []),
-                icon: const Icon(Icons.inbox_outlined),
-                label: const Text('Open saved receipt drafts'),
-              ),
-              // Hero Viewfinder / Scanner Illustration Surface
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: AppColor.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColor.line, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.ink.withValues(alpha: 0.04),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
+        child: _isProcessing
+            ? ReceiptProcessingView(
+                imagePath: _processingImagePath, status: _processingStatus)
+            : SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Concentric inner target area (Outer radius 20 = inner 12 + padding 8)
-                    Container(
-                      width: 130,
-                      height: 130,
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceMuted,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColor.hairline,
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          LucideIcons.scanLine,
-                          size: 54,
-                          color: AppColor.brand,
-                        ),
-                      ),
+                    if (_acquisitionError != null) ...[
+                      Semantics(
+                          liveRegion: true,
+                          child: Text(_acquisitionError!,
+                              style: AppType.body
+                                  .copyWith(color: AppColor.attentionInk))),
+                      const SizedBox(height: 16),
+                    ],
+                    if (_isAcquiring) ...[
+                      const LinearProgressIndicator(),
+                      const SizedBox(height: 12),
+                      const Text('Opening receipt capture…',
+                          style: AppType.secondary),
+                    ],
+                    TextButton.icon(
+                      onPressed:
+                          _isBusy ? null : () => _processBatchImages(const []),
+                      icon: const Icon(Icons.inbox_outlined),
+                      label: const Text('Open saved receipt drafts'),
                     ),
-                    // Live OCR / Auto-link badge
-                    Positioned(
-                      bottom: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColor.brandTint,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: AppColor.brandTintStrong,
-                            width: 1,
+                    // Hero Viewfinder / Scanner Illustration Surface
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: AppColor.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColor.line, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColor.ink.withValues(alpha: 0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.sparkles,
-                              size: 13,
-                              color: AppColor.brand,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'ATO Smart Match & Multi-scan',
-                              style: AppType.eyebrow.copyWith(
-                                color: AppColor.brand,
-                                letterSpacing: 0.2,
+                        ],
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Concentric inner target area (Outer radius 20 = inner 12 + padding 8)
+                          Container(
+                            width: 130,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              color: AppColor.surfaceMuted,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColor.hairline,
+                                width: 1,
                               ),
                             ),
-                          ],
+                            child: Center(
+                              child: Icon(
+                                LucideIcons.scanLine,
+                                size: 54,
+                                color: AppColor.brand,
+                              ),
+                            ),
+                          ),
+                          // Live OCR / Auto-link badge
+                          Positioned(
+                            bottom: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColor.brandTint,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: AppColor.brandTintStrong,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    LucideIcons.sparkles,
+                                    size: 13,
+                                    color: AppColor.brand,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'ATO Smart Match & Multi-scan',
+                                    style: AppType.eyebrow.copyWith(
+                                      color: AppColor.brand,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Title and Description with refined typography hierarchy
+                    const Text(
+                      'Scan receipt evidence',
+                      style: AppType.title,
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: const Text(
+                        'Photograph physical fuel and material dockets or upload photos. Text recognition extracts merchant, amount, GST, and auto-links eligible trips.',
+                        style: AppType.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Primary Action: Camera Scanner (Single primary filled button per view)
+                    FilledButton.icon(
+                      onPressed: _isBusy ? null : () => _scanReceipt(),
+                      icon: const Icon(LucideIcons.camera, size: 20),
+                      label: const Text('Open camera scanner'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColor.brand,
+                        foregroundColor: AppColor.onNavy,
+                        elevation: 0,
+                        minimumSize: const Size(double.infinity, 54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Secondary Action: Choose from gallery (Subtle neutral surface)
+                    OutlinedButton.icon(
+                      onPressed: _isBusy ? null : _pickFromGallery,
+                      icon: const Icon(LucideIcons.image, size: 20),
+                      label: const Text('Choose from gallery'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColor.ink,
+                        side: const BorderSide(color: AppColor.line, width: 1),
+                        minimumSize: const Size(double.infinity, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tertiary Action: Manual Entry
+                    TextButton(
+                      onPressed: _isBusy ? null : _navigateToManual,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColor.inkMuted,
+                        minimumSize: const Size(double.infinity, 48),
+                        textStyle: AppType.bodyStrong,
+                      ),
+                      child: const Text('Enter details manually'),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
-
-              // Title and Description with refined typography hierarchy
-              const Text(
-                'Scan receipt evidence',
-                style: AppType.title,
-              ),
-              const SizedBox(height: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: const Text(
-                  'Photograph physical fuel and material dockets or upload photos. Text recognition extracts merchant, amount, GST, and auto-links eligible trips.',
-                  style: AppType.secondary,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Actions or Processing Feedback
-              if (_isProcessing) ...[
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColor.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColor.line, width: 1),
-                  ),
-                  child: Column(
-                    children: [
-                      const ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(999)),
-                        child: LinearProgressIndicator(
-                          minHeight: 6,
-                          backgroundColor: AppColor.hairline,
-                          color: AppColor.brand,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _processingStatus,
-                        style: AppType.bodyStrong.copyWith(
-                          fontFeatures: AppType.tabular,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                // Primary Action: Camera Scanner (Single primary filled button per view)
-                FilledButton.icon(
-                  onPressed: _scanReceipt,
-                  icon: const Icon(LucideIcons.camera, size: 20),
-                  label: const Text('Open camera scanner'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColor.brand,
-                    foregroundColor: AppColor.onNavy,
-                    elevation: 0,
-                    minimumSize: const Size(double.infinity, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Secondary Action: Choose from gallery (Subtle neutral surface)
-                OutlinedButton.icon(
-                  onPressed: _pickFromGallery,
-                  icon: const Icon(LucideIcons.image, size: 20),
-                  label: const Text('Choose from gallery'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColor.ink,
-                    side: const BorderSide(color: AppColor.line, width: 1),
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Tertiary Action: Manual Entry
-                TextButton(
-                  onPressed: _navigateToManual,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColor.inkMuted,
-                    minimumSize: const Size(double.infinity, 48),
-                    textStyle: AppType.bodyStrong,
-                  ),
-                  child: const Text('Enter details manually'),
-                ),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }

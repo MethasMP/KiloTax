@@ -11,8 +11,11 @@ import '../logbook/logbook_home_body.dart';
 /// Zero cross-contamination, 100% clean domain boundary.
 class EvidenceHomeScreen extends StatelessWidget {
   final VoidCallback? onViewAll;
+  final VoidCallback? onReviewTrips;
+  final VoidCallback? onViewTax;
 
-  const EvidenceHomeScreen({super.key, this.onViewAll});
+  const EvidenceHomeScreen(
+      {super.key, this.onViewAll, this.onReviewTrips, this.onViewTax});
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +26,16 @@ class EvidenceHomeScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: isLogbook
-            ? LogbookHomeBody(appState: appState, onViewAll: onViewAll)
-            : CpkHomeBody(appState: appState, onViewAll: onViewAll),
+            ? LogbookHomeBody(
+                appState: appState,
+                onViewAll: onViewAll,
+                onReviewTrips: onReviewTrips,
+                onViewTax: onViewTax)
+            : CpkHomeBody(
+                appState: appState,
+                onViewAll: onViewAll,
+                onReviewTrips: onReviewTrips,
+                onViewTax: onViewTax),
       ),
     );
   }

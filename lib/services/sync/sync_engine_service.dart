@@ -4,7 +4,9 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../core/constants/app_constants.dart';
+import '../../data/models/annual_odometer.dart';
 import '../../data/models/job_site.dart';
+import '../../data/models/logbook_period.dart';
 import '../../data/models/trip.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/vehicle_expense.dart';
@@ -522,6 +524,169 @@ class SyncEngineService {
     }
   }
 
+  /// ATO ITAA 1997 s 28-J: Sync Annual Vehicle Odometers (Opening / Closing Odometer)
+  Future<SyncResult> syncAnnualOdometersToCloud({
+    required List<AnnualVehicleOdometer> records,
+    String? userToken,
+    String? userId,
+    bool requireAuth = false,
+  }) async {
+    final effectiveUserId = userId ?? currentUser?.id;
+    final effectiveUserToken = userToken ?? currentAccessToken;
+
+    if (requireAuth &&
+        (!isAuthenticated ||
+            (currentUser == null && currentAccessToken == null)) &&
+        effectiveUserId == null) {
+      return SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+        errorMessage: 'User is not authenticated. Annual odometer sync aborted.',
+      );
+    }
+
+    if (records.isEmpty) {
+      return SyncResult(
+        success: true,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+      );
+    }
+
+    try {
+      final headers = _buildHeaders(effectiveUserToken);
+      final payloads = records
+          .map((r) => {
+                'id': cloudId(r.id, effectiveUserId),
+                'local_id': r.id,
+                if (effectiveUserId != null) 'user_id': effectiveUserId,
+                'vehicle_id': cloudId(r.vehicleId, effectiveUserId),
+                'financial_year': r.financialYear,
+                'opening_date': r.openingDate.toIso8601String().split('T').first,
+                'opening_odometer': r.openingOdometer,
+                'closing_date': r.closingDate?.toIso8601String().split('T').first,
+                'closing_odometer': r.closingOdometer,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+          .toList();
+
+      final uri =
+          Uri.parse('$supabaseUrl/rest/v1/annual_odometers?on_conflict=id');
+      final res = await _httpClient.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(payloads),
+      );
+
+      final isSuccess = res.statusCode >= 200 && res.statusCode < 300;
+      return SyncResult(
+        success: isSuccess,
+        syncedTrips: 0,
+        syncedExpenses: isSuccess ? records.length : 0,
+        rejectedOrIgnored: isSuccess ? 0 : records.length,
+        errorMessage: isSuccess
+            ? null
+            : 'Supabase returned HTTP ${res.statusCode}: ${res.body}',
+      );
+    } catch (e, stack) {
+      debugPrint('[SyncEngine] Error syncing annual odometers: $e\n$stack');
+      return SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: records.length,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  /// ATO ITAA 1997 s 28-G: Sync 12-Week Representative Logbook Periods
+  Future<SyncResult> syncLogbookPeriodsToCloud({
+    required List<LogbookPeriod> periods,
+    String? userToken,
+    String? userId,
+    bool requireAuth = false,
+  }) async {
+    final effectiveUserId = userId ?? currentUser?.id;
+    final effectiveUserToken = userToken ?? currentAccessToken;
+
+    if (requireAuth &&
+        (!isAuthenticated ||
+            (currentUser == null && currentAccessToken == null)) &&
+        effectiveUserId == null) {
+      return SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+        errorMessage: 'User is not authenticated. Logbook period sync aborted.',
+      );
+    }
+
+    if (periods.isEmpty) {
+      return SyncResult(
+        success: true,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: 0,
+      );
+    }
+
+    try {
+      final headers = _buildHeaders(effectiveUserToken);
+      final payloads = periods
+          .map((p) => {
+                'id': cloudId(p.id, effectiveUserId),
+                'local_id': p.id,
+                if (effectiveUserId != null) 'user_id': effectiveUserId,
+                'vehicle_id': cloudId(p.vehicleId, effectiveUserId),
+                'start_date': p.startDate.toIso8601String(),
+                'end_date': p.endDate.toIso8601String(),
+                'start_odometer': p.startOdometer,
+                'end_odometer': p.endOdometer,
+                'status': p.status.name,
+                'certified_business_percentage': p.certifiedBusinessPercentage,
+                'established_financial_year': p.establishedFinancialYear,
+                'valid_until_financial_year': p.validUntilFinancialYear,
+                'digital_signature_hash': p.digitalSignatureHash,
+                'certified_at': p.certifiedAt?.toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+          .toList();
+
+      final uri =
+          Uri.parse('$supabaseUrl/rest/v1/logbook_periods?on_conflict=id');
+      final res = await _httpClient.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(payloads),
+      );
+
+      final isSuccess = res.statusCode >= 200 && res.statusCode < 300;
+      return SyncResult(
+        success: isSuccess,
+        syncedTrips: 0,
+        syncedExpenses: isSuccess ? periods.length : 0,
+        rejectedOrIgnored: isSuccess ? 0 : periods.length,
+        errorMessage: isSuccess
+            ? null
+            : 'Supabase returned HTTP ${res.statusCode}: ${res.body}',
+      );
+    } catch (e, stack) {
+      debugPrint('[SyncEngine] Error syncing logbook periods: $e\n$stack');
+      return SyncResult(
+        success: false,
+        syncedTrips: 0,
+        syncedExpenses: 0,
+        rejectedOrIgnored: periods.length,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   /// RESTORE FROM CLOUD: Pulls existing vehicles, trips, and expenses
   /// Allows instant data recovery when reinstalling the app or switching devices.
   Future<CloudRestoreResult> restoreFromCloud({
@@ -665,6 +830,67 @@ class SyncEngineService {
         }
       }
 
+      final annualOdoUri = Uri.parse(
+          '$supabaseUrl/rest/v1/annual_odometers?select=*$userFilter&order=opening_date.asc');
+      final annualOdoRes = await _httpClient.get(annualOdoUri, headers: headers);
+
+      final List<AnnualVehicleOdometer> restoredAnnualOdometers = [];
+      if (annualOdoRes.statusCode >= 200 && annualOdoRes.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(annualOdoRes.body);
+        for (final item in data) {
+          try {
+            final row = Map<String, dynamic>.from(item as Map);
+            row['id'] = row['local_id'] ?? row['id'];
+            row['vehicleId'] =
+                vehicleIds[row['vehicle_id']] ?? row['vehicle_id'];
+            row['financialYear'] = row['financial_year'];
+            row['openingDate'] = row['opening_date'];
+            row['openingOdometer'] = row['opening_odometer'];
+            row['closingDate'] = row['closing_date'];
+            row['closingOdometer'] = row['closing_odometer'];
+            restoredAnnualOdometers.add(AnnualVehicleOdometer.fromJson(row));
+          } catch (e, stack) {
+            failedRecords++;
+            debugPrint(
+                '[SyncEngine] Warning parsing annual odometer record: $e\n$stack');
+          }
+        }
+      }
+
+      final logbookUri = Uri.parse(
+          '$supabaseUrl/rest/v1/logbook_periods?select=*$userFilter&order=start_date.asc');
+      final logbookRes = await _httpClient.get(logbookUri, headers: headers);
+
+      final List<LogbookPeriod> restoredLogbookPeriods = [];
+      if (logbookRes.statusCode >= 200 && logbookRes.statusCode < 300) {
+        final List<dynamic> data = jsonDecode(logbookRes.body);
+        for (final item in data) {
+          try {
+            final row = Map<String, dynamic>.from(item as Map);
+            row['id'] = row['local_id'] ?? row['id'];
+            row['vehicleId'] =
+                vehicleIds[row['vehicle_id']] ?? row['vehicle_id'];
+            row['startDate'] = row['start_date'];
+            row['endDate'] = row['end_date'];
+            row['startOdometer'] = row['start_odometer'];
+            row['endOdometer'] = row['end_odometer'];
+            row['status'] = row['status'];
+            row['certifiedBusinessPercentage'] =
+                row['certified_business_percentage'];
+            row['establishedFinancialYear'] =
+                row['established_financial_year'];
+            row['validUntilFinancialYear'] = row['valid_until_financial_year'];
+            row['digitalSignatureHash'] = row['digital_signature_hash'];
+            row['certifiedAt'] = row['certified_at'];
+            restoredLogbookPeriods.add(LogbookPeriod.fromJson(row));
+          } catch (e, stack) {
+            failedRecords++;
+            debugPrint(
+                '[SyncEngine] Warning parsing logbook period record: $e\n$stack');
+          }
+        }
+      }
+
       if (localCacheDir != null) {
         for (int i = 0; i < restoredExpenses.length; i++) {
           final exp = restoredExpenses[i];
@@ -789,6 +1015,8 @@ class SyncEngineService {
         trips: restoredTrips,
         expenses: restoredExpenses,
         jobSites: restoredJobSites,
+        annualOdometers: restoredAnnualOdometers,
+        logbookPeriods: restoredLogbookPeriods,
         corruptedRecordsCount: failedRecords,
         errorMessage: failedRecords > 0
             ? '$failedRecords records or receipt files could not be restored completely. Available records were returned.'
@@ -802,6 +1030,8 @@ class SyncEngineService {
         trips: [],
         expenses: [],
         jobSites: [],
+        annualOdometers: [],
+        logbookPeriods: [],
         corruptedRecordsCount: 0,
         errorMessage: e.toString(),
       );
@@ -815,6 +1045,8 @@ class CloudRestoreResult {
   final List<Trip> trips;
   final List<VehicleExpense> expenses;
   final List<JobSite> jobSites;
+  final List<AnnualVehicleOdometer> annualOdometers;
+  final List<LogbookPeriod> logbookPeriods;
   final int corruptedRecordsCount;
   final String? errorMessage;
 
@@ -824,6 +1056,8 @@ class CloudRestoreResult {
     required this.trips,
     required this.expenses,
     this.jobSites = const [],
+    this.annualOdometers = const [],
+    this.logbookPeriods = const [],
     this.corruptedRecordsCount = 0,
     this.errorMessage,
   });

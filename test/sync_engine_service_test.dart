@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:kilotax/data/models/annual_odometer.dart';
 import 'package:kilotax/data/models/job_site.dart';
+import 'package:kilotax/data/models/logbook_period.dart';
 import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/data/models/vehicle_expense.dart';
@@ -834,6 +836,94 @@ void main() {
       expect(result.jobSites.first.id, equals('poi-restored-01'));
       expect(result.jobSites.first.name, equals('Barangaroo Site A'));
       expect(result.jobSites.first.radiusMeters, equals(150.0));
+    });
+
+    test('syncAnnualOdometersToCloud serializes annual odometer records properly',
+        () async {
+      List<dynamic>? capturedPayload;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('annual_odometers')) {
+          capturedPayload = jsonDecode(request.body) as List<dynamic>;
+          return http.Response(jsonEncode(capturedPayload), 201);
+        }
+        return http.Response('[]', 200);
+      });
+
+      final syncService = SyncEngineService(
+        supabaseUrl: 'https://test.supabase.co',
+        anonKey: 'test_anon_key',
+        httpClient: mockClient,
+      );
+
+      final record = AnnualVehicleOdometer(
+        id: 'ann-odo-01',
+        vehicleId: 'veh-123',
+        financialYear: '2024-2025',
+        openingDate: DateTime(2024, 7, 1),
+        openingOdometer: 10000.0,
+        closingDate: DateTime(2025, 6, 30),
+        closingOdometer: 25000.0,
+      );
+
+      final result = await syncService.syncAnnualOdometersToCloud(
+        records: [record],
+        userId: 'user-tradie-101',
+      );
+
+      expect(result.success, isTrue);
+      expect(capturedPayload, isNotNull);
+      expect(capturedPayload!.length, equals(1));
+      final item = capturedPayload!.first as Map<String, dynamic>;
+      expect(item['local_id'], equals('ann-odo-01'));
+      expect(item['financial_year'], equals('2024-2025'));
+      expect(item['opening_odometer'], equals(10000.0));
+      expect(item['closing_odometer'], equals(25000.0));
+    });
+
+    test('syncLogbookPeriodsToCloud serializes logbook periods correctly',
+        () async {
+      List<dynamic>? capturedPayload;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('logbook_periods')) {
+          capturedPayload = jsonDecode(request.body) as List<dynamic>;
+          return http.Response(jsonEncode(capturedPayload), 201);
+        }
+        return http.Response('[]', 200);
+      });
+
+      final syncService = SyncEngineService(
+        supabaseUrl: 'https://test.supabase.co',
+        anonKey: 'test_anon_key',
+        httpClient: mockClient,
+      );
+
+      final period = LogbookPeriod(
+        id: 'lb-period-01',
+        vehicleId: 'veh-123',
+        startDate: DateTime(2024, 8, 1),
+        endDate: DateTime(2024, 10, 24),
+        startOdometer: 12000.0,
+        endOdometer: 16000.0,
+        status: LogbookStatus.certifiedValid,
+        certifiedBusinessPercentage: 82.5,
+        establishedFinancialYear: '2024-2025',
+        validUntilFinancialYear: '2028-2029',
+      );
+
+      final result = await syncService.syncLogbookPeriodsToCloud(
+        periods: [period],
+        userId: 'user-tradie-101',
+      );
+
+      expect(result.success, isTrue);
+      expect(capturedPayload, isNotNull);
+      expect(capturedPayload!.length, equals(1));
+      final item = capturedPayload!.first as Map<String, dynamic>;
+      expect(item['local_id'], equals('lb-period-01'));
+      expect(item['status'], equals('certifiedValid'));
+      expect(item['certified_business_percentage'], equals(82.5));
     });
 
     test(
