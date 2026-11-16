@@ -39,12 +39,12 @@ void main() {
         classification: TripClassification.unclassified));
     await t.pumpWidget(wrap(Scaffold(body: CpkHomeBody(appState: state))));
     await t.pumpAndSettle();
-    expect(find.text('Review your records'), findsOneWidget);
+    expect(find.text('Review 1 trip'), findsOneWidget);
     await t.scrollUntilVisible(find.text('Recent trips'), 150,
         scrollable: find.byType(Scrollable).first);
     expect(find.text('Recent trips'), findsOneWidget);
     expect(find.byType(CpkQuotaArcMeter), findsNothing);
-    expect(t.getTopLeft(find.text('Review your records')).dy,
+    expect(t.getTopLeft(find.text('Review 1 trip')).dy,
         lessThan(t.getTopLeft(find.text('Recent trips')).dy));
   });
 
@@ -52,9 +52,11 @@ void main() {
       (t) async {
     await t.pumpWidget(wrap(const MainScaffoldScreen()));
     await t.pumpAndSettle();
-    await t.scrollUntilVisible(find.text('Add your first trip'), 150,
+    await t.scrollUntilVisible(
+        find.text('Add your first trip').hitTestable(), 150,
         scrollable: find.byType(Scrollable).first);
-    await t.tap(find.text('Add your first trip'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Add your first trip').hitTestable());
     await t.pumpAndSettle();
     expect(find.text('Record with GPS'), findsOneWidget);
     expect(find.text('Add a past trip'), findsOneWidget);

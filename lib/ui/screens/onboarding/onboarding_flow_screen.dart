@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../state/app_state.dart';
+import '../../../services/tracking/location_permission_service.dart';
+import '../auth/sign_in_screen.dart';
 import '../home/main_scaffold_screen.dart';
 import '../vehicle/vehicle_setup_flow.dart';
 import 'onboarding_slides_screen.dart';
-import 'widgets/value_first_gate_screen.dart';
+import 'widgets/permission_preprompt_screen.dart';
 
-/// Vehicle setup leads to an optional account connection before entering Home.
 class OnboardingFlowScreen extends StatefulWidget {
   final int initialStep;
   const OnboardingFlowScreen({super.key, this.initialStep = 0});
@@ -16,32 +17,77 @@ class OnboardingFlowScreen extends StatefulWidget {
 }
 
 class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
-  late bool _showWelcome = widget.initialStep == 0;
+  late int _currentStep;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStep = widget.initialStep;
+  }
+
+  Future<void> _handleRequestPermissions() async {
+    final locationService = LocationPermissionService();
+    final permission = await locationService.requestForegroundPermission();
+    if (permission == AppLocationPermissionStatus.grantedForeground) {
+      await locationService.requestBackgroundEscalation();
+    }
+
+    if (mounted) {
+      setState(() => _currentStep = 3);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    if (appState.hasVehicle) return const MainScaffoldScreen();
-    if (_showWelcome) {
+
+    if (appState.hasVehicle) {
+      return const MainScaffoldScreen();
+    }
+
+    if (_currentStep == 0) {
       return OnboardingSlidesScreen(onComplete: () async {
         await appState.completeOnboarding();
-        if (mounted) setState(() => _showWelcome = false);
+        if (mounted) {
+          if (appState.isAuthenticated) {
+            setState(() => _currentStep = 2);
+          } else {
+            setState(() => _currentStep = 1);
+          }
+        }
       });
     }
+
+    if (_currentStep == 1 && !appState.isAuthenticated) {
+      return SignInScreen(
+        onAuthSuccess: () {
+          if (mounted) {
+            setState(() => _currentStep = 2);
+          }
+        },
+        onContinueAsGuest: () {
+          if (mounted) {
+            setState(() => _currentStep = 2);
+          }
+        },
+      );
+    }
+
+    if (_currentStep == 2) {
+      return PermissionPrepromptScreen(
+        onEnableTracking: _handleRequestPermissions,
+        onSkipOrManual: () {
+          if (mounted) setState(() => _currentStep = 3);
+        },
+      );
+    }
+
     return VehicleSetupFlow(
       includeBluetoothSetup: false,
-      onCancel: () => setState(() => _showWelcome = true),
+      onCancel: () {
+        setState(() => _currentStep = 0);
+      },
       onVehicleCreated: (vehicle) async {
-        if (!appState.isAuthenticated) {
-          final navigator = Navigator.of(context);
-          // Keep the account choice above the root, which becomes Home on save.
-          navigator.push(MaterialPageRoute<void>(
-            builder: (_) => ValueFirstGateScreen(
-              vehicle: vehicle,
-              onContinue: () => navigator.pop(),
-            ),
-          ));
-        }
         await appState.completeOnboarding();
         await appState.addVehicle(vehicle);
       },

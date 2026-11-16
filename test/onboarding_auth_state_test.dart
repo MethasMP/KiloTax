@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/state/app_state.dart';
 import 'package:kilotax/ui/screens/onboarding/onboarding_flow_screen.dart';
 import 'package:kilotax/ui/screens/onboarding/onboarding_slides_screen.dart';
-import 'package:kilotax/ui/screens/onboarding/widgets/value_first_gate_screen.dart';
+import 'package:kilotax/ui/screens/onboarding/widgets/permission_preprompt_screen.dart';
 import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
 import 'package:kilotax/ui/screens/dashboard/widgets/first_trip_card.dart';
 import 'package:kilotax/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
@@ -28,6 +29,12 @@ void main() {
     expect(find.textContaining('Step 1 of'), findsNothing);
     await tester.ensureVisible(find.text('Get started'));
     await tester.tap(find.text('Get started'));
+    await tester.pumpAndSettle();
+    expect(find.text('Continue without an account'), findsOneWidget);
+    await tester.tap(find.text('Continue without an account'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PermissionPrepromptScreen), findsOneWidget);
+    await tester.tap(find.text('I’ll log trips manually instead'));
     await tester.pumpAndSettle();
     expect(find.byType(VehicleSetupFlow), findsOneWidget);
     expect(
@@ -55,7 +62,7 @@ void main() {
     expect(find.text('Car Bluetooth'), findsNothing);
   });
 
-  testWidgets('Saving the first vehicle presents account choice before Home',
+  testWidgets('Guest chooses manual tracking before saving the first vehicle',
       (tester) async {
     await tester.pumpWidget(ChangeNotifierProvider<AppState>.value(
       value: state,
@@ -66,24 +73,48 @@ void main() {
             : const OnboardingFlowScreen(initialStep: 1),
       )),
     ));
+    expect(find.text('Continue with Apple'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    await tester.tap(find.text('Continue without an account'));
+    await tester.pumpAndSettle();
+    expect(state.isGuestMode, isTrue);
+    expect(find.byType(PermissionPrepromptScreen), findsOneWidget);
+    await tester.tap(find.text('I’ll log trips manually instead'));
+    await tester.pumpAndSettle();
     final setup =
         tester.widget<VehicleSetupFlow>(find.byType(VehicleSetupFlow));
     await setup
         .onVehicleCreated(Vehicle(id: 'first', make: 'Toyota', model: 'Yaris'));
     await tester.pumpAndSettle();
     expect(state.hasVehicle, isTrue);
-    expect(find.byType(ValueFirstGateScreen), findsOneWidget);
-    expect(find.text('Continue with Apple'), findsNothing);
-    await tester.tap(find.text('Back up your records'));
-    await tester.pumpAndSettle();
-    expect(find.text('Continue with Apple'), findsOneWidget);
-    expect(find.text('Continue with Google'), findsOneWidget);
-    await tester.ensureVisible(find.text('Start using DriveLog'));
-    await tester.tap(find.text('Start using DriveLog'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ValueFirstGateScreen), findsNothing);
-    expect(find.text('Home destination'), findsOneWidget);
     expect(state.isGuestMode, isTrue);
+    expect(state.isAuthenticated, isFalse);
+    expect(find.text('Home destination'), findsOneWidget);
+    expect(find.byType(PermissionPrepromptScreen), findsNothing);
+  });
+
+  testWidgets('Denied foreground access proceeds without a background request',
+      (tester) async {
+    const location = MethodChannel('flutter.baseflow.com/geolocator');
+    var requests = 0;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(location, (call) async {
+      if (call.method == 'isLocationServiceEnabled') return true;
+      if (call.method == 'checkPermission') return 0;
+      if (call.method == 'requestPermission') {
+        requests++;
+        return 0;
+      }
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(location, null));
+    await tester.pumpWidget(wrap(const OnboardingFlowScreen(initialStep: 2)));
+    await tester.tap(find.text('Enable automatic tracking'));
+    await tester.pumpAndSettle();
+    expect(requests, 1);
+    expect(find.byType(VehicleSetupFlow), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

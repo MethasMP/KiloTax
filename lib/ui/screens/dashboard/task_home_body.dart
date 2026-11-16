@@ -6,6 +6,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
+import '../../../services/engine/evidence_review_service.dart';
 import '../../../state/app_state.dart';
 import '../auth/sign_in_screen.dart';
 import '../evidence/evidence_review_screen.dart';
@@ -15,6 +16,7 @@ import '../logbook/logbook_setup_screen.dart';
 import '../logbook/widgets/annual_odometer_reminder_card.dart';
 import '../logbook/widgets/odometer_gap_review_card.dart';
 import '../tax/tax_summary_screen.dart';
+import '../vehicle/vehicle_setup_flow.dart';
 import 'widgets/account_settings_sheet.dart';
 import '../home/widgets/quick_capture_bottom_sheet.dart';
 import '../trips/trip_live_tracking_screen.dart';
@@ -26,7 +28,15 @@ import 'widgets/home_telemetry_capsule.dart';
 class TaskHomeBody extends StatelessWidget {
   final AppState appState;
   final VoidCallback? onViewAll;
-  const TaskHomeBody({super.key, required this.appState, this.onViewAll});
+  final VoidCallback? onReviewTrips;
+  final VoidCallback? onViewTax;
+  const TaskHomeBody({
+    super.key,
+    required this.appState,
+    this.onViewAll,
+    this.onReviewTrips,
+    this.onViewTax,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -73,66 +83,87 @@ class TaskHomeBody extends StatelessWidget {
                   'Add your vehicle to begin',
               style: AppType.secondary),
           const SizedBox(height: 24),
-          if (appState.isDriving)
-            HomeTelemetryCapsule(appState: appState)
-          else if (report.hasRecords)
-            HomeRecordHero(
-                summary: summary,
-                onViewBasis: () => _showBasis(context, summary),
-                onLogbook: () => _openLogbook(context))
-          else ...[
-            HomeWelcomeHero(
-                vehicleName:
-                    appState.primaryVehicle?.displayName ?? 'Your vehicle',
-                taxMethod: appState.primaryVehicle?.taxMethod),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-                onPressed: () =>
-                    QuickCaptureBottomSheet.showTripCaptureModeSheet(
-                        context, appState),
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 52)),
-                icon: const Icon(Icons.add),
-                label: const Text('Add your first trip')),
-            TextButton(
-                onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                        builder: (_) =>
-                            TripLiveTrackingScreen(appState: appState))),
-                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                child: const Text('Record a drive with GPS →')),
-          ],
-          const SizedBox(height: 16),
-          if (!appState.isDriving) HomeTelemetryCapsule(appState: appState),
-          if (isLogbook && report.hasRecords) _odometer(context),
-          if (report.hasRecords && summary.pendingItems.isNotEmpty) ...[
-            Material(
-              key: const ValueKey('home-next-task'),
-              color: AppColor.brandTint,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColor.brandTintStrong)),
+          HomeTelemetryCapsule(appState: appState),
+          if (appState.syncStatus == SyncStatus.error)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
               child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: Text('${summary.pendingItems.length}',
-                    style: AppType.metricSmall),
-                title: const Text('Review your records',
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.cloud_off_outlined),
+                title: const Text('Couldn’t sync your records',
                     style: AppType.bodyStrong),
                 subtitle: const Text(
-                    'Check trip purposes, receipts and missing details.',
+                    'Your records on this device are still available.',
                     style: AppType.secondary),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () =>
-                    EvidenceReviewScreen.show(context, appState: appState),
+                trailing: TextButton(
+                  onPressed: () => appState.triggerSyncToCloud(),
+                  child: const Text('Retry'),
+                ),
               ),
             ),
+          if (!appState.isDriving) ...[
+            if (!report.hasRecords) ...[
+              HomeWelcomeHero(
+                vehicleName:
+                    appState.primaryVehicle?.displayName ?? 'Your vehicle',
+                taxMethod: appState.primaryVehicle?.taxMethod,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  if (appState.primaryVehicle == null) {
+                    Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (routeContext) => VehicleSetupFlow(
+                        onVehicleCreated: (vehicle) async {
+                          await appState.addVehicle(vehicle);
+                          if (routeContext.mounted) {
+                            Navigator.of(routeContext).pop();
+                          }
+                        },
+                        onCancel: () => Navigator.of(routeContext).pop(),
+                      ),
+                    ));
+                  } else {
+                    QuickCaptureBottomSheet.showTripCaptureModeSheet(
+                        context, appState);
+                  }
+                },
+                style: FilledButton.styleFrom(minimumSize: const Size(48, 52)),
+                icon: const Icon(Icons.add),
+                label: Text(appState.primaryVehicle == null
+                    ? 'Add your vehicle'
+                    : 'Add your first trip'),
+              ),
+              if (appState.primaryVehicle != null)
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) =>
+                              TripLiveTrackingScreen(appState: appState))),
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  child: const Text('Record a drive with GPS →'),
+                ),
+            ] else
+              _nextAction(context, summary),
             const SizedBox(height: 24),
           ],
           if (hasTrips) ...[
             HomeRecentActivity(appState: appState, onViewAll: onViewAll),
             const SizedBox(height: 24)
           ],
+          if (report.hasRecords) ...[
+            HomeRecordHero(
+              summary: summary,
+              onViewBasis: () => _showBasis(context, summary),
+              onLogbook: () => _openLogbook(context),
+              onViewSummary: () => _openTax(context),
+            ),
+            const SizedBox(height: 24),
+          ],
           if (isLogbook) ...[
+            const Text('Logbook details', style: AppType.section),
+            const SizedBox(height: 8),
+            if (report.hasRecords) _odometer(context),
             OdometerGapReviewCard(appState: appState),
             if (!report.hasRecords) _logbook(context),
             const SizedBox(height: 16),
@@ -160,6 +191,70 @@ class TaskHomeBody extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _nextAction(BuildContext context, HomeRecordSummary summary) {
+    final tripCount = summary.pendingItems.whereType<TripReviewItem>().length;
+    final hasPending = summary.pendingItems.isNotEmpty;
+    final title = tripCount > 0
+        ? 'Review $tripCount ${tripCount == 1 ? 'trip' : 'trips'}'
+        : hasPending
+            ? 'Review your records'
+            : 'Your records are up to date';
+    return Container(
+      key: const ValueKey('home-next-task'),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: hasPending ? AppColor.brandTint : AppColor.positiveTint,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: hasPending
+                ? AppColor.brandTintStrong
+                : AppColor.positiveTintStrong),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(hasPending ? 'YOUR NEXT STEP' : 'RECORD REVIEW',
+            style: AppType.eyebrow),
+        const SizedBox(height: 8),
+        Text(title, style: AppType.titleSmall),
+        const SizedBox(height: 8),
+        Text(
+            tripCount > 0
+                ? 'Confirm trip purposes and missing details.'
+                : hasPending
+                    ? 'Check receipts and missing details before sharing.'
+                    : 'No outstanding record details. Check your tax summary before exporting.',
+            style: AppType.secondary),
+        const SizedBox(height: 16),
+        if (hasPending)
+          FilledButton(
+            onPressed: () {
+              if (tripCount > 0 && onReviewTrips != null) {
+                onReviewTrips!();
+              } else {
+                EvidenceReviewScreen.show(context, appState: appState);
+              }
+            },
+            style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: Text(tripCount > 0 ? 'Review trips' : 'Review records'),
+          )
+        else
+          OutlinedButton(
+            onPressed: () => _openTax(context),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+            child: const Text('View tax summary'),
+          ),
+      ]),
+    );
+  }
+
+  void _openTax(BuildContext context) {
+    if (onViewTax != null) {
+      onViewTax!();
+    } else {
+      Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const TaxSummaryScreen()));
+    }
   }
 
   void _showBasis(BuildContext context, HomeRecordSummary summary) {
@@ -197,8 +292,12 @@ class TaskHomeBody extends StatelessWidget {
                       FilledButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            navigator.push(MaterialPageRoute<void>(
-                                builder: (_) => const TaxSummaryScreen()));
+                            if (onViewTax != null) {
+                              onViewTax!();
+                            } else {
+                              navigator.push(MaterialPageRoute<void>(
+                                  builder: (_) => const TaxSummaryScreen()));
+                            }
                           },
                           child: const Text('View full tax summary')),
                       const SizedBox(height: 8),

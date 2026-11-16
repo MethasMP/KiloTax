@@ -10,6 +10,7 @@ void main() {
         'ExpenseDetailScreen requires review when no OCR evidence is supplied',
         (WidgetTester tester) async {
       final appState = AppState();
+      addTearDown(appState.dispose);
       final vehicle = Vehicle(
         id: 'v_ocr_1',
         make: 'Toyota',
@@ -32,13 +33,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 1. A manually seeded value is never presented as OCR evidence.
-      expect(find.text('MANUAL ENTRY • REVIEW REQUIRED'), findsOneWidget);
-      expect(find.textContaining('Attach a clear receipt'), findsOneWidget);
+      expect(find.text('Review before export'), findsOneWidget);
+      expect(find.text('Receipt photo needed'), findsOneWidget);
+      expect(find.textContaining('Draft extracted from photo'), findsNothing);
+      expect(
+          tester
+              .widget<CheckboxListTile>(
+                  find.byKey(const ValueKey('confirm-expense-details')))
+              .value,
+          isFalse);
+      expect(
+          find.text(
+              'Saving without confirmation keeps this expense in review.'),
+          findsOneWidget);
       expect(find.text('BP Connect Mascot'), findsOneWidget);
       expect(find.text('142.50'), findsOneWidget);
 
-      // 2. Open Category Picker and verify 3 Core Pillars are rendered
       await tester.ensureVisible(find.text('Fuel & Oil').first);
       await tester.tap(find.text('Fuel & Oil').first);
       await tester.pumpAndSettle();
@@ -48,11 +58,9 @@ void main() {
           findsOneWidget);
       expect(find.text('Other Secondary Business Costs'), findsOneWidget);
 
-      // 3. User can manually tap another category if needed
       await tester.tap(find.text('Servicing, Repairs & Tyres'));
       await tester.pumpAndSettle();
 
-      // Verify category updated to Repairs
       expect(find.text('Servicing, Repairs & Tyres'), findsWidgets);
     });
   });

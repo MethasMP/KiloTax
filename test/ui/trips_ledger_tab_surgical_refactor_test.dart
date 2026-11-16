@@ -82,7 +82,7 @@ void main() {
     });
 
     testWidgets(
-        '3. Trip card standardizes to clean 2-row layout matching HomeRecentActivity',
+        '3. Trip cards show the destination, distance and a separate day heading',
         (tester) async {
       final tripCpk = Trip(
         id: 'trip_cpk',
@@ -104,7 +104,8 @@ void main() {
 
       // Row 1: Destination on left, distance & date on right
       expect(find.text('Job Site Richmond'), findsOneWidget);
-      expect(find.text('14.8 km · 30 Oct'), findsOneWidget);
+      expect(find.textContaining('14.8 km ·'), findsOneWidget);
+      expect(find.textContaining('October 30, 2026'), findsOneWidget);
 
       // Row 2: Origin on left, claim badge on right for CPK
       expect(find.text('from Bunnings Port Melbourne'), findsOneWidget);
@@ -148,7 +149,7 @@ void main() {
       expect(find.text('+\$22.75'), findsNothing);
     });
 
-    testWidgets('5. Trip needing review displays 1-Tap Purpose button',
+    testWidgets('5. Trip needing review displays Review button',
         (tester) async {
       final unclassifiedTrip = Trip(
         id: 'trip_unclassified',
@@ -168,7 +169,7 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('1-Tap Purpose'), findsOneWidget);
+      expect(find.text('Review'), findsOneWidget);
     });
   });
 }

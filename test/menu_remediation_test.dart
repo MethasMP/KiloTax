@@ -68,7 +68,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Needs review'));
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsOneWidget,
+    expect(find.text('Review'), findsOneWidget,
         reason: 'The same record must remain visible in the review filter');
   });
 
@@ -341,10 +341,10 @@ void main() {
     addTearDown(s.dispose);
     await tester.pumpWidget(wrap(s, TripsLedgerTab(appState: s)));
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsOneWidget);
+    expect(find.text('Review'), findsOneWidget);
     s.resolveTripPurpose('pending', 'Deliver materials to Smith renovation');
     await tester.pumpAndSettle();
-    expect(find.text('1-Tap Purpose'), findsNothing);
+    expect(find.text('Review'), findsNothing);
     expect(find.text('Unclassified trip'), findsNothing);
     expect(tester.takeException(), isNull);
   });

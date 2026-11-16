@@ -179,7 +179,8 @@ void main() {
     await capture(tester, key, 'evidence-review');
   });
 
-  testWidgets('CPK home exposes expense review and preserves batch review',
+  testWidgets(
+      'CPK home prioritizes trip review and keeps expense evidence accessible',
       (tester) async {
     final state = await seed();
     state.recordExpense(VehicleExpense(
@@ -193,9 +194,11 @@ void main() {
     expect(
         find.descendant(
             of: find.byKey(const ValueKey('home-next-task')),
-            matching: find.text('2')),
+            matching: find.text('Review 1 trip')),
         findsOneWidget);
-    await tester.tap(find.text('Review your records'));
+    await tester.ensureVisible(find.text('Review trips'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Review trips').hitTestable());
     await tester.pumpAndSettle();
     expect(find.text('Review evidence'), findsOneWidget);
     expect(find.textContaining('Attach a receipt'), findsOneWidget);
@@ -207,7 +210,9 @@ void main() {
     final state = await seed(method: TaxMethod.logbook);
     final key = await render(tester, state, home: true, logbook: true);
     expect(find.byKey(const ValueKey('home-next-task')), findsOneWidget);
-    await tester.tap(find.text('Review your records'));
+    await tester.ensureVisible(find.text('Review trips'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Review trips').hitTestable());
     await tester.pumpAndSettle();
     expect(find.text('Review evidence'), findsOneWidget);
     expect(tester.takeException(), isNull);
