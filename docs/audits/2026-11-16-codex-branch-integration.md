@@ -130,3 +130,9 @@ The independent same-model reviewer returned PASS+NOTES. Its own serialized widg
 All 743 unique tests in the full-suite inventory now have passing evidence from the full run and the independent corrected-test rerun. The full command itself ended 742 passed and one failed before that test-only correction. It was not represented as a zero-exit full command. No application source changed between those checks.
 
 Prove It Works drove native interaction and real export checks. Sequence Work into Verifiable Units kept source selection, regression repairs and landing separate. Laziness Protocol kept newer main safety code and rejected unrelated unsafe or incomplete branch changes.
+
+## Landing and cleanup
+
+Integration commit `9eabc2203dd5262ec116c3993c84a7aa9ac85173` has parents `269c28e` and `325ffe4`. Main was fast-forwarded to this exact tested application tree and pushed to origin. The remote main reference was read back at that commit. Both local `codex/mixed-receipt-sync` and temporary `codex/final-branch-integration` branches were deleted after ancestry verification. Remote `codex/mixed-receipt-sync` deletion succeeded.
+
+The earlier `codex/project-backlog-integration` and `codex/receipt-ocr-remediation` branches were already deleted after verifying that their commits were ancestors of main. The unrelated `feat/onboarding-persona-engine` checkout and its pending edits were left untouched. No production database deployment was performed.
