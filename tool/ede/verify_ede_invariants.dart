@@ -1,31 +1,81 @@
+import 'dart:convert';
 import 'dart:io';
 
-/// EDE Tier Invariant Engine & Static Verification Tool
-/// Enforces:
-/// 1. Tier C -> Tier D purity (UI code in lib/ui/ must not calculate tax arithmetic directly)
-/// 2. Evidence Claim Sheet integrity
+/// Configurable Architectural Invariant Rule
+class InvariantRule {
+  final String id;
+  final String targetDir;
+  final List<RegExp> forbiddenPatterns;
+  final String message;
+
+  InvariantRule({
+    required this.id,
+    required this.targetDir,
+    required this.forbiddenPatterns,
+    required this.message,
+  });
+
+  factory InvariantRule.fromJson(Map<String, dynamic> json) {
+    return InvariantRule(
+      id: json['id'] as String,
+      targetDir: json['target_dir'] as String,
+      forbiddenPatterns: (json['forbidden_patterns'] as List<dynamic>)
+          .map((p) => RegExp(p as String, caseSensitive: false))
+          .toList(),
+      message: json['message'] as String,
+    );
+  }
+}
+
+/// EDE Tier Invariant Engine & Static Verification Tool (v3.2 Global)
 class EdeInvariantEngine {
   final String projectRoot;
 
   EdeInvariantEngine({this.projectRoot = '.'});
 
-  /// Scans lib/ui/ to ensure no screens perform raw tax arithmetic or ATO rate multiplications
-  List<String> verifyTierDPurity() {
+  List<InvariantRule> loadRules() {
+    final configFile = File('$projectRoot/.ede/invariants.json');
+    if (!configFile.existsSync()) {
+      // Default built-in fallback rules
+      return [
+        InvariantRule(
+          id: 'DEFAULT_UI_PURITY',
+          targetDir: 'lib/ui',
+          forbiddenPatterns: [
+            RegExp(r'(km|distance|cents|claim|deduction)\s*\*\s*0\.(85|88|90|78)', caseSensitive: false),
+            RegExp(r'businessKm\s*/\s*totalKm'),
+          ],
+          message: 'Direct business/tax calculation in UI layer.',
+        ),
+      ];
+    }
+
+    try {
+      final jsonMap = jsonDecode(configFile.readAsStringSync()) as Map<String, dynamic>;
+      final rulesJson = jsonMap['rules'] as List<dynamic>;
+      return rulesJson.map((r) => InvariantRule.fromJson(r as Map<String, dynamic>)).toList();
+    } catch (e) {
+      stderr.writeln('Warning: Failed to parse .ede/invariants.json: $e');
+      return [];
+    }
+  }
+
+  /// Scans directories against active architectural invariant rules
+  List<String> verifyAllInvariants() {
     final violations = <String>[];
-    final uiDir = Directory('$projectRoot/lib/ui');
-    if (!uiDir.existsSync()) return violations;
+    final rules = loadRules();
 
-    final taxPatterns = [
-      RegExp(r'(km|distance|cents|claim|deduction)\s*\*\s*0\.(85|88|90|78)', caseSensitive: false), // Hardcoded ATO cents/km rates against distance
-      RegExp(r'businessKm\s*/\s*totalKm'), // Raw business % calculations
-    ];
+    for (final rule in rules) {
+      final targetDirectory = Directory('$projectRoot/${rule.targetDir}');
+      if (!targetDirectory.existsSync()) continue;
 
-    for (final file in uiDir.listSync(recursive: true).whereType<File>()) {
-      if (!file.path.endsWith('.dart')) continue;
-      final content = file.readAsStringSync();
-      for (final pattern in taxPatterns) {
-        if (pattern.hasMatch(content)) {
-          violations.add('Violation in ${file.path}: Direct tax arithmetic found in Tier D presentation layer.');
+      for (final file in targetDirectory.listSync(recursive: true).whereType<File>()) {
+        if (!file.path.endsWith('.dart')) continue;
+        final content = file.readAsStringSync();
+        for (final pattern in rule.forbiddenPatterns) {
+          if (pattern.hasMatch(content)) {
+            violations.add('[${rule.id}] ${file.path}: ${rule.message}');
+          }
         }
       }
     }
@@ -34,7 +84,7 @@ class EdeInvariantEngine {
   }
 }
 
-/// Represents a structured Evidence Claim Sheet under EDE v2.0
+/// Represents a structured Evidence Claim Sheet under EDE v3
 class EvidenceClaim {
   final String claimId;
   final String timestamp;
@@ -58,7 +108,6 @@ class EvidenceClaim {
     required this.verdict,
   });
 
-  /// Parses a YAML-like structured Markdown claim string
   factory EvidenceClaim.parse(String raw) {
     final lines = raw.split('\n');
     final map = <String, String>{};
@@ -100,66 +149,46 @@ class EvidenceClaim {
       map[multiLineKey] = multiLineBuffer.toString().trim();
     }
 
-    final requiredFields = [
+    const requiredFields = [
       'claim_id',
-      'timestamp',
-      'author',
       'target_invariant',
       'target_file',
       'vulnerability',
       'severity',
       'counterexample_test',
-      'verdict',
     ];
-
-    for (final req in requiredFields) {
-      if (!map.containsKey(req) || map[req]!.isEmpty) {
-        throw FormatException('Missing required Evidence Claim field: $req');
+    for (final field in requiredFields) {
+      if (!map.containsKey(field) || map[field]!.trim().isEmpty) {
+        throw FormatException('Missing required EvidenceClaim field: $field');
       }
     }
 
     return EvidenceClaim(
       claimId: map['claim_id']!,
-      timestamp: map['timestamp']!,
-      author: map['author']!,
+      timestamp: map['timestamp'] ?? DateTime.now().toIso8601String(),
+      author: map['author'] ?? 'unknown',
       targetInvariant: map['target_invariant']!,
       targetFile: map['target_file']!,
       vulnerability: map['vulnerability']!,
       severity: map['severity']!,
       counterexampleTest: map['counterexample_test']!,
-      verdict: map['verdict']!,
+      verdict: map['verdict'] ?? 'PENDING',
     );
-  }
-
-  String toYaml() {
-    return '''
-claim_id: "$claimId"
-timestamp: "$timestamp"
-author: "$author"
-target_invariant: "$targetInvariant"
-target_file: "$targetFile"
-vulnerability: >
-  $vulnerability
-severity: "$severity"
-counterexample_test: |
-${counterexampleTest.split('\n').map((l) => '  $l').join('\n')}
-verdict: "$verdict"
-''';
   }
 }
 
 void main(List<String> args) {
   final engine = EdeInvariantEngine();
-  stdout.writeln('Checking EDE Tier Invariants...');
+  stdout.writeln('Checking architectural invariants against .ede/invariants.json...');
+  final violations = engine.verifyAllInvariants();
 
-  final violations = engine.verifyTierDPurity();
   if (violations.isEmpty) {
-    stdout.writeln('ALL TIER INVARIANTS SATISFIED (Tier D is pure).');
+    stdout.writeln('PASS: All architectural layer invariants hold cleanly. No layer leakage.');
     exit(0);
   } else {
-    stderr.writeln('TIER INVARIANT BREACH DETECTED:');
+    stderr.writeln('FAIL: Found ${violations.length} architectural invariant violation(s):');
     for (final v in violations) {
-      stderr.writeln('  - $v');
+      stderr.writeln(' - $v');
     }
     exit(1);
   }

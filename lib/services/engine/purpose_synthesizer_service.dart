@@ -1,3 +1,4 @@
+import '../../data/models/trade_persona.dart';
 import '../tracking/trade_poi_resolver.dart';
 
 /// Synthesizes dynamic, non-repetitive, and ATO audit-proof Purpose descriptions.
@@ -41,6 +42,7 @@ class PurposeSynthesizerService {
     required String? destination,
     bool bulkyToolsCarried = false,
     String? jobReference,
+    TradePersona? persona,
   }) {
     final dest = (destination != null && destination.trim().isNotEmpty)
         ? destination.trim()
@@ -50,18 +52,23 @@ class PurposeSynthesizerService {
         ? ' [Ref: ${jobReference.trim()}]'
         : '';
 
-    // Auto-resolve merchant from destination or purpose input
-    final poiMatch = TradePoiResolver.resolve(dest) ??
-        TradePoiResolver.resolve(selectedPurpose);
+    // Auto-resolve merchant from destination or purpose input, taking persona priorities into account
+    final poiMatch = TradePoiResolver.resolve(dest, persona: persona) ??
+        TradePoiResolver.resolve(selectedPurpose, persona: persona);
 
     // Normalize purpose selection
     final normalized = selectedPurpose.toLowerCase();
 
-    if (bulkyToolsCarried ||
+    // If persona defaults to bulky tools or explicitly flagged
+    final hasBulkyTools = bulkyToolsCarried ||
+        (persona != null && persona.defaultBulkyToolsCarried);
+
+    if (hasBulkyTools ||
         normalized.contains('tool') ||
         normalized.contains('heavy') ||
         normalized.contains('bulky')) {
-      return 'Transit with essential heavy trade equipment (>20kg) to $dest per ITAA 1997 s 8-1$jobSuffix';
+      final tradeTag = persona != null ? ' (${persona.title})' : '';
+      return 'Transit with essential heavy trade equipment (>20kg) to $dest per ITAA 1997 s 8-1$tradeTag$jobSuffix';
     }
 
     if (normalized.contains('suppl') ||

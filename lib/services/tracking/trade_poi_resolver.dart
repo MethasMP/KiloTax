@@ -1,3 +1,5 @@
+import '../../data/models/trade_persona.dart';
+
 /// High-precision Australian Trade Merchant & POI Classification Engine.
 /// Detects prominent Australian hardware, plumbing, electrical, and tool suppliers
 /// from OpenStreetMap tags or reverse-geocoded place names.
@@ -38,14 +40,35 @@ class TradePoiResolver {
   };
 
   /// Evaluates an address, place name, or POI tag to determine if it is an Australian Trade Merchant.
+  /// When [persona] is provided, prioritizes matching against that trade's common suppliers first.
   /// Returns a [TradePoiMatch] if recognized, or null if it appears to be a general location.
-  static TradePoiMatch? resolve(String? placeNameOrAddress) {
+  static TradePoiMatch? resolve(
+    String? placeNameOrAddress, {
+    TradePersona? persona,
+  }) {
     if (placeNameOrAddress == null || placeNameOrAddress.trim().isEmpty) {
       return null;
     }
 
     final lower = placeNameOrAddress.toLowerCase();
 
+    // 1. If persona is passed, check priority merchants first
+    if (persona != null) {
+      for (final priorityKey in persona.priorityMerchants) {
+        if (lower.contains(priorityKey)) {
+          final merchantName = _knownTradeMerchants[priorityKey] ??
+              (priorityKey[0].toUpperCase() + priorityKey.substring(1));
+          return TradePoiMatch(
+            merchantName: merchantName,
+            keywordMatched: priorityKey,
+            suggestedPurpose: 'Supplies Run (${persona.title})',
+            auditCategory: 'Trade Supplies / Materials Run',
+          );
+        }
+      }
+    }
+
+    // 2. Fall back to standard catalog scan
     for (final entry in _knownTradeMerchants.entries) {
       if (lower.contains(entry.key)) {
         return TradePoiMatch(

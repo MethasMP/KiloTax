@@ -1,3 +1,5 @@
+import 'trade_persona.dart';
+
 /// Immutable model representing the user's home base and tax profile settings.
 /// Used for Home Base Geofencing (TR 2021/1) to deterministically classify
 /// commute origins and destinations via precise coordinates rather than brittle strings.
@@ -8,6 +10,7 @@ class UserProfile {
   final double? homeLatitude;
   final double? homeLongitude;
   final double homeRadiusMeters;
+  final TradePersona tradePersona;
 
   const UserProfile({
     this.taxpayerName,
@@ -16,6 +19,7 @@ class UserProfile {
     this.homeLatitude,
     this.homeLongitude,
     this.homeRadiusMeters = 200.0,
+    this.tradePersona = TradePersona.otherSoleTrader,
   });
 
   bool get hasHomeCoordinates => homeLatitude != null && homeLongitude != null;
@@ -27,6 +31,7 @@ class UserProfile {
     double? homeLatitude,
     double? homeLongitude,
     double? homeRadiusMeters,
+    TradePersona? tradePersona,
   }) {
     return UserProfile(
       taxpayerName: taxpayerName ?? this.taxpayerName,
@@ -35,6 +40,7 @@ class UserProfile {
       homeLatitude: homeLatitude ?? this.homeLatitude,
       homeLongitude: homeLongitude ?? this.homeLongitude,
       homeRadiusMeters: homeRadiusMeters ?? this.homeRadiusMeters,
+      tradePersona: tradePersona ?? this.tradePersona,
     );
   }
 
@@ -45,6 +51,7 @@ class UserProfile {
         if (homeLatitude != null) 'homeLatitude': homeLatitude,
         if (homeLongitude != null) 'homeLongitude': homeLongitude,
         'homeRadiusMeters': homeRadiusMeters,
+        'tradePersona': tradePersona.id,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -64,6 +71,8 @@ class UserProfile {
           (json['homeRadiusMeters'] ?? json['home_radius_meters'] as num?)
                   ?.toDouble() ??
               200.0,
+      tradePersona: TradePersonaMetadata.fromId(
+          (json['tradePersona'] ?? json['trade_persona']) as String?),
     );
   }
 }
