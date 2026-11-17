@@ -14,13 +14,20 @@ class NativeHardwareTelemetryBridge {
   NativeHardwareTelemetryBridge._internal();
 
   /// Synchronize the user's primary vehicle Bluetooth device name down to iOS Native
-  Future<void> syncTargetBluetoothName(String? bluetoothName) async {
+  Future<void> syncTargetBluetoothName(String? bluetoothName, {String? bluetoothUuid}) async {
     if (!Platform.isIOS) return;
 
     try {
-      await _channel.invokeMethod('setTargetBluetoothName', bluetoothName);
+      if (bluetoothUuid != null && bluetoothUuid.isNotEmpty) {
+        await _channel.invokeMethod('setTargetBluetoothTarget', {
+          'name': bluetoothName,
+          'uuid': bluetoothUuid,
+        });
+      } else {
+        await _channel.invokeMethod('setTargetBluetoothName', bluetoothName);
+      }
       debugPrint(
-          '[NativeTelemetryBridge] Synced vehicle Bluetooth to iOS Native: $bluetoothName');
+          '[NativeTelemetryBridge] Synced vehicle Bluetooth to iOS Native: $bluetoothName (UUID: $bluetoothUuid)');
     } on MissingPluginException {
       // Graceful fallback during tests, simulator runs, or unattached channels.
       return;

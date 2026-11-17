@@ -22,6 +22,12 @@ import UIKit
           let name = call.arguments as? String
           KiloTaxBackgroundEngine.shared.setTargetBluetoothName(name)
           result(true)
+        case "setTargetBluetoothTarget":
+          let args = call.arguments as? [String: Any]
+          let name = args?["name"] as? String
+          let uuid = args?["uuid"] as? String
+          KiloTaxBackgroundEngine.shared.setTargetBluetoothTarget(name: name, uuid: uuid)
+          result(true)
         case "getCompletedNativeTrips":
           let trips = KiloTaxBackgroundEngine.shared.getCompletedNativeTrips()
           result(trips)

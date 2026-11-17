@@ -20,6 +20,7 @@ import UserNotifications
     private var locationManager: CLLocationManager?
 
     private let userDefaultsKeyTargetBT = "kilotax_native_target_bt_name"
+    private let userDefaultsKeyTargetBTUuid = "kilotax_native_target_bt_uuid"
     private let userDefaultsKeyNativeTrip = "kilotax_native_in_flight_trip"
     private let userDefaultsKeyCompletedTrips = "kilotax_native_completed_trips"
 
@@ -60,14 +61,23 @@ import UserNotifications
         }
     }
 
-    /// Sets the target Bluetooth device name configured in Flutter
-    @objc func setTargetBluetoothName(_ name: String?) {
+    /// Sets the target Bluetooth device name and optional hardware UUID configured in Flutter
+    @objc func setTargetBluetoothTarget(name: String?, uuid: String?) {
         let defaults = UserDefaults.standard
         if let name = name, !name.isEmpty {
             defaults.set(name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines), forKey: userDefaultsKeyTargetBT)
         } else {
             defaults.removeObject(forKey: userDefaultsKeyTargetBT)
         }
+        if let uuid = uuid, !uuid.isEmpty {
+            defaults.set(uuid.lowercased().trimmingCharacters(in: .whitespacesAndNewlines), forKey: userDefaultsKeyTargetBTUuid)
+        } else {
+            defaults.removeObject(forKey: userDefaultsKeyTargetBTUuid)
+        }
+    }
+
+    @objc func setTargetBluetoothName(_ name: String?) {
+        setTargetBluetoothTarget(name: name, uuid: nil)
     }
 
     /// Gets any trips completed natively while Flutter was completely dead (Non-destructive read).
@@ -103,32 +113,48 @@ import UserNotifications
     }
 
     private func matchesTarget(peripheral: CBPeripheral, advertisementData: [String : Any]? = nil) -> Bool {
-        guard let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT), !target.isEmpty else { return false }
+        let defaults = UserDefaults.standard
+        let targetName = defaults.string(forKey: userDefaultsKeyTargetBT)
+        let targetUuid = defaults.string(forKey: userDefaultsKeyTargetBTUuid)
+
+        if (targetName == nil || targetName!.isEmpty) && (targetUuid == nil || targetUuid!.isEmpty) {
+            return false
+        }
+
+        let peripheralUuid = peripheral.identifier.uuidString.lowercased()
+
+        // 1. Strict Hardware UUID Binding (FLAW-9 Shield)
+        if let targetUuid = targetUuid, !targetUuid.isEmpty {
+            if peripheralUuid == targetUuid {
+                return true
+            }
+        }
+
+        guard let target = targetName, !target.isEmpty else { return false }
         let targetLower = target.lowercased()
 
-        // 1. Check peripheral hardware identifier (UUID)
-        let peripheralUuid = peripheral.identifier.uuidString.lowercased()
+        // 2. Hardware identifier match against target name (if user entered UUID directly)
         if peripheralUuid == targetLower || peripheralUuid.contains(targetLower) {
             return true
         }
 
-        // 2. Check peripheral advertisement name and advertised service UUIDs
+        // 3. Check peripheral advertisement name and advertised service UUIDs
         if let adv = advertisementData {
             if let localName = adv[CBAdvertisementDataLocalNameKey] as? String,
-               localName.lowercased().contains(targetLower) {
+               localName.lowercased() == targetLower || localName.lowercased().contains(targetLower) {
                 return true
             }
             if let serviceUuids = adv[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] {
                 for uuid in serviceUuids {
-                    if uuid.uuidString.lowercased().contains(targetLower) {
+                    if uuid.uuidString.lowercased() == targetLower {
                         return true
                     }
                 }
             }
         }
 
-        // 3. Check peripheral standard name
-        if let name = peripheral.name?.lowercased(), name.contains(targetLower) {
+        // 4. Check peripheral standard name
+        if let name = peripheral.name?.lowercased(), name == targetLower || name.contains(targetLower) {
             return true
         }
 
