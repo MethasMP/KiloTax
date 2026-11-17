@@ -40,12 +40,14 @@ class SensorFusionTrackingEngine {
   final Wgs84GeodesicEngine _geodesic = Wgs84GeodesicEngine();
   Position? _lastValidPosition;
   DateTime? _lastTimestamp;
+  DateTime? _stationarySince;
   double _lastValidSpeedKmh = 0.0;
 
   void reset() {
     _geodesic.reset();
     _lastValidPosition = null;
     _lastTimestamp = null;
+    _stationarySince = null;
     _lastValidSpeedKmh = 0.0;
   }
 
@@ -125,6 +127,7 @@ class SensorFusionTrackingEngine {
         (sensorSpeedKmh < 2.0 && rawMeters < minMovementThresholdMeters);
 
     if (isStationary) {
+      _stationarySince ??= now;
       _lastTimestamp = now;
       _lastValidSpeedKmh = 0.0;
       return FilteredPositionUpdate(
@@ -136,6 +139,10 @@ class SensorFusionTrackingEngine {
       );
     }
 
+    // Vehicle has transitioned from stationary to moving.
+    // Reset stationary marker. If we were stationary, clamp delta time to avoid
+    // artificial acceleration spikes from delayed stationary ticks.
+    _stationarySince = null;
     _lastValidPosition = newFix;
     _lastTimestamp = now;
     _lastValidSpeedKmh =

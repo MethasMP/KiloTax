@@ -152,8 +152,26 @@ import UserNotifications
     private func scanOrInspectConnectedDevices() {
         guard let target = UserDefaults.standard.string(forKey: userDefaultsKeyTargetBT), !target.isEmpty else { return }
         
-        // Scan for advertising Bluetooth devices
-        centralManager?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+        // FLAW-4 Fix: 1. Immediately check already connected system peripherals (e.g. CarPlay / Head Unit)
+        // This handles cases where iOS wakes app up after Jetsam while car is already connected.
+        if let connected = centralManager?.retrieveConnectedPeripherals(withServices: [
+            CBUUID(string: "1800"), // Generic Access
+            CBUUID(string: "1801"), // Generic Attribute
+            CBUUID(string: "180A"), // Device Information
+        ]) {
+            for peripheral in connected {
+                if matchesTarget(peripheral: peripheral) {
+                    NSLog("[KiloTax Native] Target vehicle already connected to iOS: \(peripheral.name ?? peripheral.identifier.uuidString)")
+                    if !isRecording {
+                        startNativeRecording()
+                    }
+                    return
+                }
+            }
+        }
+
+        // 2. Scan for advertising Bluetooth devices
+        centralManager?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {

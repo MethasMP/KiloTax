@@ -37,11 +37,14 @@ class OdometerGapReconciler {
       {required String vehicleId,
       required double baseline,
       required Iterable<Trip> trips}) {
+    // FLAW-8 GATE: Filter out uninitialized or zero-start trips (e.g. manual entry without odo)
+    // to prevent sorting anomalies and phantom 100k+ km gaps.
     final recorded = trips
         .where((t) =>
             t.vehicleId == vehicleId &&
             !t.isDeleted &&
             t.startOdometer.isFinite &&
+            t.startOdometer > 0.0 &&
             t.endOdometer.isFinite &&
             t.endOdometer > t.startOdometer)
         .toList()
