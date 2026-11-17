@@ -676,7 +676,7 @@ class AppState extends ChangeNotifier {
               endOdometer: currentOdometer + dist,
               evidenceSource: 'native_bluetooth_auto',
             );
-            await recordTrip(trip);
+            recordTrip(trip);
             ingestedIds.add(tripId);
             debugPrint(
                 '[AppState] Auto-ingested native trip: $dist km from iOS background daemon.');

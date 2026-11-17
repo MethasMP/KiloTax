@@ -6,14 +6,6 @@ import '../vehicle/vehicle_setup_flow.dart';
 import 'onboarding_slides_screen.dart';
 import 'widgets/value_first_gate_screen.dart';
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../state/app_state.dart';
-import '../home/main_scaffold_screen.dart';
-import '../vehicle/vehicle_setup_flow.dart';
-import 'onboarding_slides_screen.dart';
-import 'widgets/value_first_gate_screen.dart';
-
 /// Vehicle setup leads to an optional account connection before entering Home.
 class OnboardingFlowScreen extends StatefulWidget {
   final int initialStep;

@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/tracking/odometer_gap_reconciler.dart';
 import 'package:kilotax/services/tracking/sensor_fusion_tracking_engine.dart';
 
 void main() {
