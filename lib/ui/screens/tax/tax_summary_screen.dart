@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_color.dart';
@@ -118,6 +119,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
   }
 
   Future<void> _primaryAction(EvidenceReviewReport report) async {
+    HapticFeedback.mediumImpact();
     final state = _appState!;
     if (report.vehicle == null) {
       await Navigator.of(context).push(MaterialPageRoute<void>(
@@ -163,19 +165,56 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: FilledButton.icon(
-            key: const ValueKey('tax-primary-action'),
-            onPressed: () => _primaryAction(report),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColor.ink,
-              foregroundColor: AppColor.onNavy,
-              minimumSize: const Size(48, 48),
-            ),
-            icon: Icon(!report.hasRecords ? Icons.add : Icons.ios_share,
-                size: 20),
-            label: Text(actionLabel),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          decoration: const BoxDecoration(
+            color: AppColor.canvas,
+            border: Border(top: BorderSide(color: AppColor.hairline)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                key: const ValueKey('tax-primary-action'),
+                onPressed: () => _primaryAction(report),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColor.ink,
+                  foregroundColor: AppColor.onNavy,
+                  elevation: 2,
+                  shadowColor: AppColor.ink.withValues(alpha: 0.3),
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: AppType.bodyStrong.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                icon: Icon(
+                  !report.hasRecords
+                      ? Icons.add
+                      : report.vehicle == null
+                          ? Icons.directions_car_outlined
+                          : Icons.send_rounded,
+                  size: 22,
+                ),
+                label: Text(actionLabel),
+              ),
+              if (report.hasRecords && report.vehicle != null) ...[
+                const SizedBox(height: 6),
+                Center(
+                  child: Text(
+                    'Pre-flight review & verified ATO export package',
+                    style: AppType.eyebrow.copyWith(
+                      color: AppColor.inkSubtle,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -246,10 +285,20 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                     : report.items.isEmpty
                         ? 'No outstanding record checks'
                         : '${report.items.length} ${report.items.length == 1 ? 'item needs' : 'items need'} attention';
+    final isAuditProofReady = report.hasRecords &&
+        !_checking &&
+        !_checkFailed &&
+        report.items.isEmpty;
+
     return Material(
       color: AppColor.surface,
       shape: RoundedRectangleBorder(
-        side: const BorderSide(color: AppColor.hairline),
+        side: BorderSide(
+          color: isAuditProofReady
+              ? AppColor.positive.withValues(alpha: 0.5)
+              : AppColor.hairline,
+          width: isAuditProofReady ? 1.5 : 1.0,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       clipBehavior: Clip.antiAlias,
@@ -258,7 +307,44 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Evidence check', style: AppType.secondary),
+            Row(
+              children: [
+                Expanded(
+                  child: const Text('Evidence check', style: AppType.secondary),
+                ),
+                if (isAuditProofReady)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColor.positiveTint,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColor.positive.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 14,
+                          color: AppColor.positiveStrong,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'AUDIT-PROOF READY',
+                          style: AppType.eyebrow.copyWith(
+                            color: AppColor.positiveStrong,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(headline, style: AppType.cardTitle),
             const SizedBox(height: 8),
