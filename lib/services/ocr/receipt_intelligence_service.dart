@@ -1,4 +1,7 @@
 import '../../data/models/vehicle_expense.dart';
+import 'australian_tax_validator.dart';
+import 'receipt_ocr_engine.dart';
+import 'spatial_receipt_parser.dart';
 
 class ReceiptOcrResult {
   final String? currency;
@@ -59,19 +62,36 @@ class ReceiptIntelligenceService {
     return _personalItemPattern.hasMatch(trimmed);
   }
 
-  ReceiptOcrResult analyseText(String rawText, {DateTime? fallbackDate}) {
+  ReceiptOcrResult analyseText(
+    String rawText, {
+    DateTime? fallbackDate,
+    List<ReceiptOcrBlock>? blocks,
+    SpatialParsedReceipt? spatialParsed,
+  }) {
     final sanitizedRaw =
         rawText.replaceAll('¥', '%').replaceAll('PREMOBA', 'PREM98');
     final normalized = _normalize(sanitizedRaw);
+
+    // If blocks are provided and spatialParsed is not, run SpatialReceiptParser
+    final spatialHints = spatialParsed ??
+        (blocks != null && blocks.isNotEmpty
+            ? const SpatialReceiptParser().parse(blocks)
+            : null);
+
     final categoryMatch = classify(normalized);
-    final gstCandidate = _extractGstAmount(normalized);
+    final rawGstCandidate = _extractGstAmount(normalized);
+    final gstCandidate = rawGstCandidate ?? spatialHints?.gstAmount;
     final discountCandidate = _extractDiscountAmount(normalized);
-    final abnCandidate = _extractAbn(sanitizedRaw);
+    final rawAbnCandidate = _extractAbn(sanitizedRaw);
+    final abnCandidate = rawAbnCandidate ??
+        (spatialHints?.abn != null ? _formatAbn(spatialHints!.abn!) : null);
+
     final consensus = _extractConsensusSettlement(
       rawText: sanitizedRaw,
       normalized: normalized,
       gst: gstCandidate,
       discount: discountCandidate,
+      spatialTotal: spatialHints?.totalAmount,
     );
 
     final currencyCodes = RegExp(r'\b(AUD|USD|NZD|CAD|EUR|GBP|THB|JPY|SGD)\b',
@@ -84,14 +104,18 @@ class ReceiptIntelligenceService {
             r'(?:invoice|receipt)\s*(?:number|no\.?|#)\s*[:#]?\s*([A-Z0-9][A-Z0-9-]*)',
             caseSensitive: false)
         .firstMatch(rawText)
-        ?.group(1);
+        ?.group(1) ??
+        spatialHints?.invoiceNumber;
     final mixed = RegExp(
             r'\b(chocolate|grocery|groceries|milk|bread|coffee|sandwich|snack|chips|drink|cigarettes|tobacco|confectionery)\b',
             caseSensitive: false)
         .hasMatch(rawText);
     final amount = consensus.amount;
     final merchant = _extractMerchant(sanitizedRaw, normalized);
-    final parsedDate = _extractDateTime(normalized, sanitizedRaw);
+    final parsedDate = _extractDateTime(normalized, sanitizedRaw) ??
+        (spatialHints?.date != null
+            ? _extractDateTime(_normalize(spatialHints!.date!), spatialHints.date!)
+            : null);
     final now = DateTime.now();
     DateTime date;
     if (parsedDate != null) {
@@ -105,6 +129,23 @@ class ReceiptIntelligenceService {
     } else {
       date = fallbackDate ?? now;
     }
+
+    // ABN Mod-89 Validation
+    String? validAbn;
+    String? rejectedAbnDigits;
+    if (abnCandidate != null && abnCandidate.isNotEmpty) {
+      if (AustralianTaxValidator.isValidAbn(abnCandidate)) {
+        validAbn = abnCandidate;
+      } else {
+        rejectedAbnDigits = abnCandidate.replaceAll(RegExp(r'\D'), '');
+      }
+    }
+
+    final isGstClean = amount > 0 &&
+        gstCandidate != null &&
+        gstCandidate > 0 &&
+        AustralianTaxValidator.isGstConsistent(amount, gstCandidate);
+
     final evidence = <String>[
       if (mixed) 'mixed_items',
       if (currency == null) 'currency_unknown',
@@ -117,20 +158,31 @@ class ReceiptIntelligenceService {
       if (merchant.isNotEmpty) 'merchant:$merchant',
       if (gstCandidate != null && gstCandidate > 0)
         'gst:${gstCandidate.toStringAsFixed(2)}',
-      if (abnCandidate != null && abnCandidate.isNotEmpty) 'abn:$abnCandidate',
+      if (validAbn != null) ...[
+        'abn:$validAbn',
+        'abn_mod89_valid',
+      ],
+      if (rejectedAbnDigits != null) 'abn_mod89_rejected:$rejectedAbnDigits',
     ];
 
-    final confidence = _bounded(
-      categoryMatch.confidence +
-          (amount > 0 ? 0.24 : 0) +
-          (merchant.isNotEmpty ? 0.16 : 0) +
-          (evidence.length >= 3 ? 0.08 : 0) +
-          (consensus.isCrossValidated ? 0.12 : 0) +
-          (abnCandidate != null ? 0.06 : 0),
-    );
+    double calculatedConfidence;
+    if (isGstClean && validAbn != null) {
+      // Both GST math invariant and ABN checksum validate cleanly
+      calculatedConfidence = 0.95;
+    } else {
+      calculatedConfidence = _bounded(
+        categoryMatch.confidence +
+            (amount > 0 ? 0.24 : 0) +
+            (merchant.isNotEmpty ? 0.16 : 0) +
+            (evidence.length >= 3 ? 0.08 : 0) +
+            (consensus.isCrossValidated ? 0.12 : 0) +
+            (validAbn != null ? 0.06 : 0),
+      );
+    }
+
     final auditedConfidence = categoryMatch.hasConflictingEvidence
-        ? confidence.clamp(0.0, 0.76).toDouble()
-        : confidence;
+        ? calculatedConfidence.clamp(0.0, 0.76).toDouble()
+        : calculatedConfidence;
 
     return ReceiptOcrResult(
       currency: currency,
@@ -144,7 +196,7 @@ class ReceiptIntelligenceService {
       merchant: merchant,
       amount: amount,
       gstAmount: gstCandidate,
-      abn: abnCandidate,
+      abn: validAbn,
       date: date,
       dateNeedsReview: parsedDate == null || date != parsedDate,
       category: categoryMatch.category,
@@ -209,6 +261,14 @@ class ReceiptIntelligenceService {
         .trim();
   }
 
+  String _formatAbn(String digitsOnly) {
+    final clean = digitsOnly.replaceAll(RegExp(r'\D'), '');
+    if (clean.length == 11) {
+      return '${clean.substring(0, 2)} ${clean.substring(2, 5)} ${clean.substring(5, 8)} ${clean.substring(8, 11)}';
+    }
+    return digitsOnly;
+  }
+
   /// Extracts statutory 11-digit Australian Business Number (ABN)
   /// e.g. "ABN: 12 345 678 901", "A.B.N 53004085616"
   String? _extractAbn(String text) {
@@ -221,7 +281,7 @@ class ReceiptIntelligenceService {
     if (match != null) {
       final digits = match.group(1)!.replaceAll(RegExp(r'[\s.-]'), '');
       if (digits.length == 11) {
-        return '${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 8)} ${digits.substring(8, 11)}';
+        return _formatAbn(digits);
       }
     }
     return null;
@@ -237,7 +297,9 @@ class ReceiptIntelligenceService {
       RegExp(
           r'(?:gst\s+amount|tax\s+amount)\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       RegExp(
-          r'(?<!total\s+)includes?\s+gst\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
+          r'(?<!total\s+)includes?\s+gst(?:\s+10%)?\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
+      RegExp(
+          r'\bincl(?:udes?)?\s+gst(?:\s+10%)?\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
       RegExp(r'\b10%\s+tax\s*[:$ ]+\s*\$?\s*(\d{1,4}(?:\.\d{2}))'),
     ];
 
@@ -277,6 +339,7 @@ class ReceiptIntelligenceService {
     required String normalized,
     required double? gst,
     required double? discount,
+    double? spatialTotal,
   }) {
     final lines = rawText
         .split(RegExp(r'\r?\n'))
@@ -286,6 +349,12 @@ class ReceiptIntelligenceService {
 
     final candidates = <_AmountCandidate>[];
     final evidence = <String>[];
+
+    // If spatial parsing found an explicit horizontal total, add it with high priority
+    if (spatialTotal != null && spatialTotal > 0) {
+      candidates.add(_AmountCandidate(spatialTotal, 7.0));
+      evidence.add('spatial_consensus_match');
+    }
 
     final reversedLines = lines.reversed.toList(growable: false);
     for (int i = 0; i < reversedLines.length; i++) {
@@ -335,11 +404,6 @@ class ReceiptIntelligenceService {
       }
     }
 
-    if (candidates.isEmpty) {
-      return const _ConsensusResult(
-          amount: 0.0, isCrossValidated: false, evidence: []);
-    }
-
     bool gstCrossValidated = false;
     if (gst != null && gst > 0) {
       final expectedTotal = gst * 11.0;
@@ -347,7 +411,9 @@ class ReceiptIntelligenceService {
         if ((c.amount - expectedTotal).abs() <= 0.60) {
           c.score += 8.0;
           gstCrossValidated = true;
-          evidence.add('gst_invariant_match');
+          if (!evidence.contains('gst_invariant_match')) {
+            evidence.add('gst_invariant_match');
+          }
           break;
         }
       }
@@ -365,6 +431,32 @@ class ReceiptIntelligenceService {
           }
         }
       }
+    }
+
+    // Auto-repair Total if GST is crisp and candidates are missing, 0, or mathematically inconsistent
+    // Only repair if no strong settlement line matched an explicit total
+    if (gst != null && gst > 0 && !gstCrossValidated) {
+      final deducedTotal = AustralianTaxValidator.deduceTotalFromGst(gst);
+      if (deducedTotal != null) {
+        // If there are no candidates, or no candidate has strong settlement evidence
+        final hasStrongSettlementCandidate = candidates.any((c) => c.score >= 5.0);
+        final hasConsistentCandidate = candidates.any(
+            (c) => (c.amount - deducedTotal).abs() <= 0.60);
+        if (!hasConsistentCandidate && !hasStrongSettlementCandidate) {
+          // Add deduced total as high-scoring candidate
+          candidates.add(_AmountCandidate(deducedTotal, 12.0));
+          evidence.add('total_repaired_from_gst:${deducedTotal.toStringAsFixed(2)}');
+          gstCrossValidated = true;
+          if (!evidence.contains('gst_invariant_match')) {
+            evidence.add('gst_invariant_match');
+          }
+        }
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return const _ConsensusResult(
+          amount: 0.0, isCrossValidated: false, evidence: []);
     }
 
     candidates.sort((a, b) => b.score.compareTo(a.score));

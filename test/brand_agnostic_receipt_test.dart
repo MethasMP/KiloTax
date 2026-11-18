@@ -14,7 +14,7 @@ void main() {
       final text = '''
 Nullarbor Roadhouse Petrol Pty Ltd
 Tax Invoice
-ABN: 72 109 448 331
+ABN: 72 709 448 331
 Diesel Pump 01
 Litres 110.50 L @ \$2.15/L
 TOTAL AUD \$237.58
@@ -28,8 +28,8 @@ EFTPOS \$237.58
       expect(result.merchant, equals('Nullarbor Roadhouse Petrol'));
       expect(result.category, equals(ExpenseCategory.fuel));
       expect(result.amount, equals(237.58));
-      expect(result.abn, equals('72 109 448 331'));
-      expect(result.evidence, contains('abn:72 109 448 331'));
+      expect(result.abn, equals('72 709 448 331'));
+      expect(result.evidence, contains('abn:72 709 448 331'));
       expect(result.isHighConfidence, isTrue);
     });
 

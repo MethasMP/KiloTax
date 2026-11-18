@@ -1,10 +1,35 @@
 import '../../data/models/vehicle_expense.dart';
+import '../ocr/receipt_fallback_engine.dart';
 import '../ocr/receipt_intelligence_service.dart';
 import '../ocr/receipt_pre_db_validator.dart';
 
 /// The same gates apply after extraction, after edits and immediately before commit.
 class ReceiptWorkflowPolicy {
-  const ReceiptWorkflowPolicy();
+  final ReceiptFallbackEngine? fallbackEngine;
+
+  const ReceiptWorkflowPolicy({this.fallbackEngine});
+
+  /// Evaluates an extraction or processed receipt against confidence gates and
+  /// dispatches to the fallback engine asynchronously if confidence is low.
+  ///
+  /// Returns the original [initialResult] if high confidence or if no fallback engine is configured.
+  /// If !initialResult.isHighConfidence and a [fallbackEngine] is provided, executes fallback
+  /// parsing and returns the fallback result if non-null, else [initialResult].
+  Future<ReceiptOcrResult> processWithFallback({
+    required ReceiptOcrResult initialResult,
+    required String imagePath,
+  }) async {
+    if (initialResult.isHighConfidence || fallbackEngine == null) {
+      return initialResult;
+    }
+
+    try {
+      final fallbackResult = await fallbackEngine!.parseImage(imagePath);
+      return fallbackResult ?? initialResult;
+    } catch (_) {
+      return initialResult;
+    }
+  }
 
   List<String> approvalIssues(VehicleExpense expense) {
     final audit = expense.receiptAudit;
