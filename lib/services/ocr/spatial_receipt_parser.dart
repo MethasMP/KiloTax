@@ -96,7 +96,6 @@ class SpatialReceiptParser {
     for (final anchor in blocks) {
       final upper = anchor.text.toUpperCase();
       final anchorPage = anchor.page;
-      final anchorLeft = anchor.bounds[0];
       final anchorTop = anchor.bounds[1];
       final anchorRight = anchor.bounds[2];
       final anchorBottom = anchor.bounds[3];
