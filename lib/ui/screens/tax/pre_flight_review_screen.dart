@@ -93,6 +93,7 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
         taxpayerName: taxpayerName,
         abn: abn,
       );
+      HapticFeedback.mediumImpact();
       if (mounted) {
         setState(() {
           _package = package;
@@ -292,14 +293,50 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'ESTIMATED BOX D1 DEDUCTION',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.6,
-                              color: Colors.white70,
-                            ),
+                          AdaptiveRow(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'ESTIMATED BOX D1 DEDUCTION',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              if (_package!.reviewIssues.isEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.emerald.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AppColors.emerald.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  child: const AdaptiveRow(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.shieldCheck,
+                                        size: 13,
+                                        color: AppColors.emerald,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '100% ATO Compliant',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.emerald,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 6),
                           Text(

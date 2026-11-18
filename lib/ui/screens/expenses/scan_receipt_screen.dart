@@ -86,13 +86,20 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       try {
         final engine = widget.ocrEngine ?? ReceiptOcrEngineFactory.create();
         final extraction = await engine.recognizeFile(imagePath);
-        final ocr = _intelligence.analyseText(extraction.text);
+        final ocr = _intelligence.analyseText(
+          extraction.text,
+          blocks: extraction.blocks,
+        );
 
         if (!mounted) return;
 
         final isHighConfidence = ocr.confidence >= 0.90 || ocr.isHighConfidence;
         debugPrint(
             '[ScanReceiptScreen] Single-shot OCR complete. Confidence: ${ocr.confidence}, isHighConfidence: $isHighConfidence');
+
+        if (isHighConfidence) {
+          HapticFeedback.heavyImpact();
+        }
 
         await _openReview(ExpenseDetailScreen(
           appState: widget.appState,

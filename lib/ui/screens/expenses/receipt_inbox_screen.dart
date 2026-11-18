@@ -152,6 +152,7 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
         ReceiptDraft result;
         try {
           final texts = <String>[], blocks = <Map<String, dynamic>>[];
+          final rawBlocks = <ReceiptOcrBlock>[];
           ReceiptOcrExtraction? extraction;
           final paths = original.pagePaths.isEmpty
               ? [original.expense.receiptPath!]
@@ -160,6 +161,7 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
             extraction = await engine.recognizeFile(paths[page]);
             _checkAccount();
             texts.add(extraction.text);
+            rawBlocks.addAll(extraction.blocks);
             blocks.addAll(extraction.blocks.map((b) => {
                   'page': page + 1,
                   'text': b.text,
@@ -167,8 +169,10 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
                   'score': b.score
                 }));
           }
-          final ocr = const ReceiptIntelligenceService()
-              .analyseText(texts.join('\n\n'));
+          final ocr = const ReceiptIntelligenceService().analyseText(
+            texts.join('\n\n'),
+            blocks: rawBlocks,
+          );
           final pageHashes = await ReceiptDocumentIntegrity.inspect(paths);
           final audit = await const ReceiptAuditService().create(
               merchant: ocr.merchant,
