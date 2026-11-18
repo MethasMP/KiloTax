@@ -12,8 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
-    // ignore: deprecated_member_use
-    anonKey: AppConstants.supabaseAnonKey,
+    publishableKey: AppConstants.supabaseAnonKey,
   );
   final appState = AppState();
   await appState.init();
@@ -32,8 +31,11 @@ class KiloTaxApp extends StatelessWidget {
     if (appState.hasVehicle) {
       return const MainScaffoldScreen();
     }
+    if (!appState.isAuthenticated && !appState.isGuestMode) {
+      return const OnboardingFlowScreen(initialStep: 0);
+    }
     if (appState.hasSeenOnboarding) {
-      return const OnboardingFlowScreen(initialStep: 1);
+      return const OnboardingFlowScreen(initialStep: 2);
     }
     return const OnboardingFlowScreen(initialStep: 0);
   }

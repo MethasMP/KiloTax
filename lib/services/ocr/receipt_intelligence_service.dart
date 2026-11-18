@@ -47,6 +47,18 @@ class ReceiptOcrResult {
 class ReceiptIntelligenceService {
   const ReceiptIntelligenceService();
 
+  static final _personalItemPattern = RegExp(
+    r'\b(ice break|coke|coca cola|snack|chips|chocolate|drink|coffee|confectionery|sandwich|pie|energy drink|red bull)\b',
+    caseSensitive: false,
+  );
+
+  /// Checks if an item description likely represents a personal/convenience purchase.
+  bool isLikelyPersonalItem(String description) {
+    final trimmed = description.trim();
+    if (trimmed.isEmpty) return false;
+    return _personalItemPattern.hasMatch(trimmed);
+  }
+
   ReceiptOcrResult analyseText(String rawText, {DateTime? fallbackDate}) {
     final sanitizedRaw =
         rawText.replaceAll('¥', '%').replaceAll('PREMOBA', 'PREM98');

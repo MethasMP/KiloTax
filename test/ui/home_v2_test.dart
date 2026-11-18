@@ -231,10 +231,17 @@ void main() {
     await pumpHome(tester, state, key);
     expect(find.byType(HomeRecordHero), findsOneWidget);
     expect(find.text(r'$200.00'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.textContaining('Trip ledger odometer'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.textContaining('Trip ledger odometer'), findsOneWidget);
     expect(find.textContaining('Last odometer photo'), findsNothing);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'daily-home');
+    await tester.scrollUntilVisible(find.text('View basis ↗'), -200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('View basis ↗'));
     await tester.pumpAndSettle();
     expect(find.text('Your estimate basis'), findsOneWidget);

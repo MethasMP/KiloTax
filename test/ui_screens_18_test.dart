@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:kilotax/data/models/vehicle.dart';
@@ -21,6 +22,16 @@ import 'package:kilotax/ui/screens/evidence/evidence_review_screen.dart';
 import 'package:kilotax/core/theme/app_typography.dart';
 
 void main() {
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('cunning_document_scanner'), (_) async => null);
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('cunning_document_scanner'), null);
+  });
   group('18 Master UI Screens Render & Integrity Tests (UI.png)', () {
     late AppState appState;
 
@@ -84,6 +95,11 @@ void main() {
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Continue without an account'), findsOneWidget);
+      await tester.tap(find.text('Continue without an account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('I’ll log trips manually instead'));
+      await tester.pumpAndSettle();
       expect(find.text('Choose your vehicle'), findsOneWidget);
       expect(find.text('Ford Ranger'), findsOneWidget);
     });
@@ -93,9 +109,9 @@ void main() {
         (tester) async {
       await tester.pumpWidget(wrap(const EvidenceHomeScreen()));
       expect(find.text('Your driving.'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Review your records'), 250,
+      await tester.scrollUntilVisible(find.text('Review 1 trip'), 250,
           scrollable: find.byType(Scrollable).first);
-      expect(find.text('Review your records'), findsOneWidget);
+      expect(find.text('Review 1 trip'), findsOneWidget);
     });
 
     testWidgets(
@@ -241,16 +257,15 @@ void main() {
       expect(find.text('Trips'), findsOneWidget);
       expect(find.textContaining('Expenses'), findsWidgets);
       expect(find.text('Tax'), findsOneWidget);
-      expect(find.text('Capture'), findsOneWidget);
-
-      await tester.tap(find.text('Capture'));
+      expect(find.text('Scan'), findsOneWidget);
+      await tester.tap(find.text('Scan'));
       await tester.pumpAndSettle();
-
-      // In Logbook mode: Trip, Car Expense, and Odometer are all available
-      expect(find.text('Record with GPS'), findsOneWidget);
-      expect(find.text('Add a past trip'), findsOneWidget);
-      expect(find.text('Scan a receipt'), findsOneWidget);
-      expect(find.text('Odometer'), findsOneWidget);
+      expect(find.byType(ScanReceiptScreen), findsNothing);
+      await tester.tap(find.text('Trips').hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Add trip'), findsOneWidget);
+      expect(find.byTooltip('Trip tools'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

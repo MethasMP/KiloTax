@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
@@ -10,6 +11,21 @@ import 'package:kilotax/ui/screens/home/widgets/quick_capture_bottom_sheet.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  var scannerCalls = 0;
+  setUp(() {
+    scannerCalls = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('cunning_document_scanner'), (_) async {
+      scannerCalls++;
+      return null;
+    });
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('cunning_document_scanner'), null);
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<AppState> state({TaxMethod method = TaxMethod.logbook}) async {
@@ -77,8 +93,9 @@ void main() {
       if (method == TaxMethod.logbook) {
         await t.tap(find.text('Scan a receipt'));
         await t.pumpAndSettle();
-        expect(find.byType(ScanReceiptScreen), findsOneWidget);
-        expect(find.text('Open camera scanner'), findsOneWidget);
+        expect(scannerCalls, 1);
+        expect(find.byType(ScanReceiptScreen), findsNothing);
+        expect(find.text('Capture'), findsOneWidget);
       } else {
         expect(find.text('Scan a receipt'), findsNothing);
         expect(find.text('Odometer'), findsNothing);

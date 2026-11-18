@@ -37,7 +37,7 @@ void main() {
           ),
         ));
         expect(t.takeException(), isNull);
-        for (final label in ['Home', 'Trips', 'Capture', 'Expenses', 'Tax']) {
+        for (final label in ['Home', 'Trips', 'Scan', 'Expenses', 'Tax']) {
           expect(find.text(label), findsOneWidget);
           final bounds = t.getRect(find.text(label));
           expect(bounds.left, greaterThanOrEqualTo(0));
@@ -46,7 +46,7 @@ void main() {
         }
         await t.tap(find.text('Expenses'));
         expect(tapped, isTrue);
-        await t.tap(find.text('Capture'));
+        await t.tap(find.text('Scan'));
         expect(captured, isTrue);
       });
     }

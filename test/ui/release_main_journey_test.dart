@@ -43,17 +43,19 @@ void main({bool nativeStorage = false}) {
     }
 
     await tap('Get started');
+    await tap('Continue without an account');
+    await tap('I’ll log trips manually instead');
     await tap('Ford Ranger');
     await tap('Save & Continue');
     await tap('Save vehicle');
-    await tap('Start using DriveLog');
     expect(find.byType(MainScaffoldScreen), findsOneWidget);
     expect(state.isGuestMode, isTrue);
     expect(state.isAuthenticated, isFalse);
     expect(state.primaryVehicle!.taxMethod, TaxMethod.logbook);
 
-    await tap('Capture');
-    await tap('Add a past trip');
+    await tap('Trips');
+    await tester.tap(find.byTooltip('Add trip').hitTestable());
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), '12.5');
     await tester.enterText(find.byType(TextField).at(1), 'Parramatta');
     await tester.enterText(find.byType(TextField).at(2), 'Blacktown');

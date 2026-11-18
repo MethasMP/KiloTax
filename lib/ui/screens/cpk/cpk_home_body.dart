@@ -7,10 +7,20 @@ import '../dashboard/task_home_body.dart';
 class CpkHomeBody extends StatelessWidget {
   final AppState appState;
   final VoidCallback? onViewAll;
-  const CpkHomeBody({super.key, required this.appState, this.onViewAll});
+  final VoidCallback? onReviewTrips;
+  final VoidCallback? onViewTax;
+  const CpkHomeBody(
+      {super.key,
+      required this.appState,
+      this.onViewAll,
+      this.onReviewTrips,
+      this.onViewTax});
   @override
-  Widget build(BuildContext context) =>
-      TaskHomeBody(appState: appState, onViewAll: onViewAll);
+  Widget build(BuildContext context) => TaskHomeBody(
+      appState: appState,
+      onViewAll: onViewAll,
+      onReviewTrips: onReviewTrips,
+      onViewTax: onViewTax);
 }
 
 /// Tactile 5,000 km Quota Cap Arc / Meter Gauge

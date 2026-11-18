@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../data/models/vehicle_expense.dart';
+import '../../../services/evidence/evidence_auto_match_engine.dart';
 import '../../../services/ocr/receipt_audit_service.dart';
 import '../../../services/ocr/receipt_intelligence_service.dart';
 import '../../../services/ocr/receipt_pre_db_validator.dart';
@@ -156,6 +159,35 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _gstController.addListener(_onFieldChanged);
     _merchantController.addListener(_onFieldChanged);
     _notesController.addListener(_onFieldChanged);
+
+    _checkAutoTripSuggestion();
+  }
+
+  void _checkAutoTripSuggestion() {
+    if (_linkedTripId == null && _suggestedTripId == null) {
+      final parsedAmount = double.tryParse(
+            _amountController.text.replaceAll(',', '').trim(),
+          ) ??
+          widget.amount;
+      final tempExpense = VehicleExpense(
+        id: widget.existingExpense?.id ?? 'temp_suggest_exp',
+        vehicleId: _vehicleId ?? '',
+        amount: parsedAmount,
+        category: _selectedCategory,
+        date: _selectedDate,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : widget.merchant,
+      );
+      final match = EvidenceAutoMatchEngine.findBestMatchingTrip(
+        expense: tempExpense,
+        candidateTrips: widget.appState.trips,
+      );
+      if (match != null && match.confidenceScore >= 0.80) {
+        _suggestedTripId = match.trip.id;
+        _autoMatchReason = match.matchReason;
+      }
+    }
   }
 
   void _onFieldChanged() {
@@ -305,52 +337,257 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   }
 
   Widget _buildAllocationEditor() {
+    final totalReceiptAmount =
+        double.tryParse(_amountController.text.replaceAll(',', '').trim()) ??
+            0.0;
+    final allocatedTotal = _allocations.fold(
+        0.0, (sum, l) => sum + (l.amount.isFinite ? l.amount : 0.0));
     final work = _allocations
         .where((l) => l.purpose == AllocationPurpose.work)
-        .fold(0.0, (sum, l) => sum + (l.amount.isFinite ? l.amount : 0));
+        .fold(0.0, (sum, l) => sum + (l.amount.isFinite ? l.amount : 0.0));
+    final private = _allocations
+        .where((l) => l.purpose == AllocationPurpose.private)
+        .fold(0.0, (sum, l) => sum + (l.amount.isFinite ? l.amount : 0.0));
+
+    final totalCents = (totalReceiptAmount * 100).round();
+    final allocatedCents = (allocatedTotal * 100).round();
+    final differenceCents = totalCents - allocatedCents;
+    final remainingDiff = differenceCents / 100.0;
+    final isBalanced = _allocations.isNotEmpty && differenceCents == 0;
+
     return Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border)),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('What belongs to this vehicle or work?',
-              style: AppTextStyles.cardPrimary),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _allocations.isEmpty
+              ? AppColors.border
+              : (isBalanced ? AppColors.emerald : Colors.amber.shade700),
+          width: isBalanced ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Text('What belongs to work / vehicle?',
+                    style: AppTextStyles.cardPrimary),
+              ),
+              if (_allocations.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isBalanced
+                        ? AppColors.emerald.withValues(alpha: 0.12)
+                        : Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isBalanced
+                        ? 'Balanced 100%'
+                        : (remainingDiff > 0
+                            ? 'Rem: \$${remainingDiff.toStringAsFixed(2)}'
+                            : 'Exceeded: \$${(-remainingDiff).toStringAsFixed(2)}'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isBalanced
+                          ? AppColors.emerald
+                          : Colors.amber.shade900,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
           const Text(
-              'Keep the full receipt. Separate personal purchases before calculating business use.'),
-          if (_allocations.isEmpty)
-            TextButton.icon(
-                key: const ValueKey('split-receipt'),
-                icon: const Icon(Icons.call_split),
-                label: const Text('Separate personal / work items'),
+            'Keep the full receipt. Separate personal purchases before calculating business use.',
+            style: TextStyle(fontSize: 13, color: AppColors.muted),
+          ),
+          const SizedBox(height: 12),
+
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (_allocations.isEmpty)
+                TextButton.icon(
+                  key: const ValueKey('split-receipt'),
+                  icon: const Icon(Icons.call_split),
+                  label: const Text('Separate personal / work items'),
+                  onPressed: _isSaving
+                      ? null
+                      : () {
+                          setState(() {
+                            _allocations = [
+                              ReceiptAllocation(
+                                  description: 'Receipt items',
+                                  amount: double.tryParse(_amountController.text
+                                          .replaceAll(',', '')
+                                          .trim()) ??
+                                      0,
+                                  purpose: AllocationPurpose.unresolved,
+                                  category: _selectedCategory)
+                            ];
+                            _confirmedByUser = false;
+                            _detailsChanged = true;
+                          });
+                        },
+                ),
+              ActionChip(
+                key: const ValueKey('preset-100-work'),
+                avatar: const Icon(Icons.business_center, size: 16),
+                label: const Text('100% Work'),
+                backgroundColor: _allocations.length == 1 &&
+                        _allocations.first.purpose == AllocationPurpose.work
+                    ? AppColors.emerald.withValues(alpha: 0.15)
+                    : Colors.grey.shade100,
                 onPressed: _isSaving
                     ? null
                     : () {
                         setState(() {
                           _allocations = [
                             ReceiptAllocation(
-                                description: 'Receipt items',
-                                amount: double.tryParse(_amountController.text
-                                        .replaceAll(',', '')
-                                        .trim()) ??
-                                    0,
-                                purpose: AllocationPurpose.unresolved,
-                                category: _selectedCategory)
+                              description: _selectedCategory.displayName,
+                              amount: totalReceiptAmount,
+                              purpose: AllocationPurpose.work,
+                              category: _selectedCategory,
+                            ),
                           ];
                           _confirmedByUser = false;
                           _detailsChanged = true;
                         });
-                      }),
+                      },
+              ),
+              ActionChip(
+                key: const ValueKey('preset-split-snack'),
+                avatar: const Icon(Icons.remove_circle_outline, size: 16),
+                label: const Text('Deduct Personal Items'),
+                backgroundColor: Colors.grey.shade100,
+                onPressed: _isSaving
+                    ? null
+                    : () {
+                        setState(() {
+                          final defaultWork = (totalReceiptAmount > 10)
+                              ? (totalReceiptAmount - 10)
+                              : totalReceiptAmount;
+                          final defaultPrivate =
+                              totalReceiptAmount - defaultWork;
+                          _allocations = [
+                            ReceiptAllocation(
+                              description: 'Work items',
+                              amount:
+                                  double.parse(defaultWork.toStringAsFixed(2)),
+                              purpose: AllocationPurpose.work,
+                              category: _selectedCategory,
+                            ),
+                            ReceiptAllocation(
+                              description: 'Personal items (Drink/Food/Etc)',
+                              amount: double.parse(
+                                  defaultPrivate.toStringAsFixed(2)),
+                              purpose: AllocationPurpose.private,
+                            ),
+                          ];
+                          _confirmedByUser = false;
+                          _detailsChanged = true;
+                        });
+                      },
+              ),
+              if (_allocations.isNotEmpty)
+                ActionChip(
+                  key: const ValueKey('preset-clear-splits'),
+                  avatar: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reset'),
+                  backgroundColor: Colors.grey.shade100,
+                  onPressed: _isSaving
+                      ? null
+                      : () {
+                          setState(() {
+                            _allocations = [];
+                            _confirmedByUser = false;
+                            _detailsChanged = true;
+                          });
+                        },
+                ),
+            ],
+          ),
+
+          if (_allocations.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                height: 8,
+                child: Row(
+                  children: [
+                    if (work > 0 && totalReceiptAmount > 0)
+                      Expanded(
+                        flex: ((work / totalReceiptAmount) * 100)
+                            .round()
+                            .clamp(1, 100),
+                        child: Container(color: AppColors.emerald),
+                      ),
+                    if (private > 0 && totalReceiptAmount > 0)
+                      Expanded(
+                        flex: ((private / totalReceiptAmount) * 100)
+                            .round()
+                            .clamp(1, 100),
+                        child: Container(color: Colors.blueGrey),
+                      ),
+                    if (remainingDiff > 0 && totalReceiptAmount > 0)
+                      Expanded(
+                        flex: ((remainingDiff / totalReceiptAmount) * 100)
+                            .round()
+                            .clamp(1, 100),
+                        child: Container(color: Colors.amber.shade400),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Work: \$${work.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.emerald),
+                ),
+                Text(
+                  'Personal: \$${private.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blueGrey),
+                ),
+                Text(
+                  'Total: \$${totalReceiptAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink),
+                ),
+              ],
+            ),
+          ],
+
           for (var i = 0; i < _allocations.length; i++) ...[
             const Divider(height: 28),
             TextFormField(
                 key: ValueKey('allocation-description-$i-$_allocationRevision'),
                 initialValue: _allocations[i].description,
-                decoration: InputDecoration(labelText: 'Item ${i + 1}'),
+                decoration: InputDecoration(labelText: 'Item ${i + 1} Name'),
                 onChanged: (v) => _changeAllocation(i, description: v)),
             const SizedBox(height: 12),
             TextFormField(
@@ -385,6 +622,25 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 onChanged: (v) {
                   if (v != null) _changeAllocation(i, purpose: v);
                 }),
+            if (_allocations[i].purpose != AllocationPurpose.private &&
+                _receiptIntelligence
+                    .isLikelyPersonalItem(_allocations[i].description)) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ActionChip(
+                  key: ValueKey('mark-private-chip-$i'),
+                  avatar: const Icon(Icons.person_outline,
+                      size: 16, color: Colors.blueGrey),
+                  label: const Text('Mark as Private'),
+                  backgroundColor: Colors.blueGrey.shade50,
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    _changeAllocation(i, purpose: AllocationPurpose.private);
+                  },
+                ),
+              ),
+            ],
             if (_allocations[i].purpose == AllocationPurpose.work) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<ExpenseCategory>(
@@ -417,7 +673,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             if (_allocations.length > 1)
               Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(
+                  child: TextButton.icon(
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: const Text('Remove item'),
                       onPressed: () {
                         setState(() {
                           _allocations.removeAt(i);
@@ -425,36 +683,69 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                           _confirmedByUser = false;
                           _detailsChanged = true;
                         });
-                      },
-                      child: const Text('Remove item'))),
+                      })),
           ],
+
           if (_allocations.isNotEmpty) ...[
-            TextButton.icon(
-                key: const ValueKey('add-receipt-item'),
-                icon: const Icon(Icons.add),
-                label: const Text('Add item'),
-                onPressed: () {
-                  setState(() {
-                    _allocations.add(const ReceiptAllocation(
-                        description: '',
-                        amount: 0,
-                        purpose: AllocationPurpose.unresolved));
-                    _confirmedByUser = false;
-                    _detailsChanged = true;
-                  });
-                }),
-            Text(_allocationError ?? 'Items match the full receipt total.',
-                style: TextStyle(
-                    color: _allocationError == null
-                        ? AppColors.emerald
-                        : AppColors.crimson)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('add-receipt-item'),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add item'),
+                    onPressed: () {
+                      setState(() {
+                        _allocations.add(const ReceiptAllocation(
+                            description: '',
+                            amount: 0,
+                            purpose: AllocationPurpose.unresolved));
+                        _confirmedByUser = false;
+                        _detailsChanged = true;
+                      });
+                    },
+                  ),
+                ),
+                if (remainingDiff > 0) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      key: const ValueKey('auto-balance-remaining'),
+                      icon: const Icon(Icons.auto_fix_high, size: 16),
+                      label: Text(
+                          '+\$${remainingDiff.toStringAsFixed(2)} Personal'),
+                      onPressed: () {
+                        setState(() {
+                          _allocations.add(ReceiptAllocation(
+                            description: 'Personal remaining balance',
+                            amount: remainingDiff,
+                            purpose: AllocationPurpose.private,
+                          ));
+                          _confirmedByUser = false;
+                          _detailsChanged = true;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
             const SizedBox(height: 8),
-            Text('Vehicle / work subtotal: AUD ${work.toStringAsFixed(2)}',
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            const Text(
-                'Personal and unsure items are excluded. Logbook business use is applied separately to vehicle running costs.'),
+            Text(
+              _allocationError ?? 'Items balance perfectly with receipt total.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _allocationError == null
+                    ? AppColors.emerald
+                    : AppColors.crimson,
+              ),
+            ),
           ],
-        ]));
+        ],
+      ),
+    );
   }
 
   ReceiptValidationResult _evaluateValidation() {
@@ -893,6 +1184,153 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     );
   }
 
+  bool get _hasReceiptEvidence =>
+      (_imagePath?.trim().isNotEmpty ?? false) ||
+      widget.receiptOcrResult != null;
+
+  Widget _buildReceiptReviewHeader() {
+    final editing = widget.existingExpense != null;
+    final extracted = widget.receiptOcrResult != null;
+    return Container(
+      key: const ValueKey('receipt-review-guidance'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColor.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(editing ? 'Edit receipt details' : 'Review your receipt',
+              style: AppType.cardTitle),
+          const SizedBox(height: 8),
+          Text(
+            editing
+                ? 'Check merchant, date, amount and category before updating this record.'
+                : extracted
+                    ? 'Draft extracted from photo, not saved. Check merchant, date, amount and category.'
+                    : 'Photo attached, not saved. Check merchant, date, amount and category.',
+            style: AppType.secondary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showReceiptPhoto() async {
+    final path = _imagePath;
+    if (path == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Receipt photo'),
+            leading: IconButton(
+              tooltip: 'Close receipt photo',
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 5,
+              child: Image.file(
+                File(path),
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    const Text('Receipt preview unavailable'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceiptPhotoCard() {
+    final hasPhoto = _imagePath != null && File(_imagePath!).existsSync();
+    return Container(
+      key: const ValueKey('receipt-photo-card'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColor.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColor.hairline),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 56,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColor.surfaceMuted,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColor.hairline),
+            ),
+            child: hasPhoto
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(File(_imagePath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(Icons.broken_image_outlined,
+                                  semanticLabel: 'Receipt preview unavailable'),
+                            )),
+                  )
+                : const Icon(LucideIcons.receipt,
+                    color: AppColor.inkMuted, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Tax Receipt Evidence', style: AppType.bodyStrong),
+                Text(hasPhoto ? 'Photo attached' : 'Receipt photo needed',
+                    style: AppType.secondary),
+                Wrap(
+                  spacing: 4,
+                  children: [
+                    if (hasPhoto)
+                      TextButton(
+                        key: const ValueKey('inspect-receipt-photo'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(48, 48),
+                        ),
+                        onPressed: _showReceiptPhoto,
+                        child: const Text('Inspect'),
+                      ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(48, 48),
+                      ),
+                      onPressed:
+                          _pickingReceipt || _isSaving ? null : _attachReceipt,
+                      child: Text(_pickingReceipt
+                          ? 'Attaching receipt…'
+                          : _imagePath == null
+                              ? 'Attach receipt'
+                              : hasPhoto
+                                  ? 'Replace'
+                                  : 'Replace receipt'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatTripDayMonth(DateTime date) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const months = [
@@ -980,62 +1418,349 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // OCR suggestions are never accounting truth until reviewed.
+                if (_hasReceiptEvidence) ...[
+                  _buildReceiptReviewHeader(),
+                  const SizedBox(height: 12),
+                  _buildReceiptPhotoCard(),
+                  const SizedBox(height: 16),
+                ],
+
                 Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: widget.receiptOcrResult == null
-                        ? AppColors.background
-                        : AppColors.amberLight,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                        color: AppColors.amberDark.withValues(alpha: 0.3)),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  child: AdaptiveRow(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: AppColors.amberDark,
-                          shape: BoxShape.circle,
+                      TextField(
+                        key: const ValueKey('expense-merchant'),
+                        controller: _merchantController,
+                        style: AppType.cardTitle,
+                        decoration: const InputDecoration(
+                          labelText: 'Merchant / Supplier',
+                          border: InputBorder.none,
+                          isDense: true,
                         ),
-                        child: const Icon(LucideIcons.sparkles,
-                            color: Colors.white, size: 14),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.receiptOcrResult == null
-                                  ? 'MANUAL ENTRY • REVIEW REQUIRED'
-                                  : 'OCR SUGGESTION • REVIEW & CONFIRM',
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.amberDark,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              widget.receiptOcrResult == null
-                                  ? 'Attach a clear receipt and confirm every field before tax export.'
-                                  : 'Matched "${_selectedCategory.displayName}" at ${(widget.receiptOcrResult!.confidence * 100).round()}% confidence. Edit any field that is wrong.',
-                              style: const TextStyle(
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColor.attentionTint,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('Review before export',
+                            style: AppType.secondary
+                                .copyWith(color: AppColor.attentionInk)),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Amount (AUD)',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.muted)),
+                      const SizedBox(height: 4),
+                      TextField(
+                        key: const ValueKey('expense-amount'),
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 32,
+                            color: AppColors.ink),
+                        decoration: const InputDecoration(
+                          prefixText: '\$ ',
+                          prefixStyle: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 32,
+                              color: AppColors.ink),
+                          hintText: '0.00',
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      ),
+                      // Apple HIG Glanceable Status Pill
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 12),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: methodConflict != null
+                              ? _buildStatusPill(
+                                  backgroundColor: AppColors.amberLight,
+                                  textColor: AppColors.amberDark,
+                                  icon: LucideIcons.alertCircle,
+                                  label: methodConflict.title,
+                                  onTap: () => _showTacticalGuidanceSheet(
+                                    context: context,
+                                    title: methodConflict.title,
+                                    explanation: methodConflict.explanation,
+                                    primaryLabel:
+                                        methodConflict.primaryActionLabel,
+                                    onPrimary: () {
+                                      setState(() {
+                                        _isVaultOnly = true;
+                                        _vaultReason =
+                                            'cents_per_km_running_cost';
+                                      });
+                                      _commitSaveExpense(parsedAmount, true,
+                                          'cents_per_km_running_cost');
+                                    },
+                                    secondaryLabel:
+                                        methodConflict.secondaryActionLabel,
+                                    onSecondary: () {},
+                                  ),
+                                )
+                              : (valResult.isVaultOnlyRecommended ||
+                                      _isVaultOnly)
+                                  ? _buildStatusPill(
+                                      backgroundColor: AppColors.amberLight,
+                                      textColor: AppColors.amberDark,
+                                      icon: LucideIcons.clock,
+                                      label: "Receipt from last tax year",
+                                      onTap: () {
+                                        final guidance =
+                                            valResult.humanGuidance ??
+                                                const HumanizedValidationError(
+                                                  title:
+                                                      'Receipt from last tax year',
+                                                  explanation:
+                                                      'This purchase is dated before 1 July. We\'ll save the photo for your records so you have proof, without mixing it into this year\'s tax claim.',
+                                                  primaryActionLabel:
+                                                      'Save Receipt',
+                                                  secondaryActionLabel:
+                                                      'Change Date',
+                                                );
+                                        _showTacticalGuidanceSheet(
+                                          context: context,
+                                          title: guidance.title,
+                                          explanation: guidance.explanation,
+                                          primaryLabel:
+                                              guidance.primaryActionLabel,
+                                          onPrimary: () {
+                                            setState(() {
+                                              _isVaultOnly = true;
+                                              _vaultReason = 'prior_tax_year';
+                                            });
+                                          },
+                                          secondaryLabel:
+                                              guidance.secondaryActionLabel,
+                                          onSecondary: _pickDate,
+                                        );
+                                      },
+                                    )
+                                  : isGstExceeded
+                                      ? _buildStatusPill(
+                                          backgroundColor:
+                                              AppColors.crimsonLight,
+                                          textColor: AppColors.crimson,
+                                          icon: LucideIcons.alertTriangle,
+                                          label: "Check GST amount",
+                                          onTap: () =>
+                                              _showTacticalGuidanceSheet(
+                                            context: context,
+                                            title: 'Check GST amount',
+                                            explanation:
+                                                'For a \$${parsedAmount.toStringAsFixed(2)} purchase, GST cannot exceed \$${legalMaxGst.toStringAsFixed(2)}. The camera may have misread the tax line.',
+                                            primaryLabel:
+                                                'Fix to \$${legalMaxGst.toStringAsFixed(2)}',
+                                            onPrimary: () {
+                                              setState(() {
+                                                _gstController.text =
+                                                    legalMaxGst
+                                                        .toStringAsFixed(2);
+                                              });
+                                            },
+                                            secondaryLabel:
+                                                'Keep \$${parsedGst.toStringAsFixed(2)}',
+                                            onSecondary: () {},
+                                          ),
+                                        )
+                                      : parsedAmount > 0
+                                          ? _buildStatusPill(
+                                              backgroundColor:
+                                                  AppColors.emeraldLight,
+                                              textColor: AppColors.emerald,
+                                              icon: LucideIcons.checkCircle2,
+                                              label: 'Amount entered',
+                                            )
+                                          : const SizedBox.shrink(),
+                        ),
+                      ),
+
+                      // Interactive Date Trigger
+                      InkWell(
+                        onTap: _pickDate,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: AdaptiveRow(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(LucideIcons.calendar,
+                                  size: 14, color: AppColors.muted),
+                              const SizedBox(width: 6),
+                              Text(
+                                _dateNeedsReview
+                                    ? 'Choose purchase date'
+                                    : Formatters.date(_selectedDate),
+                                style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w600),
-                            ),
+                                  color: AppColors.deepNavy,
+                                  fontWeight: FontWeight.w700,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '• Tap to change date',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_dateNeedsReview)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Purchase date was not read. Choose the date printed on the receipt.',
+                            key: ValueKey('receipt-date-needs-review'),
+                            style: AppType.secondary,
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+
+                      // Minimal GST Component Input Row
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isGstExceeded
+                                ? AppColors.crimson
+                                : AppColors.border,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text('GST component (AUD)',
+                                style: AppType.secondary),
+                            const SizedBox(height: 8),
+                            Row(children: [
+                              Expanded(
+                                  child: TextField(
+                                controller: _gstController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                style: AppType.cardNumeric.copyWith(
+                                    color: isGstExceeded
+                                        ? AppColor.critical
+                                        : AppColor.ink),
+                                decoration: const InputDecoration(
+                                    prefixText: '\$ ',
+                                    hintText: 'If shown',
+                                    isDense: true),
+                              )),
+                              if (parsedAmount > 0) ...[
+                                const SizedBox(width: 12),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _gstController.text =
+                                        legalMaxGst.toStringAsFixed(2));
+                                  },
+                                  child: const Text('Estimate'),
+                                ),
+                              ],
+                            ]),
                           ],
                         ),
+                      ),
+                      if (isGstExceeded)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 4),
+                          child: Text(
+                            'For a \$${parsedAmount.toStringAsFixed(2)} purchase, maximum GST is \$${legalMaxGst.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.crimson,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildDropdownRow(
+                        icon: LucideIcons.tag,
+                        label: 'Category',
+                        value: _selectedCategory.displayName,
+                        onTap: _showCategoryPicker,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      _buildInfoRow(
+                        icon: LucideIcons.creditCard,
+                        label: 'Payment method',
+                        value: 'Not specified',
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      _buildInfoRow(
+                        icon: LucideIcons.truck,
+                        label: 'Vehicle',
+                        value: vehicleName,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      _buildDropdownRow(
+                        icon: LucideIcons.link,
+                        label: 'Linked Trip',
+                        value: _linkedTripId != null
+                            ? (widget.appState.trips
+                                    .where((t) => t.id == _linkedTripId)
+                                    .map((t) =>
+                                        '${t.date.day}/${t.date.month} (${t.distanceKm.toStringAsFixed(1)} km)')
+                                    .firstOrNull ??
+                                'Linked')
+                            : 'None (Tap to link)',
+                        onTap: _showTripSelectorSheet,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      _buildInfoRow(
+                        icon: LucideIcons.percent,
+                        label: 'Claim type',
+                        value: _selectedCategory.isDirectlyDeductibleByDefault
+                            ? 'Confirm business use'
+                            : 'Logbook Scaled Claim',
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
+                const Text('Additional details', style: AppType.section),
+                const SizedBox(height: 12),
                 if (_suggestedTripId != null)
                   Card(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -1058,7 +1783,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                       },
                     ),
                   ),
-                // Evidence Graph Auto-Match Trip Banner
                 if (_linkedTripId != null) ...[
                   Builder(
                     builder: (context) {
@@ -1261,392 +1985,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                     decoration: const InputDecoration(
                         labelText: 'Receipt / invoice number (if printed)')),
                 const SizedBox(height: 16),
-                // Merchant & Amount Input Card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AdaptiveRow(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.emerald.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(LucideIcons.receipt,
-                                color: AppColors.emerald, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              key: const ValueKey('expense-merchant'),
-                              controller: _merchantController,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: AppColors.ink),
-                              decoration: const InputDecoration(
-                                hintText: 'Merchant / Supplier',
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.amberLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'Review before export',
-                              style: TextStyle(
-                                  color: AppColors.amberDark,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Amount (AUD)',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.muted)),
-                      const SizedBox(height: 4),
-                      TextField(
-                        key: const ValueKey('expense-amount'),
-                        controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 32,
-                            color: AppColors.ink),
-                        decoration: const InputDecoration(
-                          prefixText: '\$ ',
-                          prefixStyle: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 32,
-                              color: AppColors.ink),
-                          hintText: '0.00',
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                      ),
-                      // Apple HIG Glanceable Status Pill
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 12),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: methodConflict != null
-                              ? _buildStatusPill(
-                                  backgroundColor: AppColors.amberLight,
-                                  textColor: AppColors.amberDark,
-                                  icon: LucideIcons.alertCircle,
-                                  label: methodConflict.title,
-                                  onTap: () => _showTacticalGuidanceSheet(
-                                    context: context,
-                                    title: methodConflict.title,
-                                    explanation: methodConflict.explanation,
-                                    primaryLabel:
-                                        methodConflict.primaryActionLabel,
-                                    onPrimary: () {
-                                      setState(() {
-                                        _isVaultOnly = true;
-                                        _vaultReason =
-                                            'cents_per_km_running_cost';
-                                      });
-                                      _commitSaveExpense(parsedAmount, true,
-                                          'cents_per_km_running_cost');
-                                    },
-                                    secondaryLabel:
-                                        methodConflict.secondaryActionLabel,
-                                    onSecondary: () {},
-                                  ),
-                                )
-                              : (valResult.isVaultOnlyRecommended ||
-                                      _isVaultOnly)
-                                  ? _buildStatusPill(
-                                      backgroundColor: AppColors.amberLight,
-                                      textColor: AppColors.amberDark,
-                                      icon: LucideIcons.clock,
-                                      label: "Receipt from last tax year",
-                                      onTap: () {
-                                        final guidance =
-                                            valResult.humanGuidance ??
-                                                const HumanizedValidationError(
-                                                  title:
-                                                      'Receipt from last tax year',
-                                                  explanation:
-                                                      'This purchase is dated before 1 July. We\'ll save the photo for your records so you have proof, without mixing it into this year\'s tax claim.',
-                                                  primaryActionLabel:
-                                                      'Save Receipt',
-                                                  secondaryActionLabel:
-                                                      'Change Date',
-                                                );
-                                        _showTacticalGuidanceSheet(
-                                          context: context,
-                                          title: guidance.title,
-                                          explanation: guidance.explanation,
-                                          primaryLabel:
-                                              guidance.primaryActionLabel,
-                                          onPrimary: () {
-                                            setState(() {
-                                              _isVaultOnly = true;
-                                              _vaultReason = 'prior_tax_year';
-                                            });
-                                          },
-                                          secondaryLabel:
-                                              guidance.secondaryActionLabel,
-                                          onSecondary: _pickDate,
-                                        );
-                                      },
-                                    )
-                                  : isGstExceeded
-                                      ? _buildStatusPill(
-                                          backgroundColor:
-                                              AppColors.crimsonLight,
-                                          textColor: AppColors.crimson,
-                                          icon: LucideIcons.alertTriangle,
-                                          label: "Check GST amount",
-                                          onTap: () =>
-                                              _showTacticalGuidanceSheet(
-                                            context: context,
-                                            title: 'Check GST amount',
-                                            explanation:
-                                                'For a \$${parsedAmount.toStringAsFixed(2)} purchase, GST cannot exceed \$${legalMaxGst.toStringAsFixed(2)}. The camera may have misread the tax line.',
-                                            primaryLabel:
-                                                'Fix to \$${legalMaxGst.toStringAsFixed(2)}',
-                                            onPrimary: () {
-                                              setState(() {
-                                                _gstController.text =
-                                                    legalMaxGst
-                                                        .toStringAsFixed(2);
-                                              });
-                                            },
-                                            secondaryLabel:
-                                                'Keep \$${parsedGst.toStringAsFixed(2)}',
-                                            onSecondary: () {},
-                                          ),
-                                        )
-                                      : parsedAmount > 0
-                                          ? _buildStatusPill(
-                                              backgroundColor:
-                                                  AppColors.emeraldLight,
-                                              textColor: AppColors.emerald,
-                                              icon: LucideIcons.checkCircle2,
-                                              label: 'Amount entered',
-                                            )
-                                          : const SizedBox.shrink(),
-                        ),
-                      ),
-
-                      // Interactive Date Trigger
-                      InkWell(
-                        onTap: _pickDate,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: AdaptiveRow(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(LucideIcons.calendar,
-                                  size: 14, color: AppColors.muted),
-                              const SizedBox(width: 6),
-                              Text(
-                                _dateNeedsReview
-                                    ? 'Choose purchase date'
-                                    : Formatters.date(_selectedDate),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.deepNavy,
-                                  fontWeight: FontWeight.w700,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                '• Tap to change date',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Minimal GST Component Input Row
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isGstExceeded
-                                ? AppColors.crimson
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: AdaptiveRow(
-                          children: [
-                            const Icon(LucideIcons.percent,
-                                size: 16, color: AppColors.muted),
-                            const SizedBox(width: 8),
-                            const Flexible(
-                              child: Text(
-                                'GST component',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.muted,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            SizedBox(
-                              width: 80,
-                              child: TextField(
-                                controller: _gstController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                textAlign: TextAlign.end,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14,
-                                  color: isGstExceeded
-                                      ? AppColors.crimson
-                                      : AppColors.ink,
-                                ),
-                                decoration: const InputDecoration(
-                                  prefixText: '\$ ',
-                                  isDense: true,
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                            if (parsedAmount > 0) ...[
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setState(() {
-                                    _gstController.text =
-                                        legalMaxGst.toStringAsFixed(2);
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: const Text(
-                                    'Auto 10%',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.deepNavy,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      if (isGstExceeded)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6, left: 4),
-                          child: Text(
-                            'For a \$${parsedAmount.toStringAsFixed(2)} purchase, maximum GST is \$${legalMaxGst.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.crimson,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Metadata Card
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildDropdownRow(
-                        icon: LucideIcons.tag,
-                        label: 'Category',
-                        value: _selectedCategory.displayName,
-                        onTap: _showCategoryPicker,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      _buildInfoRow(
-                        icon: LucideIcons.creditCard,
-                        label: 'Payment method',
-                        value: 'Not specified',
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      _buildInfoRow(
-                        icon: LucideIcons.truck,
-                        label: 'Vehicle',
-                        value: vehicleName,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      _buildDropdownRow(
-                        icon: LucideIcons.link,
-                        label: 'Linked Trip',
-                        value: _linkedTripId != null
-                            ? (widget.appState.trips
-                                    .where((t) => t.id == _linkedTripId)
-                                    .map((t) =>
-                                        '${t.date.day}/${t.date.month} (${t.distanceKm.toStringAsFixed(1)} km)')
-                                    .firstOrNull ??
-                                'Linked')
-                            : 'None (Tap to link)',
-                        onTap: _showTripSelectorSheet,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      _buildInfoRow(
-                        icon: LucideIcons.percent,
-                        label: 'Claim type',
-                        value: _selectedCategory.isDirectlyDeductibleByDefault
-                            ? 'Confirm business use'
-                            : 'Logbook Scaled Claim',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
                 // Notes field
                 Container(
                   padding:
@@ -1673,77 +2011,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Receipt Photo Preview
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: AdaptiveRow(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: _imagePath != null &&
-                                File(_imagePath!).existsSync()
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(File(_imagePath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Center(
-                                          child: Text(
-                                              'Receipt preview unavailable',
-                                              textAlign: TextAlign.center),
-                                        )),
-                              )
-                            : const Center(
-                                child: Icon(LucideIcons.receipt,
-                                    color: AppColors.muted, size: 28),
-                              ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Tax Receipt Evidence',
-                              style: AppTextStyles.cardPrimary,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _imagePath != null &&
-                                      File(_imagePath!).existsSync()
-                                  ? 'Photo attached'
-                                  : 'Receipt photo needed',
-                              style: AppTextStyles.caption,
-                            ),
-                            TextButton.icon(
-                              onPressed: _pickingReceipt || _isSaving
-                                  ? null
-                                  : _attachReceipt,
-                              icon: const Icon(
-                                  Icons.add_photo_alternate_outlined),
-                              label: Text(_pickingReceipt
-                                  ? 'Attaching receipt…'
-                                  : _imagePath == null
-                                      ? 'Attach receipt'
-                                      : 'Replace receipt'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+                if (!_hasReceiptEvidence) ...[
+                  _buildReceiptPhotoCard(),
+                  const SizedBox(height: 16),
+                ],
 
                 _buildAllocationEditor(),
 
@@ -1775,9 +2046,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                       const SizedBox(height: 10),
                       _buildEvidenceCheck(
                           label: 'Date & Time',
-                          isVerified: const AtoTaxPeriodEngine()
-                              .forDate(_selectedDate)
-                              .containsExpenseDate(_selectedDate)),
+                          isVerified: !_dateNeedsReview &&
+                              const AtoTaxPeriodEngine()
+                                  .forDate(_selectedDate)
+                                  .containsExpenseDate(_selectedDate)),
                       const SizedBox(height: 10),
                       _buildEvidenceCheck(
                           label: 'Business Category',
@@ -1979,68 +2251,50 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     required String label,
     required String value,
     required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: AdaptiveRow(
-          children: [
-            Icon(icon, size: 20, color: AppColors.muted),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
-                      color: AppColors.ink)),
-            ),
-            const SizedBox(width: 8),
-            Text(value,
-                maxLines: 1,
-                style: const TextStyle(
-                    color: AppColors.workBlue,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13)),
-            const SizedBox(width: 4),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 12, color: AppColors.muted),
-          ],
+  }) =>
+      Semantics(
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(children: [
+              Icon(icon, size: 20, color: AppColors.muted),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(label, style: AppType.secondary),
+                    const SizedBox(height: 4),
+                    Text(value, style: AppType.bodyStrong),
+                  ])),
+              const SizedBox(width: 12),
+              const Icon(Icons.chevron_right, size: 20, color: AppColors.muted),
+            ]),
+          ),
         ),
-      ),
-    );
-  }
+      );
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: AdaptiveRow(
-        children: [
+  Widget _buildInfoRow(
+          {required IconData icon,
+          required String label,
+          required String value}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(children: [
           Icon(icon, size: 20, color: AppColors.muted),
           const SizedBox(width: 12),
-          Text(label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.5,
-                  color: AppColors.ink)),
-          const Spacer(),
           Expanded(
-              child: Text(value,
-                  textAlign: TextAlign.end,
-                  style: const TextStyle(
-                      color: AppColors.muted,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13))),
-        ],
-      ),
-    );
-  }
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(label, style: AppType.secondary),
+                const SizedBox(height: 4),
+                Text(value, style: AppType.bodyStrong),
+              ])),
+        ]),
+      );
 
   void _showTripSelectorSheet() {
     final vehicleId = _vehicleId;

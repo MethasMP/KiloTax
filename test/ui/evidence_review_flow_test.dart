@@ -234,8 +234,11 @@ void main() {
 
     await tester.tap(find.text('Open expense'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Replace receipt'));
-    await tester.tap(find.text('Replace receipt'));
+    final replaceReceipt = find.descendant(
+        of: find.byKey(const ValueKey('receipt-photo-card')),
+        matching: find.widgetWithText(TextButton, 'Replace'));
+    await tester.ensureVisible(replaceReceipt);
+    await tester.tap(replaceReceipt);
     await tester.pumpAndSettle();
     await tester.runAsync(() async {
       await tester.tap(find.text('Choose receipt photo'));
