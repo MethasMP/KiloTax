@@ -1,5 +1,21 @@
 import '../../data/models/job_site.dart';
 import '../../data/models/trip.dart';
+import 'wgs84_geodesic_engine.dart';
+
+/// Geofence match result conforming to Evidence Graph INV-B03 contract.
+class GeofenceMatch {
+  final String jobSiteId;
+  final double confidenceScore;
+  final String associationMethod;
+  final JobSite? jobSite;
+
+  const GeofenceMatch({
+    required this.jobSiteId,
+    required this.confidenceScore,
+    this.associationMethod = 'spatial_geofence',
+    this.jobSite,
+  });
+}
 
 /// Match result indicating whether a trip origin or destination matched a JobSite geofence.
 class JobSiteMatchResult {
@@ -22,6 +38,46 @@ class JobSiteMatchResult {
 /// (default 150m). Automatically associates the trip with the job site name and client
 /// without requiring manual typing from the user.
 class JobSiteGeofenceEngine {
+  /// Evaluates whether a trip stopping at a location for dwell ≥ 120s matches a JobSite geofence (INV-B03).
+  GeofenceMatch? matchTripToJobSite(Trip trip, List<JobSite> sites) {
+    final dwell = trip.stoppedDuration;
+    if (dwell == null || dwell < 120) return null;
+
+    final targetLat = trip.endLat ?? trip.endLatitude;
+    final targetLng = trip.endLng ?? trip.endLongitude;
+    if (targetLat == null || targetLng == null) return null;
+
+    final activeSites = sites.where((s) => s.isActive && s.trackingEnabled).toList();
+    if (activeSites.isEmpty) return null;
+
+    JobSite? bestSite;
+    double shortestDistance = double.infinity;
+
+    for (final site in activeSites) {
+      final dist = Wgs84GeodesicEngine.calculateDistanceMeters(
+        lat1: targetLat,
+        lon1: targetLng,
+        lat2: site.lat,
+        lon2: site.lng,
+      );
+      if (dist <= site.radiusMeters && dist < shortestDistance) {
+        shortestDistance = dist;
+        bestSite = site;
+      }
+    }
+
+    if (bestSite == null) return null;
+
+    final confidence = (1.0 - (shortestDistance / bestSite.radiusMeters) * 0.5).clamp(0.1, 1.0);
+
+    return GeofenceMatch(
+      jobSiteId: bestSite.id,
+      confidenceScore: confidence,
+      associationMethod: 'spatial_geofence',
+      jobSite: bestSite,
+    );
+  }
+
   /// Evaluates whether a coordinate (start or end of a trip) falls within any active JobSite geofence.
   /// If multiple sites match, returns the closest one.
   static JobSiteMatchResult? matchTripEndpoints({

@@ -51,6 +51,17 @@ class Trip {
   final String? routePolyline;
   final Map<String, dynamic>? detectedPoi;
   final bool isPassengerUnverified;
+  final double? startLat;
+  final double? startLng;
+  final double? endLat;
+  final double? endLng;
+  final DateTime? stoppedAt;
+  final int? stoppedDuration; // in seconds
+
+  double? get startLatitude => startLat;
+  double? get startLongitude => startLng;
+  double? get endLatitude => endLat;
+  double? get endLongitude => endLng;
 
   /// Full captured distance is retained; only confirmed business distance is counted.
   double get businessDistanceKm {
@@ -90,6 +101,12 @@ class Trip {
     this.routePolyline,
     this.detectedPoi,
     this.isPassengerUnverified = false,
+    this.startLat,
+    this.startLng,
+    this.endLat,
+    this.endLng,
+    this.stoppedAt,
+    this.stoppedDuration,
     Map<String, dynamic> review = const {},
   })  : review = Map.unmodifiable(review),
         distanceKm = distanceKm < 0.0 ? 0.0 : distanceKm,
@@ -125,6 +142,12 @@ class Trip {
     String? routePolyline,
     Map<String, dynamic>? detectedPoi,
     bool? isPassengerUnverified,
+    double? startLat,
+    double? startLng,
+    double? endLat,
+    double? endLng,
+    DateTime? stoppedAt,
+    int? stoppedDuration,
     Map<String, dynamic>? review,
   }) {
     return Trip(
@@ -148,6 +171,12 @@ class Trip {
       routePolyline: routePolyline ?? this.routePolyline,
       detectedPoi: detectedPoi ?? this.detectedPoi,
       isPassengerUnverified: isPassengerUnverified ?? this.isPassengerUnverified,
+      startLat: startLat ?? this.startLat,
+      startLng: startLng ?? this.startLng,
+      endLat: endLat ?? this.endLat,
+      endLng: endLng ?? this.endLng,
+      stoppedAt: stoppedAt ?? this.stoppedAt,
+      stoppedDuration: stoppedDuration ?? this.stoppedDuration,
       review: review ??
           (this.review.isNotEmpty &&
                   classification != null &&
@@ -186,6 +215,12 @@ class Trip {
       'routePolyline': routePolyline,
       'detectedPoi': detectedPoi,
       'isPassengerUnverified': isPassengerUnverified,
+      'startLat': startLat,
+      'startLng': startLng,
+      'endLat': endLat,
+      'endLng': endLng,
+      'stoppedAt': stoppedAt?.toIso8601String(),
+      'stoppedDuration': stoppedDuration,
       'review': review,
     };
   }
@@ -254,6 +289,14 @@ class Trip {
           : null,
       isPassengerUnverified:
           (json['isPassengerUnverified'] ?? json['is_passenger_unverified']) as bool? ?? false,
+      startLat: ((json['startLat'] ?? json['start_lat'] ?? json['startLatitude'] ?? json['start_latitude']) as num?)?.toDouble(),
+      startLng: ((json['startLng'] ?? json['start_lng'] ?? json['startLongitude'] ?? json['start_longitude']) as num?)?.toDouble(),
+      endLat: ((json['endLat'] ?? json['end_lat'] ?? json['endLatitude'] ?? json['end_latitude']) as num?)?.toDouble(),
+      endLng: ((json['endLng'] ?? json['end_lng'] ?? json['endLongitude'] ?? json['end_longitude']) as num?)?.toDouble(),
+      stoppedAt: json['stoppedAt'] != null
+          ? DateTime.tryParse(json['stoppedAt'] as String)
+          : (json['stopped_at'] != null ? DateTime.tryParse(json['stopped_at'] as String) : null),
+      stoppedDuration: (json['stoppedDuration'] ?? json['stopped_duration']) as int?,
       review: Map<String, dynamic>.from((json['review'] as Map?) ?? const {}),
     );
   }

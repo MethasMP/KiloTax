@@ -1,9 +1,11 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../data/models/job_site.dart';
 import '../../data/models/trade_persona.dart';
 import '../../data/models/trip.dart';
 import '../../data/models/user_profile.dart';
+import 'job_site_geofence_engine.dart';
 import 'wgs84_geodesic_engine.dart';
 import 'road_snap_routing_service.dart';
 import 'geocoding_service.dart';
@@ -46,6 +48,7 @@ class AutonomousTripDetector {
   final double Function()? odometerProvider;
   final String Function()? vehicleIdProvider;
   final UserProfile Function()? userProfileProvider;
+  final List<JobSite> Function()? jobSitesProvider;
   final Queue<Position> _ringBuffer = Queue<Position>();
   final List<Position> _activeTripPath = [];
 
@@ -70,6 +73,7 @@ class AutonomousTripDetector {
     this.odometerProvider,
     this.vehicleIdProvider,
     this.userProfileProvider,
+    this.jobSitesProvider,
   }) : _routingService = routingService ?? RoadSnapRoutingService();
 
   AutonomousDetectorState get state => _state;
@@ -323,6 +327,7 @@ class AutonomousTripDetector {
       }
     }
 
+    final dwellSeconds = DateTime.now().difference(endTime).inSeconds;
     _finalizedTrip = Trip(
       id: 'auto_trip_${endTime.millisecondsSinceEpoch}',
       vehicleId: vehicleId,
@@ -336,6 +341,27 @@ class AutonomousTripDetector {
       classification: initialClassification,
       routePolyline: routeResult.geometryPolyline,
       detectedPoi: detectedPoi,
+      startLat: startFix.latitude,
+      startLng: startFix.longitude,
+      endLat: endFix.latitude,
+      endLng: endFix.longitude,
+      stoppedAt: endTime,
+      stoppedDuration: dwellSeconds > 0 ? dwellSeconds : 300,
     );
+
+    final sites = jobSitesProvider?.call();
+    if (sites != null && sites.isNotEmpty) {
+      final match = JobSiteGeofenceEngine().matchTripToJobSite(_finalizedTrip!, sites);
+      if (match != null) {
+        _finalizedTrip = JobSiteGeofenceEngine.enrichTripWithJobSite(
+          trip: _finalizedTrip!,
+          jobSites: sites,
+          startLatitude: startFix.latitude,
+          startLongitude: startFix.longitude,
+          endLatitude: endFix.latitude,
+          endLongitude: endFix.longitude,
+        );
+      }
+    }
   }
 }

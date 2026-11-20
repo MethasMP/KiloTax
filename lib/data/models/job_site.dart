@@ -19,27 +19,37 @@ class JobSite {
   final DateTime updatedAt;
 
   JobSite({
-    required this.id,
+    String? id,
     this.userId = '',
-    required this.name,
-    required this.clientName,
+    String? name,
+    String? clientName,
     this.projectCode,
     this.address = '',
-    required this.latitude,
-    required this.longitude,
+    double? latitude,
+    double? longitude,
+    double? lat,
+    double? lng,
     this.radiusMeters = 150.0,
     this.isActive = true,
     this.trackingEnabled = true,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
+  })  : id = id ?? 'site_${DateTime.now().millisecondsSinceEpoch}',
+        name = name ?? 'Job Site',
+        clientName = clientName ?? 'Client',
+        latitude = latitude ?? lat ?? 0.0,
+        longitude = longitude ?? lng ?? 0.0,
+        createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
-        assert(latitude >= -90.0 && latitude <= 90.0,
+        assert((latitude ?? lat ?? 0.0) >= -90.0 && (latitude ?? lat ?? 0.0) <= 90.0,
             'Latitude must be between -90 and 90 degrees'),
-        assert(longitude >= -180.0 && longitude <= 180.0,
+        assert((longitude ?? lng ?? 0.0) >= -180.0 && (longitude ?? lng ?? 0.0) <= 180.0,
             'Longitude must be between -180 and 180 degrees'),
         assert(radiusMeters >= 10.0 && radiusMeters <= 5000.0,
             'Radius must be between 10m and 5,000m');
+
+  double get lat => latitude;
+  double get lng => longitude;
 
   /// Evaluates whether a given GPS coordinate falls within this JobSite's geodesic geofence.
   bool containsCoordinate({

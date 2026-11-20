@@ -122,5 +122,32 @@ void main() {
       expect(enriched.jobReference, equals('INV-999-URGENT'));
       expect(enriched.purpose, equals('Custom Urgent Electrical Fault Rectification'));
     });
+
+    Trip makeTripWithDwell({required double lat, required double lng, required int seconds}) {
+      return Trip(
+        id: 'trip_dwell_test',
+        vehicleId: 'veh_test_1',
+        date: DateTime(2026, 11, 20, 10, 0),
+        purpose: '',
+        endLat: lat,
+        endLng: lng,
+        stoppedDuration: seconds,
+        stoppedAt: DateTime(2026, 11, 20, 10, 30),
+      );
+    }
+
+    test('tags trip when dwell ≥ 120s inside geofence', () {
+      final engine = JobSiteGeofenceEngine();
+      final trip = makeTripWithDwell(lat: -33.865, lng: 151.209, seconds: 180);
+      final site = JobSite(lat: -33.865, lng: 151.209, radiusMeters: 150);
+      expect(engine.matchTripToJobSite(trip, [site])?.confidenceScore, greaterThan(0.0));
+    });
+
+    test('does NOT tag trip when dwell < 120s', () {
+      final engine = JobSiteGeofenceEngine();
+      final trip = makeTripWithDwell(lat: -33.865, lng: 151.209, seconds: 90);
+      final site = JobSite(lat: -33.865, lng: 151.209, radiusMeters: 150);
+      expect(engine.matchTripToJobSite(trip, [site]), isNull);
+    });
   });
 }
