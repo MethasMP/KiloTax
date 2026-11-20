@@ -62,6 +62,10 @@ class Trip {
   double? get startLongitude => startLng;
   double? get endLatitude => endLat;
   double? get endLongitude => endLng;
+  double? get originLat => startLat;
+  double? get originLng => startLng;
+  double? get destLat => endLat;
+  double? get destLng => endLng;
 
   /// Full captured distance is retained; only confirmed business distance is counted.
   double get businessDistanceKm {
@@ -101,14 +105,22 @@ class Trip {
     this.routePolyline,
     this.detectedPoi,
     this.isPassengerUnverified = false,
-    this.startLat,
-    this.startLng,
-    this.endLat,
-    this.endLng,
+    double? startLat,
+    double? startLng,
+    double? endLat,
+    double? endLng,
+    double? originLat,
+    double? originLng,
+    double? destLat,
+    double? destLng,
     this.stoppedAt,
     this.stoppedDuration,
     Map<String, dynamic> review = const {},
-  })  : review = Map.unmodifiable(review),
+  })  : startLat = startLat ?? originLat,
+        startLng = startLng ?? originLng,
+        endLat = endLat ?? destLat,
+        endLng = endLng ?? destLng,
+        review = Map.unmodifiable(review),
         distanceKm = distanceKm < 0.0 ? 0.0 : distanceKm,
         assert(
           (startOdometer == 0.0 && endOdometer == 0.0) ||
