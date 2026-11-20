@@ -4,6 +4,7 @@ import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
 import '../cpk/cpk_trip_entry_screen.dart';
 import '../logbook/logbook_trip_entry_screen.dart';
+import 'widgets/trip_evidence_badge.dart';
 
 /// Screen 7 Polymorphic Router:
 /// Routes to dedicated [CpkTripEntryScreen] or [LogbookTripEntryScreen] based on vehicle tax strategy.
@@ -33,8 +34,25 @@ class TripDetectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
-    return isLogbook
+    final content = isLogbook
         ? LogbookTripEntryScreen(appState: appState, detectedTrip: detectedTrip)
         : CpkTripEntryScreen(appState: appState, detectedTrip: detectedTrip);
+
+    if (detectedTrip == null) {
+      return content;
+    }
+
+    return Column(
+      children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: TripEvidenceBadge(detectedTrip!, appState: appState),
+          ),
+        ),
+        Expanded(child: content),
+      ],
+    );
   }
 }

@@ -17,6 +17,64 @@ enum TripClassification {
   }
 }
 
+/// Link entity in the Evidence Graph joining Trips to JobSites, Expenses, or AuditEvidence.
+class TripEvidenceLink {
+  final String id;
+  final String tripId;
+  final String? jobSiteId;
+  final String? expenseId;
+  final String? evidenceId;
+  final double confidenceScore;
+  final String associationMethod;
+  final DateTime linkedAt;
+
+  TripEvidenceLink({
+    required this.id,
+    required this.tripId,
+    this.jobSiteId,
+    this.expenseId,
+    this.evidenceId,
+    this.confidenceScore = 1.0,
+    this.associationMethod = 'manual_user',
+    DateTime? linkedAt,
+  }) : linkedAt = linkedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'tripId': tripId,
+        'jobSiteId': jobSiteId,
+        'expenseId': expenseId,
+        'evidenceId': evidenceId,
+        'confidenceScore': confidenceScore,
+        'associationMethod': associationMethod,
+        'linkedAt': linkedAt.toIso8601String(),
+      };
+
+  factory TripEvidenceLink.fromJson(Map<String, dynamic> json) =>
+      TripEvidenceLink(
+        id: json['id'] as String,
+        tripId: json['tripId'] as String? ?? json['trip_id'] as String? ?? '',
+        jobSiteId:
+            json['jobSiteId'] as String? ?? json['job_site_id'] as String?,
+        expenseId:
+            json['expenseId'] as String? ?? json['expense_id'] as String?,
+        evidenceId:
+            json['evidenceId'] as String? ?? json['evidence_id'] as String?,
+        confidenceScore:
+            ((json['confidenceScore'] ?? json['confidence_score']) as num?)
+                    ?.toDouble() ??
+                1.0,
+        associationMethod: (json['associationMethod'] ??
+            json['association_method'] ??
+            'manual_user') as String,
+        linkedAt: json['linkedAt'] != null
+            ? DateTime.tryParse(json['linkedAt'] as String)
+            : (json['linked_at'] != null
+                ? DateTime.tryParse(json['linked_at'] as String)
+                : null),
+      );
+}
+
 /// Core Trip Entity conforming to Layer 1 (TRIPS):
 /// - Vehicle
 /// - Distance
@@ -57,6 +115,7 @@ class Trip {
   final double? endLng;
   final DateTime? stoppedAt;
   final int? stoppedDuration; // in seconds
+  final List<TripEvidenceLink> evidenceLinks;
 
   double? get startLatitude => startLat;
   double? get startLongitude => startLng;
@@ -115,11 +174,13 @@ class Trip {
     double? destLng,
     this.stoppedAt,
     this.stoppedDuration,
+    List<TripEvidenceLink>? evidenceLinks,
     Map<String, dynamic> review = const {},
   })  : startLat = startLat ?? originLat,
         startLng = startLng ?? originLng,
         endLat = endLat ?? destLat,
         endLng = endLng ?? destLng,
+        evidenceLinks = evidenceLinks ?? const [],
         review = Map.unmodifiable(review),
         distanceKm = distanceKm < 0.0 ? 0.0 : distanceKm,
         assert(
@@ -160,6 +221,7 @@ class Trip {
     double? endLng,
     DateTime? stoppedAt,
     int? stoppedDuration,
+    List<TripEvidenceLink>? evidenceLinks,
     Map<String, dynamic>? review,
   }) {
     return Trip(
@@ -189,6 +251,7 @@ class Trip {
       endLng: endLng ?? this.endLng,
       stoppedAt: stoppedAt ?? this.stoppedAt,
       stoppedDuration: stoppedDuration ?? this.stoppedDuration,
+      evidenceLinks: evidenceLinks ?? this.evidenceLinks,
       review: review ??
           (this.review.isNotEmpty &&
                   classification != null &&
@@ -233,6 +296,7 @@ class Trip {
       'endLng': endLng,
       'stoppedAt': stoppedAt?.toIso8601String(),
       'stoppedDuration': stoppedDuration,
+      'evidenceLinks': evidenceLinks.map((e) => e.toJson()).toList(),
       'review': review,
     };
   }
@@ -309,6 +373,11 @@ class Trip {
           ? DateTime.tryParse(json['stoppedAt'] as String)
           : (json['stopped_at'] != null ? DateTime.tryParse(json['stopped_at'] as String) : null),
       stoppedDuration: (json['stoppedDuration'] ?? json['stopped_duration']) as int?,
+      evidenceLinks: (json['evidenceLinks'] as List<dynamic>?)
+              ?.map((e) => TripEvidenceLink.fromJson(
+                  Map<String, dynamic>.from(e as Map)))
+              .toList() ??
+          const [],
       review: Map<String, dynamic>.from((json['review'] as Map?) ?? const {}),
     );
   }
