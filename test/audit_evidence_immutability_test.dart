@@ -4,9 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('PR-09: Append-Only Audit Evidence Migration Verification', () {
     test('Migration file exists and enforces append-only RLS policies', () {
-      final migrationFile = File(
+      final migrationPaths = [
+        'supabase/migrations/20261008000100_append_only_audit_evidence.sql',
         'supabase/migrations/20261008_append_only_audit_evidence.sql',
-      );
+      ];
+      final path = migrationPaths.firstWhere((p) => File(p).existsSync());
+      final migrationFile = File(path);
       expect(migrationFile.existsSync(), isTrue);
 
       final content = migrationFile.readAsStringSync();

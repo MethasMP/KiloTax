@@ -126,6 +126,10 @@ DROP POLICY IF EXISTS "trip_evidence_delete_own" ON public.trip_evidence_links;
 CREATE POLICY "trip_evidence_delete_own" ON public.trip_evidence_links
     FOR DELETE TO authenticated USING (user_id = (SELECT auth.uid()));
 
+GRANT SELECT, INSERT, DELETE ON public.trip_evidence_links TO authenticated;
+GRANT SELECT ON public.trip_evidence_links TO anon;
+GRANT ALL ON public.trip_evidence_links TO service_role;
+
 -- 5. TAMPER-PROOF TRIGGER FOR AUDIT EVIDENCE (ITAA 1997 s 900-165)
 CREATE OR REPLACE FUNCTION public.enforce_audit_evidence_tamper_proof()
 RETURNS TRIGGER
