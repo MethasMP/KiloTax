@@ -41,6 +41,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
   Map<String, ReceiptFileInspection> _receiptFiles = const {};
   bool _checking = true;
   bool _checkFailed = false;
+  bool _exporting = false;
   int _generation = 0;
   List<VehicleExpense> _inspectedExpenses = const [];
   String? _inspectedVehicleId;
@@ -138,7 +139,14 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
             : LogbookTripEntryScreen(appState: state),
       ));
     } else {
-      await widget.onSend(context, state);
+      setState(() => _exporting = true);
+      try {
+        await widget.onSend(context, state);
+      } finally {
+        if (mounted) {
+          setState(() => _exporting = false);
+        }
+      }
     }
     if (mounted) _inspect();
   }
@@ -177,7 +185,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
             children: [
               FilledButton.icon(
                 key: const ValueKey('tax-primary-action'),
-                onPressed: () => _primaryAction(report),
+                onPressed: _exporting ? null : () => _primaryAction(report),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColor.ink,
                   foregroundColor: AppColor.onNavy,
@@ -192,15 +200,24 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                     letterSpacing: -0.2,
                   ),
                 ),
-                icon: Icon(
-                  !report.hasRecords
-                      ? Icons.add
-                      : report.vehicle == null
-                          ? Icons.directions_car_outlined
-                          : Icons.send_rounded,
-                  size: 22,
-                ),
-                label: Text(actionLabel),
+                icon: _exporting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColor.onNavy,
+                        ),
+                      )
+                    : Icon(
+                        !report.hasRecords
+                            ? Icons.add
+                            : report.vehicle == null
+                                ? Icons.directions_car_outlined
+                                : Icons.send_rounded,
+                        size: 22,
+                      ),
+                label: Text(_exporting ? 'Generating export pack...' : actionLabel),
               ),
               if (report.hasRecords && report.vehicle != null) ...[
                 const SizedBox(height: 6),
