@@ -1,25 +1,40 @@
 ---
 name: KiloTax (DriveLog)
 description: The Tax Evidence OS for Australian Tradies & Sole Traders
+theme: Obsidian & Terracotta
 colors:
-  surface-navy: "#0A1628"
-  navy-raised: "#132338"
-  navy-line: "#1E3452"
-  brand: "#1E3A8A"
-  brand-bright: "#2563EB"
-  positive-bright: "#10B981"
+  canvas: "#FAF9F6"
+  surface: "#FFFFFF"
+  surface-muted: "#F5F4F1"
+  surface-sunken: "#E7E5E4"
+  surface-navy: "#18181B"
+  navy-raised: "#27272A"
+  navy-line: "#3F3F46"
+  ink: "#18181B"
+  ink-muted: "#52525B"
+  ink-subtle: "#71717A"
+  on-navy: "#FFFFFF"
+  on-navy-muted: "#D4D4D8"
+  line: "#D6D3D1"
+  hairline: "#E7E5E4"
+  brand: "#C2410C"
+  brand-bright: "#EA580C"
+  brand-tint: "#FFF1E8"
+  brand-tint-strong: "#FFDFC9"
+  positive: "#15803D"
+  positive-strong: "#166534"
   positive-tint: "#ECFDF5"
-  attention: "#EA580C"
-  attention-strong: "#C2410C"
-  attention-tint: "#FFF7ED"
+  positive-bright: "#10B981"
+  positive-ink: "#065F46"
+  attention: "#D97706"
+  attention-strong: "#B45309"
+  attention-tint: "#FEF3C7"
+  attention-tint-soft: "#FFFBEB"
+  attention-ink: "#92400E"
   critical: "#DC2626"
   critical-strong: "#B91C1C"
   critical-tint: "#FEF2F2"
-  ink: "#0F172A"
-  muted: "#64748B"
-  line: "#E2E8F0"
-  surface: "#FFFFFF"
-  surface-muted: "#F8FAFC"
+  critical-ink: "#991B1B"
 typography:
   metric-xl:
     fontSize: "72px"
@@ -29,10 +44,18 @@ typography:
     fontSize: "44px"
     fontWeight: 700
     lineHeight: 1.05
+  metric-small:
+    fontSize: "20px"
+    fontWeight: 700
+    lineHeight: 1.15
   title:
     fontSize: "28px"
     fontWeight: 700
     lineHeight: 1.18
+  title-small:
+    fontSize: "22px"
+    fontWeight: 700
+    lineHeight: 1.25
   section:
     fontSize: "20px"
     fontWeight: 600
@@ -70,6 +93,7 @@ spacing:
   lg: "16px"
   xl: "20px"
   xxl: "24px"
+  xxxl: "32px"
   huge: "48px"
 components:
   touch-target-minimum:
@@ -77,56 +101,90 @@ components:
     width: "48px"
 ---
 
-# KiloTax Design System
-
-## Iconography
-
-- Use Lucide for application icons. Shared meanings live in `lib/core/theme/app_icons.dart`; prefer `AppIcons` semantic names over per-screen choices.
-- Size roles: `AppIconSize.inline` 16dp, `control` 20dp, `navigation` 24dp, `feature` 32dp. Glyph size is independent of the minimum 48dp interactive area.
-- Consistent meanings: Home = house, Trips = route, vehicle = car front, Logbook = book, Expenses = receipt, Tax = document, odometer = gauge, photo capture = camera.
-- Keep the same navigation glyph for selected and unselected states. Selection uses an orange-tinted background, dark content and the existing selected semantics; do not mix Material filled glyphs with Lucide outlines.
-- Green check states describe saved or confirmed evidence. Attention states use a labelled alert icon. Never communicate status through color alone.
-- Applied to Logbook and the shared navigation, header, recent activity, quick capture, Trips, Expenses and Tax surfaces. Other legacy screens can adopt these aliases as they are revised.
+# KiloTax Design System (Obsidian & Terracotta)
 
 ## Overview
-KiloTax is the tax evidence OS purpose-built for Australian tradies, contractors, and sole traders.
-Ergonomics are designed for an exhausted driver sitting in a ute at 5:00 PM with dirty hands under harsh Aussie sun glare.
+KiloTax is the Tax Evidence OS purpose-built for Australian tradies, contractors, and sole traders.
+The design theme is **Obsidian & Terracotta**:
+- Warm linen canvas with neutral stone text hierarchy.
+- Restrained terracotta orange (`#C2410C` / `#EA580C`) for primary CTAs and brand identity.
+- High-contrast authoritative obsidian (`#18181B`) for telemetry hero cards and audit status.
+- Ergonomically tuned for an exhausted tradie in a ute under harsh Aussie sun glare (tested at 320px viewport and 200% dynamic text scale).
 
-## Colors
-- **Surface Navy (`#0A1628`)**: Primary authoritative background for hero cards, speedometer telemetry, and summary pills.
-- **Emerald Green (`#10B981`)**: Positive tax claim accumulation and audit readiness indicators.
-- **Attention Amber (`#EA580C`)**: Actionable items requiring 1-tap review (missing trip purpose).
-- **Critical Crimson (`#DC2626`)**: Severe compliance risks (exceeded 5,000 km statutory CPK cap).
+---
 
-## Typography
-- **Strict 9-tier Type Scale**: Defined in `lib/core/theme/app_typography.dart`. Raw `TextStyle` with off-grid half-pixel sizes (`.5`) are strictly prohibited.
-- **Tabular Figures Required**: All financial metrics, odometer km, and timers must carry `fontFeatures: [FontFeature.tabularFigures()]` to eliminate horizontal text jitter.
+## Color Palette & Token Mapping (`lib/core/theme/app_color.dart`)
 
-## Layout
-- **Gutter**: Screen horizontal padding follows `S.gutter` (20px).
-- **Card Padding**: Standard card internal padding is `S.cardPad` (20px).
-- **Hero Priority**: Exactly one hero metric or primary CTA per viewport.
+### Surfaces & Backgrounds
+- **Canvas (`#FAF9F6`)**: Warm off-white page background (`AppColor.canvas`).
+- **Surface (`#FFFFFF`)**: Pure white card background (`AppColor.surface`).
+- **Surface Muted (`#F5F4F1`)**: Soft contrast background for secondary blocks (`AppColor.surfaceMuted`).
+- **Surface Sunken (`#E7E5E4`)**: Recessed areas and search/input container fills (`AppColor.surfaceSunken`).
+- **Surface Navy / Obsidian (`#18181B`)**: Authoritative dark container for hero cards, summary meters, and compliance dossiers (`AppColor.surfaceNavy`).
+- **Navy Raised (`#27272A`)**: Raised obsidian cards and audit pill backgrounds (`AppColor.navyRaised`).
+- **Navy Line (`#3F3F46`)**: High-contrast borders within dark cards (`AppColor.navyLine`).
 
-## Elevation & Depth
-- Subtle Old-Money ambient elevations with `AppColor.scrimSoft/scrimMedium`. No harsh or noisy shadows.
+### Content & Typography Colors
+- **Ink (`#18181B`)**: Primary text color meeting WCAG AA against linen canvas (`AppColor.ink`).
+- **Ink Muted (`#52525B`)**: Secondary descriptive copy (`AppColor.inkMuted`).
+- **Ink Subtle (`#71717A`)**: Captions, timestamps, and placeholder copy (`AppColor.inkSubtle`).
+- **On Navy (`#FFFFFF`)**: Pure white text for dark hero cards (`AppColor.onNavy`).
+- **On Navy Muted (`#D4D4D8`)**: Subdued metadata text on dark cards (`AppColor.onNavyMuted`).
 
-## Shapes
-- `R.chip`: 8px for status pills and category badges.
-- `R.control`: 10px for input fields, buttons, and segmented controls.
-- `R.card`: 16px for data cards and alert containers.
-- `R.sheet`: 24px for modal bottom sheets.
+### Brand & Accents (Terracotta)
+- **Brand (`#C2410C`)**: High-contrast Terracotta action color with white text contrast (`AppColor.brand`).
+- **Brand Bright (`#EA580C`)**: Vibrant accent for active indicators and selection states (`AppColor.brandBright`).
+- **Brand Tint (`#FFF1E8`)**: Warm orange-tinted background for active navigation pills and chips (`AppColor.brandTint`).
 
-## Components
-- **Touch Target Floor**: Minimum **48x48dp** interactive area for all buttons, chips, icons, and list tiles.
-- **Quick Resolve Grid**: 2x2 grid (maximum 4 options) for trip classifications.
+### Semantic Compliance Colors
+- **Positive (`#15803D`) / Positive Bright (`#10B981`)**: Verified ATO audit trails and confirmed deductions.
+- **Attention (`#D97706`) / Attention Strong (`#B45309`)**: Actionable items (e.g. unreviewed trips, missing purpose).
+- **Critical (`#DC2626`) / Critical Strong (`#B91C1C`)**: Statutory cap breaches (CPK 5,000 km) and invalid logbooks.
 
-## Do's and Don'ts
-- **DO** use `AlertDialog.adaptive` before destructive actions like discarding rescued in-flight trips.
-- **DO** provide `Semantics(button: true, label: ...)` on all custom `InkWell` and `GestureDetector` widgets.
-- **DO** prioritize alerts: show 1 primary alert + compact secondary rows to prevent alert stacking fatigue.
-- **DON'T** write raw hex `Color(0x...)` or raw `TextStyle` in screen files.
-- **DON'T** let hero numbers overflow at 200% dynamic text scale; always wrap in `FittedBox`.
+---
 
-## Typography usage
+## Typography Scale (`lib/core/theme/app_typography.dart`)
+Font Family: **Inter** throughout the application.
 
-Use Inter throughout. Reserve 700 for page titles and primary metrics; use 600 for card titles and actions, 400 for body and supporting text, and 500 for compact metadata when needed. Body text uses 16 logical pixels with normal tracking; essential supporting text uses 14. Keep negative tracking on large titles and metrics only. Numeric columns and live metrics use tabular figures. Use sentence case for descriptive labels and reserve uppercase for short status badges. Navigation labels use 12 with content-driven height.
+1. **`metricXL` (72px / w700 / -1.8 letter spacing)**: Full-bleed live odometer readout with tabular figures.
+2. **`metric` (44px / w700 / -1.0 letter spacing)**: Chronograph hero deduction readout (`MoneyDisplay`).
+3. **`metricSmall` (20px / w700 / -0.3 letter spacing)**: Compact metric readouts for telemetry and pills.
+4. **`title` (28px / w700 / -0.5 letter spacing)**: Screen title and modal headline.
+5. **`titleSmall` (22px / w700 / -0.3 letter spacing)**: Secondary headings and section titles.
+6. **`section` (20px / w600 / -0.3 letter spacing)**: Section group headers inside lists.
+7. **`cardTitle` / `cardNumeric` (17px / w600 / 0 letter spacing)**: Card headers and list primary text.
+8. **`body` (16px / w400 / 0 letter spacing)**: Primary explanatory copy and form fields.
+9. **`secondary` (14px / w400 / 0 letter spacing)**: Subtitle metadata, dates, and badges.
+10. **`caption` / `eyebrow` (12px / w400 & w600 / 0 letter spacing)**: Footnotes and category tags.
+
+> **Rule:** All numeric readouts carry `FontFeature.tabularFigures()` (`AppType.tabular`) to eliminate jitter during live tracking.
+
+---
+
+## Spacing & Elevation (`lib/core/theme/app_space.dart`)
+- **Spacing Grid**: 4pt increments (`xxs: 2`, `xs: 4`, `sm: 8`, `md: 12`, `lg: 16`, `xl: 20`, `xxl: 24`, `xxxl: 32`, `huge: 48`).
+- **Page Gutter**: `S.gutter` = 20px horizontal padding.
+- **Card Padding**: `S.cardPad` = 20px uniform internal padding.
+- **Corner Radii (`R`)**:
+  - `R.chip` (8px): Badges and status pills.
+  - `R.control` (10px): Buttons, text inputs, and segmented selectors.
+  - `R.card` (16px): Content cards and evidence preview tiles.
+  - `R.sheet` (24px): Bottom sheets and floating nav bars (`BorderRadius.circular(24)`).
+- **Elevations (`AppElevation`)**:
+  - `AppElevation.card`: Soft ambient cashmere shadow (`0x0C181B1F`, blur 18, offset y=4).
+  - `AppElevation.floating`: High-floating shadow for the bottom nav bar and Quick Scan FAB.
+
+---
+
+## Iconography & Interactive Semantics (`lib/core/theme/app_icons.dart`)
+- **Library**: Lucide outline iconography.
+- **Standard Roles**:
+  - Home: `AppIcons.home`
+  - Trips: `AppIcons.trips`
+  - Scan / Quick Action: Center floating scan button
+  - Expenses / Receipts: `AppIcons.expenses`
+  - Tax & Evidence: `AppIcons.tax`
+- **Touch Target Floor**: Minimum **48x48dp** interactive area for all tappable controls.
+- **Accessibility & Contrast**:
+  - Never communicate status through color alone (always combine with icons and text labels).
+  - Explicit `Semantics(button: true, label: ...)` on all custom ink touches.

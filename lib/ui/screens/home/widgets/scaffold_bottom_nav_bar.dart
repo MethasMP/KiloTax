@@ -90,10 +90,8 @@ class ScaffoldBottomNavBar extends StatelessWidget {
               Text(
                 destination.$1,
                 textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: AppType.navLabel.copyWith(
-                    height: 1.2,
+                    height: 1.3,
                     color: selected ? AppColor.brand : AppColor.inkMuted),
               ),
             ],

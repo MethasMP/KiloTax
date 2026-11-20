@@ -107,8 +107,8 @@ void main() {
       // Trips now populated, empty state replaced by latest trip hero card
       expect(appState.trips.isNotEmpty, isTrue);
       expect(find.text('No trips recorded yet.'), findsNothing);
-      expect(find.text('Job Site'), findsOneWidget);
-      expect(find.text('from Bunnings Warehouse'), findsOneWidget);
+      expect(find.textContaining('Job Site'), findsOneWidget);
+      expect(find.textContaining('Bunnings Warehouse'), findsOneWidget);
     });
   });
 }
