@@ -350,7 +350,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'AUDIT-PROOF READY',
+                          'ACCOUNTANT READY',
                           style: AppType.eyebrow.copyWith(
                             color: AppColor.positiveStrong,
                             fontWeight: FontWeight.w700,

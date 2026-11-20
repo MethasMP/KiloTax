@@ -250,7 +250,7 @@ class NotificationService {
         break;
       case EofyAlertMilestone.june28:
         body =
-            '2 days until 30 June! ATO ITAA 1997 s 28-125 requires your closing odometer reading to maintain your audit-proof business claim.';
+            '2 days until 30 June! ATO ITAA 1997 s 28-125 requires your closing odometer reading to maintain your accountant-ready business claim.';
         break;
       case EofyAlertMilestone.june30:
         body =
