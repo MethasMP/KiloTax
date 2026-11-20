@@ -364,6 +364,25 @@ class AccountantHandoffService {
 
     // ── TAB 1: TAX SUMMARY ───────────────────────────────────────────────────
     final summarySheet = builder.addSheet('Tax Summary');
+    summarySheet.addRow([
+      'taxpayerName',
+      'abn',
+      'vehicleRego',
+      'financialYear',
+      'openingOdometer',
+      'closingOdometer',
+      'deductibleClaim',
+    ]);
+    summarySheet.addRow([
+      taxpayerName,
+      abn,
+      vehicle.regoPlate,
+      'FY${taxRule.financialYear}',
+      openingOdometer,
+      closingOdometer,
+      claimAmount,
+    ]);
+    summarySheet.addRow([]);
     summarySheet
         .addRow(['KILOTAX VEHICLE TAX SUBSTANTIATION - ATO SCHEDULE D1 (CPK)']);
     summarySheet.addRow(['Taxpayer / Client Name', taxpayerName]);
@@ -516,6 +535,25 @@ class AccountantHandoffService {
 
     // ── TAB 1: SUMMARY ────────────────────────────────────────────────────────
     final summarySheet = builder.addSheet('Tax Summary');
+    summarySheet.addRow([
+      'taxpayerName',
+      'abn',
+      'vehicleRego',
+      'financialYear',
+      'openingOdometer',
+      'closingOdometer',
+      'deductibleClaim',
+    ]);
+    summarySheet.addRow([
+      taxpayerName,
+      abn,
+      vehicle.regoPlate,
+      'FY${taxRule.financialYear}',
+      openingOdometer,
+      closingOdometer,
+      cat.totalCarClaim,
+    ]);
+    summarySheet.addRow([]);
     summarySheet
         .addRow(['KILOTAX VEHICLE TAX SUBSTANTIATION - ATO SCHEDULE D1']);
     summarySheet.addRow(['Taxpayer / Client Name', taxpayerName]);
@@ -635,9 +673,6 @@ class AccountantHandoffService {
     // ── TAB 3: VEHICLE EXPENSES & RECEIPTS ────────────────────────────────────
     final expensesSheet = builder.addSheet('Expenses & Receipts');
     expensesSheet.addRow([
-      'Expense_ID',
-      'Date',
-      'Category',
       'Merchant_Name',
       'Merchant_ABN',
       'Gross_Amount_AUD',
@@ -645,12 +680,17 @@ class AccountantHandoffService {
       'Net_Amount_AUD',
       'Business_Percent',
       'Deductible_Amount_AUD',
+      'Cloud_Receipt_URL',
+      'AuditEvidence_Id',
+      'Image_SHA256',
+      'Expense_ID',
+      'Date',
+      'Category',
       'Linked_Trip_Ref',
       'Linked_Trip_Date',
       'Linked_Trip_Odometer_Range',
       'Linked_Trip_Route',
       'Receipt_Verification_Status',
-      'Cloud_Receipt_URL',
     ]);
 
     for (final exp in expenses) {
@@ -678,11 +718,12 @@ class AccountantHandoffService {
       final deductibleAmount = exp.category.isDirectlyDeductibleByDefault
           ? exp.amount * (exp.businessPercentage / 100.0)
           : exp.amount * (summary.businessPercentage / 100.0);
+      final evidenceId =
+          exp.receiptAudit?.batchId ?? exp.clientDedupId ?? exp.id;
+      final imageSha256 =
+          exp.sha256Hash ?? exp.receiptAudit?.imageSha256 ?? '';
 
       expensesSheet.addRow([
-        exp.id,
-        exp.date.toIso8601String().substring(0, 10),
-        exp.category.displayName,
         merchantName,
         merchantAbn,
         grossAmount,
@@ -690,12 +731,17 @@ class AccountantHandoffService {
         netAmount,
         exp.businessPercentage,
         deductibleAmount,
+        cloudUrl,
+        evidenceId,
+        imageSha256,
+        exp.id,
+        exp.date.toIso8601String().substring(0, 10),
+        exp.category.displayName,
         exp.linkedTripId ?? '',
         tripDate,
         tripOdoRange,
         tripRoute,
         exp.receiptAudit?.reviewStatus.name ?? 'unverified',
-        cloudUrl,
       ]);
     }
 

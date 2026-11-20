@@ -87,23 +87,20 @@ class PdfExportService {
     final effectiveOpeningOdo = openingOdometer ??
         (trips.isNotEmpty && trips.first.startOdometer > 0
             ? trips.first.startOdometer
-            : null);
+            : vehicle.initialOdometer);
     final effectiveClosingOdo = closingOdometer ??
         (trips.isNotEmpty && trips.last.endOdometer > 0
             ? trips.last.endOdometer
-            : null);
+            : (effectiveOpeningOdo + summary.totalKm));
 
     final cleanTaxpayerName =
-        taxpayerName != null && taxpayerName.trim().isNotEmpty
+        (taxpayerName != null && taxpayerName.trim().isNotEmpty)
             ? _sanitizeForPdf(taxpayerName.trim())
-            : null;
-    final cleanAbn = abn != null && abn.trim().isNotEmpty
+            : 'Taxpayer';
+    final cleanAbn = (abn != null && abn.trim().isNotEmpty)
         ? _sanitizeForPdf(abn.trim())
-        : null;
-    final hasClientInfo = cleanTaxpayerName != null || cleanAbn != null;
-
-    final hasOdometer =
-        effectiveOpeningOdo != null && effectiveClosingOdo != null;
+        : 'Not provided';
+    const hasClientInfo = true;
 
     pdf.addPage(
       pw.Page(
@@ -278,13 +275,16 @@ class PdfExportService {
                     _buildDivider(),
                     _buildRow('Vehicle Registration', regoLabel),
                     _buildDivider(),
-                    if (hasOdometer) ...[
-                      _buildRow(
-                        'Odometer Readings',
-                        'Opening: ${effectiveOpeningOdo.toStringAsFixed(0)} km  |  Closing: ${effectiveClosingOdo.toStringAsFixed(0)} km',
-                      ),
-                      _buildDivider(),
-                    ],
+                    _buildRow(
+                      'Opening Odometer',
+                      '${effectiveOpeningOdo.toStringAsFixed(0)} km',
+                    ),
+                    _buildDivider(),
+                    _buildRow(
+                      'Closing Odometer',
+                      '${effectiveClosingOdo.toStringAsFixed(0)} km',
+                    ),
+                    _buildDivider(),
                     _buildRow('Total Work Travel',
                         '${summary.businessKm.toStringAsFixed(1)} km  (${businessTrips.length} trips)'),
                     _buildDivider(),
@@ -303,6 +303,11 @@ class PdfExportService {
                       ),
                       _buildDivider(),
                     ],
+                    _buildRow(
+                      'Deductible Claim',
+                      _sanitizeForPdf(Formatters.currency(claimAmount)),
+                    ),
+                    _buildDivider(),
                     // Highlight row — total claimable
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
