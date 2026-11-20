@@ -4,9 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('PR-11: Receipts Storage Bucket & RLS Migration Verification', () {
     test('Migration file creates receipts bucket with strict auth.uid() folder RLS', () {
-      final migrationFile = File(
+      final migrationPaths = [
+        'supabase/migrations/20261008000500_storage_receipts_rls.sql',
         'supabase/migrations/20261008_storage_receipts_rls.sql',
-      );
+      ];
+      final path = migrationPaths.firstWhere((p) => File(p).existsSync());
+      final migrationFile = File(path);
       expect(migrationFile.existsSync(), isTrue);
 
       final content = migrationFile.readAsStringSync();

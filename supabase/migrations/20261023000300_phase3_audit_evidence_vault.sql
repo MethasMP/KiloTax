@@ -151,6 +151,8 @@ DROP POLICY IF EXISTS "Users can view own audit evidence" ON public.audit_eviden
 DROP POLICY IF EXISTS "Users can insert own audit evidence" ON public.audit_evidence;
 DROP POLICY IF EXISTS "Users can update own audit evidence" ON public.audit_evidence;
 DROP POLICY IF EXISTS "Users can delete own audit evidence" ON public.audit_evidence;
+DROP POLICY IF EXISTS "audit_evidence_select_own" ON public.audit_evidence;
+DROP POLICY IF EXISTS "audit_evidence_insert_own" ON public.audit_evidence;
 
 -- SELECT policy: Cached auth.uid() check
 CREATE POLICY "audit_evidence_select_own"
@@ -165,6 +167,10 @@ ON public.audit_evidence
 FOR INSERT
 TO authenticated
 WITH CHECK (user_id = (SELECT auth.uid()));
+
+GRANT SELECT, INSERT ON public.audit_evidence TO authenticated;
+GRANT SELECT ON public.audit_evidence TO anon;
+GRANT ALL ON public.audit_evidence TO service_role;
 
 -- Principle of Least Privilege: Revoke UPDATE and DELETE from authenticated and anon
 REVOKE UPDATE, DELETE ON public.audit_evidence FROM authenticated;
