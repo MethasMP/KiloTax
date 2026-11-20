@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import '../../core/utils/formatters.dart';
+import '../../data/models/audit_evidence.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/tax_summary.dart';
 import '../../data/models/trip.dart';
@@ -6,6 +9,7 @@ import '../../data/models/vehicle_expense.dart';
 import '../../data/models/tax_config.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/csv_security.dart';
+import 'openxml_workbook_builder.dart';
 
 /// Logbook Method (TR 97/11) Dedicated Exporter
 /// Aligned strictly with ITAA 1997 Subdivision 28-F & TR 97/11
@@ -15,6 +19,174 @@ import '../../core/utils/csv_security.dart';
 /// 3. Standard Xero Manual Journal CSV (with custom or default COA)
 /// 4. Standard MYOB General Journal CSV (with custom or default COA)
 class LogbookExportService {
+  const LogbookExportService();
+
+  /// Generates the standard 3-tab Logbook OpenXML Workbook (.xlsx) with AuditEvidence and SHA-256 provenance (INV-B05):
+  /// - Tab 1: Tax Summary (all 7 ATO required audit fields)
+  /// - Tab 2: Logbook Trips (continuous odometer trail)
+  /// - Tab 3: Expenses & Receipts (10 columns: Merchant_Name, Merchant_ABN, Gross_Amount_AUD, GST_Amount_AUD, Net_Amount_AUD, Business_Percent, Deductible_Amount_AUD, Cloud_Receipt_URL, AuditEvidence_Id, Image_SHA256)
+  Future<Uint8List> buildWorkbook({
+    required Vehicle vehicle,
+    required List<Trip> trips,
+    required List<VehicleExpense> expenses,
+    required TaxSummary summary,
+    required AtoTaxRule taxRule,
+    String taxpayerName = 'Tradie Client',
+    String abn = '',
+    double openingOdometer = 0.0,
+    double closingOdometer = 0.0,
+    List<AuditEvidence> auditEvidenceList = const [],
+  }) async {
+    final builder = OpenXmlWorkbookBuilder();
+
+    final effectiveOpening = openingOdometer > 0
+        ? openingOdometer
+        : (trips.isNotEmpty ? trips.first.startOdometer : vehicle.initialOdometer);
+    final effectiveClosing = closingOdometer > 0
+        ? closingOdometer
+        : (trips.isNotEmpty ? trips.last.endOdometer : effectiveOpening);
+
+    // ── TAB 1: TAX SUMMARY ───────────────────────────────────────────────────
+    final summarySheet = builder.addSheet('Tax Summary', tabular: true);
+    summarySheet.addRow([
+      'taxpayerName',
+      'abn',
+      'vehicleRego',
+      'financialYear',
+      'openingOdometer',
+      'closingOdometer',
+      'deductibleClaim',
+    ]);
+    summarySheet.addRow([
+      taxpayerName,
+      abn,
+      vehicle.regoPlate,
+      'FY${taxRule.financialYear}',
+      effectiveOpening,
+      effectiveClosing,
+      summary.logbookClaim,
+    ]);
+    summarySheet.addRow([]);
+    summarySheet.addRow(['Taxpayer / Client Name', taxpayerName]);
+    summarySheet.addRow(['ABN', abn]);
+    summarySheet.addRow(['Vehicle Rego', vehicle.regoPlate]);
+    summarySheet.addRow(['Financial Year', 'FY${taxRule.financialYear}']);
+    summarySheet.addRow(['Opening Odometer', effectiveOpening]);
+    summarySheet.addRow(['Closing Odometer', effectiveClosing]);
+    summarySheet.addRow(['Deductible Claim', summary.logbookClaim]);
+
+    // ── TAB 2: LOGBOOK TRIPS ──────────────────────────────────────────────────
+    final tripsSheet = builder.addSheet('Logbook Trips', tabular: true);
+    tripsSheet.addRow([
+      'Trip_Number',
+      'Trip_Date',
+      'Start_Time',
+      'Vehicle_Rego',
+      'Odometer_Start_KM',
+      'Odometer_End_KM',
+      'Distance_KM',
+      'Classification',
+      'Origin',
+      'Destination',
+      'ATO_Business_Purpose',
+      'Driver_Name',
+      'Linked_Expense_IDs',
+    ]);
+    var tripNum = 1;
+    for (final t in trips) {
+      tripsSheet.addRow([
+        tripNum++,
+        t.date.toIso8601String().split('T').first,
+        '${t.date.hour.toString().padLeft(2, '0')}:${t.date.minute.toString().padLeft(2, '0')}',
+        vehicle.regoPlate,
+        t.startOdometer,
+        t.endOdometer,
+        t.distanceKm,
+        t.isBusiness ? 'BUSINESS' : 'PERSONAL',
+        t.originAddress ?? '[Origin]',
+        t.destinationAddress ?? '[Destination]',
+        t.isBusiness ? t.purpose : '[Private Journey]',
+        'Primary Driver',
+        t.linkedExpenseIds.join('; '),
+      ]);
+    }
+
+    // ── TAB 3: EXPENSES & RECEIPTS (10 Mandated Columns under INV-B05) ────────
+    final expensesSheet = builder.addSheet('Expenses & Receipts', tabular: true);
+    expensesSheet.addRow([
+      'Merchant_Name',
+      'Merchant_ABN',
+      'Gross_Amount_AUD',
+      'GST_Amount_AUD',
+      'Net_Amount_AUD',
+      'Business_Percent',
+      'Deductible_Amount_AUD',
+      'Cloud_Receipt_URL',
+      'AuditEvidence_Id',
+      'Image_SHA256',
+    ]);
+
+    for (final exp in expenses) {
+      // Find matching AuditEvidence:
+      // 1. Direct entity match
+      AuditEvidence? matchedEvidence = auditEvidenceList
+          .where((e) => e.entityId == exp.id || e.id == exp.receiptAudit?.batchId)
+          .firstOrNull;
+
+      // 2. Link via trips' evidenceLinks
+      if (matchedEvidence == null) {
+        for (final t in trips) {
+          for (final link in t.evidenceLinks) {
+            if (link.expenseId == exp.id && link.evidenceId != null) {
+              matchedEvidence = auditEvidenceList
+                  .where((e) => e.id == link.evidenceId)
+                  .firstOrNull;
+              if (matchedEvidence != null) break;
+            }
+          }
+          if (matchedEvidence != null) break;
+        }
+      }
+
+      final evidenceId = matchedEvidence?.id ??
+          exp.receiptAudit?.batchId ??
+          exp.clientDedupId ??
+          exp.id;
+      final imageSha256 = matchedEvidence?.imageSha256 ??
+          exp.sha256Hash ??
+          exp.receiptAudit?.imageSha256 ??
+          '';
+
+      final gross = exp.amount;
+      final gst = exp.gstAmount ?? (gross / 11.0);
+      final net = gross - gst;
+      final merchant = exp.receiptAudit?.ocrMerchant ??
+          exp.supplier ??
+          exp.category.displayName;
+      final merchantAbn = exp.receiptAudit?.ocrAbn ?? exp.supplierAbn ?? '';
+      final deductible = gross * (exp.businessPercentage / 100.0);
+      final cloudUrl = (exp.receiptPath != null && exp.receiptPath!.isNotEmpty)
+          ? exp.receiptPath!
+          : (matchedEvidence != null
+              ? '${AppConstants.supabaseUrl}/storage/v1/object/public/${AppConstants.receiptStorageBucket}/${matchedEvidence.storagePath}'
+              : '');
+
+      expensesSheet.addRow([
+        merchant,
+        merchantAbn,
+        gross,
+        gst,
+        net,
+        exp.businessPercentage,
+        deductible,
+        cloudUrl,
+        evidenceId,
+        imageSha256,
+      ]);
+    }
+
+    return builder.buildBytes();
+  }
   /// Sanitize a CSV cell per CWE-1236 to prevent CSV formula injection
   /// Routes to centralized [CsvSecurity.sanitizeCsvCell].
   static String sanitizeCsvCell(String input) =>
