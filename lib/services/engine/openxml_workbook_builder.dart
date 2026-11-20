@@ -2,6 +2,37 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import '../../data/models/trip.dart';
+import '../../data/models/vehicle_expense.dart';
+
+/// Input parameters for multi-tab OpenXML workbook generation
+class WorkbookInput {
+  final String method; // 'cpk' or 'logbook'
+  final List<Trip> trips;
+  final List<VehicleExpense> expenses;
+  final String taxpayerName;
+  final String abn;
+  final String rego;
+  final String fy;
+  final double openingOdometer;
+  final double closingOdometer;
+  final double ratePerKm;
+  final double deductibleClaim;
+
+  const WorkbookInput({
+    required this.method,
+    this.trips = const [],
+    this.expenses = const [],
+    this.taxpayerName = 'Taxpayer',
+    this.abn = '',
+    this.rego = 'NO_REGO',
+    this.fy = '2026',
+    this.openingOdometer = 0.0,
+    this.closingOdometer = 0.0,
+    this.ratePerKm = 0.88,
+    this.deductibleClaim = 0.0,
+  });
+}
 
 /// Represents a single cell in an Excel sheet.
 class ExcelCell {
@@ -58,6 +89,193 @@ class ExcelSheet {
 /// Microsoft Excel, Google Sheets, Apple Numbers, and LibreOffice.
 class OpenXmlWorkbookBuilder {
   final List<ExcelSheet> _sheets = [];
+
+  /// Builds a complete ATO compliant Excel workbook according to WorkbookInput
+  Future<Uint8List> build(WorkbookInput input) async {
+    final isCpk = input.method.toLowerCase() == 'cpk';
+
+    // ── TAB 1: TAX SUMMARY ───────────────────────────────────────────────────
+    final summarySheet = addSheet('Tax Summary', tabular: true);
+    // Row 1: ATO Required Field Headers
+    summarySheet.addRow([
+      'taxpayerName',
+      'abn',
+      'vehicleRego',
+      'financialYear',
+      'openingOdometer',
+      'closingOdometer',
+      'deductibleClaim',
+    ]);
+    final businessKm = input.trips
+        .where((t) => t.isBusiness)
+        .fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+    final cappedKm = businessKm > 5000.0 ? 5000.0 : businessKm;
+    final cpkClaim = cappedKm * input.ratePerKm;
+    final claim = input.deductibleClaim > 0
+        ? input.deductibleClaim
+        : (isCpk ? cpkClaim : 0.0);
+
+    // Row 2: ATO Required Field Values
+    summarySheet.addRow([
+      input.taxpayerName,
+      input.abn,
+      input.rego,
+      'FY${input.fy}',
+      input.openingOdometer,
+      input.closingOdometer,
+      claim,
+    ]);
+    summarySheet.addRow([]);
+    summarySheet.addRow(['Taxpayer / Client Name', input.taxpayerName]);
+    summarySheet.addRow(['ABN', input.abn]);
+    summarySheet.addRow(['Vehicle Rego', input.rego]);
+    summarySheet.addRow(['Financial Year', 'FY${input.fy}']);
+    summarySheet.addRow(['Opening Odometer', input.openingOdometer]);
+    summarySheet.addRow(['Closing Odometer', input.closingOdometer]);
+    summarySheet.addRow(['Deductible Claim', claim]);
+
+    if (isCpk) {
+      // ── TAB 2: CPK TRIP LEDGER (for CPK) ───────────────────────────────────
+      final ledgerSheet = addSheet('CPK Trip Ledger', tabular: true);
+      ledgerSheet.addRow([
+        'Trip_ID',
+        'Trip_Date',
+        'Start_Time',
+        'Vehicle_Rego',
+        'Origin_Address',
+        'Destination_Address',
+        'Distance_KM',
+        'ATO_Purpose_Category',
+        'Business_Purpose_Detail',
+        'Bulky_Tools_Carried',
+        'Statutory_Rate',
+        'Uncapped_Trip_Value_AUD',
+        'Cumulative_KM_Year',
+        'Cap_Status',
+      ]);
+      double cumulativeKm = 0.0;
+      var index = 1;
+      for (final t in input.trips) {
+        if (!t.isBusiness) continue;
+        cumulativeKm += t.businessDistanceKm;
+        final tripId =
+            'CPK-${t.date.year}${t.date.month.toString().padLeft(2, '0')}${t.date.day.toString().padLeft(2, '0')}-${index.toString().padLeft(3, '0')}';
+        final dateStr = t.date.toIso8601String().split('T').first;
+        final startTime =
+            '${t.date.hour.toString().padLeft(2, '0')}:${t.date.minute.toString().padLeft(2, '0')}';
+        final origin =
+            (t.originAddress != null && t.originAddress!.trim().isNotEmpty)
+                ? t.originAddress!
+                : '[Unspecified Origin]';
+        final dest =
+            (t.destinationAddress != null && t.destinationAddress!.trim().isNotEmpty)
+                ? t.destinationAddress!
+                : '[Unspecified Destination]';
+        final rate = input.ratePerKm;
+        final uncappedValue = t.businessDistanceKm * rate;
+        final capStatus =
+            cumulativeKm <= 5000.0 ? 'UNDER_5000_CAP' : 'CAPPED_EXCESS';
+
+        ledgerSheet.addRow([
+          tripId,
+          dateStr,
+          startTime,
+          input.rego,
+          origin,
+          dest,
+          t.businessDistanceKm,
+          'BUSINESS_DUTY',
+          t.purpose.trim().isNotEmpty ? t.purpose : '[Unspecified Purpose]',
+          'NO',
+          rate,
+          uncappedValue,
+          cumulativeKm,
+          capStatus,
+        ]);
+        index++;
+      }
+    } else {
+      // ── TAB 2: LOGBOOK TRIPS (for Logbook) ──────────────────────────────────
+      final tripsSheet = addSheet('Logbook Trips', tabular: true);
+      tripsSheet.addRow([
+        'Trip_Number',
+        'Trip_Date',
+        'Start_Time',
+        'Vehicle_Rego',
+        'Odometer_Start_KM',
+        'Odometer_End_KM',
+        'Distance_KM',
+        'Classification',
+        'Origin',
+        'Destination',
+        'ATO_Business_Purpose',
+        'Driver_Name',
+        'Linked_Expense_IDs',
+      ]);
+      var tripNum = 1;
+      for (final t in input.trips) {
+        tripsSheet.addRow([
+          tripNum++,
+          t.date.toIso8601String().split('T').first,
+          '${t.date.hour.toString().padLeft(2, '0')}:${t.date.minute.toString().padLeft(2, '0')}',
+          input.rego,
+          t.startOdometer,
+          t.endOdometer,
+          t.distanceKm,
+          t.isBusiness ? 'BUSINESS' : 'PERSONAL',
+          t.originAddress ?? '[Origin]',
+          t.destinationAddress ?? '[Destination]',
+          t.isBusiness ? t.purpose : '[Private Journey]',
+          'Primary Driver',
+          t.linkedExpenseIds.join('; '),
+        ]);
+      }
+
+      // ── TAB 3: EXPENSES & RECEIPTS (for Logbook) ───────────────────────────
+      final expensesSheet = addSheet('Expenses & Receipts', tabular: true);
+      expensesSheet.addRow([
+        'Merchant_Name',
+        'Merchant_ABN',
+        'Gross_Amount_AUD',
+        'GST_Amount_AUD',
+        'Net_Amount_AUD',
+        'Business_Percent',
+        'Deductible_Amount_AUD',
+        'Cloud_Receipt_URL',
+        'AuditEvidence_Id',
+        'Image_SHA256',
+      ]);
+      for (final exp in input.expenses) {
+        final gross = exp.amount;
+        final gst = exp.gstAmount ?? (gross / 11.0);
+        final net = gross - gst;
+        final merchant = exp.receiptAudit?.ocrMerchant ??
+            exp.supplier ??
+            exp.category.displayName;
+        final abn = exp.receiptAudit?.ocrAbn ?? exp.supplierAbn ?? '';
+        final deductible = gross * (exp.businessPercentage / 100.0);
+        final cloudUrl = exp.receiptPath ?? '';
+        final evidenceId =
+            exp.receiptAudit?.batchId ?? exp.clientDedupId ?? exp.id;
+        final sha256 = exp.sha256Hash ?? exp.receiptAudit?.imageSha256 ?? '';
+
+        expensesSheet.addRow([
+          merchant,
+          abn,
+          gross,
+          gst,
+          net,
+          exp.businessPercentage,
+          deductible,
+          cloudUrl,
+          evidenceId,
+          sha256,
+        ]);
+      }
+    }
+
+    return buildBytes();
+  }
 
   ExcelSheet addSheet(String title, {bool tabular = false}) {
     // Excel sheet names max 31 chars and cannot contain: \ / ? * [ ] :

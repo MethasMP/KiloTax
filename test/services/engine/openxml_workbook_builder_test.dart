@@ -1,7 +1,20 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:archive/archive.dart';
+import 'package:kilotax/data/models/trip.dart';
+import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/services/engine/openxml_workbook_builder.dart';
+
+List<String> _extractSheetNames(Archive archive) {
+  final wbFile = archive.findFile('xl/workbook.xml');
+  if (wbFile == null) return [];
+  final content = utf8.decode(wbFile.content as List<int>);
+  final regex = RegExp(r'<sheet\s+name="([^"]+)"');
+  return regex
+      .allMatches(content)
+      .map((m) => m.group(1)!.replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&apos;', "'"))
+      .toList();
+}
 
 void main() {
   group('OpenXmlWorkbookBuilder', () {
@@ -55,5 +68,105 @@ void main() {
       expect(s1Xml, contains('<c r="B2" t="n"><v>82.5</v></c>'));
       expect(s1Xml, contains('<c r="B3" t="n"><v>4250.75</v></c>'));
     });
+
+    final cpkInput = WorkbookInput(
+      method: 'cpk',
+      taxpayerName: 'Dave Smith',
+      abn: '51 824 753 556',
+      rego: 'CPK-999',
+      fy: '2026',
+      openingOdometer: 10000,
+      closingOdometer: 14500,
+      ratePerKm: 0.88,
+      deductibleClaim: 3960.0,
+      trips: [
+        Trip(
+          id: 't-1',
+          vehicleId: 'v1',
+          date: DateTime(2026, 8, 1),
+          distanceKm: 45.0,
+          purpose: 'Plumbing callout',
+          classification: TripClassification.business,
+          startOdometer: 10000,
+          endOdometer: 10045,
+        ),
+      ],
+    );
+
+    final logbookInput = WorkbookInput(
+      method: 'logbook',
+      taxpayerName: 'Sarah Connor',
+      abn: '12 345 678 901',
+      rego: 'LOG-888',
+      fy: '2026',
+      openingOdometer: 50000,
+      closingOdometer: 58000,
+      deductibleClaim: 4250.0,
+      trips: [
+        Trip(
+          id: 't-2',
+          vehicleId: 'v2',
+          date: DateTime(2026, 8, 2),
+          distanceKm: 80.0,
+          purpose: 'Site inspection',
+          classification: TripClassification.business,
+          startOdometer: 50000,
+          endOdometer: 50080,
+        ),
+      ],
+      expenses: [
+        VehicleExpense(
+          id: 'exp-1',
+          vehicleId: 'v2',
+          date: DateTime(2026, 8, 2),
+          amount: 110.0,
+          category: ExpenseCategory.fuel,
+        ),
+      ],
+    );
+
+    test('CPK xlsx has exactly 2 worksheets', () async {
+      final bytes = await OpenXmlWorkbookBuilder().build(cpkInput);
+      final archive = ZipDecoder().decodeBytes(bytes);
+      final sheetNames = _extractSheetNames(archive);
+      expect(sheetNames, hasLength(2));
+      expect(sheetNames, containsAll(['Tax Summary', 'CPK Trip Ledger']));
+    });
+
+    test('Logbook xlsx has exactly 3 worksheets', () async {
+      final bytes = await OpenXmlWorkbookBuilder().build(logbookInput);
+      final archive = ZipDecoder().decodeBytes(bytes);
+      final sheetNames = _extractSheetNames(archive);
+      expect(sheetNames, hasLength(3));
+      expect(sheetNames,
+          containsAll(['Tax Summary', 'Logbook Trips', 'Expenses & Receipts']));
+    });
+
+    test('xlsx bytes form a valid zip', () async {
+      final bytes = await OpenXmlWorkbookBuilder().build(cpkInput);
+      expect(() => ZipDecoder().decodeBytes(bytes), returnsNormally);
+    });
+
+    test('xlsx Tab 1 contains all 7 ATO required field headers', () async {
+      final bytes = await OpenXmlWorkbookBuilder().build(cpkInput);
+      final archive = ZipDecoder().decodeBytes(bytes);
+      final sheet1File = archive.findFile('xl/worksheets/sheet1.xml')!;
+      final content = utf8.decode(sheet1File.content as List<int>);
+
+      const requiredFields = [
+        'taxpayerName',
+        'abn',
+        'vehicleRego',
+        'financialYear',
+        'openingOdometer',
+        'closingOdometer',
+        'deductibleClaim',
+      ];
+      for (final field in requiredFields) {
+        expect(content, contains(field),
+            reason: 'Tab 1 must contain required field: $field');
+      }
+    });
   });
 }
+
