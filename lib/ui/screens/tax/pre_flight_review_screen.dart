@@ -11,6 +11,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/engine/accountant_handoff_service.dart';
+import '../../../services/engine/accounting_export_validator.dart';
 import '../../../services/engine/tax_email_dispatch_service.dart';
 import '../../../state/app_state.dart';
 
@@ -27,12 +28,16 @@ class PreFlightReviewScreen extends StatefulWidget {
   final AppState appState;
   final Directory? outputDirectory;
   final AccountantHandoffPackage? initialPackage;
+  final ValidationResult? validationResult;
+  final Future<void> Function()? onExport;
 
   const PreFlightReviewScreen({
     super.key,
     required this.appState,
     this.outputDirectory,
     this.initialPackage,
+    this.validationResult,
+    this.onExport,
   });
 
   static Future<void> show(
@@ -40,6 +45,8 @@ class PreFlightReviewScreen extends StatefulWidget {
     required AppState appState,
     Directory? outputDirectory,
     AccountantHandoffPackage? initialPackage,
+    ValidationResult? validationResult,
+    Future<void> Function()? onExport,
   }) {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -47,6 +54,8 @@ class PreFlightReviewScreen extends StatefulWidget {
           appState: appState,
           outputDirectory: outputDirectory,
           initialPackage: initialPackage,
+          validationResult: validationResult,
+          onExport: onExport,
         ),
       ),
     );
@@ -59,10 +68,20 @@ class PreFlightReviewScreen extends StatefulWidget {
 class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
   bool _isLoading = false;
   AccountantHandoffPackage? _package;
+  late ValidationResult _validationResult;
+  final Set<String> _acknowledgedWarningCodes = {};
+
+  bool get _allWarningsAcknowledged =>
+      _validationResult.warnings.every((w) => _acknowledgedWarningCodes.contains(w.code));
+
+  bool get _canProceedToExport =>
+      _validationResult.canExport && _allWarningsAcknowledged;
 
   @override
   void initState() {
     super.initState();
+    _validationResult = widget.validationResult ??
+        const AccountingExportValidator().validate(widget.appState);
     if (widget.initialPackage != null) {
       _package = widget.initialPackage;
       _isLoading = false;
@@ -127,6 +146,17 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
   Future<void> _handleConfirmAndSend() async {
     final pkg = _package;
     if (pkg == null) return;
+
+    if (widget.onExport != null) {
+      HapticFeedback.mediumImpact();
+      setState(() => _isLoading = true);
+      try {
+        await widget.onExport!();
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+      return;
+    }
 
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
@@ -362,6 +392,143 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                     const SizedBox(height: 14),
                   ],
 
+                  // Blocking Validation Errors
+                  if (_validationResult.errors.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.crimson.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.crimson.withValues(alpha: 0.6)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(LucideIcons.alertOctagon, color: AppColors.crimson, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Export Blocked: Fix Errors Before Hand-off',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.crimson,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          ..._validationResult.errors.map(
+                            (err) => Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('• ',
+                                      style: TextStyle(
+                                          color: AppColors.crimson,
+                                          fontWeight: FontWeight.bold)),
+                                  Expanded(
+                                    child: Text(
+                                      err.message,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Compliance Warnings (require user acknowledgement)
+                  if (_validationResult.warnings.isNotEmpty) ...[
+                    ..._validationResult.warnings.map(
+                      (warn) => Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.amber.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.amber),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(LucideIcons.triangleAlert,
+                                    color: AppColors.amber, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Compliance Warning',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.ink,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        warn.message,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.ink,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 20, color: AppColors.amber),
+                            Row(
+                              children: [
+                                Checkbox(
+                                  key: Key('warning_ack_${warn.code}'),
+                                  value: _acknowledgedWarningCodes.contains(warn.code),
+                                  activeColor: AppColors.deepNavy,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (val == true) {
+                                        _acknowledgedWarningCodes.add(warn.code);
+                                      } else {
+                                        _acknowledgedWarningCodes.remove(warn.code);
+                                      }
+                                    });
+                                  },
+                                ),
+                                const Text(
+                                  'I understand',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
                   // Pre-flight Health & Gap Checklist
                   const Text(
                     'Pre-flight Health Checklist',
@@ -501,6 +668,7 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                       Expanded(
                         flex: 2,
                         child: ElevatedButton.icon(
+                          key: const Key('export_button'),
                           icon: const Icon(LucideIcons.send, size: 16),
                           label: Text(
                               (_package?.reviewIssues.isNotEmpty ?? true)
@@ -515,7 +683,9 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: _isLoading ? null : _handleConfirmAndSend,
+                          onPressed: (_isLoading || !_canProceedToExport)
+                              ? null
+                              : _handleConfirmAndSend,
                         ),
                       ),
                     ],

@@ -43,6 +43,30 @@ class LogbookProgressScreen extends StatelessWidget {
             t.isBusiness && t.date.isAfter(weekStartMidnight) && !t.isDeleted)
         .length;
 
+    final vehicle = appState.primaryVehicle;
+    final period = appState.activeLogbookPeriod;
+    final startDate = period?.startDate ?? vehicle?.logbookStartDate;
+    final endDate = period?.endDate ??
+        (startDate != null ? startDate.add(const Duration(days: 84)) : null);
+
+    int gapWeeks = 0;
+    if (startDate != null && endDate != null) {
+      final totalDaysInPeriod = endDate.difference(startDate).inDays;
+      final daysWithAtLeastOneTrip = appState.trips
+          .where((t) =>
+              !t.isDeleted &&
+              (vehicle == null || t.vehicleId == vehicle.id) &&
+              !t.date.isBefore(startDate) &&
+              !t.date.isAfter(endDate))
+          .map((t) => DateTime(t.date.year, t.date.month, t.date.day))
+          .toSet()
+          .length;
+
+      final gapDays =
+          (totalDaysInPeriod - daysWithAtLeastOneTrip).clamp(0, totalDaysInPeriod);
+      gapWeeks = (gapDays / 7).round();
+    }
+
     return Scaffold(
       backgroundColor: AppColor.canvas,
       appBar: logbookAppBar(context, 'Logbook overview'),
@@ -53,6 +77,38 @@ class LogbookProgressScreen extends StatelessWidget {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (gapWeeks > 0) ...[
+                    Container(
+                      key: const Key('gap_weeks_banner'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: S.lg,
+                        vertical: S.md,
+                      ),
+                      margin: const EdgeInsets.only(bottom: S.lg),
+                      decoration: BoxDecoration(
+                        color: AppColor.attentionTintSoft,
+                        borderRadius: R.controlR,
+                        border: Border.all(color: AppColor.attentionTintStrong),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            AppIcons.attention,
+                            color: AppColor.attentionInk,
+                            size: AppIconSize.control,
+                          ),
+                          const SizedBox(width: S.md),
+                          Expanded(
+                            child: Text(
+                              '$gapWeeks ${gapWeeks == 1 ? 'week' : 'weeks'} unaccounted',
+                              style: AppType.bodyStrong
+                                  .copyWith(color: AppColor.attentionInk),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   OdometerGapReviewCard(appState: appState),
                   TaxExemptionStreakHero(appState: appState),
                   const SizedBox(height: S.xxl),

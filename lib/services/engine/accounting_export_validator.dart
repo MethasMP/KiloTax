@@ -1,4 +1,75 @@
 import '../../core/utils/csv_security.dart';
+import '../../data/models/logbook_period.dart';
+import '../../data/models/vehicle.dart';
+import '../../state/app_state.dart';
+
+/// Represents a blocking validation error that prevents accountant export.
+class ValidationError {
+  final String code;
+  final String message;
+
+  const ValidationError({
+    required this.code,
+    required this.message,
+  });
+
+  @override
+  String toString() => 'ValidationError($code: $message)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ValidationError &&
+          runtimeType == other.runtimeType &&
+          code == other.code &&
+          message == other.message;
+
+  @override
+  int get hashCode => code.hashCode ^ message.hashCode;
+}
+
+/// Represents a non-blocking compliance warning that requires user acknowledgement before export.
+class ValidationWarning {
+  final String code;
+  final String message;
+
+  const ValidationWarning({
+    required this.code,
+    required this.message,
+  });
+
+  @override
+  String toString() => 'ValidationWarning($code: $message)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ValidationWarning &&
+          runtimeType == other.runtimeType &&
+          code == other.code &&
+          message == other.message;
+
+  @override
+  int get hashCode => code.hashCode ^ message.hashCode;
+}
+
+/// Pre-flight export validation result.
+/// [canExport] is true only if [errors] is empty.
+class ValidationResult {
+  final List<ValidationError> errors;
+  final List<ValidationWarning> warnings;
+  final bool canExport;
+
+  ValidationResult({
+    required this.errors,
+    required this.warnings,
+    bool? canExport,
+  }) : canExport = canExport ?? errors.isEmpty;
+
+  @override
+  String toString() =>
+      'ValidationResult(canExport: $canExport, errors: ${errors.length}, warnings: ${warnings.length})';
+}
 
 /// Validation result payload for accounting platform journal exports (Xero / MYOB).
 class AccountingValidationResult {
@@ -25,6 +96,123 @@ class AccountingValidationResult {
 /// Boundary validator strictly adhering to Xero and MYOB import specifications.
 /// Enforces principle-model-the-domain and principle-boundary-discipline.
 class AccountingExportValidator {
+  const AccountingExportValidator();
+
+  /// Validates [AppState] for pre-flight export compliance.
+  /// Enforces:
+  /// - ERROR NO_TRIPS: no trips in selected period
+  /// - ERROR NO_CLOSING_ODOMETER: closing odometer not set for vehicle
+  /// - WARNING SHORT_LOGBOOK: logbook period < 12 weeks (Logbook method only)
+  ValidationResult validate(
+    AppState appState, {
+    Vehicle? vehicle,
+    LogbookPeriod? logbookPeriod,
+  }) {
+    final errors = <ValidationError>[];
+    final warnings = <ValidationWarning>[];
+
+    final effectiveVehicle = vehicle ?? appState.primaryVehicle;
+    if (effectiveVehicle == null) {
+      errors.add(const ValidationError(
+        code: 'NO_TRIPS',
+        message: 'No vehicle or trips found in selected period.',
+      ));
+      errors.add(const ValidationError(
+        code: 'NO_CLOSING_ODOMETER',
+        message: 'Closing odometer not set for vehicle.',
+      ));
+      return ValidationResult(errors: errors, warnings: warnings);
+    }
+
+    final activePeriod = logbookPeriod ?? appState.activeLogbookPeriod;
+
+    // 1. Check trips in selected period
+    final relevantTrips = appState.trips.where((t) {
+      if (t.isDeleted) return false;
+      if (t.vehicleId != effectiveVehicle.id) return false;
+      if (effectiveVehicle.taxMethod == TaxMethod.logbook) {
+        if (activePeriod != null) {
+          if (t.date.isBefore(activePeriod.startDate) ||
+              t.date.isAfter(activePeriod.endDate)) {
+            return false;
+          }
+        } else if (effectiveVehicle.logbookStartDate != null) {
+          final start = effectiveVehicle.logbookStartDate!;
+          final end = start.add(const Duration(days: 84));
+          if (t.date.isBefore(start) || t.date.isAfter(end)) {
+            return false;
+          }
+        }
+      } else {
+        // CPK: all active trips for vehicle in current scope
+      }
+      return true;
+    }).toList();
+
+    if (relevantTrips.isEmpty) {
+      errors.add(const ValidationError(
+        code: 'NO_TRIPS',
+        message: 'No trips in selected period.',
+      ));
+    }
+
+    // 2. Check closing odometer
+    final hasAnnualClosing = appState.annualOdometers.any(
+      (a) =>
+          a.vehicleId == effectiveVehicle.id &&
+          a.closingOdometer != null &&
+          a.closingOdometer! > 0,
+    );
+    final hasPeriodClosing = activePeriod != null &&
+        activePeriod.vehicleId == effectiveVehicle.id &&
+        activePeriod.endOdometer != null &&
+        activePeriod.endOdometer! > 0;
+
+    if (!hasAnnualClosing && !hasPeriodClosing) {
+      errors.add(const ValidationError(
+        code: 'NO_CLOSING_ODOMETER',
+        message: 'Closing odometer not set for vehicle.',
+      ));
+    }
+
+    // 3. Check SHORT_LOGBOOK warning (Logbook method only)
+    if (effectiveVehicle.taxMethod == TaxMethod.logbook) {
+      bool isShort = false;
+      if (activePeriod != null) {
+        if (activePeriod.endDate.difference(activePeriod.startDate).inDays < 84) {
+          isShort = true;
+        }
+      } else if (effectiveVehicle.logbookStartDate != null) {
+        if (DateTime.now()
+                .difference(effectiveVehicle.logbookStartDate!)
+                .inDays <
+            84) {
+          isShort = true;
+        }
+      } else if (relevantTrips.length >= 2) {
+        final earliest = relevantTrips
+            .map((t) => t.date)
+            .reduce((a, b) => a.isBefore(b) ? a : b);
+        final latest = relevantTrips
+            .map((t) => t.date)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
+        if (latest.difference(earliest).inDays < 84) {
+          isShort = true;
+        }
+      }
+
+      if (isShort) {
+        warnings.add(const ValidationWarning(
+          code: 'SHORT_LOGBOOK',
+          message:
+              'Logbook period is less than 12 weeks. ATO requires 12 continuous representative weeks.',
+        ));
+      }
+    }
+
+    return ValidationResult(errors: errors, warnings: warnings);
+  }
+
   // Xero Australian specification: DD/MM/YYYY
   static final RegExp _xeroAuDateRegex =
       RegExp(r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$');
