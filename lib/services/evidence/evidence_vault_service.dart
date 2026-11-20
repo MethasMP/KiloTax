@@ -2,16 +2,22 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../data/models/audit_evidence.dart';
 import '../storage/receipt_image_optimization_service.dart';
+import '../storage/receipt_storage_service.dart';
 
 class EvidenceVaultService {
   final ReceiptImageOptimizationService _optimizer;
+  final ReceiptStorageService? _storageService;
   final Directory? _vaultDirectory;
 
   EvidenceVaultService({
     ReceiptImageOptimizationService? optimizer,
+    ReceiptStorageService? storageService,
     Directory? vaultDirectory,
   })  : _optimizer = optimizer ?? ReceiptImageOptimizationService(),
+        _storageService = storageService,
         _vaultDirectory = vaultDirectory;
+
+  ReceiptStorageService? get storageService => _storageService;
 
   /// Processes raw captured photo:
   /// 1. Optimizes/compresses image first to eliminate local bloat
@@ -72,6 +78,50 @@ class EvidenceVaultService {
     } catch (e) {
       return (null, 'Evidence processing failed: $e');
     }
+  }
+
+  /// Registers verified audit evidence row following post-upload hash integrity check (INV-A01 & INV-A04).
+  ///
+  /// Guarantees client SHA-256 matches storage hash before writing the audit_evidence record.
+  Future<(AuditEvidence? evidence, String? errorMessage)> registerVerifiedAuditEvidence({
+    required List<int> bytes,
+    required EvidenceType evidenceType,
+    required String userId,
+    String? vehicleId,
+    String? entityId,
+    required UploadResult uploadResult,
+    Map<String, dynamic>? watermarkMetadata,
+  }) async {
+    if (!uploadResult.matchesClientHash || uploadResult.storagePath == null) {
+      return (
+        null,
+        'Evidence integrity verification failed: ${uploadResult.errorMessage ?? "Storage hash does not match client SHA-256."}'
+      );
+    }
+
+    final clientHash = ReceiptStorageService.computeSha256(bytes);
+    if (clientHash.toLowerCase() != uploadResult.confirmedSha256?.toLowerCase()) {
+      return (
+        null,
+        'Evidence integrity verification failed: Client SHA-256 does not match confirmed storage hash.'
+      );
+    }
+
+    final evidence = AuditEvidence(
+      id: 'ev_${DateTime.now().millisecondsSinceEpoch}',
+      vehicleId: vehicleId,
+      evidenceType: evidenceType,
+      entityId: entityId,
+      storagePath: uploadResult.storagePath!,
+      imageSha256: clientHash,
+      fileSizeBytes: bytes.length,
+      mimeType: 'image/webp',
+      capturedAt: DateTime.now(),
+      captureSource: 'camera_live',
+      watermarkMetadata: watermarkMetadata ?? {},
+    );
+
+    return (evidence, null);
   }
 
   /// Purges all local cached images and documents in the evidence vault
