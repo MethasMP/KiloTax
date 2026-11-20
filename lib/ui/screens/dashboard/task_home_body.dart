@@ -149,7 +149,11 @@ class TaskHomeBody extends StatelessWidget {
           ],
           if (hasTrips) ...[
             HomeRecentActivity(appState: appState, onViewAll: onViewAll),
-            const SizedBox(height: 24)
+            const SizedBox(height: 16),
+          ],
+          if (appState.pendingOdometerGaps.isNotEmpty && !isLogbook) ...[
+            OdometerGapReviewCard(appState: appState),
+            const SizedBox(height: 16),
           ],
           if (report.hasRecords) ...[
             HomeRecordHero(

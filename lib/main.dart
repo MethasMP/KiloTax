@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -10,10 +11,15 @@ import 'ui/screens/home/main_scaffold_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: AppConstants.supabaseUrl,
-    publishableKey: AppConstants.supabaseAnonKey,
-  );
+  try {
+    await Supabase.initialize(
+      url: AppConstants.supabaseUrl,
+      publishableKey: AppConstants.supabaseAnonKey,
+    ).timeout(const Duration(seconds: 4));
+  } catch (e) {
+    debugPrint(
+        '[KiloTax] Offline Launch: Supabase unreachable ($e). Operating in offline-first mode.');
+  }
   final appState = AppState();
   await appState.init();
   runApp(

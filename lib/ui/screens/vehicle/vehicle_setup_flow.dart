@@ -1,7 +1,10 @@
 import '../../widgets/adaptive_row.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/app_constants.dart';
@@ -31,6 +34,7 @@ class VehicleSetupFlow extends StatefulWidget {
   final VehicleSetupStage initialStage;
   final bool includeBluetoothSetup;
   final AustralianVehicleCatalogEntry? initialVehicle;
+  final ImagePicker? imagePicker;
 
   const VehicleSetupFlow({
     super.key,
@@ -39,6 +43,7 @@ class VehicleSetupFlow extends StatefulWidget {
     this.includeBluetoothSetup = true,
     this.initialStage = VehicleSetupStage.searchAndSelect,
     this.initialVehicle,
+    this.imagePicker,
   });
 
   @override
@@ -59,6 +64,48 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       AustralianVehicleCatalog.popularTradieVehicles.first;
   bool _isSearching = false;
   List<AustralianVehicleCatalogEntry> _searchResults = [];
+
+  // Opening Odometer Evidence
+  late final ImagePicker _imagePicker = widget.imagePicker ?? ImagePicker();
+  String? _startOdometerPhotoPath;
+  String? _startOdometerImageHash;
+  DateTime? _startOdometerVerifiedAt;
+
+  Future<void> _pickOdometerPhoto() async {
+    HapticFeedback.lightImpact();
+    try {
+      final photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (photo != null) {
+        Uint8List bytes;
+        try {
+          bytes = await photo.readAsBytes();
+        } catch (_) {
+          bytes = Uint8List.fromList(photo.path.codeUnits);
+        }
+        final hash = sha256.convert(bytes).toString();
+        setState(() {
+          _startOdometerPhotoPath = photo.path;
+          _startOdometerImageHash = hash;
+          _startOdometerVerifiedAt = DateTime.now();
+        });
+      }
+    } catch (_) {
+      // Photo capture cancelled or failed
+    }
+  }
+
+  void _removeOdometerPhoto() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _startOdometerPhotoPath = null;
+      _startOdometerImageHash = null;
+      _startOdometerVerifiedAt = null;
+    });
+  }
 
   // Tax method: Default to Logbook matching RECOMMENDED status
   TaxMethod _selectedTaxMethod = TaxMethod.logbook;
@@ -216,6 +263,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       taxMethod: _selectedTaxMethod,
       logbookStartDate: null,
       bluetoothDeviceName: _selectedBluetoothDevice,
+      startOdometerPhotoPath: _startOdometerPhotoPath,
+      startOdometerImageHash: _startOdometerImageHash,
+      startOdometerVerifiedAt: _startOdometerVerifiedAt,
     );
 
     widget.onVehicleCreated(created);
@@ -865,6 +915,76 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  if (_startOdometerPhotoPath == null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        key: const Key('add_odometer_photo_button'),
+                        onPressed: _pickOdometerPhoto,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColor.brand,
+                          minimumSize: const Size(48, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        ),
+                        icon: const Icon(LucideIcons.camera, size: 17),
+                        label: const Text(
+                          'Add odometer photo proof (Optional)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      key: const Key('odometer_photo_attached_card'),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColor.positiveTint,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColor.positive),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.circleCheck,
+                              size: 18, color: AppColor.positiveStrong),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Photo Proof Attached',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColor.positiveStrong,
+                                  ),
+                                ),
+                                if (_startOdometerImageHash != null)
+                                  Text(
+                                    'SHA-256: ${_startOdometerImageHash!.substring(0, 16)}...',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontFamily: 'monospace',
+                                      color: AppColor.inkMuted,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            key: const Key('remove_odometer_photo_button'),
+                            icon: const Icon(LucideIcons.x, size: 16, color: AppColor.inkSubtle),
+                            onPressed: _removeOdometerPhoto,
+                            tooltip: 'Remove photo',
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          ),
+                        ],
+                      ),
+                    ),
                   if (_odometerError != null) ...[
                     const SizedBox(height: 6),
                     Padding(
