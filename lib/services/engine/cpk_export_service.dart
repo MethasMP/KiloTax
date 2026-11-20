@@ -2,8 +2,39 @@ import '../../core/utils/formatters.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/tax_summary.dart';
 import '../../data/models/trip.dart';
+import '../../data/models/vehicle_expense.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/csv_security.dart';
+
+/// Result of a Cents-per-Kilometre (CPK) calculation
+class CpkExportResult {
+  final double deductionAud;
+  final double cappedKm;
+  final double businessKm;
+  final double ratePerKm;
+
+  const CpkExportResult({
+    required this.deductionAud,
+    required this.cappedKm,
+    required this.businessKm,
+    required this.ratePerKm,
+  });
+}
+
+/// Input parameters for CPK calculation / export
+class CpkExportInput {
+  final double businessKm;
+  final double ratePerKm;
+  final List<Trip> trips;
+  final List<VehicleExpense> runningCosts;
+
+  const CpkExportInput({
+    required this.businessKm,
+    required this.ratePerKm,
+    this.trips = const [],
+    this.runningCosts = const [],
+  });
+}
 
 /// Cents-per-kilometre (CPK) Dedicated Exporter
 /// Aligned strictly with ITAA 1997 Subdivision 28-C (§ 28-25 to § 28-35)
@@ -11,6 +42,28 @@ import '../../core/utils/csv_security.dart';
 /// 1. 1-Page Box D1 Lodgement Slip Text/PDF Payload
 /// 2. Detailed CPK Reasonable-Estimation Ledger CSV (14 Columns)
 class CpkExportService {
+  const CpkExportService();
+
+  /// Calculates the statutory CPK deduction under ITAA 1997 s 28-25:
+  /// - businessKm is capped at 5,000 km per car per financial year
+  /// - fuel, maintenance, or running expenses are strictly excluded
+  CpkExportResult calculate({
+    required double businessKm,
+    required double ratePerKm,
+    List<VehicleExpense> runningCosts = const [],
+    List<Trip> trips = const [],
+  }) {
+    final effectiveKm = businessKm < 0.0 ? 0.0 : businessKm;
+    final cappedKm = effectiveKm > 5000.0 ? 5000.0 : effectiveKm;
+    final deductionAud = cappedKm * ratePerKm;
+
+    return CpkExportResult(
+      deductionAud: deductionAud,
+      cappedKm: cappedKm,
+      businessKm: businessKm,
+      ratePerKm: ratePerKm,
+    );
+  }
   /// Sanitize a CSV cell per CWE-1236 to prevent CSV formula injection
   /// Routes to centralized [CsvSecurity.sanitizeCsvCell].
   static String sanitizeCsvCell(String input) =>
