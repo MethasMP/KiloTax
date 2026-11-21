@@ -38,7 +38,7 @@
 - Consumes: `AppType`, `AppColor`
 - Produces: Sanitized UI badges and notification messages without legal liability
 
-- [ ] **Step 1: Write the failing test for sanitized copy in `test/ui/tax/tax_summary_copy_test.dart`**
+- [x] **Step 1: Write the failing test for sanitized copy in `test/ui/tax/tax_summary_copy_test.dart`**
 
 ```dart
 import 'package:flutter/material.dart';
@@ -53,23 +53,23 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `flutter test test/ui/tax/tax_summary_copy_test.dart`
 Expected: FAIL (still finding 'AUDIT-PROOF READY')
 
-- [ ] **Step 3: Update copy in `tax_summary_screen.dart` and `notification_service.dart`**
+- [x] **Step 3: Update copy in `tax_summary_screen.dart` and `notification_service.dart`**
 
 Replace:
 `'AUDIT-PROOF READY'` with `'ACCOUNTANT READY'` in `tax_summary_screen.dart:353`.
 `'maintain your audit-proof business claim'` with `'maintain your accountant-ready business claim'` in `notification_service.dart:253`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `flutter test test/ui/tax/tax_summary_copy_test.dart`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ui/screens/tax/tax_summary_screen.dart lib/services/notifications/notification_service.dart test/ui/tax/tax_summary_copy_test.dart
@@ -92,7 +92,7 @@ git commit -m "fix(copy): replace unsafe audit-proof claims with defensible acco
 - Consumes: `AccountingExportValidator`, `ExcelExportService`, `PdfExportService`
 - Produces: Pre-generated, verifiable sample files and practitioner guide for immediate pilot testing with AU tax agents
 
-- [ ] **Step 1: Write test verifying sample pack generator generates valid files**
+- [x] **Step 1: Write test verifying sample pack generator generates valid files**
 
 ```dart
 import 'dart:io';
@@ -107,16 +107,16 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run: `flutter test test/services/engine/accountant_pilot_pack_test.dart`
 Expected: FAIL (files do not exist yet)
 
-- [ ] **Step 3: Implement `bin/generate_accountant_pilot_pack.dart` and generate sample files**
+- [x] **Step 3: Implement `bin/generate_accountant_pilot_pack.dart` and generate sample files**
 
 Create generator script that creates a realistic Australian sparkie scenario (Toyota Hilux, 42 business trips between JobSites and Bunnings, 8 fuel/material receipts with valid ABNs and GST), then generates the 3 sample files into `assets/samples/accountant_sample_pack/`.
 
-- [ ] **Step 4: Create `ACCOUNTANT_PILOT_GUIDE.md`**
+- [x] **Step 4: Create `ACCOUNTANT_PILOT_GUIDE.md`**
 
 Write practitioner documentation explaining:
 1. Executive Summary for CPAs and Tax Agents
@@ -125,12 +125,12 @@ Write practitioner documentation explaining:
 4. Statutory substantiation under ITAA 1997 Div 28 and TR 2021/1
 5. How odometer gaps and non-business trips are quarantined
 
-- [ ] **Step 5: Run verification test**
+- [x] **Step 5: Run verification test**
 
 Run: `flutter test test/services/engine/accountant_pilot_pack_test.dart`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add bin/generate_accountant_pilot_pack.dart ACCOUNTANT_PILOT_GUIDE.md assets/samples/accountant_sample_pack/ test/services/engine/accountant_pilot_pack_test.dart
@@ -149,7 +149,7 @@ git commit -m "feat(pilot): provide accountant sample pack fixtures and practiti
 - Consumes: `TaskHomeBody`, `VehicleSetupFlow`, `GapBridgeSheet`
 - Produces: Automated end-to-end regression proving the 5 PM tradie flow takes < 2 seconds and requires zero manual data typing
 
-- [ ] **Step 1: Write the Ute Test integration harness**
+- [x] **Step 1: Write the Ute Test integration harness**
 
 ```dart
 import 'package:flutter/material.dart';
@@ -166,20 +166,20 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails or passes**
+- [x] **Step 2: Run test to verify it fails or passes**
 
 Run: `flutter test test/ui/tradie_ute_test_harness_test.dart`
 
-- [ ] **Step 3: Fix any UI touch target or flow bottleneck if identified**
+- [x] **Step 3: Fix any UI touch target or flow bottleneck if identified**
 
 Ensure every action button has `minimumSize: const Size(48, 48)` and clear haptic feedback.
 
-- [ ] **Step 4: Re-run test to verify 100% green pass**
+- [x] **Step 4: Re-run test to verify 100% green pass**
 
 Run: `flutter test test/ui/tradie_ute_test_harness_test.dart`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add test/ui/tradie_ute_test_harness_test.dart lib/ui/screens/dashboard/task_home_body.dart
