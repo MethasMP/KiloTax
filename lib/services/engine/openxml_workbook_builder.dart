@@ -133,6 +133,48 @@ class OpenXmlWorkbookBuilder {
     summarySheet.addRow(['Opening Odometer', input.openingOdometer]);
     summarySheet.addRow(['Closing Odometer', input.closingOdometer]);
     summarySheet.addRow(['Deductible Claim', claim]);
+    summarySheet.addRow([]);
+
+    // ── 1-CLICK HANDITAX FORM D & XERO GL RECONCILIATION ───────────────────
+    summarySheet.addRow(['── 1-CLICK HANDITAX FORM D (D1 WORKPAPER RECONCILIATION) ──']);
+    summarySheet.addRow(['HandiTax Schedule Field', 'Value', 'Statutory Instruction / ATO Box']);
+    if (isCpk) {
+      summarySheet.addRow(['Calculation Method', 'Cents per KM (Code S)', 'ITAA 1997 Subdivision 28-C']);
+      summarySheet.addRow(['Business Kilometres (Capped 5,000 km)', cappedKm, 'Max 5,000 km per vehicle claim limit']);
+      summarySheet.addRow(['Statutory Cents Rate', input.ratePerKm, 'ATO Set Rate for FY${input.fy}']);
+      summarySheet.addRow(['D1 Box A Allowable Deduction', claim, 'Direct entry into HandiTax Item D1 Box A']);
+      summarySheet.addRow(['Xero General Ledger Account', '489 - Motor Vehicle Expenses', 'Debit D1 claim amount']);
+    } else {
+      final businessKmLogbook = input.trips.where((t) => t.isBusiness).fold(0.0, (sum, t) => sum + t.businessDistanceKm);
+      final totalKmLogbook = (input.closingOdometer - input.openingOdometer) > 0
+          ? (input.closingOdometer - input.openingOdometer)
+          : input.trips.fold(0.0, (sum, t) => sum + t.distanceKm);
+      final bizPct = totalKmLogbook > 0 ? (businessKmLogbook / totalKmLogbook * 100.0) : 0.0;
+      final fuelExpenses = input.expenses.where((e) => e.category == ExpenseCategory.fuel).fold(0.0, (s, e) => s + e.amount);
+      final maintExpenses = input.expenses.where((e) => e.category == ExpenseCategory.maintenanceTyres).fold(0.0, (s, e) => s + e.amount);
+      final regoInsurance = input.expenses
+          .where((e) =>
+              e.category == ExpenseCategory.rego ||
+              e.category == ExpenseCategory.insurance)
+          .fold(0.0, (s, e) => s + e.amount);
+      final otherExpenses = input.expenses
+          .where((e) =>
+              e.category != ExpenseCategory.fuel &&
+              e.category != ExpenseCategory.maintenanceTyres &&
+              e.category != ExpenseCategory.rego &&
+              e.category != ExpenseCategory.insurance)
+          .fold(0.0, (s, e) => s + e.amount);
+
+      summarySheet.addRow(['Calculation Method', 'Logbook Method (Code B)', 'ITAA 1997 Subdivision 28-F']);
+      summarySheet.addRow(['Logbook Business Percentage', '${bizPct.toStringAsFixed(1)}%', 'Apply to total running costs']);
+      summarySheet.addRow(['Fuel and Oil Total (\$)', fuelExpenses, 'Actual motor vehicle fuel gross']);
+      summarySheet.addRow(['Repairs and Maintenance (\$)', maintExpenses, 'Servicing, repairs and tyres']);
+      summarySheet.addRow(['Registration and Insurance (\$)', regoInsurance, 'State vehicle registration & CTP']);
+      summarySheet.addRow(['Other Vehicle Running Costs (\$)', otherExpenses, 'Tolls, parking, wash, interest']);
+      summarySheet.addRow(['Total Vehicle Running Expenses (\$)', input.expenses.fold(0.0, (s, e) => s + e.amount), 'Gross running expenses']);
+      summarySheet.addRow(['D1 Box B Net Deductible Claim (\$)', claim, 'Direct entry into HandiTax Item D1 Box B']);
+      summarySheet.addRow(['Xero General Ledger Account', '489 - Motor Vehicle Expenses', 'Debit D1 claim amount']);
+    }
 
     if (isCpk) {
       // ── TAB 2: CPK TRIP LEDGER (for CPK) ───────────────────────────────────
