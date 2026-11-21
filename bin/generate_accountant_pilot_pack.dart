@@ -5,6 +5,7 @@ import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/services/engine/accountant_handoff_service.dart';
+import 'package:kilotax/services/engine/xero_export_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -148,6 +149,15 @@ void main() async {
   final pdfDest = File('${outDir.path}/KiloTax_Tax_Summary_Sample.pdf');
   await logPkg.pdfFile.copy(pdfDest.path);
   print('✅ Generated: ${pdfDest.path}');
+
+  // 3. Xero 1-Click Import Preset Sample
+  final xeroCsv = XeroExportService.generateBillsCsv(
+    expenses: sampleExpenses,
+    vehicle: logVehicle,
+  );
+  final xeroDest = File('${outDir.path}/KiloTax_Xero_Bills_Import_Sample.csv');
+  await xeroDest.writeAsString(xeroCsv);
+  print('✅ Generated: ${xeroDest.path}');
 
   if (tempDir.existsSync()) {
     tempDir.deleteSync(recursive: true);

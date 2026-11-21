@@ -6,6 +6,7 @@ import 'package:kilotax/data/models/trip.dart';
 import 'package:kilotax/data/models/vehicle.dart';
 import 'package:kilotax/data/models/vehicle_expense.dart';
 import 'package:kilotax/services/engine/accountant_handoff_service.dart';
+import 'package:kilotax/services/engine/xero_export_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -149,6 +150,14 @@ void main() {
     final pdfDest = File('${packDir.path}/KiloTax_Tax_Summary_Sample.pdf');
     await logPkg.pdfFile.copy(pdfDest.path);
 
+    // 3. Xero 1-Click Import Preset Sample
+    final xeroCsv = XeroExportService.generateBillsCsv(
+      expenses: sampleExpenses,
+      vehicle: logVehicle,
+    );
+    final xeroDest = File('${packDir.path}/KiloTax_Xero_Bills_Import_Sample.csv');
+    await xeroDest.writeAsString(xeroCsv);
+
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
     }
@@ -180,6 +189,13 @@ void main() {
     expect(pdfSummary.existsSync(), isTrue, reason: 'PDF summary must exist');
     expect(await pdfSummary.length(), greaterThan(1000),
         reason: 'PDF summary must contain valid PDF document structure');
+
+    final xeroSampleCsv =
+        File('${packDir.path}/KiloTax_Xero_Bills_Import_Sample.csv');
+    expect(xeroSampleCsv.existsSync(), isTrue,
+        reason: 'Xero sample CSV must exist');
+    final xeroLines = (await xeroSampleCsv.readAsString()).trim().split('\n');
+    expect(xeroLines.first, contains('*ContactName,*InvoiceNumber,*InvoiceDate'));
 
     final guideFile = File('ACCOUNTANT_PILOT_GUIDE.md');
     expect(guideFile.existsSync(), isTrue,

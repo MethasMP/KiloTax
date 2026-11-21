@@ -36,30 +36,40 @@ Rather than providing unstructured CSV dumps or generic mileage trackers, KiloTa
 
 ---
 
-## 3. Tax Software Field Mappings
+## 3. Tax Software Field Mappings (Zero-Mapping Presets)
 
-### HandiTax Form D (Motor Vehicle Expenses)
-| HandiTax Field | KiloTax Source | Notes |
+### 1-Click HandiTax Form D (Motor Vehicle Expenses Workpaper)
+Sheet 1 (`Tax Summary`) contains a dedicated **`1-CLICK HANDITAX FORM D (D1 WORKPAPER RECONCILIATION)`** block that maps 1:1 into HandiTax without copying across disparate sheets:
+
+| HandiTax Field | KiloTax Worksheet Field | Notes / Statutory Reference |
 | :--- | :--- | :--- |
-| **Calculation Method** | `Tax Summary!B4` | Cents per km (C) or Logbook (L) |
-| **Vehicle Make / Model / Rego** | `Tax Summary!B6:B8` | e.g., Toyota HiLux (TRADIE-CPK) |
-| **Business Kilometres** | `Tax Summary!B10` | Capped at 5,000 for CPK; Total Business km for Logbook |
-| **Business Percentage (%)** | `Tax Summary!B11` | Logbook Method only |
-| **Fuel and Oil** | `Expenses & Receipts (Cat = Fuel)` | Sum of Net + GST claimed |
-| **Repairs and Maintenance** | `Expenses & Receipts (Cat = Maintenance)` | Sum of Net + GST claimed |
-| **Total Motor Vehicle Claim** | `Tax Summary!B15` | Total Deductible AUD |
+| **Calculation Method** | `Calculation Method` | Cents per KM (Code S) or Logbook Method (Code B) |
+| **Business Kilometres** | `Business Kilometres (Capped 5,000 km)` | Strictly capped at 5,000 km for CPK (ITAA 1997 s 28-25) |
+| **Logbook Business %** | `Logbook Business Percentage` | `(Business KM / Total Odometer KM) * 100` |
+| **Fuel and Oil ($)** | `Fuel and Oil Total ($)` | Gross fuel receipts claimed |
+| **Repairs and Maintenance ($)** | `Repairs and Maintenance ($)` | Servicing, mechanical repairs, replacement tyres |
+| **Registration and Insurance ($)** | `Registration and Insurance ($)` | State motor vehicle registration & comprehensive/CTP insurance |
+| **Net Item D1 Allowable Claim ($)** | `D1 Box A/B Allowable Deduction` | Direct entry value for Box A (CPK) or Box B (Logbook) |
 
-### Xero Practice Manager / General Ledger
-* **Account 449 (Motor Vehicle Expenses):** Total from `Tax Summary!B15`
-* **GST on Expenses:** Accurately isolated in column `GST_Amount_AUD` on Tab 3 for BAS reconciliation.
+### 1-Click Xero Bills to Pay Import Preset
+For practitioners using Xero, KiloTax delivers a dedicated `KiloTax_Xero_Bills_Import_Sample.csv` matching Xero's official Bills Import schema. Drag-and-drop directly into **Xero -> Business -> Bills to pay -> Import -> Bills**:
+
+* `*ContactName`: Merchant / Supplier name (e.g. BP Connect, Ultra Tune, Bunnings)
+* `*InvoiceNumber`: Receipt Reference / Vault Batch ID
+* `*InvoiceDate` & `*DueDate`: Transaction date (YYYY-MM-DD)
+* `*Description`: Expense category, Vehicle Rego, and Logbook Business %
+* `*UnitAmount` & `Total`: Gross invoice amount
+* `*AccountCode`: Standard Australian chart code `489` (Motor Vehicle Expenses) or `493` (Tolls & Travel)
+* `*TaxType`: `GST on Expenses` (or `BAS Excluded` for stamp duty/rego components)
 
 ---
 
-## 4. Evidentiary Rigor & Audit Defense (TR 2021/1)
+## 4. Statutory Quarantine & Audit Defense (ITAA 1997 Div 28 & TR 2021/1)
 
-1. **Nexus Substantiation:** Trips are linked with known client JobSites when geofence dwell time $\ge 120$ seconds, eliminating generic "work travel" claims.
-2. **Receipt Cryptographic Integrity:** Every receipt in Tab 3 carries an immutable `Image_SHA256` hash and `AuditEvidence_Id` backed by an encrypted storage vault with a 5-year retention guarantee (1,825 days).
-3. **Pre-flight Error Gate:** KiloTax blocks the export button if opening/closing odometer readings are missing or if logbook weeks are unaccounted for.
+1. **Page 2 Statutory Quarantine Certificate:** The summary PDF includes a formal **"Statutory Non-Business Quarantine & Exclusion Certificate"** explicitly detailing quarantined private kilometres and non-allowable expenses. Auditors and tax agents have immediate mathematical proof that private travel contains 0% claimable deduction.
+2. **Cryptographic SHA-256 Audit Seal:** Every certificate and receipt ledger entry is sealed client-side with a deterministic SHA-256 hash, ensuring records cannot be retroactively tampered with.
+3. **Nexus Substantiation:** Trips are linked with known client JobSites when geofence dwell time $\ge 120$ seconds, eliminating generic "work travel" claims.
+4. **Pre-flight Error Gate:** KiloTax blocks export if opening/closing odometer readings are missing or if logbook weeks are unaccounted for.
 
 ---
 

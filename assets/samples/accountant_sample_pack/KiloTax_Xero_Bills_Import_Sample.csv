@@ -1,0 +1,4 @@
+*ContactName,*InvoiceNumber,*InvoiceDate,*DueDate,Total,*Description,*Quantity,*UnitAmount,*AccountCode,*TaxType
+Bunnings Warehouse Alexandria,EXP-exp-bunnings-1,2026-07-14,2026-07-14,458.50,Tools & Job Materials (Bunnings) - TRADIE-LOG (100% Business),1,458.50,489,GST on Expenses
+BP Connect Mascot,EXP-exp-bp-fuel-1,2026-07-20,2026-07-20,142.80,Fuel & Oil - TRADIE-LOG (100% Business),1,142.80,489,GST on Expenses
+Ultra Tune Sydney CBD,EXP-exp-service-1,2026-09-10,2026-09-10,890.00,"Servicing, Repairs & Tyres - TRADIE-LOG (100% Business)",1,890.00,489,GST on Expenses
