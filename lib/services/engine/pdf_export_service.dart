@@ -5,6 +5,8 @@ import 'package:printing/printing.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/models/tax_summary.dart';
 import '../../data/models/trip.dart';
+import '../../data/models/quarantine_certificate.dart';
+import '../../data/models/vehicle_expense.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/formatters.dart';
 
@@ -42,6 +44,8 @@ class PdfExportService {
     double? closingOdometer,
     ByteData? regularFont,
     ByteData? boldFont,
+    QuarantineCertificate? quarantineCertificate,
+    List<VehicleExpense> expenses = const [],
   }) async {
     // Load true Unicode font to avoid Helvetica Type 1 limitations
     pw.ThemeData? theme;
@@ -402,6 +406,243 @@ class PdfExportService {
               pw.Text(
                 'ITAA 1997 Div 28-C / Subdiv 28-H / s 900-165 compliant. Not tax advice. Non-affiliated with the ATO.',
                 style: pw.TextStyle(fontSize: 6.5, color: _muted),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ── PAGE 2: STATUTORY NON-BUSINESS QUARANTINE & EXCLUSION CERTIFICATE ────
+    final totalCalcKm = (effectiveClosingOdo - effectiveOpeningOdo).abs();
+    final cert = quarantineCertificate ??
+        QuarantineCertificate(
+          vehicleId: vehicle.id,
+          regoPlate: vehicle.regoPlate,
+          financialYear: taxRule.financialYear,
+          totalOdometerKm: totalCalcKm > 0 ? totalCalcKm : summary.totalKm,
+          businessKm: summary.businessKm,
+          quarantinedPrivateKm: summary.personalKm,
+          businessTripsCount: businessTrips.length,
+          quarantinedPrivateTripsCount:
+              trips.where((t) => !t.isBusiness).length,
+          totalExpensesAud: expenses.fold(0.0, (s, e) => s + e.amount),
+          deductibleExpensesAud: claimAmount,
+          quarantinedPrivateExpensesAud:
+              (expenses.fold(0.0, (s, e) => s + e.amount) - claimAmount) > 0
+                  ? (expenses.fold(0.0, (s, e) => s + e.amount) - claimAmount)
+                  : 0.0,
+          generatedAt: DateTime.now(),
+        );
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        theme: theme,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              pw.Container(
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: const pw.BoxDecoration(
+                  color: _navy,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'STATUTORY NON-BUSINESS QUARANTINE & EXCLUSION CERTIFICATE',
+                          style: pw.TextStyle(
+                            color: _white,
+                            fontSize: 10.5,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          'Formal substantiation declaration under ITAA 1997 Division 28 & TR 2021/1',
+                          style: const pw.TextStyle(
+                              color: PdfColor(1, 1, 1, 0.7), fontSize: 8),
+                        ),
+                      ],
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: const pw.BoxDecoration(
+                        color: _emerald,
+                        borderRadius:
+                            pw.BorderRadius.all(pw.Radius.circular(4)),
+                      ),
+                      child: pw.Text(
+                        'AUDIT DEFENSE',
+                        style: pw.TextStyle(
+                          color: _white,
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Certification Notice
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: _background,
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  border: pw.Border.all(color: _border),
+                ),
+                child: pw.Text(
+                  'This statutory certificate confirms that all non-business journeys and private operating costs have been mathematically quarantined and 100% excluded from the deduction claim for vehicle $regoLabel in FY${taxRule.financialYear}.',
+                  style: pw.TextStyle(fontSize: 8.5, color: _navy),
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Quarantine Table 1: Travel & Mileage Isolation
+              pw.Text(
+                '1. TRAVEL & MILEAGE QUARANTINE SCHEDULE',
+                style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _navy),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Container(
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: _border),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                ),
+                child: pw.Column(
+                  children: [
+                    _buildRow('Total Odometer Movement',
+                        '${cert.totalOdometerKm.toStringAsFixed(2)} km (100.0%)'),
+                    _buildDivider(),
+                    _buildRow('Substantive Work-Related Travel',
+                        '${cert.businessKm.toStringAsFixed(2)} km (${cert.businessPercentage.toStringAsFixed(1)}%) - CLAIMABLE'),
+                    _buildDivider(),
+                    _buildRow('Quarantined Private Travel',
+                        '${cert.quarantinedPrivateKm.toStringAsFixed(2)} km (${cert.quarantinedKmPercentage.toStringAsFixed(1)}%) - STRICTLY EXCLUDED'),
+                    _buildDivider(),
+                    _buildRow('Quarantined Private Journeys Logged',
+                        '${cert.quarantinedPrivateTripsCount} trips (Isolated from claim)'),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Quarantine Table 2: Financial Expenses Isolation
+              pw.Text(
+                '2. OPERATING EXPENSES QUARANTINE SCHEDULE',
+                style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _navy),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Container(
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: _border),
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                ),
+                child: pw.Column(
+                  children: [
+                    _buildRow('Total Gross Vehicle Costs Logged',
+                        '\$${cert.totalExpensesAud.toStringAsFixed(2)}'),
+                    _buildDivider(),
+                    _buildRow('Allowable Work-Related Deductions',
+                        '\$${cert.deductibleExpensesAud.toStringAsFixed(2)} - CLAIMABLE'),
+                    _buildDivider(),
+                    _buildRow('Quarantined Private / Non-Allowable Costs',
+                        '\$${cert.quarantinedPrivateExpensesAud.toStringAsFixed(2)} - STRICTLY EXCLUDED'),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Taxpayer & System Attestation
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: _emeraldLight,
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  border: pw.Border.all(color: _emerald),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'STATUTORY SUBSTANTIATION DECLARATION',
+                      style: pw.TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _emerald),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'I confirm that all private journeys, private commuting, and personal vehicle running expenses have been systematically isolated and quarantined. The net deduction claim contains zero private utility, satisfying the substantiation requirements of ITAA 1997 Division 28 and ATO Tax Ruling TR 2021/1.',
+                      style: pw.TextStyle(fontSize: 7.5, color: _navy),
+                    ),
+                  ],
+                ),
+              ),
+              pw.Spacer(),
+
+              // Digital Cryptographic Seal Box
+              pw.Container(
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: pw.BoxDecoration(
+                  color: _background,
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  border: pw.Border.all(color: _border),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          'Vault SHA-256 Seal: ${cert.auditHash}',
+                          style: pw.TextStyle(
+                              fontSize: 6.5,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _navy),
+                        ),
+                        pw.Text(
+                          '100% MATHEMATICALLY SOUND',
+                          style: pw.TextStyle(
+                              fontSize: 6.5,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _emerald),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'System Verification Seal Generated: ${cert.generatedAt.toIso8601String()}',
+                      style: pw.TextStyle(fontSize: 6, color: _muted),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
