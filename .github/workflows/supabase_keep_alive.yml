@@ -13,15 +13,12 @@ jobs:
     steps:
       - name: Send Keep-Alive Query to Supabase REST API
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "https://mwtxfdqcyalsohruzmps.supabase.co/rest/v1/ato_tax_rules?select=count" \
+          HTTP_CODE=$(curl -s -o /tmp/supabase_res.json -w "%{http_code}" -X GET "https://mwtxfdqcyalsohruzmps.supabase.co/rest/v1/ato_tax_rules?select=count" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs' }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs' }}")
           
-          BODY=$(echo "$RESPONSE" | head -n -1)
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
-          
           echo "Supabase HTTP Response Code: $HTTP_CODE"
-          echo "Supabase Response Body: $BODY"
+          echo "Supabase Response Body: $(cat /tmp/supabase_res.json)"
           
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             echo "✅ Supabase project successfully kept alive!"
