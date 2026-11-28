@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/ocr/receipt_audit_service.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/ocr/receipt_audit_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
   group('Deterministic Consensus Engine & Australian Fuel Receipts', () {
@@ -121,6 +121,26 @@ EFTPOS                \$105.00
       expect(auditTrail.ocrGstAmount, equals(10.00));
       expect(auditTrail.ocrEvidence, contains('gst_invariant_match'));
       expect(auditTrail.reviewStatus, ReceiptReviewStatus.needsReview);
+    });
+
+    test('6. Auto-repairs degraded ABN characters from thermal paper OCR (e.g. O instead of 0)', () {
+      // 53 004 085 616 (Bunnings Group Ltd) with 'O' instead of '0' and 'B' instead of '8'
+      // ABN: 53 OO4 OB5 616
+      final text = '''
+BUNNINGS WAREHOUSE
+TAX INVOICE
+ABN 53 OO4 OB5 616
+TOTAL AUD \$110.00
+INCL GST \$10.00
+10/11/2026
+''';
+
+      final result = service.analyseText(text);
+
+      expect(result.abn, equals('53 004 085 616'));
+      expect(result.evidence, contains('abn_ocr_repaired'));
+      expect(result.evidence, contains('abn_mod89_valid'));
+      expect(result.isHighConfidence, isTrue);
     });
   });
 }

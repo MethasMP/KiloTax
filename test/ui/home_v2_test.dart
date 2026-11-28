@@ -5,19 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/core/theme/app_color.dart';
-import 'package:kilotax/core/theme/app_typography.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/models/home_record_summary.dart';
-import 'package:kilotax/ui/screens/dashboard/task_home_body.dart';
-import 'package:kilotax/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
-import 'package:kilotax/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/home_record_hero.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/core/theme/app_color.dart';
+import 'package:kiloclaim/core/theme/app_typography.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/models/home_record_summary.dart';
+import 'package:kiloclaim/ui/screens/dashboard/task_home_body.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/home_record_hero.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -73,6 +73,18 @@ HomeRecordSummary summary(
             items: items),
         taxRule: rule,
         now: now);
+
+class _FixtureFiles extends EvidenceReviewService {
+  const _FixtureFiles();
+  @override
+  Future<Map<String, ReceiptFileInspection>> inspectReceipts(
+          List<VehicleExpense> expenses) async =>
+      {
+        for (final expense in expenses)
+          expense.id:
+              const ReceiptFileInspection(status: ReceiptFileStatus.available),
+      };
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -189,7 +201,9 @@ void main() {
                               QuickCaptureBottomSheet.show(context, state),
                         ),
                         body: SafeArea(
-                            child: TaskHomeBody(appState: state))))))));
+                            child: TaskHomeBody(
+                                appState: state,
+                                evidenceService: const _FixtureFiles()))))))));
     await tester.pumpAndSettle();
     tester
         .state<ScrollableState>(find.byType(Scrollable).first)
@@ -205,14 +219,13 @@ void main() {
     await state.addVehicle(vehicle(start: DateTime.now()));
     final key = GlobalKey();
     await pumpHome(tester, state, key);
-    expect(find.text('Your driving.'), findsOneWidget);
-    expect(find.text('Every trip.\nEvery receipt.\nOne clear record.'),
-        findsOneWidget);
+    expect(find.text('Your evidence.'), findsOneWidget);
+    expect(find.text('Keep your evidence\ntogether.'), findsOneWidget);
     expect(find.text('Estimated deduction'), findsNothing);
-    expect(find.text('Add your first trip'), findsOneWidget);
+    expect(find.text('Capture your first record'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'first-day');
-    await tester.tap(find.text('Add your first trip'));
+    await tester.tap(find.text('Capture your first record'));
     await tester.pumpAndSettle();
     expect(find.text('Add a past trip'), findsOneWidget);
   });
@@ -229,8 +242,12 @@ void main() {
         expense('checked-fuel', 200).copyWith(date: DateTime.now()));
     final key = GlobalKey();
     await pumpHome(tester, state, key);
-    expect(find.byType(HomeRecordHero), findsOneWidget);
-    expect(find.text(r'$200.00'), findsOneWidget);
+    expect(find.byType(HomeRecordHero), findsNothing);
+    expect(find.text('Recent records'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining(r'$200.00'), 160,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining(r'$200.00'), findsOneWidget);
     await tester.scrollUntilVisible(
         find.textContaining('Trip ledger odometer'), 200,
         scrollable: find.byType(Scrollable).first);
@@ -239,15 +256,6 @@ void main() {
     expect(find.textContaining('Last odometer photo'), findsNothing);
     expect(tester.takeException(), isNull);
     await capture(tester, key, 'daily-home');
-    await tester.scrollUntilVisible(find.text('View basis ↗'), -200,
-        scrollable: find.byType(Scrollable).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('View basis ↗'));
-    await tester.pumpAndSettle();
-    expect(find.text('Your estimate basis'), findsOneWidget);
-    expect(
-        find.textContaining('Receipt file availability is checked separately'),
-        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -257,7 +265,7 @@ void main() {
     addTearDown(state.dispose);
     await state.addVehicle(vehicle(method: TaxMethod.centsPerKm));
     await pumpHome(tester, state, GlobalKey());
-    expect(find.text('Every trip.\nEvery purpose.\nOne clear record.'),
+    expect(find.text('Build your record.\nReview what is missing.'),
         findsOneWidget);
     expect(find.textContaining('Scan receipts'), findsNothing);
     expect(tester.takeException(), isNull);

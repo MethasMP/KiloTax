@@ -5,7 +5,8 @@ import '../../../state/app_state.dart';
 import '../dashboard/evidence_home_screen.dart';
 import '../expenses/evidence_expenses_screen.dart';
 import '../tax/tax_summary_screen.dart';
-import '../expenses/scan_receipt_screen.dart';
+import '../evidence/evidence_review_screen.dart';
+import 'widgets/quick_capture_bottom_sheet.dart';
 import 'widgets/scaffold_bottom_nav_bar.dart';
 import 'widgets/trips_ledger_tab.dart';
 
@@ -18,6 +19,11 @@ class MainScaffoldScreen extends StatefulWidget {
 
 class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
   String _destination = 'home';
+  int _reviewRequest = 0;
+  final _recordsBodyKey = GlobalKey();
+  String? _packVehicleId;
+  String? _packYear;
+  int _packRequest = 0;
   String _tripsFilter = 'All';
   String? _tripsVehicleId;
   String? _tripsFinancialYear;
@@ -76,47 +82,69 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
     }
 
     void switchToTripsTab({String filter = 'All'}) {
+      final recordsContext = _recordsBodyKey.currentContext;
+      if (recordsContext != null) {
+        DefaultTabController.maybeOf(recordsContext)?.animateTo(0);
+      }
       setState(() {
         _tripsFilter = filter;
         _tripsVehicleId = appState.primaryVehicle?.id;
         _tripsFinancialYear = appState.activeTaxRule.financialYear;
         _tripsRequest++;
-        _destination = 'trips';
+        _destination = 'records';
       });
     }
 
-    final home = EvidenceHomeScreen(
-      onViewAll: () => switchToTripsTab(),
-      onReviewTrips: () => switchToTripsTab(filter: 'Needs review'),
-      onViewTax: () => setState(() => _destination = 'tax'),
-    );
-    final trips = TripsLedgerTab(
-      key: ValueKey(_tripsRequest),
-      appState: appState,
-      initialFilter: _tripsFilter,
-      initialVehicleId: _tripsVehicleId,
-      financialYear: _tripsFinancialYear,
-    );
-
-    // Polymorphic screen lists:
-    // CPK: 3 screens (Zero Expenses/Receipts confusion, 100% passive deduction ledger)
-    // Logbook: 4 screens (Requires expenses & fuel substantiation)
-    final screens = isCpk
-        ? [
-            home,
-            trips,
-            TaxSummaryScreen(onViewTrips: () => switchToTripsTab()),
-          ]
-        : [
-            home,
-            trips,
-            const EvidenceExpensesScreen(),
-            TaxSummaryScreen(onViewTrips: () => switchToTripsTab()),
-          ];
-
-    final destinations =
-        isCpk ? ['home', 'trips', 'tax'] : ['home', 'trips', 'expenses', 'tax'];
-    if (!destinations.contains(_destination)) _destination = 'home';
+    void openPack() => setState(() {
+          _packVehicleId = appState.primaryVehicle?.id;
+          _packYear = appState.activeTaxRule.financialYear;
+          _packRequest++;
+          _destination = 'pack';
+        });
+    final screens = <Widget>[
+      EvidenceHomeScreen(
+        onViewAll: () => switchToTripsTab(),
+        onReviewTrips: () => setState(() {
+          _reviewRequest++;
+          _destination = 'review';
+        }),
+        onViewTax: openPack,
+      ),
+      EvidenceReviewScreen(
+          appState: appState,
+          vehicleId: appState.primaryVehicle?.id,
+          financialYear: appState.activeTaxRule.financialYear,
+          onOpenPack: openPack,
+          allPendingRequest: _reviewRequest),
+      DefaultTabController(
+          length: isCpk ? 1 : 2,
+          child: Column(key: _recordsBodyKey, children: [
+            SafeArea(
+                bottom: false,
+                child: TabBar(tabs: [
+                  const Tab(text: 'Trips'),
+                  if (!isCpk) const Tab(text: 'Expenses')
+                ])),
+            Expanded(
+                child: TabBarView(children: [
+              _KeepAliveRecordTab(
+                  child: TripsLedgerTab(
+                      key: ValueKey(_tripsRequest),
+                      appState: appState,
+                      initialFilter: _tripsFilter,
+                      initialVehicleId: _tripsVehicleId,
+                      financialYear: _tripsFinancialYear)),
+              if (!isCpk)
+                const _KeepAliveRecordTab(child: EvidenceExpensesScreen()),
+            ])),
+          ])),
+      TaxSummaryScreen(
+          onViewTrips: () => switchToTripsTab(),
+          initialVehicleId: _packVehicleId,
+          initialFinancialYear: _packYear,
+          scopeRequest: _packRequest),
+    ];
+    const destinations = ['home', 'review', 'records', 'pack'];
     final safeIndex = destinations.indexOf(_destination);
 
     return Scaffold(
@@ -130,8 +158,27 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
         taxMethod: taxMethod,
         onTabSelected: (index) =>
             setState(() => _destination = destinations[index]),
-        onCenterActionTap: () => ScanReceiptScreen.show(context, appState),
+        onCenterActionTap: () =>
+            QuickCaptureBottomSheet.show(context, appState),
       ),
     );
+  }
+}
+
+class _KeepAliveRecordTab extends StatefulWidget {
+  final Widget child;
+  const _KeepAliveRecordTab({required this.child});
+  @override
+  State<_KeepAliveRecordTab> createState() => _KeepAliveRecordTabState();
+}
+
+class _KeepAliveRecordTabState extends State<_KeepAliveRecordTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

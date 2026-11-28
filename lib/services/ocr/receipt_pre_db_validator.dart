@@ -24,6 +24,32 @@ class HumanizedValidationError {
   });
 }
 
+/// Minimal fingerprint of an existing saved receipt for duplicate detection.
+class ReceiptFingerprint {
+  final String merchant;
+  final double amount;
+  final DateTime date;
+
+  const ReceiptFingerprint({
+    required this.merchant,
+    required this.amount,
+    required this.date,
+  });
+}
+
+/// ATO 5-Point Substantiation Completeness Report.
+class AtoSubstantiationReport {
+  final int score;
+  final List<String> missingItems;
+
+  const AtoSubstantiationReport({
+    required this.score,
+    required this.missingItems,
+  });
+
+  bool get isAuditReady => score == 5;
+}
+
 /// Comprehensive validation & sanitization result before persistence.
 class ReceiptValidationResult {
   final ValidationSeverity severity;
@@ -44,6 +70,8 @@ class ReceiptValidationResult {
   final bool isVaultOnlyRecommended;
   final String? vaultReason;
   final double? recommendedCappedGst;
+  final AtoSubstantiationReport atoReport;
+  final bool isDuplicateSuspected;
 
   const ReceiptValidationResult({
     required this.severity,
@@ -60,6 +88,8 @@ class ReceiptValidationResult {
     this.isVaultOnlyRecommended = false,
     this.vaultReason,
     this.recommendedCappedGst,
+    this.atoReport = const AtoSubstantiationReport(score: 0, missingItems: []),
+    this.isDuplicateSuspected = false,
   });
 }
 
@@ -72,6 +102,7 @@ class ReceiptPreDbValidator {
     required ReceiptOcrResult ocrResult,
     DateTime? currentSystemTime,
     DateTime? logbookStartDate,
+    List<ReceiptFingerprint> existingReceipts = const [],
   }) {
     final now = currentSystemTime ?? DateTime.now();
     final errors = <String>[];
@@ -192,6 +223,32 @@ class ReceiptPreDbValidator {
             ? ValidationSeverity.needsReview
             : ValidationSeverity.valid;
 
+    final missingAtoItems = <String>[
+      if (cleanMerchant.isEmpty) 'Supplier name',
+      if (cleanAmount <= 0) 'Expense amount',
+      if (ocrResult.rawText.trim().isEmpty &&
+          ocrResult.lineObservations.isEmpty)
+        'Nature of goods/services',
+      if (ocrResult.dateNeedsReview) 'Purchase date',
+      if (cleanAmount > 82.50 && (cleanAbn == null || cleanAbn.isEmpty))
+        'ABN (required over \$82.50)',
+    ];
+    final atoReport = AtoSubstantiationReport(
+      score: 5 - missingAtoItems.length,
+      missingItems: missingAtoItems,
+    );
+
+    final normalizedMerchant = cleanMerchant.toLowerCase();
+    final isDuplicateSuspected = existingReceipts.any((existing) =>
+        existing.merchant.trim().toLowerCase() == normalizedMerchant &&
+        (existing.amount - cleanAmount).abs() <= 0.01 &&
+        existing.date.year == receiptDate.year &&
+        existing.date.month == receiptDate.month &&
+        existing.date.day == receiptDate.day);
+    if (isDuplicateSuspected) {
+      warnings.add('Possible duplicate receipt detected');
+    }
+
     return ReceiptValidationResult(
       severity: severity,
       isValid: errors.isEmpty,
@@ -207,6 +264,8 @@ class ReceiptPreDbValidator {
       isVaultOnlyRecommended: isVaultOnly,
       vaultReason: vaultReason,
       recommendedCappedGst: recommendedCappedGst,
+      atoReport: atoReport,
+      isDuplicateSuspected: isDuplicateSuspected,
     );
   }
 

@@ -94,11 +94,11 @@ class VehicleLookupResult {
 class VehicleLookupService {
   // Primary: GitHub Raw (Always real-time, no stale CDN cache)
   static const String primaryUrl =
-      'https://raw.githubusercontent.com/MethasMP/KiloTax/main/australia_vehicles.json';
+      'https://raw.githubusercontent.com/MethasMP/KiloClaim/main/australia_vehicles.json';
 
   // Fallback: Global jsDelivr Edge CDN
   static const String cdnUrl =
-      'https://cdn.jsdelivr.net/gh/MethasMP/KiloTax@main/australia_vehicles.json';
+      'https://cdn.jsdelivr.net/gh/MethasMP/KiloClaim@main/australia_vehicles.json';
 
   // In-Memory Cache (fetched once per app session)
   static List<VehicleLookupResult>? _cachedVehicles;
@@ -123,7 +123,7 @@ class VehicleLookupService {
       client.connectionTimeout = const Duration(seconds: 4);
       final request = await client.getUrl(Uri.parse(primaryUrl));
       request.headers
-          .set('User-Agent', 'KiloTax-ATO/1.0 (Privacy-First Client)');
+          .set('User-Agent', 'KiloClaim-ATO/1.0 (Privacy-First Client)');
       final response = await request.close();
 
       if (response.statusCode == 200) {

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -5,7 +6,9 @@ import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../services/ocr/receipt_intelligence_service.dart';
 import '../../../services/ocr/receipt_ocr_engine.dart';
+import '../../../services/ocr/thermal_receipt_image_preprocessor.dart';
 import '../../../services/receipts/receipt_inbox_service.dart';
+import '../../../services/receipts/receipt_workflow_policy.dart';
 import '../../../services/scanner/document_scanner_service.dart';
 import '../../../state/app_state.dart';
 import 'expense_detail_screen.dart';
@@ -23,6 +26,7 @@ class ScanReceiptScreen extends StatefulWidget {
   final ReceiptOcrEngine? ocrEngine;
   final ReceiptIntelligenceService? intelligenceService;
   final ReceiptInboxService? receiptInboxService;
+  final ThermalReceiptImagePreprocessor? preprocessor;
 
   const ScanReceiptScreen({
     super.key,
@@ -32,6 +36,7 @@ class ScanReceiptScreen extends StatefulWidget {
     this.ocrEngine,
     this.intelligenceService,
     this.receiptInboxService,
+    this.preprocessor,
   });
 
   static Future<void> show(BuildContext context, AppState appState,
@@ -53,10 +58,13 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
   bool _isAcquiring = false;
   String? _processingImagePath;
   String? _acquisitionError;
+  double? _lastOcrConfidence;
+  bool _lastOcrIsLowConfidence = false;
   bool get _isBusy => _isProcessing || _isAcquiring;
   String _processingStatus = 'Reading receipt details…';
   late final DocumentScannerService _scanner;
   late final ReceiptIntelligenceService _intelligence;
+  late final ThermalReceiptImagePreprocessor? _preprocessor;
 
   @override
   void initState() {
@@ -65,6 +73,10 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         DocumentScannerService(reportCaptureErrors: true);
     _intelligence =
         widget.intelligenceService ?? const ReceiptIntelligenceService();
+    _preprocessor = widget.preprocessor ??
+        (widget.ocrEngine == null
+            ? const ThermalReceiptImagePreprocessor()
+            : null);
     if (widget.autoStartScanner) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _scanReceipt(autoLaunch: true);
@@ -83,22 +95,69 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       });
 
       final imagePath = imagePaths.first;
+      final enhancedPath = '${imagePath}_enhanced.jpg';
+      String? enhancedTempPath;
       try {
-        final engine = widget.ocrEngine ?? ReceiptOcrEngineFactory.create();
-        final extraction = await engine.recognizeFile(imagePath);
-        final ocr = _intelligence.analyseText(
-          extraction.text,
-          blocks: extraction.blocks,
-        );
+        var targetPath = imagePath;
+        var isImageBlurry = false;
+        late final ReceiptOcrResult ocr;
+        try {
+          // Step 1: Preprocess thermal image (assess blur and enhance faded contrast)
+          if (_preprocessor != null) {
+            final preprocessed = await _preprocessor.preprocessReceipt(
+              inputPath: imagePath,
+              outputPath: enhancedPath,
+            );
+            targetPath = preprocessed.enhancedPath;
+            if (targetPath != imagePath) {
+              enhancedTempPath = targetPath;
+            }
+            isImageBlurry = preprocessed.clarity.isBlurry;
+          }
+
+          // Step 2: Feed enhanced image to OCR engine
+          final engine = widget.ocrEngine ?? ReceiptOcrEngineFactory.create();
+          final extraction = await engine.recognizeFile(targetPath);
+          ocr = const ReceiptWorkflowPolicy().analyseWithContext(
+            extraction.text,
+            blocks: extraction.blocks,
+            trips: widget.appState.trips,
+            existingExpenses: widget.appState.expenses,
+            intelligence: _intelligence,
+          );
+        } finally {
+          if (_preprocessor != null) {
+            for (final candidate in {enhancedPath, enhancedTempPath}) {
+              if (candidate == null || candidate == imagePath) continue;
+              try {
+                final tempFile = File(candidate);
+                if (tempFile.existsSync()) {
+                  tempFile.deleteSync();
+                }
+              } catch (_) {}
+            }
+          }
+        }
 
         if (!mounted) return;
 
-        final isHighConfidence = ocr.confidence >= 0.90 || ocr.isHighConfidence;
+        final isHighConfidence =
+            !isImageBlurry && (ocr.confidence >= 0.90 || ocr.isHighConfidence);
+        final isLowConfidence = isImageBlurry || ocr.confidence < 0.70;
         debugPrint(
-            '[ScanReceiptScreen] Single-shot OCR complete. Confidence: ${ocr.confidence}, isHighConfidence: $isHighConfidence');
+            '[ScanReceiptScreen] Single-shot OCR complete. Confidence: ${ocr.confidence}, isHighConfidence: $isHighConfidence, isLowConfidence: $isLowConfidence, isBlurry: $isImageBlurry');
 
         if (isHighConfidence) {
           HapticFeedback.heavyImpact();
+        } else if (isLowConfidence) {
+          HapticFeedback.lightImpact();
+          setState(() {
+            _lastOcrConfidence = ocr.confidence;
+            _lastOcrIsLowConfidence = true;
+            _processingStatus = isImageBlurry
+                ? 'Image looks blurry. Please check details carefully…'
+                : 'Low confidence (${(ocr.confidence * 100).round()}%). Check details…';
+          });
         }
 
         await _openReview(ExpenseDetailScreen(
@@ -239,7 +298,11 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
       body: SafeArea(
         child: _isProcessing
             ? ReceiptProcessingView(
-                imagePath: _processingImagePath, status: _processingStatus)
+                imagePath: _processingImagePath,
+                status: _processingStatus,
+                confidence: _lastOcrConfidence,
+                isLowConfidence: _lastOcrIsLowConfidence,
+              )
             : SingleChildScrollView(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

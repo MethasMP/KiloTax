@@ -1,0 +1,27 @@
+{
+  "backup": "/Users/methas/Desktop/DriveLog-cleanup-backup-2026-11-24",
+  "moves": {
+    "aso-package-au-v1.md": "docs/marketing/aso-package-au-v1.md",
+    "humanizer .md": "docs/agent-reference/humanizer.md",
+    "llm-council-skill .md": "docs/agent-reference/llm-council-skill.md",
+    "create_doc.py": "docs/archive/unrelated/create_doc.py",
+    "รายงานนำเสนอผลงาน_แอปพลิเคชันหมูกระทะ_ส่วนที่2.docx": "docs/archive/unrelated/รายงานนำเสนอผลงาน_แอปพลิเคชันหมูกระทะ_ส่วนที่2.docx"
+  },
+  "removed_generated_directories": [
+    "build",
+    ".dart_tool",
+    "coverage"
+  ],
+  "original_other_tracked_files_unchanged": true,
+  "moved_checksums_match": true,
+  "tracked_files_over_10MiB": [],
+  "potential_secret_paths_review_required": [
+    ".agents/skills/document-generate/SKILL.md",
+    ".agents/skills/document-generate/SKILL.md.tmpl"
+  ],
+  "secret_scan_limits": "Pattern scan of tracked/unignored text files <=2MiB; does not audit Git history or guarantee absence of secrets.",
+  "secret_pattern_review": "Both hits are explicitly marked documentation examples; no confirmed credential identified by this scan.",
+  "post_pub_get_other_tracked_files_unchanged": true,
+  "git_diff_check": "passed",
+  "flutter_pub_get": "passed"
+}

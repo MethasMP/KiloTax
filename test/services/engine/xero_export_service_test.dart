@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/xero_export_service.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/xero_export_service.dart';
 
 void main() {
   group('XeroExportService', () {

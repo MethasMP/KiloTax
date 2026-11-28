@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:kilotax/core/theme/app_color.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/onboarding/onboarding_slides_screen.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/first_trip_card.dart';
-import 'package:kilotax/ui/screens/tracking/tracking_setup_screen.dart';
+import 'package:kiloclaim/core/theme/app_color.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/onboarding/onboarding_slides_screen.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/first_trip_card.dart';
+import 'package:kiloclaim/ui/screens/tracking/tracking_setup_screen.dart';
 
 void main() {
   testWidgets('Capture journey screens at phone width and check large text',

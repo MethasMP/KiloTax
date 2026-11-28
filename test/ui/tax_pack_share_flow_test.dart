@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
+import '../support/tax_pack_reader.dart';
+import '../support/pack_save_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:archive/archive.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
@@ -10,13 +13,13 @@ import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/receipts/receipt_inbox_service.dart';
-import 'package:kilotax/services/engine/tax_pack_share_helper.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/services/auth/supabase_auth_service.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/receipts/receipt_inbox_service.dart';
+import 'package:kiloclaim/services/engine/tax_pack_share_helper.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/services/auth/supabase_auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent;
 
 class AccountantTestAuth extends SupabaseAuthService {
@@ -35,13 +38,14 @@ void main() {
   ffi.sqfliteFfiInit();
   sqlite.databaseFactory = ffi.databaseFactoryFfiNoIsolate;
   const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
-  const mailChannel = MethodChannel('flutter_email_sender');
+  const mailChannel = MethodChannel('dev.fluttercommunity.plus/share');
   const printingChannel = MethodChannel('net.nfet.printing');
   late Directory temp;
   late Directory documents;
   final sentNames = <String>[];
   final sentBodies = <String>[];
   final sentPendingCounts = <int>[];
+  final sentPacks = <TaxPackReader>[];
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -50,6 +54,7 @@ void main() {
     sentNames.clear();
     sentBodies.clear();
     sentPendingCounts.clear();
+    sentPacks.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(printingChannel,
             (_) async => <String, dynamic>{'canRaster': false});
@@ -62,10 +67,11 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(mailChannel, (call) async {
       final arguments = call.arguments as Map;
-      final paths = (arguments['attachment_paths'] as List).cast<String>();
+      final paths = (arguments['paths'] as List).cast<String>();
       expect(paths.length, 1);
       final bytes = await File(paths.single).readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
+      sentPacks.add(TaxPackReader(archive));
       expect(archive.findFile('Report.pdf'), isNotNull);
       expect(archive.findFile('Details.xlsx'), isNotNull);
       final metadata = jsonDecode(utf8.decode(archive
@@ -73,8 +79,8 @@ void main() {
           .content as List<int>));
       sentPendingCounts.add(metadata['pendingDraftCount'] as int);
       sentNames.addAll(paths);
-      sentBodies.add(arguments['body'] as String);
-      return null;
+      sentBodies.add(arguments['text'] as String);
+      return 'com.test.share.target';
     });
   });
 
@@ -129,7 +135,7 @@ void main() {
   }
 
   Future<void> waitFor(WidgetTester tester, Finder finder) async {
-    for (var i = 0; i < 100 && finder.evaluate().isEmpty; i++) {
+    for (var i = 0; i < 300 && finder.evaluate().isEmpty; i++) {
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump(const Duration(milliseconds: 20));
@@ -184,7 +190,7 @@ void main() {
       ),
     ))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Ready for your accountant'));
+    await waitFor(tester, find.text('Review accountant pack'));
     expect(sentNames, isEmpty);
     expect(find.text('Preview report'), findsOneWidget);
     expect(find.textContaining('Your summary, spreadsheet'), findsOneWidget);
@@ -198,7 +204,7 @@ void main() {
     expect(preview.allowPrinting, isFalse);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Send to accountant'));
+    await tester.tap(find.text('Share pack'));
     await tester.pumpAndSettle();
     await finish(tester, operation!);
     await tester.pumpAndSettle();
@@ -229,7 +235,7 @@ void main() {
       ),
     ))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Ready for your accountant'));
+    await waitFor(tester, find.text('Review accountant pack'));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     await finish(tester, operation!);
@@ -254,9 +260,9 @@ void main() {
       ),
     ))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Ready for your accountant'));
+    await waitFor(tester, find.text('Review accountant pack'));
     expect(find.textContaining('Unexplained odometer distance'), findsWidgets);
-    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(find.text('Share pack'), findsOneWidget);
     expect(sentNames, isEmpty);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -287,7 +293,7 @@ void main() {
                     },
                     child: const Text('Prepare'))))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Ready for your accountant'));
+    await waitFor(tester, find.text('Review accountant pack'));
     await tester.tap(find.text('Preview report'));
     await waitFor(tester, find.text('Report preview'));
     await tester.pumpAndSettle();
@@ -300,7 +306,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.text('Preparation cancelled'), findsOneWidget);
-    expect(find.text('Send to accountant'), findsNothing);
+    expect(find.text('Share pack'), findsNothing);
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
     await finish(tester, operation!);
@@ -330,9 +336,9 @@ void main() {
                     },
                     child: const Text('Prepare'))))));
     await tester.tap(find.text('Prepare'));
-    await waitFor(tester, find.text('Ready for your accountant'));
+    await waitFor(tester, find.text('Review accountant pack'));
     await tester.pumpAndSettle();
-    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(find.text('Share pack'), findsOneWidget);
     expect(find.text('Share ZIP'), findsNothing);
     expect(find.text('Share draft ZIP'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -340,5 +346,91 @@ void main() {
     await tester.pumpAndSettle();
     await finish(tester, operation!);
     expect(sentNames, isEmpty);
+  });
+  testWidgets(
+      'Selected historical vehicle pack excludes all other scope data without changing primary',
+      (tester) async {
+    final state = await fixture();
+    addTearDown(state.dispose);
+    await state.addVehicle(Vehicle(
+        id: 'v2',
+        make: 'Ford',
+        model: 'Ranger',
+        regoPlate: 'OTHER',
+        isPrimary: false,
+        initialOdometer: 100,
+        taxMethod: TaxMethod.centsPerKm));
+    for (final record in [
+      (id: 'chosen-trip', car: 'v2', date: DateTime(2025, 8, 1), km: 20.0),
+      (id: 'wrong-year', car: 'v2', date: DateTime(2026, 8, 1), km: 30.0),
+      (id: 'wrong-car', car: 'v1', date: DateTime(2025, 8, 1), km: 40.0),
+    ]) {
+      state.recordTrip(Trip(
+          id: record.id,
+          vehicleId: record.car,
+          date: record.date,
+          distanceKm: record.km,
+          startOdometer: 100,
+          endOdometer: 100 + record.km,
+          purpose: record.id,
+          classification: TripClassification.business));
+    }
+    Future<void>? operation;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => FilledButton(
+                      onPressed: () => operation =
+                          TaxPackShareHelper.shareTaxPack(context, state,
+                              vehicleId: 'v2', financialYear: '2025-26'),
+                      child: const Text('Prepare'),
+                    )))));
+    await tester.tap(find.text('Prepare'));
+    await waitFor(tester, find.text('Review accountant pack'));
+    expect(state.primaryVehicle!.id, 'v1');
+    await tester.tap(find.text('Share pack'));
+    await tester.pumpAndSettle();
+    await finish(tester, operation!);
+    final pack = sentPacks.single;
+    expect(pack.metadata['vehicleId'], 'v2');
+    expect(pack.metadata['financialYear'], '2025-26');
+    expect(pack.metadata['tripCount'], 1);
+    expect(pack.searchableText, contains('chosen-trip'));
+    expect(pack.searchableText, isNot(contains('wrong-year')));
+    expect(pack.searchableText, isNot(contains('wrong-car')));
+    expect(pack.summaryValue('Rate (AUD per km)'), .88);
+    expect(state.primaryVehicle!.id, 'v1');
+    expect(await tester.runAsync(() => temp.list().toList()), isEmpty);
+  });
+  testWidgets(
+      'Save a copy writes the reviewed ZIP through system picker without sharing',
+      (tester) async {
+    final original = FilePickerPlatform.instance;
+    final picker = PackSavePicker();
+    FilePickerPlatform.instance = picker;
+    addTearDown(() => FilePickerPlatform.instance = original);
+    final state = await fixture();
+    addTearDown(state.dispose);
+    Future<void>? operation;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => FilledButton(
+                      onPressed: () => operation =
+                          TaxPackShareHelper.shareTaxPack(context, state),
+                      child: const Text('Prepare'),
+                    )))));
+    await tester.tap(find.text('Prepare'));
+    await waitFor(tester, find.text('Review accountant pack'));
+    expect(picker.savedBytes, isNull);
+    await tester.tap(find.text('Save a copy'));
+    await tester.pumpAndSettle();
+    await finish(tester, operation!);
+    final archive = ZipDecoder().decodeBytes(picker.savedBytes!);
+    expect(archive.findFile('Report.pdf'), isNotNull);
+    expect(archive.findFile('Details.xlsx'), isNotNull);
+    expect(sentNames, isEmpty);
+    expect(find.text('Pack saved to your selected location.'), findsOneWidget);
+    expect(await tester.runAsync(() => temp.list().toList()), isEmpty);
   });
 }

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Odometer Evidence Vault & Anti-Fraud Verification
+-- KiloClaim Database Migration: Odometer Evidence Vault & Anti-Fraud Verification
 -- Complies with ITAA 1997 Subdivision 28-F & TR 97/11 (Statutory substantiation)
 -- Enforces tamper-evident cryptographic hashes to prevent image reuse fraud
 -- ==============================================================================

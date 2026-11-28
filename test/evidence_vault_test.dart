@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/audit_evidence.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/evidence/evidence_vault_service.dart';
-import 'package:kilotax/services/storage/receipt_image_optimization_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/audit_evidence.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/evidence/evidence_vault_service.dart';
+import 'package:kiloclaim/services/storage/receipt_image_optimization_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   group('Unified Evidence Vault & Anti-Fraud Suite', () {

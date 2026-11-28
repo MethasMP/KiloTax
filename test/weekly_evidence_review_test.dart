@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:kilotax/ui/screens/notifications/notifications_sheet.dart';
-import 'package:kilotax/ui/screens/notifications/notifications_dropdown.dart';
+import 'package:kiloclaim/ui/screens/notifications/notifications_sheet.dart';
+import 'package:kiloclaim/ui/screens/notifications/notifications_dropdown.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
-import 'package:kilotax/services/notifications/notification_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/evidence/evidence_review_screen.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/services/notifications/notification_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/evidence/evidence_review_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

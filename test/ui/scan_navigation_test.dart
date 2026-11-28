@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
-import 'package:kilotax/ui/screens/home/widgets/trips_ledger_tab.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../support/main_menu_fixtures.dart' as fixtures;
 
@@ -17,10 +17,12 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   for (final method in TaxMethod.values) {
-    testWidgets('Scan exposes one camera action for ${method.name}',
+    const expectedLabel = 'Capture';
+    const expectedIcon = Icons.add;
+    testWidgets('Center action exposes $expectedLabel for ${method.name}',
         (tester) async {
       final semantics = tester.ensureSemantics();
-      var scanCalls = 0;
+      var actionCalls = 0;
       final tabSelections = <int>[];
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
@@ -28,29 +30,29 @@ void main() {
             currentIndex: 0,
             taxMethod: method,
             onTabSelected: tabSelections.add,
-            onCenterActionTap: () => scanCalls++,
+            onCenterActionTap: () => actionCalls++,
           ),
         ),
       ));
-      expect(find.text('Scan'), findsOneWidget);
-      expect(find.text('Capture'), findsNothing);
-      expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
+      expect(find.text('Scan'), findsNothing);
+      expect(find.text('Capture'), findsOneWidget);
+      expect(find.byIcon(expectedIcon), findsOneWidget);
       expect(
-        tester.getSemantics(find.bySemanticsLabel('Scan receipt')),
+        tester.getSemantics(find.bySemanticsLabel(expectedLabel)),
         matchesSemantics(
-          label: 'Scan receipt',
+          label: expectedLabel,
           isButton: true,
           hasTapAction: true,
         ),
       );
-      await tester.tap(find.text('Scan'));
-      expect(scanCalls, 1);
+      await tester.tap(find.bySemanticsLabel(expectedLabel));
+      expect(actionCalls, 1);
       expect(tabSelections, isEmpty);
-      await tester.tap(find.text('Trips'));
-      expect(scanCalls, 1);
+      await tester.tap(find.text('Review'));
+      expect(actionCalls, 1);
       expect(tabSelections, [1]);
-      expect(find.text('Expenses'),
-          method != TaxMethod.centsPerKm ? findsOneWidget : findsNothing);
+      expect(find.text('Records'), findsOneWidget);
+      expect(find.text('Pack'), findsOneWidget);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });

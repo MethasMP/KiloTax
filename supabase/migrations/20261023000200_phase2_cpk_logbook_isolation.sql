@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Phase 2 - CPK & Logbook Isolation Engine (ITAA 1997 Compliant)
+-- KiloClaim Database Migration: Phase 2 - CPK & Logbook Isolation Engine (ITAA 1997 Compliant)
 -- Migration: 20261023_phase2_cpk_logbook_isolation.sql
 --
 -- 1. Partial Index for CPK Trips (5,000 km statutory cap extraction):

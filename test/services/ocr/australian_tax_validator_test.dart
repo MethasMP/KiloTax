@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/ocr/australian_tax_validator.dart';
+import 'package:kiloclaim/services/ocr/australian_tax_validator.dart';
 
 void main() {
   group('AustralianTaxValidator - ABN Modulus-89 Validation', () {

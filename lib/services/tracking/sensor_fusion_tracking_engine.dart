@@ -40,6 +40,7 @@ class SensorFusionTrackingEngine {
   final Wgs84GeodesicEngine _geodesic = Wgs84GeodesicEngine();
   Position? _lastValidPosition;
   DateTime? _lastTimestamp;
+  DateTime? _lastKalmanTimestamp;
   DateTime? _stationarySince;
   double _lastValidSpeedKmh = 0.0;
 
@@ -47,6 +48,7 @@ class SensorFusionTrackingEngine {
     _geodesic.reset();
     _lastValidPosition = null;
     _lastTimestamp = null;
+    _lastKalmanTimestamp = null;
     _stationarySince = null;
     _lastValidSpeedKmh = 0.0;
   }
@@ -68,8 +70,15 @@ class SensorFusionTrackingEngine {
     final now = newFix.timestamp;
 
     if (_lastValidPosition == null || _lastTimestamp == null) {
+      _geodesic.filterPosition(
+        lat: newFix.latitude,
+        lon: newFix.longitude,
+        accuracyMeters: newFix.accuracy,
+        timeDeltaMilliseconds: 0,
+      );
       _lastValidPosition = newFix;
       _lastTimestamp = now;
+      _lastKalmanTimestamp = now;
       _lastValidSpeedKmh = newFix.speed > 0.8 ? (newFix.speed * 3.6) : 0.0;
 
       return FilteredPositionUpdate(
@@ -81,8 +90,14 @@ class SensorFusionTrackingEngine {
       );
     }
 
-    final dtSeconds = (now.difference(_lastTimestamp!).inMilliseconds / 1000.0)
-        .clamp(0.05, 60.0);
+    final rawDtMs = now.difference(_lastTimestamp!).inMilliseconds;
+    final dtSeconds = (rawDtMs / 1000.0).clamp(0.05, 60.0);
+    // Elapsed time since the last Kalman state update (spans stationary periods
+    // so departure fixes are not pulled back to the stop location).
+    final kalmanDtMs = (_lastKalmanTimestamp != null
+            ? now.difference(_lastKalmanTimestamp!).inMilliseconds
+            : rawDtMs)
+        .clamp(50, 3600000);
 
     final rawMeters = Wgs84GeodesicEngine.calculateDistanceMeters(
       lat1: _lastValidPosition!.latitude,
@@ -119,6 +134,21 @@ class SensorFusionTrackingEngine {
       );
     }
 
+    // Filter B2: Physical Acceleration Sanity Gate (maxPlausibleAccelerationMs2)
+    final prevSpeedMs = _lastValidSpeedKmh / 3.6;
+    final accelerationMs2 = (calculatedSpeedMs - prevSpeedMs).abs() / dtSeconds;
+    if (dtSeconds >= 0.5 &&
+        accelerationMs2 > maxPlausibleAccelerationMs2 &&
+        calculatedSpeedKmh > 25.0) {
+      return FilteredPositionUpdate(
+        distanceDeltaKm: 0.0,
+        instantaneousSpeedKmh: _lastValidSpeedKmh,
+        isStationary: false,
+        isAnomalousJumpDiscarded: true,
+        currentPosition: _lastValidPosition!,
+      );
+    }
+
     // Filter C: Stationary Jitter / Dead Zone Filter (ZUPT: Zero Velocity Update)
     // When speed is 0 (or below human crawl threshold 1.0 km/h) and movement is within jitter radius,
     // clamp to stationary and discard any accumulated drift.
@@ -139,23 +169,52 @@ class SensorFusionTrackingEngine {
       );
     }
 
+    // Apply 1D Spatial Kalman Filter to suppress multipath noise on accepted fixes
+    final (filteredLat, filteredLon) = _geodesic.filterPosition(
+      lat: newFix.latitude,
+      lon: newFix.longitude,
+      accuracyMeters: newFix.accuracy,
+      timeDeltaMilliseconds: kalmanDtMs,
+    );
+
+    final filteredMeters = Wgs84GeodesicEngine.calculateDistanceMeters(
+      lat1: _lastValidPosition!.latitude,
+      lon1: _lastValidPosition!.longitude,
+      lat2: filteredLat,
+      lon2: filteredLon,
+    );
+
+    final smoothedFix = Position(
+      longitude: filteredLon,
+      latitude: filteredLat,
+      timestamp: newFix.timestamp,
+      accuracy: newFix.accuracy,
+      altitude: newFix.altitude,
+      altitudeAccuracy: newFix.altitudeAccuracy,
+      heading: newFix.heading,
+      headingAccuracy: newFix.headingAccuracy,
+      speed: newFix.speed,
+      speedAccuracy: newFix.speedAccuracy,
+      floor: newFix.floor,
+      isMocked: newFix.isMocked,
+    );
+
     // Vehicle has transitioned from stationary to moving.
-    // Reset stationary marker. If we were stationary, clamp delta time to avoid
-    // artificial acceleration spikes from delayed stationary ticks.
     _stationarySince = null;
-    _lastValidPosition = newFix;
+    _lastValidPosition = smoothedFix;
     _lastTimestamp = now;
+    _lastKalmanTimestamp = now;
     _lastValidSpeedKmh =
         sensorSpeedKmh > 0 ? sensorSpeedKmh : calculatedSpeedKmh;
 
-    final acceptedDistanceKm = rawMeters / 1000.0;
+    final acceptedDistanceKm = filteredMeters / 1000.0;
 
     return FilteredPositionUpdate(
       distanceDeltaKm: acceptedDistanceKm,
       instantaneousSpeedKmh: _lastValidSpeedKmh,
       isStationary: false,
       isAnomalousJumpDiscarded: false,
-      currentPosition: newFix,
+      currentPosition: smoothedFix,
     );
   }
 }

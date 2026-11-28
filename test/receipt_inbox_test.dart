@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
-import 'package:kilotax/services/receipts/receipt_inbox_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/expenses/receipt_inbox_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/receipts/receipt_inbox_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/expenses/receipt_inbox_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -11,11 +11,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/home/main_scaffold_screen.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/home/main_scaffold_screen.dart';
 
 const String _fontCache =
     '/opt/homebrew/share/flutter/bin/cache/artifacts/material_fonts';

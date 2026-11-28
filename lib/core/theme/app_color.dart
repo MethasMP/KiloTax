@@ -23,9 +23,11 @@ class AppColor {
   // ----------------------------------------------------------------- content
   static const Color ink = Color(0xFF18181B);
 
-  static const Color inkMuted = Color(0xFF52525B);
+  static const Color inkMuted = Color(0xFF3F3F46);
 
-  static const Color inkSubtle = Color(0xFF71717A);
+  /// High-contrast token (Zinc 600) tuned for sunlight readability and anti-glare
+  /// visibility on ute dashboard mounts. Exceeds WCAG AA on canvas/white (7.4:1).
+  static const Color inkSubtle = Color(0xFF52525B);
 
   static const Color onNavy = Color(0xFFFFFFFF);
   static const Color onNavyMuted = Color(0xFFD4D4D8);

@@ -74,7 +74,7 @@ class _PermissionPrepromptScreenState extends State<PermissionPrepromptScreen> {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'KiloTax needs your location and motion data to detect drives automatically from site to site without draining your battery.',
+                        'Allow location and motion access so KiloClaim records your drives from site to site automatically.',
                         style: AppTextStyles.secondaryMedium,
                         textAlign: TextAlign.center,
                       ),
@@ -83,21 +83,21 @@ class _PermissionPrepromptScreenState extends State<PermissionPrepromptScreen> {
                         icon: Icons.shield_outlined,
                         title: 'Trip records for review',
                         description:
-                            'Review recorded trips, distances and purposes before sharing.',
+                            'Each trip fills in your distance and route automatically. Tap once to confirm if it was for work.',
                       ),
                       const SizedBox(height: 16),
                       _buildBullet(
                         icon: Icons.directions_car_outlined,
                         title: 'Select "Always Allow"',
                         description:
-                            'Allows background logging so you never have to remember to open the app before driving.',
+                            'Lets the app log trips in the background while your phone stays in your pocket.',
                       ),
                       const SizedBox(height: 16),
                       _buildBullet(
                         icon: Icons.battery_charging_full_outlined,
                         title: 'Battery-Optimised Motion Sensors',
                         description:
-                            'GPS activates only when your vehicle is moving and sleeps when you are parked.',
+                            'GPS turns on only when your vehicle moves and turns off when you park.',
                       ),
                       const Spacer(),
                       const SizedBox(height: 24),

@@ -1,0 +1,38 @@
+🚀 Starting KiloClaim 1,000 Tradie Monte Carlo Sandbox Simulation...
+{
+  "total_users": 1000,
+  "onboarding_friction": {
+    "rego_lookup_fallback_needed": 102,
+    "abandoned_on_manual_rego_entry": 2
+  },
+  "tracking_issues": {
+    "ghost_micro_trip_on_site": 18669,
+    "gps_tunnel_multipath_gap": 12235,
+    "premature_trip_cutoff_bt_disconnect": 4338
+  },
+  "review_friction_5pm": {
+    "backlog_overwhelm_gt_15_trips": 806,
+    "swiped_all_blindly_without_audit_check": 204
+  },
+  "receipt_ocr_issues": {
+    "faded_thermal_paper_low_confidence": 4516,
+    "abn_or_gst_missed_requires_manual_edit": 1642,
+    "orphaned_expense_no_matching_trip": 2888
+  },
+  "tax_arbitrage_behavior": {
+    "cpk_capped_at_5000km_money_loss": 483,
+    "smart_pivot_to_logbook_triggered": 371,
+    "ignored_smart_pivot_lost_deductions": 112
+  },
+  "accountant_handoff_blockers": {
+    "missing_odo_photo_audit_vulnerability": 634,
+    "user_worried_private_trip_details_leak_to_accountant": 17,
+    "unexplained_odometer_jump_gap": 70
+  },
+  "ui_ux_ergonomics": {
+    "contrast_subtle_grey_unreadable_in_glare": 202,
+    "bulky_tools_rationale_unclear_at_review": 101,
+    "missed_small_touch_target_fatigue": 138
+  },
+  "critical_bugs_encountered": {}
+}

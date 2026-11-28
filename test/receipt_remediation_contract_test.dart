@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/ocr/receipt_audit_service.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/ocr/receipt_audit_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
   test('copyWith can clear optional observed fields explicitly', () {

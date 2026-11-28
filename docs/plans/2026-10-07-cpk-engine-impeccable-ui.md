@@ -20,8 +20,8 @@
 **Step 1: Write the failing test**
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/vehicle/vehicle_classification_engine.dart';
-import 'package:kilotax/data/models/vehicle.dart';
+import 'package:kiloclaim/services/vehicle/vehicle_classification_engine.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
 
 void main() {
   test('correctly identifies commercial vehicles with payload over 1000kg', () {

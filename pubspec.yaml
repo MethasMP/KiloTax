@@ -1,5 +1,5 @@
-name: kilotax
-description: "KiloTax - Australian Vehicle Tax & Mileage Micro-SaaS"
+name: kiloclaim
+description: "KiloClaim - Australian Vehicle Tax & Mileage Micro-SaaS"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,11 +13,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   provider: ^6.1.2
+  intl: ^0.20.3
   http: ^1.6.0
   crypto: ^3.0.7
   archive: ^4.6.0
   shared_preferences: ^2.5.5
   image_picker: ^1.2.3
+  image: ^4.12.0
   lucide_icons_flutter: ^3.1.18
   url_launcher: ^6.3.2
   supabase_flutter: ^2.17.2
@@ -56,6 +58,8 @@ flutter:
     - google.svg
     - apple.svg
     - assets/icon_master.png
+    - assets/brand/folio/folio-mark.svg
+    - assets/brand/folio/folio-app-icon.svg
     - assets/data/ato_rates_baseline.json
 
   # Inter was declared in ThemeData but never bundled, so every screen silently

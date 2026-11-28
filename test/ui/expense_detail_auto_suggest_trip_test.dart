@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/expenses/expense_detail_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +30,8 @@ void main() {
         vehicleId: 'veh_test_1',
         date: baseTime.subtract(const Duration(minutes: 20)), // 1:40 PM
         distanceKm: 12.0,
-        purpose: 'Site Inspection',
+        purpose: 'Materials Pickup',
+        destinationAddress: 'Bunnings Warehouse Alexandria',
         classification: TripClassification.business,
       );
       appState.recordTrip(matchingTrip);
@@ -39,9 +40,9 @@ void main() {
         MaterialApp(
           home: ExpenseDetailScreen(
             appState: appState,
-            merchant: 'BP Connect',
+            merchant: 'Bunnings Warehouse',
             amount: 88.50,
-            categoryName: 'Fuel',
+            categoryName: 'Tools & Job Materials (Bunnings)',
             receiptDate: baseTime, // 2:00 PM (20 mins after trip end)
           ),
         ),
@@ -53,7 +54,7 @@ void main() {
           find.byKey(const ValueKey('accept-suggested-trip'));
       expect(suggestedCheckbox, findsOneWidget);
       expect(find.text('Suggested trip link'), findsOneWidget);
-      expect(find.textContaining('Matched work trip'), findsOneWidget);
+      expect(find.textContaining('Matched trade supply stop'), findsOneWidget);
 
       // Tap on the checkbox to accept the suggestion
       await Scrollable.ensureVisible(tester.element(suggestedCheckbox),
@@ -65,7 +66,45 @@ void main() {
       // Upon accepting, the suggestion checkbox disappears and the linked trip banner appears
       expect(find.byKey(const ValueKey('accept-suggested-trip')), findsNothing);
       expect(find.text('Linked trip'), findsOneWidget);
-      expect(find.textContaining('Matched work trip'), findsOneWidget);
+      expect(find.textContaining('Matched trade supply stop'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Does not suggest individual trip for pooled fuel expense (ATO 2-Bucket Rule)',
+        (tester) async {
+      final appState = AppState();
+      final vehicle = Vehicle(
+        id: 'veh_test_fuel',
+        make: 'Toyota',
+        model: 'HiLux',
+        regoPlate: 'TEST-03',
+        taxMethod: TaxMethod.logbook,
+      );
+      await appState.addVehicle(vehicle);
+
+      appState.recordTrip(Trip(
+        id: 'trip_work_fuel',
+        vehicleId: 'veh_test_fuel',
+        date: baseTime.subtract(const Duration(minutes: 20)),
+        distanceKm: 12.0,
+        purpose: 'Site Inspection',
+        classification: TripClassification.business,
+      ));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ExpenseDetailScreen(
+            appState: appState,
+            merchant: 'BP Connect',
+            amount: 88.50,
+            categoryName: 'Fuel',
+            receiptDate: baseTime,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('accept-suggested-trip')), findsNothing);
     });
 
     testWidgets('Does not suggest trip if expense already has linkedTripId',
@@ -112,8 +151,9 @@ void main() {
 
       // Card for suggestion should NOT be present since it is already linked
       expect(find.byKey(const ValueKey('accept-suggested-trip')), findsNothing);
-      // But the linked trip banner should be present
+      // Incompatible historical links remain visible only as legacy context
       expect(find.text('Linked trip'), findsOneWidget);
+      expect(find.text('Legacy link — unlink or review'), findsWidgets);
     });
   });
 }

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Eradicate cognitive noise across KiloTax's main interface by reducing navigation and screens down to the Steve Jobs "Holy Trinity" (Drive/Trips, 1-Tap Snap, Tax/Accountant), burying deep secondary workflows into contextual drawers/settings, and elevating "Send to Accountant" as the unmistakable Hero Action.
+**Goal:** Eradicate cognitive noise across KiloClaim's main interface by reducing navigation and screens down to the Steve Jobs "Holy Trinity" (Drive/Trips, 1-Tap Snap, Tax/Accountant), burying deep secondary workflows into contextual drawers/settings, and elevating "Send to Accountant" as the unmistakable Hero Action.
 
 **Architecture:**
 1. **The Pure 3+1 Bottom Bar:** Unify the polymorphic navbar into 3 crystal-clear destination hubs (`Trips`, `Tax`) with an elevated, prominent center `[ 📷 Snap ]` action button.
@@ -40,6 +40,6 @@
   - **Verification:** Navigation transitions test cleanly without state thrashing (`test/ui/scan_navigation_test.dart` 5/5 passed).
 
 - [x] **Task 3: Elevate "Send to Accountant" in `TaxSummaryScreen`**
-  - **Context:** Tradies use KiloTax to solve their tax audit anxiety. The "Send to Accountant" package must be the unmistakable Hero Action with instant clarity.
+  - **Context:** Tradies use KiloClaim to solve their tax audit anxiety. The "Send to Accountant" package must be the unmistakable Hero Action with instant clarity.
   - **Deliverable:** Polished primary action card and 56px hero button in `lib/ui/screens/tax/tax_summary_screen.dart` with "AUDIT-PROOF READY" badge.
   - **Verification:** `test/ui/tax_summary_readiness_test.dart` & `test/ui/pre_flight_review_screen_test.dart` pass 100% (22/22 passed across combined suite).

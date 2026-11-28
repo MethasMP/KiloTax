@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/tracking/odometer_gap_reconciler.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/tracking/odometer_gap_reconciler.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 Trip trip(String id, double start, double end,
         {String vehicle = 'ute', String source = 'manual_retroactive'}) =>

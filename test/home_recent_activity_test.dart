@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/home_recent_activity.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/home_recent_activity.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -47,7 +47,10 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('No trips recorded yet.'), findsOneWidget);
+      expect(
+          find.text(
+              'No trips logged for this vehicle yet. Auto-GPS or manual trips appear here.'),
+          findsOneWidget);
       expect(find.text('Add a trip'), findsOneWidget);
       expect(find.text('Simulate a Test Drive'), findsNothing);
       expect(appState.trips, isEmpty);
@@ -74,6 +77,32 @@ void main() {
       expect(logged, isTrue);
     });
 
+    testWidgets('Trip classifications stay distinct without per-trip claims',
+        (tester) async {
+      for (final classification in [
+        TripClassification.business,
+        TripClassification.personal,
+        TripClassification.unclassified,
+      ]) {
+        appState.recordTrip(Trip(
+          id: classification.name,
+          vehicleId: 'v_hilux',
+          date: DateTime.now(),
+          distanceKm: 10,
+          purpose: 'Recorded trip',
+          classification: classification,
+        ));
+      }
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+      expect(find.text('Work'), findsOneWidget);
+      expect(find.text('Personal'), findsOneWidget);
+      expect(find.text('Unclassified'), findsOneWidget);
+      expect(find.textContaining('claim'), findsNothing);
+      expect(find.textContaining('km business'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
         'Recorded trip updates recent activity without sample ledger entries',
         (tester) async {
@@ -92,7 +121,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('No trips recorded yet.'), findsOneWidget);
+      expect(
+          find.text(
+              'No trips logged for this vehicle yet. Auto-GPS or manual trips appear here.'),
+          findsOneWidget);
 
       expect(appState.trips, isEmpty);
       appState.recordTrip(Trip(
@@ -106,7 +138,10 @@ void main() {
       await tester.pump();
       // Trips now populated, empty state replaced by latest trip hero card
       expect(appState.trips.isNotEmpty, isTrue);
-      expect(find.text('No trips recorded yet.'), findsNothing);
+      expect(
+          find.text(
+              'No trips logged for this vehicle yet. Auto-GPS or manual trips appear here.'),
+          findsNothing);
       expect(find.textContaining('Job Site'), findsOneWidget);
       expect(find.textContaining('Bunnings Warehouse'), findsOneWidget);
     });

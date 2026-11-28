@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:kilotax/services/scanner/document_scanner_service.dart';
+import 'package:kiloclaim/services/scanner/document_scanner_service.dart';
 
 class MockImagePicker extends Fake implements ImagePicker {
   final XFile? returnedFile;

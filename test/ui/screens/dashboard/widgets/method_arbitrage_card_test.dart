@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/theme/app_motion.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/method_arbitrage_card.dart';
+import 'package:kiloclaim/core/theme/app_motion.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/method_arbitrage_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 void main() {
@@ -262,6 +262,75 @@ void main() {
       await tester.pump();
       await tester.pump(AppMotion.release);
       expect(scaleWidget.scale.value, closeTo(1.0, 0.01));
+    });
+
+    testWidgets(
+        'renders proactively via annualized projection when businessKm >= 500 and annualized >= 5000',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MethodArbitrageCard(
+              businessKm: 650.0,
+              centsPerKmClaim: 4400.0,
+              logbookClaim: 6200.0,
+              annualizedBusinessKm: 15800.0,
+              trackingDays: 15,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('METHOD ARBITRAGE'), findsOneWidget);
+      expect(find.text('+\$1,800 Difference'), findsOneWidget);
+      expect(find.text('Unlock Logbook'), findsOneWidget);
+    });
+
+    testWidgets(
+        'stays hidden when annualizedBusinessKm < 5000 even with >= 14 tracking days',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MethodArbitrageCard(
+              businessKm: 550.0,
+              centsPerKmClaim: 3000.0,
+              logbookClaim: 3800.0,
+              annualizedBusinessKm: 4200.0,
+              trackingDays: 45,
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.byType(MethodArbitrageCard)), Size.zero);
+    });
+
+    testWidgets(
+        'displays ute benchmark disclosure when isBenchmarkEstimate is true',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MethodArbitrageCard(
+              businessKm: 700.0,
+              centsPerKmClaim: 4400.0,
+              logbookClaim: 6400.0,
+              annualizedBusinessKm: 16000.0,
+              trackingDays: 15,
+              isBenchmarkEstimate: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('METHOD ARBITRAGE'), findsOneWidget);
+      expect(
+        find.text(
+          'Estimated from typical AU ute running costs. Add receipts to refine.',
+        ),
+        findsOneWidget,
+      );
     });
   });
 }

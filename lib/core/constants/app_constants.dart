@@ -102,7 +102,7 @@ class AtoTaxRule {
 }
 
 class AppConstants {
-  static const String appTitle = 'KiloTax';
+  static const String appTitle = 'KiloClaim';
 
   // Active ATO Tax Year: 2026-27
   static const AtoTaxRule activeTaxRule = AtoTaxRule(
@@ -118,7 +118,7 @@ class AppConstants {
   static int get statutoryLogbookWeeks => activeTaxRule.logbookMinWeeks;
   static int get statutoryLogbookDays => activeTaxRule.logbookMinWeeks * 7;
 
-  // Supabase Cloud Vault Config (Project: KiloTax)
+  // Supabase Cloud Vault Config (Project: KiloClaim)
   static const String supabaseUrl = 'https://mwtxfdqcyalsohruzmps.supabase.co';
   static const String supabaseAnonKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dHhmZHFjeWFsc29ocnV6bXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODIzNDYsImV4cCI6MjEwNDI1ODM0Nn0.OLMf4bsr1kgnzDieaf4q3dYTpZGsp01bYepfXpDwNKs';
@@ -131,9 +131,9 @@ class AppConstants {
   static const String receiptStorageBucket = 'receipts';
 
   // Legal & Compliance URLs (Public Hosted Portal)
-  static const String privacyPolicyUrl = 'https://methasmp.github.io/KiloTax/legal/#privacy';
-  static const String termsOfServiceUrl = 'https://methasmp.github.io/KiloTax/legal/#terms';
-  static const String supportUrl = 'https://methasmp.github.io/KiloTax/legal/#support';
+  static const String privacyPolicyUrl = 'https://methasmp.github.io/KiloClaim/legal/#privacy';
+  static const String termsOfServiceUrl = 'https://methasmp.github.io/KiloClaim/legal/#terms';
+  static const String supportUrl = 'https://methasmp.github.io/KiloClaim/legal/#support';
 }
 
 /// Strict Typography Hierarchy locked from Product Architect & UX spec:

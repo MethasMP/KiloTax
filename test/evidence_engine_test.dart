@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/tax_calculator_service.dart';
-import 'package:kilotax/services/sync/sync_engine_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/tax_calculator_service.dart';
+import 'package:kiloclaim/services/sync/sync_engine_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
-  group('KiloTax Double-Claim Guard & 12-Week Compliance Tests', () {
+  group('KiloClaim Double-Claim Guard & 12-Week Compliance Tests', () {
     test('AtoTaxRule versioning correctly provides FY2026-27 statutory limits',
         () {
       expect(AppConstants.activeTaxRule.financialYear, equals('2026-27'));

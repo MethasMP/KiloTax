@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/storage/receipt_image_optimization_service.dart';
+import 'package:kiloclaim/services/storage/receipt_image_optimization_service.dart';
 
 void main() {
   group('ReceiptImageOptimizationService (WebP Engine)', () {
@@ -10,7 +10,7 @@ void main() {
 
     setUp(() async {
       service = ReceiptImageOptimizationService();
-      tempDir = await Directory.systemTemp.createTemp('kilotax_test_');
+      tempDir = await Directory.systemTemp.createTemp('kiloclaim_test_');
     });
 
     tearDown(() async {
@@ -21,7 +21,7 @@ void main() {
 
     test('Computes deterministic SHA-256 hash for raw file bytes', () {
       final testBytes =
-          Uint8List.fromList('KiloTax Tax Evidence Receipt Audit'.codeUnits);
+          Uint8List.fromList('KiloClaim Tax Evidence Receipt Audit'.codeUnits);
       final hash = service.computeSha256(testBytes);
 
       expect(hash, isNotEmpty);

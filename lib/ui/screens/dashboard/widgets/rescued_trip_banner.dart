@@ -228,7 +228,7 @@ class _RescuedTripBannerState extends State<RescuedTripBanner> {
 
             // Main Message
             const Text(
-              'Your previous drive was interrupted when the app closed. KiloTax protected your tax deduction data.',
+              'Your previous drive was interrupted when the app closed. KiloClaim protected your tax deduction data.',
               style: TextStyle(
                 fontSize: 12,
                 color: AppColor.attentionInk,

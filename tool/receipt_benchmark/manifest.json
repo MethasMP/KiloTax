@@ -1,0 +1,225 @@
+{
+  "dataset_version": "1.1.0",
+  "created_at": "2026-11-24",
+  "curator": "scavenger-dataset",
+  "total_samples": 19,
+  "sources": [
+    "Hugging Face & GitHub ICDAR 2019 SROIE Scanned Receipt Dataset (althayr/ICDAR-2019-SROIE-dataset, darentang/sroie)",
+    "Wikimedia Commons Public Domain Australian Retail Receipts (Woolworths Group Limited)",
+    "Australian Retail, Trade & Fuel Tax Invoices (Bunnings Warehouse, Ampol Australia, BP Connect, Reece Plumbing, Shell / Viva Energy, 7-Eleven Stores)"
+  ],
+  "samples": [
+    {
+      "id": "au_bunnings_01",
+      "file": "au_bunnings_01.png",
+      "expected_merchant": "Bunnings Alexandria",
+      "expected_abn": "26 008 672 179",
+      "expected_total": 317.00,
+      "expected_gst": 28.82,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": false,
+      "expected_category": "toolsMaterials",
+      "quality_challenges": ["clean_thermal", "standard_contrast"]
+    },
+    {
+      "id": "au_bunnings_faded_02",
+      "file": "au_bunnings_faded_02.png",
+      "expected_merchant": "Bunnings Alexandria",
+      "expected_abn": "26 008 672 179",
+      "expected_total": 317.00,
+      "expected_gst": 28.82,
+      "is_faded": true,
+      "has_crease": true,
+      "has_mixed_items": false,
+      "expected_category": "toolsMaterials",
+      "quality_challenges": ["severe_thermal_fading", "horizontal_crease", "dot_matrix_loss"]
+    },
+    {
+      "id": "au_ampol_01",
+      "file": "au_ampol_01.png",
+      "expected_merchant": "Ampol Mascot",
+      "expected_abn": "17 000 032 128",
+      "expected_total": 129.00,
+      "expected_gst": 11.73,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": false,
+      "expected_category": "fuel",
+      "quality_challenges": ["pump_line_items", "fuel_rate_breakdown"]
+    },
+    {
+      "id": "au_ampol_faded_02",
+      "file": "au_ampol_faded_02.png",
+      "expected_merchant": "Ampol Mascot",
+      "expected_abn": "17 000 032 128",
+      "expected_total": 129.00,
+      "expected_gst": 11.73,
+      "is_faded": true,
+      "has_crease": true,
+      "has_mixed_items": false,
+      "expected_category": "fuel",
+      "quality_challenges": ["faded_thermal_ink", "ute_dashboard_sun_exposure", "smudged_abn"]
+    },
+    {
+      "id": "au_7eleven_mixed_01",
+      "file": "au_7eleven_mixed_01.png",
+      "expected_merchant": "7-Eleven Alexandria",
+      "expected_abn": "48 005 299 427",
+      "expected_total": 81.50,
+      "expected_gst": 7.41,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": true,
+      "expected_category": "fuel",
+      "quality_challenges": ["mixed_personal_convenience_item", "ice_break_iced_coffee_split_required"]
+    },
+    {
+      "id": "au_bp_01",
+      "file": "au_bp_01.png",
+      "expected_merchant": "BP Connect Melbourne",
+      "expected_abn": "53 004 085 616",
+      "expected_total": 88.55,
+      "expected_gst": 8.05,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": false,
+      "expected_category": "fuel",
+      "quality_challenges": ["three_decimal_fuel_pricing", "eftpos_auth_footer", "thermal_printer_margins"]
+    },
+    {
+      "id": "au_reece_01",
+      "file": "au_reece_01.png",
+      "expected_merchant": "Reece Plumbing Alexandria",
+      "expected_abn": "84 004 097 090",
+      "expected_total": 242.00,
+      "expected_gst": 22.00,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": false,
+      "expected_category": "toolsMaterials",
+      "quality_challenges": ["trade_account_invoice_format", "vehicle_rego_notation", "multi_line_hardware"]
+    },
+    {
+      "id": "au_shell_01",
+      "file": "au_shell_01.png",
+      "expected_merchant": "Shell Service Station (Viva Energy)",
+      "expected_abn": "46 004 610 459",
+      "expected_total": 110.00,
+      "expected_gst": 10.00,
+      "is_faded": false,
+      "has_crease": false,
+      "has_mixed_items": false,
+      "expected_category": "fuel",
+      "quality_challenges": ["high_speed_diesel_pump", "tax_invoice_header_prominence"]
+    }
+  ],
+  "open_source_sroie_samples": [
+    {
+      "id": "sroie_000",
+      "file": "sroie_000.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "format": "scanned_thermal_paper",
+      "quality_challenges": ["heavy_skew", "grayscale_compression_artifacts", "dot_matrix_characters"]
+    },
+    {
+      "id": "sroie_001",
+      "file": "sroie_001.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "POPULAR BOOK CO. (M) SDN BHD",
+      "expected_total": 11.80,
+      "expected_date": "11/02/18",
+      "quality_challenges": ["angled_scan", "uneven_illumination", "small_receipt_width"]
+    },
+    {
+      "id": "sroie_002",
+      "file": "sroie_002.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "BHPETROL PALEKBANG",
+      "expected_total": 6.00,
+      "expected_date": "24-03-2018",
+      "category": "fuel",
+      "quality_challenges": ["petrol_kiosk_printer", "thermal_ink_fading", "low_dpi"]
+    },
+    {
+      "id": "sroie_003",
+      "file": "sroie_003.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "IKANO HANDEL SDN BHD",
+      "expected_total": 22.00,
+      "expected_date": "25/04/18",
+      "quality_challenges": ["complex_retail_layout", "tabular_line_items", "faint_header"]
+    },
+    {
+      "id": "sroie_004",
+      "file": "sroie_004.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "UNIHAKKA INTERNATIONAL SDN BHD",
+      "expected_total": 12.20,
+      "expected_date": "10 MAY 2018",
+      "quality_challenges": ["currency_prefix_formatting", "vertical_crease"]
+    },
+    {
+      "id": "sroie_005",
+      "file": "sroie_005.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "MR. D. I. Y. (KUCHAI) SDN BHD",
+      "expected_total": 53.30,
+      "expected_date": "16-03-18",
+      "category": "toolsMaterials",
+      "quality_challenges": ["hardware_store_multi_item", "compact_tabular_spacing"]
+    },
+    {
+      "id": "sroie_006",
+      "file": "sroie_006.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "BOON SENG PAPER SDN BHD",
+      "expected_total": 31.80,
+      "expected_date": "19/03/2018",
+      "quality_challenges": ["full_page_invoice_layout", "stamped_signature", "contrast_bleed"]
+    },
+    {
+      "id": "sroie_007",
+      "file": "sroie_007.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "HASHA PETROKIOSK",
+      "expected_total": 50.00,
+      "expected_date": "06/04/2018",
+      "category": "fuel",
+      "quality_challenges": ["fuel_kiosk_receipt", "thermal_heat_damage", "low_contrast"]
+    },
+    {
+      "id": "sroie_008",
+      "file": "sroie_008.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "GARDENIA BAKERIES (KL) SDN BHD",
+      "expected_total": 7.97,
+      "expected_date": "17/08/2017",
+      "quality_challenges": ["faint_ribbon_printer", "non_standard_paper_ratio"]
+    },
+    {
+      "id": "sroie_009",
+      "file": "sroie_009.jpg",
+      "source": "ICDAR 2019 SROIE Task 1/2 Benchmark",
+      "expected_company": "THREE STOOGES",
+      "expected_total": 343.95,
+      "expected_date": "12/03/2018",
+      "quality_challenges": ["elongated_restaurant_docket", "subtotal_service_tax_lines"]
+    }
+  ],
+  "real_world_public_captures": [
+    {
+      "id": "woolworths_receipt",
+      "file": "woolworths_receipt.jpg",
+      "source": "Wikimedia Commons (Receipt-woolworth.jpg)",
+      "expected_merchant": "Woolworths Group Limited",
+      "expected_abn": "88 000 014 675",
+      "quality_challenges": [
+        "perspective_camera_tilt",
+        "uneven_ambient_lighting_shadows",
+        "paper_curl_wrinkles",
+        "high_resolution_real_phone_capture"
+      ]
+    }
+  ]
+}

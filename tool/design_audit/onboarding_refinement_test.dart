@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/core/theme/app_theme.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
-import 'package:kilotax/ui/screens/onboarding/widgets/value_first_gate_screen.dart';
+import 'package:kiloclaim/core/theme/app_theme.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/ui/screens/onboarding/widgets/value_first_gate_screen.dart';
 
 void main() {
   setUpAll(() async {

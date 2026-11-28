@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/data/models/trade_persona.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/user_profile.dart';
-import 'package:kilotax/services/tracking/autonomous_trip_detector.dart';
+import 'package:kiloclaim/data/models/trade_persona.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/user_profile.dart';
+import 'package:kiloclaim/services/tracking/autonomous_trip_detector.dart';
 
 void main() {
   group('FLAW-2 & FLAW-7 Fix Verification Tests', () {

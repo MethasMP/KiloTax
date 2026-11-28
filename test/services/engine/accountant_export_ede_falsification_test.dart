@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/accountant_handoff_service.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/accountant_handoff_service.dart';
 import 'package:xml/xml.dart';
 
 void main() {

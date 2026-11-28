@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/trips/widgets/trip_evidence_badge.dart';
-import 'package:kilotax/ui/screens/workflow/workflow_screen.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/trips/widgets/trip_evidence_badge.dart';
+import 'package:kiloclaim/ui/screens/workflow/workflow_screen.dart';
 
 void main() {
   group('TripEvidenceBadge Widget Tests', () {

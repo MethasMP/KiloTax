@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/ui/screens/onboarding/widgets/permission_preprompt_screen.dart';
+import 'package:kiloclaim/ui/screens/onboarding/widgets/permission_preprompt_screen.dart';
 
 void main() {
   group('PermissionPrepromptScreen Widget Tests', () {

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_motion.dart';
-import 'widgets/welcome_journey_illustration.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_motion.dart';
+import '../../../core/theme/app_space.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../widgets/kiloclaim_brand_lockup.dart';
 import '../../widgets/tactile_primary_button.dart';
-import '../auth/sign_in_screen.dart';
+import 'widgets/welcome_trip_preview.dart';
 
-/// A single welcome screen, with a direct return path for existing users.
+/// A brief, explorable introduction before account and vehicle setup.
 class OnboardingSlidesScreen extends StatefulWidget {
   final VoidCallback onComplete;
   const OnboardingSlidesScreen({super.key, required this.onComplete});
@@ -21,11 +23,12 @@ class _OnboardingSlidesScreenState extends State<OnboardingSlidesScreen>
     vsync: this,
     duration: AppMotion.welcome,
   );
-  late final CurvedAnimation _route = CurvedAnimation(
-    parent: _entrance,
-    curve: const Interval(0, 0.85, curve: AppMotion.enterCurve),
-  );
   bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void didChangeDependencies() {
@@ -58,7 +61,6 @@ class _OnboardingSlidesScreenState extends State<OnboardingSlidesScreen>
 
   @override
   void dispose() {
-    _route.dispose();
     _entrance.dispose();
     super.dispose();
   }
@@ -67,70 +69,83 @@ class _OnboardingSlidesScreenState extends State<OnboardingSlidesScreen>
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: AppColor.canvas,
         body: SafeArea(
-          child: LayoutBuilder(builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: constraints.maxHeight - 48),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 24),
-                          const Text('KiloTax',
-                              style: AppTextStyles.sectionTitle),
-                          const SizedBox(height: 32),
-                          WelcomeJourneyIllustration(progress: _route),
-                          const SizedBox(height: 24),
-                          _reveal(
-                              const Text('Your work trips.\nReady for review.',
-                                  style: AppTextStyles.pageTitle),
-                              0.1),
-                          const SizedBox(height: 16),
-                          _reveal(
-                              const Text(
-                                  'Keep kilometres, trip purposes and supporting records together for your accountant.',
-                                  style: AppTextStyles.secondaryMedium),
-                              0.2),
-                          const SizedBox(height: 24),
-                          const Text(
-                              'Start with your vehicle. Choose how to record trips when you’re ready.',
-                              style: AppTextStyles.secondaryMedium),
-                        ]),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 32),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TactilePrimaryButton(
-                                label: 'Get started',
-                                onPressed: widget.onComplete,
-                                trailingIcon: Icons.arrow_forward),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: () => Navigator.of(context)
-                                  .push(MaterialPageRoute<void>(
-                                builder: (routeContext) => SignInScreen(
-                                  onContinueAsGuest: () =>
-                                      Navigator.of(routeContext).pop(),
-                                  onAuthSuccess: () =>
-                                      Navigator.of(routeContext).pop(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) =>
+                          SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                            S.xl, S.xl, S.xl, S.lg),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight - S.xl - S.lg,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                KiloClaimBrandLockup(
+                                    compact: false, markProgress: _entrance),
+                                SizedBox(
+                                    height:
+                                        MediaQuery.textScalerOf(context)
+                                                    .scale(1) >
+                                                1.3
+                                            ? S.lg
+                                            : S.xxxl),
+                                _reveal(
+                                  Text(
+                                    'Drives logged automatically.\nReceipts linked in one tap.',
+                                    style: AppType.title,
+                                  ),
+                                  0.1,
                                 ),
-                              )),
-                              child: const Text(
-                                  'Already have an account? Sign in'),
+                                const SizedBox(height: S.sm),
+                                _reveal(
+                                  Text(
+                                    'KiloClaim records your site trips in the background and keeps every receipt with the job.',
+                                    style: AppType.body
+                                        .copyWith(color: AppColor.inkMuted),
+                                  ),
+                                  0.15,
+                                ),
+                                const SizedBox(height: S.xxl),
+                                Expanded(
+                                  child: _reveal(
+                                    WelcomeTripPreview(progress: _entrance),
+                                    0.22,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ]),
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(S.xl, S.sm, S.xl, S.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TactilePrimaryButton(
+                          label: 'Get started',
+                          baseColor: AppColor.brand,
+                          onPressed: widget.onComplete,
+                          trailingIcon: AppIcons.forward,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            );
-          }),
+            ),
+          ),
         ),
       );
 }

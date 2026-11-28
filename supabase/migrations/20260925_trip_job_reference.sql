@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Trip Job & Client Reference Linking
+-- KiloClaim Database Migration: Trip Job & Client Reference Linking
 -- Adds job_reference column to trips table for ATO audit evidence linking.
 -- ==============================================================================
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/cpk_export_service.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/cpk_export_service.dart';
 
 void main() {
   group('CpkExportService Arithmetic Verification (ITAA 1997 s 28-25)', () {

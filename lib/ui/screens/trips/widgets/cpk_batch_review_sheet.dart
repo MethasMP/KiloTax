@@ -3,10 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../data/models/job_site.dart';
 import '../../../../data/models/trip.dart';
+import '../../../../data/models/vehicle.dart';
 import '../../../../services/engine/trip_confidence_classifier.dart';
+import '../../../../services/tracking/job_site_auto_learner.dart';
 import '../../../../state/app_state.dart';
 import '../../../../core/theme/app_color.dart';
+
+/// Universal Evidence Batch Review alias so Logbook and CPK callers share one engine.
+typedef EvidenceBatchReviewSheet = CpkBatchReviewSheet;
 
 /// Meta Muse-Inspired "Structured Approval Sheet"
 /// Separates high-confidence work travel (1-tap sign-off) from high-audit-risk drives (user decision card)
@@ -33,12 +39,30 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
   late Set<String> _selectedHighConfidenceIds;
   final TextEditingController _jobRefController = TextEditingController();
 
+  TripClassificationContext _contextFor(Trip trip) {
+    final vehicle = widget.appState.vehicles
+        .where((v) => v.id == trip.vehicleId)
+        .firstOrNull ??
+        widget.appState.primaryVehicle;
+    return TripClassificationContext(
+      userProfile: widget.appState.userProfile,
+      vehicle: vehicle,
+      jobSites: widget.appState.jobSites,
+      expenses: widget.appState.expenses,
+      isVehicleBluetoothMatched:
+          trip.review['vehicleBluetoothMatched'] == true ||
+              trip.evidenceSource == 'native_bluetooth_auto',
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     final pendingTrips = widget.appState.missingComplianceTrips;
     _selectedHighConfidenceIds = pendingTrips
-        .where((t) => TripConfidenceClassifier.assess(t).isHighConfidence)
+        .where((t) =>
+            TripConfidenceClassifier.assess(t, context: _contextFor(t))
+                .isHighConfidence)
         .map((t) => t.id)
         .toSet();
   }
@@ -52,6 +76,8 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
   void _signOffHighConfidenceBatch(
       List<ClassifiedTripAssessment> highConfidenceList) {
     HapticFeedback.heavyImpact();
+    final isLogbook =
+        widget.appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
     final totalKm = highConfidenceList
         .where((a) => _selectedHighConfidenceIds.contains(a.trip.id))
@@ -72,6 +98,10 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
       }
     }
 
+    final summaryMsg = isLogbook
+        ? 'Signed off ${_selectedHighConfidenceIds.length} logbook drives (+${totalKm.toStringAsFixed(0)} km)'
+        : 'Signed off ${_selectedHighConfidenceIds.length} work drives (+${Formatters.currency(dollarClaimed)})';
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -83,7 +113,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Signed off ${_selectedHighConfidenceIds.length} work drives (+${Formatters.currency(dollarClaimed)})',
+                summaryMsg,
                 style:
                     const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
@@ -133,10 +163,23 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
   @override
   Widget build(BuildContext context) {
     final pendingTrips = widget.appState.missingComplianceTrips;
+    final isLogbook =
+        widget.appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
 
-    final assessments =
-        pendingTrips.map(TripConfidenceClassifier.assess).toList();
+    final assessments = pendingTrips
+        .map((t) => TripConfidenceClassifier.assess(t, context: _contextFor(t)))
+        .toList();
+    final activeVehicleId = widget.appState.primaryVehicle?.id;
+    final siteSuggestions = JobSiteAutoLearner.suggest(
+      trips: activeVehicleId == null
+          ? widget.appState.trips
+          : widget.appState.trips
+              .where((t) => t.vehicleId == activeVehicleId)
+              .toList(),
+      existingSites: widget.appState.jobSites,
+      userProfile: widget.appState.userProfile,
+    );
     final highConfidence =
         assessments.where((a) => a.isHighConfidence).toList();
     final requiresDecision =
@@ -256,6 +299,83 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
           Expanded(
             child: ListView(
               children: [
+                if (siteSuggestions.isNotEmpty) ...[
+                  Container(
+                    key: const ValueKey('auto_learn_job_site_banner'),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.emeraldLight,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.emerald.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          LucideIcons.mapPin,
+                          size: 18,
+                          color: AppColors.emerald,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Save "${siteSuggestions.first.name}" as Job Site?',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.deepNavy,
+                                ),
+                              ),
+                              Text(
+                                'Visited ${siteSuggestions.first.visitCount} work trips. Auto-approves future drives.',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          key: const ValueKey('btn_save_suggested_job_site'),
+                          onPressed: () async {
+                            final s = siteSuggestions.first;
+                            await widget.appState.addJobSite(
+                              JobSite(
+                                name: s.name,
+                                address: s.address,
+                                latitude: s.latitude,
+                                longitude: s.longitude,
+                              ),
+                            );
+                            if (mounted) {
+                              setState(() {});
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.emerald,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(48, 48),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          child: const Text(
+                            'Save Site',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (highConfidence.isNotEmpty) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -307,9 +427,11 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'BATCH CLAIM VALUE',
-                                  style: TextStyle(
+                                Text(
+                                  isLogbook
+                                      ? 'LOGBOOK BATCH IMPACT'
+                                      : 'BATCH CLAIM VALUE',
+                                  style: const TextStyle(
                                     color: AppColor.line,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
@@ -318,7 +440,9 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '+${Formatters.currency(selectedHighConfidenceDollars)}',
+                                  isLogbook
+                                      ? '+${selectedHighConfidenceKm.toStringAsFixed(0)} km'
+                                      : '+${Formatters.currency(selectedHighConfidenceDollars)}',
                                   style: const TextStyle(
                                     color: AppColor.positiveBright,
                                     fontSize: 26,
@@ -348,7 +472,7 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 icon: const Icon(LucideIcons.checkCheck,
                                     size: 16),
                                 label: Text(
-                                  'Sign-Off (${_selectedHighConfidenceIds.length})',
+                                  'Approve All (${_selectedHighConfidenceIds.length})',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13),
@@ -420,7 +544,9 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                           color: AppColors.muted),
                                     ),
                                     Text(
-                                      '+${Formatters.currency(tripVal)}',
+                                      isLogbook
+                                          ? '+${assessment.trip.distanceKm.toStringAsFixed(1)} km'
+                                          : '+${Formatters.currency(tripVal)}',
                                       style: const TextStyle(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w800,
@@ -513,7 +639,9 @@ class _CpkBatchReviewSheetState extends State<CpkBatchReviewSheet> {
                                 ),
                               ),
                               Text(
-                                '+${Formatters.currency(tripVal)}',
+                                isLogbook
+                                    ? '+${assessment.trip.distanceKm.toStringAsFixed(1)} km'
+                                    : '+${Formatters.currency(tripVal)}',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w900,

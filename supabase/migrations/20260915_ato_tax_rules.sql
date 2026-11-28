@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Global Canonical ATO Tax Rules
+-- KiloClaim Database Migration: Global Canonical ATO Tax Rules
 -- Centralized Single Source of Truth for Australian Cents-per-Kilometre Rates
 -- References: ITAA 1997 Division 28 (Car Expenses) & Annual ATO Determinations
 -- ==============================================================================

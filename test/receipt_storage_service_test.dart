@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/services/storage/receipt_storage_service.dart';
+import 'package:kiloclaim/services/storage/receipt_storage_service.dart';
 
 void main() {
   group('ReceiptStorageService Direct Unit Tests', () {

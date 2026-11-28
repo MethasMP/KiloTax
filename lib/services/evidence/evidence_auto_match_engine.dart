@@ -82,6 +82,13 @@ class EvidenceAutoMatchEngine {
   }
 
   /// Evaluates an expense against candidate trips and finds the best matching trip if confident.
+  ///
+  /// INVARIANT (ATO 2-Bucket Rule):
+  /// 1. General vehicle running costs (Fuel, Rego, Insurance, Servicing/Tyres, Interest)
+  ///    belong to the vehicle's annual running pool scaled by Logbook Business %.
+  ///    They MUST NOT be individual-trip matched, eliminating false links and user confusion.
+  /// 2. Direct Job Site / Materials expenses (Tools & Materials) are eligible for
+  ///    correlating with matching trade hardware stops on the same day.
   static EvidenceMatchResult? findBestMatchingTrip({
     required VehicleExpense expense,
     required List<Trip> candidateTrips,
@@ -94,17 +101,26 @@ class EvidenceAutoMatchEngine {
   }) {
     if (candidateTrips.isEmpty) return null;
 
+    // Rule 1: Vehicle running pool expenses are strictly pooled, never individual-trip linked
+    if (expense.category.isCarExpense) {
+      return null;
+    }
+
     final expenseTime = expense.date;
     final vehicleId = expense.vehicleId;
 
-    // Filter to trips by same vehicle and within reasonable time window
+    // Filter to trips by same vehicle on the same date/window
     final eligibleTrips = candidateTrips.where((t) {
       if (t.vehicleId != vehicleId) return false;
       // Statutory Firewall: Personal trips cannot be linked to substantiate business deductions
       if (t.classification == TripClassification.personal) return false;
 
+      // Same calendar day check or within maxTimeWindow
+      final isSameDay = t.date.year == expenseTime.year &&
+          t.date.month == expenseTime.month &&
+          t.date.day == expenseTime.day;
       final diff = (t.date.difference(expenseTime)).abs();
-      return diff <= maxTimeWindow;
+      return isSameDay || diff <= maxTimeWindow;
     }).toList();
 
     if (eligibleTrips.isEmpty) return null;

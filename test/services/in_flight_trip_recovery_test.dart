@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/in_flight_trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/in_flight_trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

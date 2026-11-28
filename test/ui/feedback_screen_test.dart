@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/services/feedback/feedback_draft.dart';
-import 'package:kilotax/ui/screens/feedback/feedback_screen.dart';
+import 'package:kiloclaim/services/feedback/feedback_draft.dart';
+import 'package:kiloclaim/ui/screens/feedback/feedback_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -177,7 +177,7 @@ Future<DetectedStatutoryRule?> extractStatutoryDetermination(int targetYear, Str
     final textUri = Uri.parse('https://www.legislation.gov.au/$registerId/latest/text');
     final textRes = await http.get(
       textUri,
-      headers: {'User-Agent': 'Mozilla/5.0 (compatible; KiloTaxSentinel/1.0)'},
+      headers: {'User-Agent': 'Mozilla/5.0 (compatible; KiloClaimSentinel/1.0)'},
     ).timeout(const Duration(seconds: 10));
 
     if (textRes.statusCode == 200 && textRes.body.isNotEmpty) {

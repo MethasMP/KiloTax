@@ -190,7 +190,7 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           constraints:
-                              const BoxConstraints(minWidth: 32, minHeight: 32),
+                              const BoxConstraints(minWidth: 48, minHeight: 48),
                         ),
                       ],
                     ),
@@ -303,7 +303,7 @@ class _NotificationsDropdownState extends State<NotificationsDropdown> {
 }
 
 class _NotificationTile extends StatelessWidget {
-  final KiloTaxNotification notification;
+  final KiloClaimNotification notification;
   final VoidCallback onTap;
 
   const _NotificationTile({
@@ -318,27 +318,27 @@ class _NotificationTile extends StatelessWidget {
     final Color iconColor;
 
     switch (notification.type) {
-      case KiloTaxNotificationType.tripDetected:
+      case KiloClaimNotificationType.tripDetected:
         icon = LucideIcons.car;
         iconBg = AppColor.brandTint;
         iconColor = AppColor.brandBright;
         break;
-      case KiloTaxNotificationType.dailySummary:
+      case KiloClaimNotificationType.dailySummary:
         icon = LucideIcons.clipboardCheck;
         iconBg = AppColor.positiveTint;
         iconColor = AppColor.positiveStrong;
         break;
-      case KiloTaxNotificationType.logbookReminder:
+      case KiloClaimNotificationType.logbookReminder:
         icon = LucideIcons.calendarDays;
         iconBg = AppColor.brandTint;
         iconColor = AppColor.brand;
         break;
-      case KiloTaxNotificationType.complianceAlert:
+      case KiloClaimNotificationType.complianceAlert:
         icon = LucideIcons.triangleAlert;
         iconBg = AppColor.attentionTintSoft;
         iconColor = AppColor.attention;
         break;
-      case KiloTaxNotificationType.eofyAlert:
+      case KiloClaimNotificationType.eofyAlert:
         icon = LucideIcons.calendarClock;
         iconBg = AppColor.attentionTintSoft;
         iconColor = AppColor.attention;

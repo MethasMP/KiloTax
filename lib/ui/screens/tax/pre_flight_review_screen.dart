@@ -6,14 +6,17 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../data/models/annual_odometer.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/engine/accountant_handoff_service.dart';
 import '../../../services/engine/accounting_export_validator.dart';
 import '../../../services/engine/tax_email_dispatch_service.dart';
 import '../../../state/app_state.dart';
+import '../logbook/logbook_progress_screen.dart';
 
 /// Pre-flight Review Screen
 /// Gives the taxpayer 100% confidence before handing off vehicle records to their accountant.
@@ -126,6 +129,80 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
           SnackBar(content: Text('Error preparing tax records: $e')),
         );
       }
+    }
+  }
+
+  void _revalidate() {
+    setState(() {
+      _validationResult =
+          const AccountingExportValidator().validate(widget.appState);
+    });
+    if (widget.initialPackage == null) {
+      _preparePackage();
+    }
+  }
+
+  Future<void> _showClosingOdometerDialog() async {
+    final vehicle = widget.appState.primaryVehicle;
+    if (vehicle == null) return;
+    final trips = widget.appState.trips
+        .where((t) => !t.isDeleted && t.vehicleId == vehicle.id && t.endOdometer > 0)
+        .toList()
+      ..sort((a, b) => b.endOdometer.compareTo(a.endOdometer));
+    final suggested = trips.isNotEmpty
+        ? trips.first.endOdometer
+        : vehicle.initialOdometer;
+
+    final savedValue = await showDialog<double>(
+      context: context,
+      builder: (_) => _ClosingOdometerDialog(initialValue: suggested),
+    );
+
+    if (savedValue != null && mounted) {
+      final fy = widget.appState.activeTaxRule.financialYear;
+      final existing = widget.appState.annualOdometers
+          .where((a) => a.vehicleId == vehicle.id && a.financialYear == fy)
+          .firstOrNull;
+      final record = existing != null
+          ? existing.copyWith(
+              closingOdometer: savedValue,
+              closingDate: DateTime.now(),
+            )
+          : AnnualVehicleOdometer(
+              id: 'odo_${vehicle.id}_$fy',
+              vehicleId: vehicle.id,
+              financialYear: fy,
+              openingDate: DateTime.now(),
+              openingOdometer: vehicle.initialOdometer,
+              closingDate: DateTime.now(),
+              closingOdometer: savedValue,
+            );
+      widget.appState.recordAnnualOdometer(record);
+      _revalidate();
+    }
+  }
+
+  Future<void> _fixValidationError(String code) async {
+    HapticFeedback.lightImpact();
+    if (code == 'NO_CLOSING_ODOMETER') {
+      await _showClosingOdometerDialog();
+    } else if (code == 'NO_TRIPS') {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _fixWarning(String code) async {
+    HapticFeedback.lightImpact();
+    if (code == 'SHORT_LOGBOOK') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ChangeNotifierProvider<AppState>.value(
+            value: widget.appState,
+            child: const LogbookProgressScreen(),
+          ),
+        ),
+      );
+      if (mounted) _revalidate();
     }
   }
 
@@ -425,7 +502,7 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                             (err) => Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const Text('• ',
                                       style: TextStyle(
@@ -441,6 +518,23 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                                       ),
                                     ),
                                   ),
+                                  if (err.code == 'NO_CLOSING_ODOMETER' ||
+                                      err.code == 'NO_TRIPS')
+                                    TextButton(
+                                      key: Key('fix_error_${err.code}'),
+                                      onPressed: () =>
+                                          _fixValidationError(err.code),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.crimson,
+                                        minimumSize: const Size(48, 48),
+                                      ),
+                                      child: const Text(
+                                        'Fix Now',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -521,6 +615,22 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
                                     color: AppColors.ink,
                                   ),
                                 ),
+                                const Spacer(),
+                                if (warn.code == 'SHORT_LOGBOOK')
+                                  TextButton(
+                                    key: Key('fix_warning_${warn.code}'),
+                                    onPressed: () => _fixWarning(warn.code),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.amberDark,
+                                      minimumSize: const Size(48, 48),
+                                    ),
+                                    child: const Text(
+                                      'View Progress',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
@@ -784,6 +894,65 @@ class _PreFlightReviewScreenState extends State<PreFlightReviewScreen> {
             fontWeight: FontWeight.w600,
             color: AppColors.muted,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ClosingOdometerDialog extends StatefulWidget {
+  final double initialValue;
+
+  const _ClosingOdometerDialog({required this.initialValue});
+
+  @override
+  State<_ClosingOdometerDialog> createState() => _ClosingOdometerDialogState();
+}
+
+class _ClosingOdometerDialogState extends State<_ClosingOdometerDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialValue > 0 ? widget.initialValue.toStringAsFixed(0) : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Closing Odometer Reading'),
+      content: TextField(
+        key: const Key('closing_odometer_input'),
+        controller: _controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(
+          labelText: 'Odometer (km)',
+          hintText: 'e.g. 84250',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('closing_odometer_save'),
+          onPressed: () {
+            final parsed = double.tryParse(_controller.text.trim());
+            if (parsed != null && parsed > 0) {
+              Navigator.of(context).pop(parsed);
+            }
+          },
+          child: const Text('Save'),
         ),
       ],
     );

@@ -49,8 +49,8 @@ jobs:
       - name: Commit & Push New Statutory Baseline
         if: steps.git_status.outputs.has_changes == 'true'
         run: |
-          git config --global user.name "KiloTax Statutory Sentinel Bot"
-          git config --global user.email "bot@kilotax.com.au"
+          git config --global user.name "KiloClaim Statutory Sentinel Bot"
+          git config --global user.email "bot@kiloclaim.com.au"
           git add assets/data/ato_rates_baseline.json
           git commit -m "chore(compliance): auto-update statutory ATO rates from Federal Register [skip ci]"
           git push origin main

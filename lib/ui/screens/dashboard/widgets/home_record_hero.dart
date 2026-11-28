@@ -30,31 +30,31 @@ class HomeRecordHero extends StatelessWidget {
       key: const ValueKey('home-record-summary'),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: homeHeroColor, borderRadius: BorderRadius.circular(24)),
+          color: AppColor.surface, borderRadius: BorderRadius.circular(24)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('FY ${summary.report.financialYear}',
-                  style: AppType.eyebrow.copyWith(color: AppColor.onNavyMuted)),
+                  style: AppType.eyebrow.copyWith(color: AppColor.inkSubtle)),
               TextButton(
                   onPressed: onViewBasis,
                   style: TextButton.styleFrom(
-                      foregroundColor: AppColor.onNavy,
+                      foregroundColor: AppColor.ink,
                       minimumSize: const Size(48, 48)),
                   child: const Text('View basis ↗')),
             ]),
         const SizedBox(height: 8),
         Text('Estimated deduction',
-            style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
-        const SizedBox(height: 6),
+            style: AppType.secondary.copyWith(color: AppColor.inkSubtle)),
+        const SizedBox(height: 8),
         Text(
             amount == null
                 ? 'More records needed'
                 : Formatters.currency(amount),
-            style: (amount == null ? AppType.titleSmall : AppType.metricSmall)
-                .copyWith(color: AppColor.onNavy)),
+            style: (amount == null ? AppType.titleSmall : AppType.metric)
+                .copyWith(color: AppColor.ink)),
         const SizedBox(height: 8),
         Text(
             summary.isLogbook && !summary.hasLogbookStart
@@ -62,18 +62,18 @@ class HomeRecordHero extends StatelessWidget {
                 : summary.isLogbook && summary.elapsedDays < cap
                     ? 'Provisional · logbook in progress'
                     : 'Provisional · checked details only',
-            style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+            style: AppType.secondary.copyWith(color: AppColor.inkSubtle)),
         const SizedBox(height: 12),
         Text(
             '${Formatters.distance(summary.reviewed.businessKm)} reviewed work travel · FY',
-            style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+            style: AppType.secondary.copyWith(color: AppColor.inkSubtle)),
         if (onViewSummary != null)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onViewSummary,
               style: TextButton.styleFrom(
-                foregroundColor: AppColor.onNavy,
+                foregroundColor: AppColor.ink,
                 minimumSize: const Size(48, 48),
                 padding: EdgeInsets.zero,
               ),
@@ -82,19 +82,19 @@ class HomeRecordHero extends StatelessWidget {
           ),
         if (summary.isCpk) ...[
           const SizedBox(height: 20),
-          const Divider(color: AppColor.navyLine, height: 1),
+          const Divider(color: AppColor.hairline, height: 1),
           const SizedBox(height: 16),
           Text(
               '${Formatters.odometer(summary.reviewed.businessKm.clamp(0, summary.taxRule.centsPerKmMaxKm))} / ${Formatters.odometer(summary.taxRule.centsPerKmMaxKm)} km annual limit',
-              style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+              style: AppType.secondary.copyWith(color: AppColor.inkSubtle)),
         ],
         if (summary.isLogbook) ...[
           const SizedBox(height: 20),
-          const Divider(color: AppColor.navyLine, height: 1),
+          const Divider(color: AppColor.hairline, height: 1),
           TextButton(
               onPressed: onLogbook,
               style: TextButton.styleFrom(
-                  foregroundColor: AppColor.onNavy,
+                  foregroundColor: AppColor.ink,
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(48, 48),
                   alignment: Alignment.centerLeft),
@@ -108,7 +108,7 @@ class HomeRecordHero extends StatelessWidget {
                     value: summary.elapsedDays / cap,
                     minHeight: 4,
                     color: AppColor.brandBright,
-                    backgroundColor: AppColor.navyLine)),
+                    backgroundColor: AppColor.hairline)),
         ],
       ]),
     );
@@ -118,8 +118,12 @@ class HomeRecordHero extends StatelessWidget {
 class HomeWelcomeHero extends StatelessWidget {
   final String vehicleName;
   final TaxMethod? taxMethod;
+  final Widget? actions;
   const HomeWelcomeHero(
-      {super.key, required this.vehicleName, required this.taxMethod});
+      {super.key,
+      required this.vehicleName,
+      required this.taxMethod,
+      this.actions});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -128,34 +132,24 @@ class HomeWelcomeHero extends StatelessWidget {
             color: homeHeroColor, borderRadius: BorderRadius.circular(24)),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('YOUR DRIVING RECORDS',
+          Text('YOUR VEHICLE EVIDENCE',
               style: AppType.eyebrow.copyWith(color: AppColor.onNavyMuted)),
           const SizedBox(height: 16),
           Text(
               taxMethod == TaxMethod.centsPerKm
-                  ? 'Every trip.\nEvery purpose.\nOne clear record.'
-                  : 'Every trip.\nEvery receipt.\nOne clear record.',
+                  ? 'Build your record.\nReview what is missing.'
+                  : 'Keep your evidence\ntogether.',
               style: AppType.titleSmall.copyWith(color: AppColor.onNavy)),
           const SizedBox(height: 12),
           Text(
               taxMethod == TaxMethod.centsPerKm
-                  ? 'Keep dates, distances and work purposes together.\nReview the details before sharing.'
-                  : 'Start with a trip. Scan receipts as you go.\nReview the details before sharing.',
+                  ? 'Capture work travel, confirm its purpose, then prepare your accountant pack.'
+                  : 'Capture travel and receipts, review missing details, then prepare your accountant pack.',
               style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
-          const SizedBox(height: 16),
-          const Divider(height: 1, color: AppColor.navyLine),
-          const SizedBox(height: 16),
-          Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              alignment: WrapAlignment.spaceBetween,
-              children: [
-                Text(vehicleName,
-                    style: AppType.secondary
-                        .copyWith(color: AppColor.onNavyMuted)),
-                Text(taxMethod?.title ?? 'Driving records',
-                    style: AppType.secondary.copyWith(color: AppColor.onNavy)),
-              ]),
+          if (actions != null) ...[
+            const SizedBox(height: 24),
+            actions!,
+          ],
         ]),
       );
 }

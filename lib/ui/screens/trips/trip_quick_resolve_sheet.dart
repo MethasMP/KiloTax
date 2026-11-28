@@ -3,12 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/trip_commute_helper.dart';
 import '../../../data/models/trip.dart';
 import '../../../data/models/vehicle.dart';
+import '../../../services/engine/trip_confidence_classifier.dart';
 import '../../../state/app_state.dart';
 import '../../../core/theme/app_color.dart';
 import '../workflow/workflow_trip_editor.dart';
 import 'widgets/trade_gear_registration_sheet.dart';
+import 'widgets/trip_route_preview_widget.dart';
 
 /// Spec #7 & #8: Fast, Frictionless Trip Purpose Classification
 /// Ultra-clean thumb-first ergonomics for tradies & sole traders.
@@ -62,20 +65,44 @@ class _TripQuickResolveSheetState extends State<TripQuickResolveSheet> {
   late final bool _isDestinationHome;
   late final TextEditingController _purposeController;
   late TripClassification _classification;
+  late final ClassifiedTripAssessment _assessment;
 
   bool get _isHomeCommute => _isOriginHome || _isDestinationHome;
 
   @override
   void initState() {
     super.initState();
-    _bulkyToolsCarried = widget.trip.purpose.contains('Bulky Tools');
-    final originLower = (widget.trip.originAddress ?? '').trim().toLowerCase();
-    final destLower =
-        (widget.trip.destinationAddress ?? '').trim().toLowerCase();
-    _isOriginHome =
-        originLower.contains('home') || originLower.contains('residence');
-    _isDestinationHome =
-        destLower.contains('home') || destLower.contains('residence');
+    final vehicle = widget.appState.vehicles
+            .where((v) => v.id == widget.trip.vehicleId)
+            .firstOrNull ??
+        widget.appState.primaryVehicle;
+    _assessment = TripConfidenceClassifier.assess(
+      widget.trip,
+      context: TripClassificationContext(
+        userProfile: widget.appState.userProfile,
+        vehicle: vehicle,
+        jobSites: widget.appState.jobSites,
+        expenses: widget.appState.expenses,
+        isVehicleBluetoothMatched:
+            widget.trip.review['vehicleBluetoothMatched'] == true ||
+                widget.trip.evidenceSource == 'native_bluetooth_auto',
+      ),
+    );
+    _bulkyToolsCarried = widget.trip.purpose.contains('Bulky Tools') ||
+        _assessment.suggestedBulkyTools;
+    final profile = widget.appState.userProfile;
+    _isOriginHome = isHomeCommute(
+      profile,
+      widget.trip.startLat,
+      widget.trip.startLng,
+      address: widget.trip.originAddress,
+    );
+    _isDestinationHome = isHomeCommute(
+      profile,
+      widget.trip.endLat,
+      widget.trip.endLng,
+      address: widget.trip.destinationAddress,
+    );
 
     _classification = widget.trip.classification == TripClassification.personal
         ? TripClassification.personal
@@ -86,9 +113,34 @@ class _TripQuickResolveSheetState extends State<TripQuickResolveSheet> {
         .replaceAll('Bulky Tools Carried', '')
         .trim();
 
+    final effectiveInitial = (initialPurpose.isEmpty || initialPurpose == '?')
+        ? (_assessment.suggestedPurpose != 'Personal'
+            ? _assessment.suggestedPurpose
+            : '')
+        : initialPurpose;
+
     _purposeController = TextEditingController(
-      text: initialPurpose == '?' ? '' : initialPurpose,
+      text: effectiveInitial,
     );
+  }
+
+  String _signalLabel(ClassificationSignal signal) {
+    switch (signal) {
+      case ClassificationSignal.receiptBacked:
+        return 'Receipt Backed';
+      case ClassificationSignal.jobSiteToJobSite:
+        return 'Saved Job Site';
+      case ClassificationSignal.jobSiteToTradeSupplier:
+        return 'Trade Supplier';
+      case ClassificationSignal.bulkyToolsHomeException:
+        return 'Bulky Tools';
+      case ClassificationSignal.vehicleBluetoothMatched:
+        return 'Bluetooth Paired';
+      case ClassificationSignal.homeCommuteGate:
+        return 'Home Commute';
+      case ClassificationSignal.personalPoiDetected:
+        return 'Personal Stop';
+    }
   }
 
   @override
@@ -214,6 +266,17 @@ class _TripQuickResolveSheetState extends State<TripQuickResolveSheet> {
               const SizedBox(height: 14),
 
               // Trip Header
+              if ((widget.trip.routePolyline ?? '').isNotEmpty) ...[
+                TripRoutePreviewWidget(
+                  routePolyline: widget.trip.routePolyline,
+                  origin: widget.trip.originAddress?.isNotEmpty == true
+                      ? widget.trip.originAddress!
+                      : 'Origin',
+                  destination: destTitle,
+                  distanceKm: widget.trip.distanceKm,
+                  detectedPoi: widget.trip.detectedPoi,
+                ),
+              ],
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -252,6 +315,57 @@ class _TripQuickResolveSheetState extends State<TripQuickResolveSheet> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              _EvidenceTag(
+                                label: widget.trip.evidenceSource ==
+                                        'auto_telemetry'
+                                    ? 'Captured • Auto-GPS'
+                                    : 'Manual Entry',
+                                color: AppColor.surfaceNavy,
+                              ),
+                              if (widget.trip.linkedExpenseIds.isNotEmpty)
+                                _EvidenceTag(
+                                  label:
+                                      'Linked: ${widget.trip.linkedExpenseIds.length} receipt(s)',
+                                  color: AppColor.positive,
+                                ),
+                              if ((widget.trip.jobReference ?? '')
+                                  .trim()
+                                  .isNotEmpty)
+                                _EvidenceTag(
+                                  label: 'Job: ${widget.trip.jobReference}',
+                                  color: AppColor.inkMuted,
+                                ),
+                              for (final signal in _assessment.evidenceSignals)
+                                _EvidenceTag(
+                                  label: _signalLabel(signal),
+                                  color: signal ==
+                                              ClassificationSignal
+                                                  .personalPoiDetected ||
+                                          signal ==
+                                              ClassificationSignal
+                                                  .homeCommuteGate
+                                      ? AppColors.amberDark
+                                      : AppColor.positive,
+                                ),
+                            ],
+                          ),
+                          if (_assessment.evidenceSignals.isNotEmpty ||
+                              _assessment.isHighConfidence) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              _assessment.decisionReason,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 2),
                           Text(
                             '${Formatters.dateTime(widget.trip.date)} • ${widget.trip.originAddress?.isNotEmpty == true ? widget.trip.originAddress! : "Origin"} → $destTitle',
@@ -295,6 +409,31 @@ class _TripQuickResolveSheetState extends State<TripQuickResolveSheet> {
                 ),
               ),
               const SizedBox(height: 14),
+
+              if (_assessment.isHighConfidence &&
+                  _purposeController.text.trim().isNotEmpty) ...[
+                FilledButton.icon(
+                  key: const ValueKey('btn-quick-resolve-1tap-confirm'),
+                  onPressed: _saveAndClose,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.emerald,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(LucideIcons.checkCheck, size: 17),
+                  label: Text(
+                    '1-Tap Confirm: ${_purposeController.text.trim()}',
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Contextual Checkbox Row: Heavy tools (Only for Home commute)
               if (_isHomeCommute) ...[
@@ -626,6 +765,35 @@ class _QuickPurposeButton extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EvidenceTag extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _EvidenceTag({
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: color,
         ),
       ),
     );

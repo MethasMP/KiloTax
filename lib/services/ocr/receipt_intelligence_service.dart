@@ -38,20 +38,23 @@ class ReceiptOcrResult {
     this.abn,
   });
 
+  /// Under ATO statutory substantiation, an invoice is high-confidence if it has a
+  /// verified ABN (or merchant name), valid positive AUD amount, consistent GST math,
+  /// and no unreviewed date or mixed personal items.
   bool get isHighConfidence =>
       confidence >= 0.78 &&
       currency == 'AUD' &&
       !hasMixedItems &&
       !dateNeedsReview &&
       amount > 0 &&
-      merchant.isNotEmpty;
+      (abn != null && abn!.isNotEmpty || merchant.isNotEmpty);
 }
 
 class ReceiptIntelligenceService {
   const ReceiptIntelligenceService();
 
   static final _personalItemPattern = RegExp(
-    r'\b(ice break|coke|coca cola|snack|chips|chocolate|drink|coffee|confectionery|sandwich|pie|energy drink|red bull)\b',
+    r'\b(ice[\s-]break|coke|coca[\s-]cola|snack|chips|chocolate|drink|coffee|confectionery|sandwich|pie|energy[\s-]drink|red[\s-]bull|grocery|groceries|milk|bread|cigarettes|tobacco)\b',
     caseSensitive: false,
   );
 
@@ -67,6 +70,9 @@ class ReceiptIntelligenceService {
     DateTime? fallbackDate,
     List<ReceiptOcrBlock>? blocks,
     SpatialParsedReceipt? spatialParsed,
+    String? contextMerchantHint,
+    String? contextAbnHint,
+    ExpenseCategory? contextCategoryHint,
   }) {
     final sanitizedRaw =
         rawText.replaceAll('¥', '%').replaceAll('PREMOBA', 'PREM98');
@@ -79,12 +85,18 @@ class ReceiptIntelligenceService {
             : null);
 
     final categoryMatch = classify(normalized);
+    final effectiveCategory = contextCategoryHint ?? categoryMatch.category;
     final rawGstCandidate = _extractGstAmount(normalized);
     final gstCandidate = rawGstCandidate ?? spatialHints?.gstAmount;
     final discountCandidate = _extractDiscountAmount(normalized);
-    final rawAbnCandidate = _extractAbn(sanitizedRaw);
-    final abnCandidate = rawAbnCandidate ??
+    final rawAbnExtraction = _extractAbnWithStatus(sanitizedRaw);
+    final detectedAbn = rawAbnExtraction?.abn ??
         (spatialHints?.abn != null ? _formatAbn(spatialHints!.abn!) : null);
+    final abnCandidate = (contextAbnHint != null && contextAbnHint.isNotEmpty)
+        ? _formatAbn(contextAbnHint)
+        : detectedAbn;
+    var abnWasRepaired = rawAbnExtraction?.wasRepaired ?? false;
+    final abnFromContext = contextAbnHint != null && contextAbnHint.isNotEmpty;
 
     final consensus = _extractConsensusSettlement(
       rawText: sanitizedRaw,
@@ -106,12 +118,13 @@ class ReceiptIntelligenceService {
         .firstMatch(rawText)
         ?.group(1) ??
         spatialHints?.invoiceNumber;
-    final mixed = RegExp(
-            r'\b(chocolate|grocery|groceries|milk|bread|coffee|sandwich|snack|chips|drink|cigarettes|tobacco|confectionery)\b',
-            caseSensitive: false)
-        .hasMatch(rawText);
+    final mixed = _personalItemPattern.hasMatch(rawText);
     final amount = consensus.amount;
-    final merchant = _extractMerchant(sanitizedRaw, normalized);
+    final detectedMerchant = _extractMerchant(sanitizedRaw, normalized);
+    final merchant = (contextMerchantHint != null && contextMerchantHint.trim().isNotEmpty)
+        ? _cleanMerchantName(contextMerchantHint)
+        : detectedMerchant;
+    final merchantFromContext = contextMerchantHint != null && contextMerchantHint.trim().isNotEmpty;
     final parsedDate = _extractDateTime(normalized, sanitizedRaw) ??
         (spatialHints?.date != null
             ? _extractDateTime(_normalize(spatialHints!.date!), spatialHints.date!)
@@ -130,14 +143,20 @@ class ReceiptIntelligenceService {
       date = fallbackDate ?? now;
     }
 
-    // ABN Mod-89 Validation
+    // ABN Mod-89 Validation with Auto-Repair
     String? validAbn;
     String? rejectedAbnDigits;
     if (abnCandidate != null && abnCandidate.isNotEmpty) {
       if (AustralianTaxValidator.isValidAbn(abnCandidate)) {
         validAbn = abnCandidate;
       } else {
-        rejectedAbnDigits = abnCandidate.replaceAll(RegExp(r'\D'), '');
+        final repaired = AustralianTaxValidator.repairOcrAbn(abnCandidate);
+        if (repaired != null) {
+          validAbn = _formatAbn(repaired);
+          abnWasRepaired = true;
+        } else {
+          rejectedAbnDigits = abnCandidate.replaceAll(RegExp(r'\D'), '');
+        }
       }
     }
 
@@ -155,11 +174,16 @@ class ReceiptIntelligenceService {
       ...categoryMatch.evidence,
       ...consensus.evidence,
       if (amount > 0) 'total:${amount.toStringAsFixed(2)}',
-      if (merchant.isNotEmpty) 'merchant:$merchant',
+      if (merchant.isNotEmpty) ...[
+        'merchant:$merchant',
+        if (merchantFromContext) 'merchant_context_fused',
+      ],
       if (gstCandidate != null && gstCandidate > 0)
         'gst:${gstCandidate.toStringAsFixed(2)}',
       if (validAbn != null) ...[
         'abn:$validAbn',
+        if (abnWasRepaired) 'abn_ocr_repaired',
+        if (abnFromContext) 'abn_context_fused',
         'abn_mod89_valid',
       ],
       if (rejectedAbnDigits != null) 'abn_mod89_rejected:$rejectedAbnDigits',
@@ -199,7 +223,7 @@ class ReceiptIntelligenceService {
       abn: validAbn,
       date: date,
       dateNeedsReview: parsedDate == null || date != parsedDate,
-      category: categoryMatch.category,
+      category: effectiveCategory,
       confidence: auditedConfidence,
       evidence: evidence,
       rawText: rawText,
@@ -271,7 +295,8 @@ class ReceiptIntelligenceService {
 
   /// Extracts statutory 11-digit Australian Business Number (ABN)
   /// e.g. "ABN: 12 345 678 901", "A.B.N 53004085616"
-  String? _extractAbn(String text) {
+  ({String abn, bool wasRepaired})? _extractAbnWithStatus(String text) {
+    // 1. Crisp pattern with standard digits
     final abnPattern = RegExp(
       r'(?:a\.?b\.?n\.?|aust(?:ralian)?\s+bus(?:iness)?\s+no\.?)\s*[:# ]*\s*(\d{2}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{3})\b',
       caseSensitive: false,
@@ -281,9 +306,26 @@ class ReceiptIntelligenceService {
     if (match != null) {
       final digits = match.group(1)!.replaceAll(RegExp(r'[\s.-]'), '');
       if (digits.length == 11) {
-        return _formatAbn(digits);
+        return (abn: _formatAbn(digits), wasRepaired: false);
       }
     }
+
+    // 2. Optical degradation tolerant pattern (allows OCR confusions like O, I, l, B, S, Z)
+    final degradedPattern = RegExp(
+      r'(?:a\.?b\.?n\.?|aust(?:ralian)?\s+bus(?:iness)?\s+no\.?)\s*[:# ]*\s*([0-9a-zA-Z]{2}[\s.-]?[0-9a-zA-Z]{3}[\s.-]?[0-9a-zA-Z]{3}[\s.-]?[0-9a-zA-Z]{3})\b',
+      caseSensitive: false,
+    );
+    final degradedMatch = degradedPattern.firstMatch(text);
+    if (degradedMatch != null) {
+      final rawCandidate = degradedMatch.group(1)!.replaceAll(RegExp(r'[\s.-]'), '');
+      if (rawCandidate.length == 11) {
+        final repaired = AustralianTaxValidator.repairOcrAbn(rawCandidate);
+        if (repaired != null) {
+          return (abn: _formatAbn(repaired), wasRepaired: true);
+        }
+      }
+    }
+
     return null;
   }
 
@@ -662,7 +704,7 @@ class ReceiptIntelligenceService {
       }
     }
 
-    final isoPattern = RegExp(r'\b(20\d{2})[/-](\d{1,2})[/-](\d{1,2})\b');
+    final isoPattern = RegExp(r'\b(20\d{2})[./-](\d{1,2})[./-](\d{1,2})\b');
     final isoMatch = isoPattern.firstMatch(text);
     if (isoMatch != null) {
       final year = int.tryParse(isoMatch.group(1)!);
@@ -674,7 +716,7 @@ class ReceiptIntelligenceService {
     }
 
     final slash =
-        RegExp(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b').firstMatch(text);
+        RegExp(r'\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b').firstMatch(text);
     if (slash == null) return null;
     final day = int.tryParse(slash.group(1)!);
     final month = int.tryParse(slash.group(2)!);
@@ -767,6 +809,10 @@ class _ReceiptSignal {
 
 /// Keyword evidence used to propose an expense category.
 final _fuelSignals = [
+  _ReceiptSignal(
+      'fuel brand',
+      r'\b(ampol|caltex|bp|shell|7-eleven|seven eleven|mobil|united petroleum|liberty oil|puma energy|metro petroleum)\b',
+      2.0),
   _ReceiptSignal(
       'fuel product',
       r'\b(fuel|petrol|diesel|unleaded|ulp|e10|u91|u95|u98|prem98|prem95)\b',

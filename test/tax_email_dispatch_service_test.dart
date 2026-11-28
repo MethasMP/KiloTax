@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/engine/tax_email_dispatch_service.dart';
+import 'package:kiloclaim/services/engine/tax_email_dispatch_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

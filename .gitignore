@@ -52,3 +52,16 @@ app.*.map.json
 *.jks
 *.keystore
 
+
+# Local environment and generated Python files
+.env
+.env.*
+!.env.example
+!.env.sample
+**/.venv/
+**/__pycache__/
+*.pyo
+# Local brainstorming session state (existing tracked files need separate review)
+.superpowers/brainstorm/.last-port
+.superpowers/brainstorm/.last-token
+**/state/server.pid

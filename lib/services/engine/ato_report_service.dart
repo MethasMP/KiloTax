@@ -17,7 +17,7 @@ class AtoReportService {
       'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.';
 
   /// Generates standardized cross-platform safe export filenames.
-  /// Complies with KiloTax Dynamic File Naming Specification.
+  /// Complies with KiloClaim Dynamic File Naming Specification.
   static String generateExportFileName({
     required String method,
     required String financialYear,
@@ -187,7 +187,7 @@ class AtoReportService {
     buffer.writeln(
         '====================================================================================================');
     buffer.writeln(
-        'KILOTAX • ATO MULTI-VEHICLE COMBINED BOX D1 LODGEMENT SCHEDULE');
+        'KILOCLAIM • ATO MULTI-VEHICLE COMBINED BOX D1 LODGEMENT SCHEDULE');
     buffer.writeln(
         'GOVERNING STATUTE: ITAA 1997 Subdivision 28-C (§ 28-25) & Subdivision 28-F');
     buffer.writeln(
@@ -290,7 +290,7 @@ class AtoReportService {
     buffer.writeln(
         'STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):');
     buffer.writeln('$statutoryDisclaimer\n'
-        'KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected');
+        'KiloClaim is an independent software application and is NOT affiliated with, endorsed by, or connected');
     buffer.writeln(
         'to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).\n'
         '====================================================================================================');
@@ -389,7 +389,7 @@ class AtoReportService {
     if (isCpk) {
       return '''Hi [Accountant Name],
 
-Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
+Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloClaim.
 
 --------------------------------------------------
 📊 ATO TAX RETURN BOX D1 CLAIM (FY${taxRule.financialYear}):
@@ -417,7 +417,7 @@ Regards,
 
       return '''Hi [Accountant Name],
 
-Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloTax.
+Here is my recorded vehicle tax summary for ${vehicle.displayName} (Rego: ${vehicle.regoPlate}) prepared via KiloClaim.
 
 --------------------------------------------------
 📊 ATO TAX RETURN BOX D1 CLAIM (FY${taxRule.financialYear}):

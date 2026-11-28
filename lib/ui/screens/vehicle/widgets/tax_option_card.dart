@@ -18,9 +18,10 @@ class TaxOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final description = switch (method) {
-      TaxMethod.logbook => 'Record work use and vehicle expenses.',
+      TaxMethod.logbook =>
+        'Work trips, odometer readings and vehicle expenses.',
       TaxMethod.centsPerKm =>
-        'Record work kilometres, up to 5,000 km per year.',
+        'Work kilometres and trip purposes.\nClaim limit: 5,000 km per car per year.',
       TaxMethod.actualExpenses =>
         'Record expenses and business use for your commercial vehicle.',
     };
@@ -29,7 +30,7 @@ class TaxOptionCard extends StatelessWidget {
       inMutuallyExclusiveGroup: true,
       button: true,
       child: Material(
-        color: AppColor.surface,
+        color: isSelected ? AppColor.brandTint : AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: () {
@@ -38,12 +39,14 @@ class TaxOptionCard extends StatelessWidget {
           },
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColor.ink : AppColor.line,
+                color: isSelected ? AppColor.brand : AppColor.line,
                 width: 1.5,
               ),
             ),
@@ -56,7 +59,7 @@ class TaxOptionCard extends StatelessWidget {
                       ? Icons.radio_button_checked_rounded
                       : Icons.radio_button_off_rounded,
                   size: 24,
-                  color: isSelected ? AppColor.ink : AppColor.inkSubtle,
+                  color: isSelected ? AppColor.brand : AppColor.inkSubtle,
                 )),
                 const SizedBox(width: 16),
                 Expanded(

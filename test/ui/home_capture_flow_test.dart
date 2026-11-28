@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/driving_live_ticker.dart';
-import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
-import 'package:kilotax/ui/screens/expenses/scan_receipt_screen.dart';
-import 'package:kilotax/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/driving_live_ticker.dart';
+import 'package:kiloclaim/ui/screens/expenses/expense_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/scan_receipt_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

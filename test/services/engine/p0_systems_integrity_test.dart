@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/tax_summary.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/engine/accounting_export_validator.dart';
-import 'package:kilotax/services/engine/logbook_export_service.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/services/sync/sync_engine_service.dart';
-import 'package:kilotax/services/tracking/autonomous_trip_detector.dart';
-import 'package:kilotax/services/tracking/sensor_fusion_tracking_engine.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/tax_summary.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/engine/accounting_export_validator.dart';
+import 'package:kiloclaim/services/engine/logbook_export_service.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/services/sync/sync_engine_service.dart';
+import 'package:kiloclaim/services/tracking/autonomous_trip_detector.dart';
+import 'package:kiloclaim/services/tracking/sensor_fusion_tracking_engine.dart';
+import 'package:kiloclaim/state/app_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Position createTestPosition({

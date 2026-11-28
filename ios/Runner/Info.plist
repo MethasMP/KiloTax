@@ -12,7 +12,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>KiloTax</string>
+	<string>KiloClaim</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,7 +34,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>kilotax</string>
+				<string>kiloclaim</string>
 				<string>com.googleusercontent.apps.186185970853-lonc1tc0iokhucjd046che8gq3q8mqj1</string>
 			</array>
 		</dict>
@@ -47,7 +47,7 @@
 	<array>
 		<string>https</string>
 		<string>http</string>
-		<string>kilotax</string>
+		<string>kiloclaim</string>
 		<string>googlegmail</string>
 		<string>ms-outlook</string>
 		<string>readdle-spark</string>
@@ -56,21 +56,21 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>KiloTax detects when you connect to your vehicle's Bluetooth or CarPlay to automatically start and stop trip logging for ATO tax compliance without manual intervention.</string>
+	<string>KiloClaim detects when you connect to your vehicle's Bluetooth or CarPlay to automatically start and stop trip logging for ATO tax compliance without manual intervention.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>KiloTax connects to your paired vehicle Bluetooth or CarPlay system to automatically detect driving sessions and record compliant ATO logbook trips.</string>
+	<string>KiloClaim connects to your paired vehicle Bluetooth or CarPlay system to automatically detect driving sessions and record compliant ATO logbook trips.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>KiloTax uses the camera to photograph fuel, service, and vehicle expense receipts for Australian Taxation Office (ATO) motor vehicle tax deduction substantiation.</string>
+	<string>KiloClaim uses the camera to photograph fuel, service, and vehicle expense receipts for Australian Taxation Office (ATO) motor vehicle tax deduction substantiation.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>KiloTax tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
+	<string>KiloClaim tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>KiloTax tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
+	<string>KiloClaim tracks driving trips in the background so your journeys are automatically logged with accurate start/end locations and distances for ATO logbook method compliance.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>KiloTax records real-time GPS routes and odometer distances during your drives to generate ATO-compliant motor vehicle tax logbook records.</string>
+	<string>KiloClaim records real-time GPS routes and odometer distances during your drives to generate ATO-compliant motor vehicle tax logbook records.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>KiloTax detects vehicle movement to automatically start and stop trip tracking, ensuring complete ATO logbook records while preserving your battery life.</string>
+	<string>KiloClaim detects vehicle movement to automatically start and stop trip tracking, ensuring complete ATO logbook records while preserving your battery life.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>KiloTax accesses your photos to attach existing fuel, toll, and maintenance receipts to your vehicle expense records for ATO tax audit substantiation.</string>
+	<string>KiloClaim accesses your photos to attach existing fuel, toll, and maintenance receipts to your vehicle expense records for ATO tax audit substantiation.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

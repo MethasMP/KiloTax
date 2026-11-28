@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,8 +7,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
-import '../../../services/tracking/sensor_fusion_tracking_engine.dart';
 import '../../../services/tracking/location_permission_service.dart';
+import '../../../services/tracking/live_drive_controller.dart';
 import 'trip_detection_screen.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_space.dart';
@@ -36,32 +35,33 @@ class TripLiveTrackingScreen extends StatefulWidget {
 
 class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  final SensorFusionTrackingEngine _fusionEngine = SensorFusionTrackingEngine();
-  Timer? _driveTimer;
-  StreamSubscription<Position>? _positionStreamSub;
-
-  int _secondsElapsed = 0;
-  double _distanceKm = 0.0;
-  double _currentSpeedKmh = 0.0;
-  bool _isPaused = false;
-  bool _isGpsLocked = false;
-  String _gpsStatusMessage = 'CONNECTING TO SATELLITES...';
-
-  Position? _lastPosition;
-  Position? _startPosition;
-
   late AnimationController _pulseController;
+
+  LiveDriveController get _controller => widget.appState.liveDriveController;
+  int get _secondsElapsed => _controller.secondsElapsed;
+  double get _distanceKm => _controller.distanceKm;
+  double get _currentSpeedKmh => _controller.currentSpeedKmh;
+  bool get _isPaused => _controller.isPaused;
+  bool get _isGpsLocked => _controller.isGpsLocked;
+  String get _gpsStatusMessage => _controller.gpsStatusMessage;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _controller.addListener(_onControllerChanged);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
     _initRealGpsTracking();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -72,7 +72,7 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       // Emergency flush of in-flight trip state before iOS suspends or kills process
       widget.appState.updateLiveDriveDistance(
         _distanceKm,
-        currentPosition: _lastPosition,
+        currentPosition: _controller.lastPosition,
       );
     }
   }
@@ -83,9 +83,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
 
     if (status == AppLocationPermissionStatus.serviceDisabled) {
       if (mounted) {
-        setState(() {
-          _gpsStatusMessage = 'LOCATION SERVICES DISABLED';
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -103,9 +100,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
 
     if (status == AppLocationPermissionStatus.denied) {
       if (mounted) {
-        setState(() {
-          _gpsStatusMessage = 'GPS PERMISSION DENIED';
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -123,9 +117,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
 
     if (status == AppLocationPermissionStatus.deniedForever) {
       if (mounted) {
-        setState(() {
-          _gpsStatusMessage = 'LOCATION BLOCKED (TAP SETTINGS)';
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -141,118 +132,29 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       return;
     }
 
-    try {
-      final initialPos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
-        ),
-      );
-      if (mounted) {
-        setState(() {
-          _startPosition = initialPos;
-          _lastPosition = initialPos;
-          _isGpsLocked = true;
-          _gpsStatusMessage = 'GPS SIGNAL AVAILABLE';
-        });
+    Position? initialPos = _controller.startPosition;
+    if (initialPos == null) {
+      try {
+        initialPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+          ),
+        );
+      } catch (e, stack) {
+        debugPrint(
+            '[TripLiveTracking] Warning acquiring initial GPS position: $e\n$stack');
       }
-    } catch (e, stack) {
-      debugPrint(
-          '[TripLiveTracking] Warning acquiring initial GPS position: $e\n$stack');
-      // Stream will attempt to pick up
     }
 
     if (!widget.appState.isDriving) {
       widget.appState.startLiveDrive(
-        startPosition: _startPosition,
+        startPosition: initialPos,
         originAddress: widget.originAddress,
         purpose: widget.initialPurpose,
       );
-    } else {
-      _distanceKm = widget.appState.activeDriveDistanceKm;
-      if (widget.appState.activeDriveStartedAt != null) {
-        _secondsElapsed = DateTime.now()
-            .difference(widget.appState.activeDriveStartedAt!)
-            .inSeconds;
-      }
-      _startPosition ??= widget.appState.activeDriveStartPosition;
-      _lastPosition ??= widget.appState.activeDriveLastPosition;
     }
 
-    _driveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_isPaused) {
-        setState(() {
-          _secondsElapsed++;
-        });
-      }
-    });
-
-    final LocationSettings locationSettings;
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      locationSettings = AndroidSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 3, // Only trigger update if moved at least 3 meters
-        intervalDuration: const Duration(seconds: 1),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: 'KiloTax Live Tracking Active',
-          notificationText:
-              'Accurately recording your business trip for ATO tax compliance...',
-          notificationIcon:
-              AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
-          enableWakeLock: true,
-          setOngoing: true,
-        ),
-      );
-    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS) {
-      locationSettings = AppleSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 3,
-        activityType: ActivityType.automotiveNavigation,
-        pauseLocationUpdatesAutomatically: false,
-        showBackgroundLocationIndicator: true,
-        allowBackgroundLocationUpdates: true,
-      );
-    } else {
-      locationSettings = const LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 3,
-      );
-    }
-
-    _positionStreamSub =
-        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-      (Position position) {
-        if (!mounted || _isPaused) return;
-
-        // Apply Sensor Fusion & Dead Reckoning filter pipeline
-        final update = _fusionEngine.processFix(position);
-
-        setState(() {
-          _isGpsLocked = true;
-          _gpsStatusMessage = update.isAnomalousJumpDiscarded
-              ? 'GPS DEAD RECKONING • FILTER ACTIVE'
-              : 'GPS LOCKED • SENSOR FUSION';
-
-          _currentSpeedKmh = update.instantaneousSpeedKmh;
-          _distanceKm += update.distanceDeltaKm;
-          _lastPosition = update.currentPosition;
-        });
-
-        // Sync with dashboard telemetry capsule & persist snapshot
-        widget.appState.updateLiveDriveDistance(
-          _distanceKm,
-          currentPosition: _lastPosition,
-        );
-      },
-      onError: (err) {
-        if (mounted) {
-          setState(() {
-            _isGpsLocked = false;
-            _gpsStatusMessage = 'GPS SIGNAL LOST';
-          });
-        }
-      },
-    );
+    await widget.appState.startOrResumeLiveTracking(initialPosition: initialPos);
   }
 
   Future<void> _handleGpsDiagnosticTap() async {
@@ -278,19 +180,18 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _driveTimer?.cancel();
-    _positionStreamSub?.cancel();
+    _controller.removeListener(_onControllerChanged);
     _pulseController.dispose();
     // P2 Lifecycle Decoupling: UI widget disposal must never end or discard an in-flight drive.
-    // Drive termination is strictly an intentional user decision (_finishDrive / Discard)
-    // or autonomous engine event, never an artifact of transient screen navigation.
+    // The GPS stream and fusion engine live in AppState.liveDriveController.
     super.dispose();
   }
 
   Future<void> _finishDrive() async {
     HapticFeedback.heavyImpact();
-    final trip =
-        widget.appState.finishLiveDriveForReview(distanceKm: _distanceKm);
+    final trip = await widget.appState
+        .finishLiveDriveForReviewWithEnrichment(distanceKm: _distanceKm);
+    if (!mounted) return;
     if (trip == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
@@ -298,9 +199,6 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
       ));
       return;
     }
-    _driveTimer?.cancel();
-    await _positionStreamSub?.cancel();
-    if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
       builder: (_) =>
           TripDetectionScreen(appState: widget.appState, detectedTrip: trip),
@@ -308,8 +206,7 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
   }
 
   void _disposeRecording() {
-    _driveTimer?.cancel();
-    _positionStreamSub?.cancel();
+    // Recording stream is owned by AppState.liveDriveController and stopped via endLiveDrive().
   }
 
   /// Leaving mid-recording: prompt the user whether to keep recording in background,
@@ -604,7 +501,7 @@ class _TripLiveTrackingScreenState extends State<TripLiveTrackingScreen>
                         ),
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          setState(() => _isPaused = !_isPaused);
+                          _controller.togglePause();
                         },
                         icon: Icon(
                             _isPaused

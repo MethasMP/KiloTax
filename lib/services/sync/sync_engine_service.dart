@@ -86,7 +86,7 @@ class SyncEngineService {
       return localId;
     }
     final hex = sha256
-        .convert(utf8.encode('kilotax:${userId ?? "local"}:$localId'))
+        .convert(utf8.encode('kiloclaim:${userId ?? "local"}:$localId'))
         .toString();
     return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-5${hex.substring(13, 16)}-a${hex.substring(17, 20)}-${hex.substring(20, 32)}';
   }

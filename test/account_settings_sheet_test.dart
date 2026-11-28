@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/account_settings_sheet.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/account_settings_sheet.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/ui/screens/logbook/widgets/tax_exemption_streak_hero.dart';
+import 'package:kiloclaim/ui/screens/logbook/widgets/tax_exemption_streak_hero.dart';
 
 void main() {
   group('UteEvolutionStage Domain Logic', () {

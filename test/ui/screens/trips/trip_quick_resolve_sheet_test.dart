@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/engine/bulky_tools_suggestion_engine.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/trips/trip_quick_resolve_sheet.dart';
-import 'package:kilotax/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/bulky_tools_suggestion_engine.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_quick_resolve_sheet.dart';
+import 'package:kiloclaim/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
 
 void main() {
   late AppState appState;
@@ -300,6 +301,70 @@ void main() {
       final size = tester.getSize(button);
       expect(size.height, greaterThanOrEqualTo(48));
       expect(size.width, greaterThanOrEqualTo(48));
+    });
+
+    testWidgets(
+        'pre-fills suggestedPurpose, shows evidence chip, and offers 1-tap confirm for receipt-backed trip',
+        (tester) async {
+      final receiptTrip = Trip(
+        id: 't_receipt_backed',
+        vehicleId: 'v_test',
+        date: DateTime(2026, 10, 5, 11, 0),
+        distanceKm: 18.5,
+        purpose: '?',
+        originAddress: '100 Collins St, Melbourne',
+        destinationAddress: 'Bunnings Warehouse Alexandria',
+        linkedExpenseIds: const ['exp_bunnings_1'],
+      );
+      appState.recordExpense(
+        VehicleExpense(
+          id: 'exp_bunnings_1',
+          vehicleId: 'v_test',
+          date: DateTime(2026, 10, 5, 11, 10),
+          amount: 145.0,
+          category: ExpenseCategory.toolsMaterials,
+          supplier: 'Bunnings',
+        ),
+      );
+
+      Trip? resolvedTrip;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) => Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    TripQuickResolveSheet.show(
+                      ctx,
+                      trip: receiptTrip,
+                      appState: appState,
+                      onTripResolved: (t) => resolvedTrip = t,
+                    );
+                  },
+                  child: const Text('Open Sheet'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Receipt Backed'), findsOneWidget);
+      final confirmBtn =
+          find.byKey(const ValueKey('btn-quick-resolve-1tap-confirm'));
+      expect(confirmBtn, findsOneWidget);
+      expect(find.textContaining('Supplies Run (Bunnings)'), findsWidgets);
+
+      await tester.tap(confirmBtn);
+      await tester.pumpAndSettle();
+
+      expect(resolvedTrip, isNotNull);
+      expect(resolvedTrip!.classification, TripClassification.business);
+      expect(resolvedTrip!.purpose, 'Supplies Run (Bunnings)');
     });
   });
 }

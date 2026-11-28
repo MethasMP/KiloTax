@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/job_site.dart';
+import 'package:kiloclaim/data/models/job_site.dart';
 
 void main() {
   group('JobSite POI Entity Invariants & Geodesic Boundaries', () {

@@ -130,7 +130,7 @@ class PdfExportService {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          'KiloTax - ATO Vehicle Tax Summary',
+                          'KiloClaim - ATO Vehicle Tax Summary',
                           style: pw.TextStyle(
                             color: _white,
                             fontSize: 15,
@@ -180,52 +180,46 @@ class PdfExportService {
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      if (cleanTaxpayerName != null)
-                        pw.Row(
-                          children: [
-                            pw.Text(
-                              'Taxpayer: ',
-                              style: pw.TextStyle(
-                                fontSize: 9,
-                                color: _muted,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            'Taxpayer: ',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              color: _muted,
+                              fontWeight: pw.FontWeight.bold,
                             ),
-                            pw.Text(
-                              cleanTaxpayerName,
-                              style: pw.TextStyle(
-                                fontSize: 9.5,
-                                color: _navy,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                          ),
+                          pw.Text(
+                            cleanTaxpayerName,
+                            style: pw.TextStyle(
+                              fontSize: 9.5,
+                              color: _navy,
+                              fontWeight: pw.FontWeight.bold,
                             ),
-                          ],
-                        )
-                      else
-                        pw.SizedBox(),
-                      if (cleanAbn != null)
-                        pw.Row(
-                          children: [
-                            pw.Text(
-                              'ABN: ',
-                              style: pw.TextStyle(
-                                fontSize: 9,
-                                color: _muted,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                          ),
+                        ],
+                      ),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            'ABN: ',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              color: _muted,
+                              fontWeight: pw.FontWeight.bold,
                             ),
-                            pw.Text(
-                              cleanAbn,
-                              style: pw.TextStyle(
-                                fontSize: 9.5,
-                                color: _navy,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
+                          ),
+                          pw.Text(
+                            cleanAbn,
+                            style: pw.TextStyle(
+                              fontSize: 9.5,
+                              color: _navy,
+                              fontWeight: pw.FontWeight.bold,
                             ),
-                          ],
-                        )
-                      else
-                        pw.SizedBox(),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -365,7 +359,7 @@ class PdfExportService {
                   children: [
                     pw.Text(
                       _sanitizeForPdf(isCpk
-                          ? 'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C / s 28-25). Statutory rate of $rate covers all vehicle operating costs - no separate expense receipts claimed. Maximum claim: 5,000 km x $rate = ${Formatters.currency(taxRule.centsPerKmMaxKm * taxRule.centsPerKmRate)}. Contemporaneous diary records are maintained within KiloTax. Retain all tax records for 5 years per Subdivision 28-H / Section 900-165.'
+                          ? 'Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C / s 28-25). Statutory rate of $rate covers all vehicle operating costs - no separate expense receipts claimed. Maximum claim: 5,000 km x $rate = ${Formatters.currency(taxRule.centsPerKmMaxKm * taxRule.centsPerKmRate)}. Contemporaneous diary records are maintained within KiloClaim. Retain all tax records for 5 years per Subdivision 28-H / Section 900-165.'
                           : 'Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F) and Taxation Ruling TR 97/11. A 12-week continuous odometer logbook has been maintained. Business-use percentage of ${summary.businessPercentage.toStringAsFixed(1)}% applies to vehicle expenses. Retain logbook and records for 5 years per Subdivision 28-H / Section 900-165.'),
                       style: pw.TextStyle(
                           fontSize: 8, color: _muted, lineSpacing: 1.4),
@@ -373,7 +367,7 @@ class PdfExportService {
                     pw.SizedBox(height: 6),
                     pw.Text(
                       _sanitizeForPdf(
-                          'STATUTORY DISCLAIMER & TPB NOTICE: Not tax advice. Confirm claims with a registered tax agent. KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).'),
+                          'STATUTORY DISCLAIMER & TPB NOTICE: Not tax advice. Confirm claims with a registered tax agent. KiloClaim is an independent software application and is NOT affiliated with, endorsed by, or connected to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).'),
                       style: pw.TextStyle(
                           fontSize: 7.5,
                           color: _muted,
@@ -393,7 +387,7 @@ class PdfExportService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'Generated by KiloTax - Australian Vehicle Tax Evidence OS',
+                    'Generated by KiloClaim - Australian Vehicle Tax Evidence OS',
                     style: pw.TextStyle(fontSize: 8, color: _muted),
                   ),
                   pw.Text(
@@ -516,9 +510,7 @@ class PdfExportService {
               pw.Text(
                 '1. TRAVEL & MILEAGE QUARANTINE SCHEDULE',
                 style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _navy),
+                    fontSize: 10, fontWeight: pw.FontWeight.bold, color: _navy),
               ),
               pw.SizedBox(height: 6),
               pw.Container(
@@ -549,9 +541,7 @@ class PdfExportService {
               pw.Text(
                 '2. OPERATING EXPENSES QUARANTINE SCHEDULE',
                 style: pw.TextStyle(
-                    fontSize: 10,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _navy),
+                    fontSize: 10, fontWeight: pw.FontWeight.bold, color: _navy),
               ),
               pw.SizedBox(height: 6),
               pw.Container(

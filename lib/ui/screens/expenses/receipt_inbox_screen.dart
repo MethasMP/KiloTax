@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../data/models/vehicle_expense.dart';
 import '../../../services/ocr/receipt_audit_service.dart';
-import '../../../services/ocr/receipt_intelligence_service.dart';
 import '../../../services/ocr/receipt_ocr_engine.dart';
 import '../../../services/receipts/receipt_inbox_service.dart';
 import '../../../services/receipts/receipt_workflow_policy.dart';
@@ -37,8 +38,6 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
   String _status = 'Saving receipt photos…';
   String? _error;
   int _skipped = 0;
-  String _paddleUrl = const String.fromEnvironment('PADDLE_OCR_URL');
-  String _paddleToken = const String.fromEnvironment('PADDLE_OCR_TOKEN');
   bool get _sameAccount =>
       (widget.appState.currentUser?.id ?? 'guest') == _account;
   void _checkAccount() {
@@ -52,15 +51,19 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
       (d.sourcePath != null || d.issues.contains('Choose purchase date'));
   List<String> _issues(ReceiptDraft d, [List<ReceiptDraft>? candidates]) {
     if (!d.processed) return d.issues;
+    final confidence = d.expense.receiptAudit?.ocrConfidence;
     return {
       ..._policy.reviewIssues(d.expense,
           purchaseDateUnknown: _unknownDate(d),
           extractionReviewed: d.extractionReviewed,
           duplicateReviewed: d.duplicateReviewed,
+          trips: widget.appState.trips,
           others: [
             ...widget.appState.expenses,
             ...(candidates ?? _drafts).map((e) => e.expense)
           ]),
+      if (confidence != null && confidence < 0.70 && !d.extractionReviewed)
+        'Low OCR confidence (${(confidence * 100).round()}%) — verify merchant, date & total',
       if (d.pagePaths.length > 1 && !d.groupingReviewed)
         'Review combined pages as one receipt',
     }.toList();
@@ -129,15 +132,13 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
     }
   }
 
-  Future<void> _readPending({String? documentId, bool paddle = false}) async {
+  Future<void> _readPending({String? documentId}) async {
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final engine = widget.engine ??
-          ReceiptOcrEngineFactory.create(
-              usePaddle: paddle, endpoint: _paddleUrl, token: _paddleToken);
+      final engine = widget.engine ?? ReceiptOcrEngineFactory.create();
       for (var i = 0; i < _drafts.length; i++) {
         if (!mounted) return;
         _checkAccount();
@@ -169,9 +170,12 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
                   'score': b.score
                 }));
           }
-          final ocr = const ReceiptIntelligenceService().analyseText(
+          final ocr = _policy.analyseWithContext(
             texts.join('\n\n'),
             blocks: rawBlocks,
+            fallbackDate: original.capturedAt,
+            trips: widget.appState.trips,
+            existingExpenses: widget.appState.expenses,
           );
           final pageHashes = await ReceiptDocumentIntegrity.inspect(paths);
           final audit = await const ReceiptAuditService().create(
@@ -391,69 +395,6 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _configurePaddle() async {
-    final address = TextEditingController(text: _paddleUrl),
-        token = TextEditingController(text: _paddleToken);
-    final configured = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-                title: const Text('PaddleOCR connection'),
-                content: SingleChildScrollView(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Text(
-                      'Optional: connect your own OCR service. Photos are sent only when you choose Read with PaddleOCR. Connection details stay in this session.'),
-                  TextField(
-                      controller: address,
-                      decoration:
-                          const InputDecoration(labelText: 'Service address')),
-                  TextField(
-                      controller: token,
-                      obscureText: true,
-                      decoration:
-                          const InputDecoration(labelText: 'Access token')),
-                ])),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Use connection'))
-                ]));
-    if (configured == true && mounted) {
-      setState(() {
-        _paddleUrl = address.text.trim();
-        _paddleToken = token.text;
-      });
-    }
-    address.dispose();
-    token.dispose();
-  }
-
-  Future<void> _paddle(ReceiptDraft draft) async {
-    if (_paddleUrl.isEmpty) {
-      await _configurePaddle();
-      if (_paddleUrl.isEmpty || !mounted) return;
-    }
-    final send = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-                title: const Text('Read with PaddleOCR?'),
-                content: Text(
-                    'Send these ${draft.pagePaths.length} page(s) to ${Uri.tryParse(_paddleUrl)?.host ?? "your OCR service"}? New results will require review again.'),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Send and read'))
-                ]));
-    if (send == true && mounted) {
-      await _readPending(documentId: draft.documentId, paddle: true);
-    }
-  }
-
   Future<void> _confirm() async {
     setState(() {
       _busy = true;
@@ -547,12 +488,7 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
         ready.where((d) => _selected.contains(d.expense.id)).toList();
     final total = selected.fold<double>(0, (sum, d) => sum + d.expense.amount);
     return Scaffold(
-      appBar: AppBar(title: const Text('Receipt inbox'), actions: [
-        IconButton(
-            tooltip: 'OCR connection',
-            onPressed: _busy ? null : _configurePaddle,
-            icon: const Icon(Icons.settings_outlined))
-      ]),
+      appBar: AppBar(title: const Text('Receipt inbox')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Text(
             '${_drafts.length} drafts · ${ready.length} ready to review together',
@@ -627,7 +563,38 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
                                 '${d.expense.supplier ?? 'Receipt'} · ${d.expense.currency ?? 'Currency unknown'} ${d.expense.amount.toStringAsFixed(2)}'),
                             subtitle: Text(
                                 '${_unknownDate(d) || !d.processed ? 'Date unknown' : d.expense.date.toIso8601String().split('T').first}\n${d.expense.category.displayName}')),
-                        for (final issue in _issues(d)) Text(issue),
+                        for (final issue in _issues(d))
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  issue.startsWith('Low OCR')
+                                      ? AppIcons.warning
+                                      : Icons.info_outline,
+                                  size: 14,
+                                  color: issue.startsWith('Low OCR')
+                                      ? AppColor.attentionStrong
+                                      : AppColor.inkMuted,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    issue,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: issue.startsWith('Low OCR')
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
+                                      color: issue.startsWith('Low OCR')
+                                          ? AppColor.attentionInk
+                                          : AppColor.inkMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         if (d.state == ReceiptDraftState.failed)
                           const Text(
                               'Reading failed. Your photo is retained; retry or enter the details.'),
@@ -647,9 +614,6 @@ class _ReceiptInboxScreenState extends State<ReceiptInboxScreen> {
                                   : () =>
                                       _readPending(documentId: d.documentId),
                               child: const Text('Read again on device')),
-                          TextButton(
-                              onPressed: _busy ? null : () => _paddle(d),
-                              child: const Text('Read with PaddleOCR')),
                           FilterChip(
                               label: const Text('Select pages to combine'),
                               selected: _pages.contains(d.documentId),

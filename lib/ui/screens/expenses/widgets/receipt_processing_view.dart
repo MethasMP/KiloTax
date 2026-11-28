@@ -9,11 +9,15 @@ import '../../../../core/theme/app_typography.dart';
 class ReceiptProcessingView extends StatefulWidget {
   final String? imagePath;
   final String status;
+  final double? confidence;
+  final bool isLowConfidence;
 
   const ReceiptProcessingView({
     super.key,
     this.imagePath,
     required this.status,
+    this.confidence,
+    this.isLowConfidence = false,
   });
 
   @override
@@ -102,6 +106,52 @@ class _ReceiptProcessingViewState extends State<ReceiptProcessingView>
                   style: AppType.section, textAlign: TextAlign.center),
             ),
             const SizedBox(height: 8),
+            if (widget.isLowConfidence ||
+                (widget.confidence != null && widget.confidence! < 0.70)) ...[
+              Container(
+                key: const ValueKey('receipt-processing-low-confidence-banner'),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColor.attentionTintSoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColor.attentionTintStrong, width: 1.2),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(AppIcons.warning,
+                        size: 18, color: AppColor.attentionStrong),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Low OCR Confidence (<70%)${widget.confidence != null ? " (${(widget.confidence! * 100).round()}%)" : ""}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColor.attentionInk,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Faded thermal ink or glare detected. Check merchant, date & total carefully before saving.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: AppColor.ink,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const Text(
               'Next, check the shop, date and total. You can edit the details before saving.',
               style: AppType.secondary,

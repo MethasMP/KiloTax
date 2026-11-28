@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/expenses/evidence_expenses_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/expenses/evidence_expenses_screen.dart';
 
 void main() {
   testWidgets('Expense filters commit on Apply and discard when closed',

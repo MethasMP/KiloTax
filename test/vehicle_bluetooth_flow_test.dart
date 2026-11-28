@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/vehicle/vehicle_setup_flow.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('VehicleSetupFlow transitions from taxMethod to bluetoothLink stage',
+  testWidgets(
+      'VehicleSetupFlow transitions from taxMethod to bluetoothLink stage',
       (tester) async {
     Vehicle? createdVehicle;
     final appState = AppState();
@@ -31,9 +32,11 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify on Tax Method stage
-    expect(find.text('Tax Method'), findsOneWidget);
+    expect(find.text('How will you keep your records?'), findsOneWidget);
     expect(find.text('Continue to Auto-Track'), findsOneWidget);
 
+    await tester.tap(find.text('Logbook Method'));
+    await tester.pumpAndSettle();
     // Tap "Continue to Auto-Track"
     await tester.tap(find.text('Continue to Auto-Track'));
     await tester.pump();
@@ -41,7 +44,9 @@ void main() {
 
     // Verify on Car Bluetooth stage
     expect(find.text('Car Bluetooth'), findsOneWidget);
-    expect(find.textContaining('Auto-detect work trips the moment you get in your car.'),
+    expect(
+        find.textContaining(
+            'Auto-detect work trips the moment you get in your car.'),
         findsOneWidget);
     expect(find.text('Save car connection'), findsOneWidget);
     expect(find.text("I'm not in my car right now (Skip)"), findsOneWidget);
@@ -56,7 +61,8 @@ void main() {
     expect(createdVehicle!.bluetoothDeviceName, isNull);
   });
 
-  testWidgets('VehicleSetupFlow Car Bluetooth back button returns to taxMethod stage',
+  testWidgets(
+      'VehicleSetupFlow Car Bluetooth back button returns to taxMethod stage',
       (tester) async {
     final appState = AppState();
 
@@ -83,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Returns to Tax Method
-    expect(find.text('Tax Method'), findsOneWidget);
+    expect(find.text('How will you keep your records?'), findsOneWidget);
     expect(find.text('Continue to Auto-Track'), findsOneWidget);
   });
 }

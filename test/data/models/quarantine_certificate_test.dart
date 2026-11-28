@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/quarantine_certificate.dart';
+import 'package:kiloclaim/data/models/quarantine_certificate.dart';
 
 void main() {
   group('QuarantineCertificate', () {

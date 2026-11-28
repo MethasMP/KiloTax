@@ -3,16 +3,16 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/job_site.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/accountant_workpaper_generator.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
-import 'package:kilotax/services/evidence/evidence_auto_match_engine.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/services/tracking/job_site_geofence_engine.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/job_site.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/accountant_workpaper_generator.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/services/evidence/evidence_auto_match_engine.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/services/tracking/job_site_geofence_engine.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +36,7 @@ void main() {
       appState = AppState(storageService: storage);
       await appState.init();
       await appState.addVehicle(primaryVehicle);
-      tempDir = await Directory.systemTemp.createTemp('kilotax_e2e_');
+      tempDir = await Directory.systemTemp.createTemp('kiloclaim_e2e_');
     });
 
     tearDown(() async {

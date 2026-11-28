@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trade_persona.dart';
-import 'package:kilotax/data/models/user_profile.dart';
-import 'package:kilotax/services/engine/purpose_synthesizer_service.dart';
-import 'package:kilotax/services/tracking/trade_poi_resolver.dart';
+import 'package:kiloclaim/data/models/trade_persona.dart';
+import 'package:kiloclaim/data/models/user_profile.dart';
+import 'package:kiloclaim/services/engine/purpose_synthesizer_service.dart';
+import 'package:kiloclaim/services/tracking/trade_poi_resolver.dart';
 
 void main() {
   group('Trade Persona & Purpose Synthesizer Integration Tests', () {

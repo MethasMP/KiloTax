@@ -10,41 +10,65 @@ import '../../ui/screens/feedback/feedback_screen.dart';
 import '../receipts/receipt_inbox_service.dart';
 import '../tax/ato_tax_period_engine.dart';
 import 'receipt_export_resolver.dart';
-import 'tax_email_dispatch_service.dart';
+import 'tax_pack_dispatch_service.dart';
+import 'accountant_export_scope.dart';
+import 'evidence_review_service.dart';
 import 'tax_pack_builder.dart';
+
+enum _PackDestination { share, save }
 
 class TaxPackShareHelper {
   static final _active = Expando<bool>();
 
-  static Future<void> shareTaxPack(
-      BuildContext context, AppState appState) async {
+  static Future<void> shareTaxPack(BuildContext context, AppState appState,
+      {String? vehicleId, String? financialYear}) async {
     if (_active[appState] == true) return;
     _active[appState] = true;
     try {
-      await _prepare(context, appState);
+      await _prepare(context, appState,
+          vehicleId: vehicleId, financialYear: financialYear);
     } finally {
       _active[appState] = false;
     }
   }
 
-  static Future<void> _prepare(BuildContext context, AppState appState) async {
-    final vehicle = appState.primaryVehicle;
-    if (vehicle == null || !appState.evidenceReview.hasRecords) {
+  static Future<void> _prepare(BuildContext context, AppState appState,
+      {String? vehicleId, String? financialYear}) async {
+    final candidate = vehicleId == null
+        ? appState.primaryVehicle
+        : appState.vehicles.where((v) => v.id == vehicleId).firstOrNull;
+    final selectedYear = AccountantExportScope.normalizeYear(
+        financialYear ?? appState.activeTaxRule.financialYear);
+    final scoped = const EvidenceReviewService().evaluate(
+        vehicle: candidate,
+        financialYear: selectedYear,
+        trips: appState.trips,
+        expenses: appState.expenses);
+    if (!scoped.canExport) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
             'Add a vehicle and records before preparing your accountant pack.'),
       ));
       return;
     }
+    final vehicle = candidate!;
     final owner = appState.currentUser?.id;
     final token = owner == null ? null : appState.currentAccessToken;
     bool isCurrent() =>
         context.mounted &&
         appState.isAccountantExportSessionCurrent(owner, token);
-    if (!isCurrent()) return;
+    if (!context.mounted || !isCurrent()) return;
     final trips = appState.trips;
     final expenses = appState.expenses;
-    final rule = appState.activeTaxRule;
+    final rule =
+        (await AccountantExportScope.loadRules(appState))[selectedYear];
+    if (!context.mounted || !isCurrent()) return;
+    if (rule == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Tax settings are unavailable for this year. Choose another year or try again later.')));
+      return;
+    }
     final profile = appState.userProfile;
     final jobs = appState.jobSites;
     final annualOdometers = appState.annualOdometers;
@@ -90,7 +114,7 @@ class TaxPackShareHelper {
       if (!context.mounted || !isCurrent()) throw AccountantExportCancelled();
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       final prepared = pack;
-      final proceed = await showDialog<bool>(
+      final proceed = await showDialog<_PackDestination>(
         context: context,
         builder: (dialogContext) => ListenableBuilder(
             listenable: appState,
@@ -102,14 +126,14 @@ class TaxPackShareHelper {
                       'Your session changed. Prepare a new pack from the current account.'),
                   actions: [
                     TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
+                        onPressed: () => Navigator.pop(dialogContext),
                         child: const Text('Close'))
                   ],
                 );
               }
               return AlertDialog(
                 scrollable: true,
-                title: const Text('Ready for your accountant'),
+                title: const Text('Review accountant pack'),
                 content: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -169,38 +193,59 @@ class TaxPackShareHelper {
                       },
                       child: const Text('Preview report')),
                   TextButton(
-                      onPressed: () => Navigator.pop(dialogContext, false),
+                      onPressed: () => Navigator.pop(dialogContext),
                       child: const Text('Cancel')),
+                  OutlinedButton(
+                      onPressed: () =>
+                          Navigator.pop(dialogContext, _PackDestination.save),
+                      child: const Text('Save a copy')),
                   FilledButton(
-                      onPressed: () => Navigator.pop(dialogContext, true),
-                      child: const Text('Send to accountant')),
+                      onPressed: () =>
+                          Navigator.pop(dialogContext, _PackDestination.share),
+                      child: const Text('Share pack')),
                 ],
               );
             }),
       );
-      if (proceed != true || !context.mounted || !isCurrent()) return;
+      if (proceed == null || !context.mounted || !isCurrent()) return;
       Rect? origin;
       final box = context.findRenderObject();
       if (box is RenderBox && box.hasSize) {
         origin = box.localToGlobal(Offset.zero) & box.size;
       }
-      final result = await TaxEmailDispatchService.dispatchTaxPackEmail(
-        attachmentPaths: [prepared.file.path],
-        subject:
-            'FY${rule.financialYear} Vehicle Records for Review - ${vehicle.regoPlate}',
-        body: prepared.description,
-        sharePositionOrigin: origin,
-      );
+      final String message;
+      if (proceed == _PackDestination.save) {
+        final result =
+            await TaxPackDispatchService.saveCopy(prepared.file.path);
+        message = switch (result) {
+          TaxPackSaveResult.saved => 'Pack saved to your selected location.',
+          TaxPackSaveResult.dismissed =>
+            'Saving cancelled. Your records are unchanged.',
+          TaxPackSaveResult.failed =>
+            'Could not save the pack. Your records are unchanged. Please try again.',
+        };
+      } else {
+        final result = await TaxPackDispatchService.share(
+          path: prepared.file.path,
+          subject:
+              'FY${rule.financialYear} Vehicle Records for Review - ${vehicle.regoPlate}',
+          description: prepared.description,
+          origin: origin,
+        );
+        message = switch (result) {
+          TaxPackShareResult.selected =>
+            'Pack handed to the selected app. Delivery is not confirmed.',
+          TaxPackShareResult.dismissed =>
+            'Sharing cancelled. Your records are unchanged.',
+          TaxPackShareResult.unavailable =>
+            'Share sheet opened. Completion could not be confirmed.',
+          TaxPackShareResult.failed =>
+            'Could not open sharing. Your records are unchanged. Please try again.',
+        };
+      }
       if (!context.mounted || !isCurrent()) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(switch (result) {
-            EmailDispatchResult.sentViaMailApp =>
-              'Accountant pack opened in your email app. Delivery is not confirmed.',
-            EmailDispatchResult.fallbackToShareSheet =>
-              'Accountant pack opened in the share sheet.',
-            EmailDispatchResult.failed =>
-              'Could not open the email app or share sheet. Please try again.',
-          }),
+          content: Text(message),
           action: SnackBarAction(
               label: 'Feedback',
               onPressed: () => FeedbackScreen.show(context))));

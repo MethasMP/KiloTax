@@ -105,7 +105,7 @@ class AnnualOdometerReminderCard extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColor.brand,
                 side: const BorderSide(color: AppColor.line),
-                minimumSize: const Size.fromHeight(40),
+                minimumSize: const Size.fromHeight(48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

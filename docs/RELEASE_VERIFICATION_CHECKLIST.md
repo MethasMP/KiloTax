@@ -1,4 +1,4 @@
-# KiloTax Release Verification Checklist & Smoke Test Protocol
+# KiloClaim Release Verification Checklist & Smoke Test Protocol
 
 **Version:** 1.0.0 (Build 1)  
 **Release Target:** iOS (App Store) & Android (Google Play)  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary & Quality Gate Sign-Off
 
-This document formalizes the release readiness verification and testing matrix for KiloTax. All changes in Sprint 3 (Telemetry Continuity, Permission Escalation, Build Tooling Sanitization, and Automated Test Coverage) have been implemented, tested, and validated.
+This document formalizes the release readiness verification and testing matrix for KiloClaim. All changes in Sprint 3 (Telemetry Continuity, Permission Escalation, Build Tooling Sanitization, and Automated Test Coverage) have been implemented, tested, and validated.
 
 | Gate | Status | Benchmark / Requirement | Result |
 | :--- | :---: | :--- | :--- |
@@ -50,7 +50,7 @@ AndroidSettings(
   distanceFilter: 3,
   intervalDuration: const Duration(seconds: 1),
   foregroundNotificationConfig: const ForegroundNotificationConfig(
-    notificationTitle: 'KiloTax Live Tracking Active',
+    notificationTitle: 'KiloClaim Live Tracking Active',
     notificationText: 'Accurately recording your business trip for ATO tax compliance...',
     notificationIcon: AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
     enableWakeLock: true,  // Preserves CPU wake during screen sleep
@@ -105,8 +105,8 @@ Execute these 5 smoke tests on physical test devices (or TestFlight / Internal A
 ### Smoke Test 1: Live Hardware GPS Tracking & Phone Lock (Continuity)
 | Step | Action | Expected Behavior |
 | :---: | :--- | :--- |
-| **1** | Launch KiloTax and tap **"Start Drive"** on Home Telemetry Capsule. | `TripLiveTrackingScreen` opens, acquires GPS lock within 3s, hero shows `0.00 km` (stationary), status pill turns green (`GPS LOCKED`). |
-| **2** | Lock device screen while tracking is active. Walk or drive 200m. | **iOS:** Blue status bar indicator / Dynamic Island pill displays.<br>**Android:** Persistent foreground notification *"KiloTax Live Tracking Active"* remains visible in drawer. |
+| **1** | Launch KiloClaim and tap **"Start Drive"** on Home Telemetry Capsule. | `TripLiveTrackingScreen` opens, acquires GPS lock within 3s, hero shows `0.00 km` (stationary), status pill turns green (`GPS LOCKED`). |
+| **2** | Lock device screen while tracking is active. Walk or drive 200m. | **iOS:** Blue status bar indicator / Dynamic Island pill displays.<br>**Android:** Persistent foreground notification *"KiloClaim Live Tracking Active"* remains visible in drawer. |
 | **3** | Unlock device and inspect distance hero. | Distance hero has accumulated ~0.20 km without drift jumps. Timer elapsed correctly. |
 | **4** | Switch to another heavy app (e.g. Google Maps or Camera), then return. | Tracking session remained active without crash, reload, or data loss. |
 | **5** | Tap **"Finish Drive"**. | Haptic feedback fires, routes to `TripDetectionScreen` with reverse-geocoded origin and destination addresses. |
@@ -115,8 +115,8 @@ Execute these 5 smoke tests on physical test devices (or TestFlight / Internal A
 | Step | Action | Expected Behavior |
 | :---: | :--- | :--- |
 | **1** | Temporarily turn off device Location Services (Airplane / GPS toggle). Tap **"Start Drive"**. | Status pill shows `LOCATION SERVICES DISABLED`. SnackBar appears with **"Enable"** button linking directly to System Location Settings. |
-| **2** | Turn on Location, set App Permission to **"Never"**. Tap **"Start Drive"**. | Status pill shows `LOCATION BLOCKED (TAP SETTINGS)`. SnackBar with **"Settings"** deep link opens KiloTax application settings. |
-| **3** | Grant **"While Using the App"** in Settings and return to KiloTax. | Screen automatically acquires GPS lock and begins telemetry stream. |
+| **2** | Turn on Location, set App Permission to **"Never"**. Tap **"Start Drive"**. | Status pill shows `LOCATION BLOCKED (TAP SETTINGS)`. SnackBar with **"Settings"** deep link opens KiloClaim application settings. |
+| **3** | Grant **"While Using the App"** in Settings and return to KiloClaim. | Screen automatically acquires GPS lock and begins telemetry stream. |
 
 ### Smoke Test 3: Bluetooth Beacon Auto-Trigger & Pairing
 | Step | Action | Expected Behavior |

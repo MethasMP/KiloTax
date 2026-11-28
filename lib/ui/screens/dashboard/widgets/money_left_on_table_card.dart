@@ -71,8 +71,9 @@ class MoneyLeftOnTableCard extends StatelessWidget {
         lostPurposeDollars = 0.0;
       }
     } else {
-      // In Cents per km: each km is worth statutory flat rate (e.g. 91c) up to 5,000 km cap
-      final remainingCap = (5000.0 - summary.businessKm).clamp(0.0, 5000.0);
+      // In Cents per km: each km is worth statutory flat rate (e.g. 91c) up to statutory cap
+      final cpkCap = appState.activeTaxRule.centsPerKmMaxKm;
+      final remainingCap = (cpkCap - summary.businessKm).clamp(0.0, cpkCap);
       final claimableUnloggedKm = unloggedTripKm.clamp(0.0, remainingCap);
       lostPurposeDollars = claimableUnloggedKm * rate;
     }
@@ -85,7 +86,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
 
     final now = DateTime.now();
     final isYearEndWindow = now.month == 5 && now.day >= 15 || now.month == 6;
-    final remainingCapKm = (5000.0 - summary.businessKm).clamp(0.0, 5000.0);
+    final cpkCapKm = appState.activeTaxRule.centsPerKmMaxKm;
+    final remainingCapKm = (cpkCapKm - summary.businessKm).clamp(0.0, cpkCapKm);
     final yearEndRescueDollars = remainingCapKm * rate;
     final isYearEndRescueActive = !isLogbook &&
         isYearEndWindow &&
@@ -713,9 +715,8 @@ class MoneyLeftOnTableCard extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: AppColor.brand,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          horizontal: 12, vertical: 8),
+                      minimumSize: const Size(48, 48),
                     ),
                     onPressed: () {
                       Navigator.of(context).push(

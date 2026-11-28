@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
-import 'package:kilotax/ui/screens/trips/trip_live_tracking_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_live_tracking_screen.dart';
 import 'package:flutter/services.dart';
-import 'package:kilotax/ui/screens/tracking/tracking_setup_screen.dart';
+import 'package:kiloclaim/ui/screens/tracking/tracking_setup_screen.dart';
 
 void main() {
   group('HomeTelemetryCapsule Tests', () {
     late AppState appState;
+    var appStateDisposed = false;
 
     TestWidgetsFlutterBinding.ensureInitialized();
     const location = MethodChannel('flutter.baseflow.com/geolocator');
     var permission = 2;
     setUp(() {
       permission = 2;
+      appStateDisposed = false;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(location, (call) async {
         if (call.method == 'isLocationServiceEnabled') return true;
@@ -37,7 +39,10 @@ void main() {
     });
 
     tearDown(() {
-      appState.dispose();
+      if (!appStateDisposed) {
+        appState.dispose();
+        appStateDisposed = true;
+      }
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(location, null);
     });
@@ -110,6 +115,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(TripLiveTrackingScreen), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      appState.dispose();
+      appStateDisposed = true;
     });
 
     testWidgets(

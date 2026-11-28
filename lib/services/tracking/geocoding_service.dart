@@ -34,7 +34,7 @@ class GeocodingService {
       final response = await httpClient.get(
         uri,
         headers: {
-          'User-Agent': 'KiloTax-Australia-Logbook-Engine/1.0',
+          'User-Agent': 'KiloClaim-Australia-Logbook-Engine/1.0',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 3));

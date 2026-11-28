@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/annual_odometer.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/engine/accounting_export_validator.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/annual_odometer.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/engine/accounting_export_validator.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

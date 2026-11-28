@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/job_site.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/services/tracking/job_site_geofence_engine.dart';
+import 'package:kiloclaim/data/models/job_site.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/services/tracking/job_site_geofence_engine.dart';
 
 void main() {
   group('JobSiteGeofenceEngine Tests (POI & Geofencing Engine)', () {
@@ -148,6 +148,81 @@ void main() {
       final trip = makeTripWithDwell(lat: -33.865, lng: 151.209, seconds: 90);
       final site = JobSite(lat: -33.865, lng: 151.209, radiusMeters: 150);
       expect(engine.matchTripToJobSite(trip, [site]), isNull);
+    });
+
+    group('Ghost Micro-Trips Suppression (<500m on-site)', () {
+      test('identifies and suppresses micro-trip (< 500m) occurring on-site', () {
+        // Barangaroo site is at -33.8640, 151.2010 (radius 150m)
+        // Movement of 200m from north gate to south loading dock inside Barangaroo
+        final isGhost = JobSiteGeofenceEngine.isGhostMicroTrip(
+          distanceKm: 0.2, // 200m
+          jobSites: jobSites,
+          startLatitude: -33.8638,
+          startLongitude: 151.2010,
+          endLatitude: -33.8645,
+          endLongitude: 151.2010,
+        );
+
+        expect(isGhost, isTrue);
+      });
+
+      test('identifies micro-trip via shouldSuppressTrip with Trip model', () {
+        final microTrip = Trip(
+          id: 'micro_1',
+          vehicleId: 'veh_ute_1',
+          date: now,
+          distanceKm: 0.35, // 350m
+          purpose: '',
+          startLat: -33.8640,
+          startLng: 151.2010,
+          endLat: -33.8655,
+          endLng: 151.2015,
+        );
+
+        expect(
+          JobSiteGeofenceEngine.shouldSuppressTrip(
+            trip: microTrip,
+            jobSites: jobSites,
+          ),
+          isTrue,
+        );
+      });
+
+      test('does NOT suppress real trip (>= 500m) even if originating at job site', () {
+        final realTrip = Trip(
+          id: 'real_trip_1',
+          vehicleId: 'veh_ute_1',
+          date: now,
+          distanceKm: 12.5, // 12.5 km drive to supplier
+          purpose: 'Bunnings run',
+          startLat: -33.8640,
+          startLng: 151.2010,
+          endLat: -33.9100,
+          endLng: 151.2200,
+        );
+
+        expect(
+          JobSiteGeofenceEngine.shouldSuppressTrip(
+            trip: realTrip,
+            jobSites: jobSites,
+          ),
+          isFalse,
+        );
+      });
+
+      test('does NOT suppress micro-trip (< 500m) if not on or near any job site', () {
+        // Driveway to local corner store with no known JobSite
+        final isGhost = JobSiteGeofenceEngine.isGhostMicroTrip(
+          distanceKm: 0.3,
+          jobSites: jobSites,
+          startLatitude: -37.8200,
+          startLongitude: 144.9900,
+          endLatitude: -37.8220,
+          endLongitude: 144.9910,
+        );
+
+        expect(isGhost, isFalse);
+      });
     });
   });
 }

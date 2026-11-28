@@ -14,7 +14,7 @@ const svg = (i,bg=ink,mark=marks[i]) => `<svg xmlns="http://www.w3.org/2000/svg"
 const icon = (i,x,y,size,bg=ink,mark=marks[i]) => `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 1024 1024"><defs><clipPath id="clip-${i}-${x}-${y}-${size}"><rect width="1024" height="1024" rx="220"/></clipPath></defs><g clip-path="url(#clip-${i}-${x}-${y}-${size})"><rect width="1024" height="1024" fill="${bg}"/>${mark}</g></svg>`;
 const txt=(x,y,t,size=18,color=ink,weight=400)=>`<text x="${x}" y="${y}" font-family="Helvetica,Arial,sans-serif" font-size="${size}" font-weight="${weight}" fill="${color}">${t}</text>`;
 let board=`<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1420" viewBox="0 0 1560 1420"><rect width="1560" height="1420" fill="${cream}"/>`;
-board+=txt(64,68,'KiloTax / Icon directions',38,ink,700)+txt(64,104,'Vector concepts · same palette · compare the silhouette at actual launcher sizes',19,'#52525B');
+board+=txt(64,68,'KiloClaim / Icon directions',38,ink,700)+txt(64,104,'Vector concepts · same palette · compare the silhouette at actual launcher sizes',19,'#52525B');
 const titles=['01  K / route','02  Route / record','03  Reviewed trip'];
 const subs=['Brand initial with a route endpoint','A record shaped by the journey','A route ending in a reviewed record'];
 for(let i=0;i<3;i++){
@@ -29,7 +29,7 @@ for(let i=0;i<3;i++){
  const colors=['#8D9B8E','#A8A1B8','#B3977B','#718897','#969696','#B6A282'];
  for(let j=0;j<8;j++){
    const xx=x+30+(j%4)*98, yy=816+Math.floor(j/4)*112;
-   if(j===2){board+=icon(i,xx,yy,60)+txt(xx+6,yy+82,'KiloTax',13,ink,500);}
+   if(j===2){board+=icon(i,xx,yy,60)+txt(xx+6,yy+82,'KiloClaim',13,ink,500);}
    else {board+=`<rect x="${xx}" y="${yy}" width="60" height="60" rx="14" fill="${colors[j%6]}"/><circle cx="${xx+30}" cy="${yy+30}" r="12" fill="#FFFFFF" opacity="0.7"/>`;}
  }
  board+=txt(x+24,1125,'Schematic context · 60 px icons',14,'#52525B');

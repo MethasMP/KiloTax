@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../services/engine/accountant_export_scope.dart';
+import '../../../services/engine/tax_calculator_service.dart';
+import '../../../services/tax/ato_tax_period_engine.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
@@ -12,24 +16,25 @@ import '../../../data/models/vehicle_expense.dart';
 import '../../../services/engine/evidence_review_service.dart';
 import '../../../services/engine/tax_pack_share_helper.dart';
 import '../../../state/app_state.dart';
-import '../compliance/compliance_center_screen.dart';
-import '../cpk/cpk_trip_entry_screen.dart';
 import '../evidence/evidence_review_screen.dart';
 import '../home/widgets/trips_ledger_tab.dart';
-import '../logbook/logbook_trip_entry_screen.dart';
-import '../vehicle/vehicle_setup_flow.dart';
-import '../workflow/workflow_screen.dart';
 
 class TaxSummaryScreen extends StatefulWidget {
   final EvidenceReviewService evidenceService;
+  final String? initialVehicleId;
+  final String? initialFinancialYear;
+  final int scopeRequest;
   final VoidCallback? onViewTrips;
-  final Future<void> Function(BuildContext, AppState) onSend;
+  final Future<void> Function(BuildContext, AppState)? onSend;
 
   const TaxSummaryScreen({
     super.key,
+    this.initialVehicleId,
+    this.initialFinancialYear,
+    this.scopeRequest = 0,
     this.evidenceService = const EvidenceReviewService(),
     this.onViewTrips,
-    this.onSend = TaxPackShareHelper.shareTaxPack,
+    this.onSend,
   });
 
   @override
@@ -38,6 +43,19 @@ class TaxSummaryScreen extends StatefulWidget {
 
 class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
   AppState? _appState;
+  String? _vehicleId;
+  String? _financialYear;
+  Map<String, AtoTaxRule> _rules = {};
+  String get _year => AccountantExportScope.normalizeYear(
+      _financialYear ?? _appState!.activeTaxRule.financialYear);
+  Vehicle? get _selectedVehicle => _vehicleId == null
+      ? _appState!.primaryVehicle
+      : _appState!.vehicles.where((v) => v.id == _vehicleId).firstOrNull;
+  AtoTaxRule? get _rule => _year ==
+          AccountantExportScope.normalizeYear(
+              _appState!.activeTaxRule.financialYear)
+      ? _appState!.activeTaxRule
+      : _rules[_year];
   Map<String, ReceiptFileInspection> _receiptFiles = const {};
   bool _checking = true;
   bool _checkFailed = false;
@@ -49,10 +67,10 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
 
   EvidenceReviewReport get _report {
     final state = _appState!;
-    final vehicle = state.primaryVehicle;
+    final vehicle = _selectedVehicle;
     return widget.evidenceService.evaluate(
       vehicle: vehicle,
-      financialYear: state.activeTaxRule.financialYear,
+      financialYear: _year,
       trips: state.trips,
       expenses: state.expenses,
       receiptFiles: _receiptFiles,
@@ -68,8 +86,26 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
     if (identical(state, _appState)) return;
     _appState?.removeListener(_refresh);
     _appState = state;
+    _vehicleId = widget.initialVehicleId ?? state.primaryVehicle?.id;
+    _financialYear = AccountantExportScope.normalizeYear(
+        widget.initialFinancialYear ?? state.activeTaxRule.financialYear);
+    _rules = {
+      AccountantExportScope.normalizeYear(state.activeTaxRule.financialYear):
+          state.activeTaxRule
+    };
     state.addListener(_refresh);
+    _loadRules(state);
     _inspect();
+  }
+
+  @override
+  void didUpdateWidget(covariant TaxSummaryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scopeRequest != widget.scopeRequest) {
+      _vehicleId = widget.initialVehicleId;
+      _financialYear = widget.initialFinancialYear;
+      _inspect();
+    }
   }
 
   @override
@@ -119,56 +155,147 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
     }
   }
 
+  Future<void> _loadRules(AppState state) async {
+    final rules = await AccountantExportScope.loadRules(state);
+    if (mounted && identical(state, _appState)) setState(() => _rules = rules);
+  }
+
   Future<void> _primaryAction(EvidenceReviewReport report) async {
+    if (_exporting || !report.canExport || _rule == null) return;
     HapticFeedback.mediumImpact();
     final state = _appState!;
-    if (report.vehicle == null) {
-      await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (routeContext) => VehicleSetupFlow(
-          onVehicleCreated: (vehicle) async {
-            await state.addVehicle(vehicle);
-            if (routeContext.mounted) Navigator.of(routeContext).pop();
-          },
-          onCancel: () => Navigator.of(routeContext).pop(),
-        ),
-      ));
-    } else if (!report.hasRecords) {
-      await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => report.vehicle!.taxMethod == TaxMethod.centsPerKm
-            ? CpkTripEntryScreen(appState: state)
-            : LogbookTripEntryScreen(appState: state),
-      ));
-    } else {
-      setState(() => _exporting = true);
-      try {
-        await widget.onSend(context, state);
-      } finally {
-        if (mounted) {
-          setState(() => _exporting = false);
-        }
+    final vehicleId = report.vehicle!.id;
+    final year = report.financialYear;
+    setState(() => _exporting = true);
+    try {
+      if (widget.onSend != null) {
+        await widget.onSend!(context, state);
+      } else {
+        await TaxPackShareHelper.shareTaxPack(context, state,
+            vehicleId: vehicleId, financialYear: year);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _exporting = false);
+        _inspect();
       }
     }
-    if (mounted) _inspect();
+  }
+
+  void _reviewRecords() => Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => EvidenceReviewScreen(
+            appState: _appState!,
+            vehicleId: _selectedVehicle?.id,
+            financialYear: _year,
+            onOpenPack: () => Navigator.of(context).pop()),
+      ));
+
+  void _viewRecords() {
+    if (_selectedVehicle?.id == _appState!.primaryVehicle?.id &&
+        _year ==
+            AccountantExportScope.normalizeYear(
+                _appState!.activeTaxRule.financialYear) &&
+        widget.onViewTrips != null) {
+      widget.onViewTrips!();
+    } else {
+      Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => TripsLedgerTab(
+                appState: _appState!,
+                initialVehicleId: _selectedVehicle?.id,
+                financialYear: _year,
+              )));
+    }
+  }
+
+  Widget _scopeSelectors() {
+    final state = _appState!;
+    const periods = AtoTaxPeriodEngine();
+    final currentStart =
+        int.parse(state.activeTaxRule.financialYear.substring(0, 4));
+    final years = <String>{
+      _year,
+      AccountantExportScope.normalizeYear(
+          AtoFinancialYear(currentStart - 1).shortLabel),
+      ..._rules.keys,
+      ...state.trips.map((t) => AccountantExportScope.normalizeYear(
+          periods.forDate(t.date).shortLabel)),
+      ...state.expenses.map((e) => AccountantExportScope.normalizeYear(
+          periods.forDate(e.date).shortLabel)),
+    }.toList()
+      ..sort((a, b) => b.compareTo(a));
+    final yearPicker = DropdownButtonFormField<String>(
+      key: ValueKey('export-year-$_year'),
+      initialValue: _year,
+      isExpanded: true,
+      decoration: const InputDecoration(
+          labelText: 'Financial year', border: OutlineInputBorder()),
+      items: years
+          .map((year) => DropdownMenuItem(
+              value: year,
+              child: Text('FY $year',
+                  maxLines: 1, overflow: TextOverflow.ellipsis)))
+          .toList(),
+      onChanged: _exporting
+          ? null
+          : (value) {
+              if (value == null || value == _year) return;
+              setState(() => _financialYear = value);
+              _inspect();
+            },
+    );
+    final vehiclePicker = DropdownButtonFormField<String>(
+      key: ValueKey('export-vehicle-${_selectedVehicle?.id}'),
+      initialValue: _selectedVehicle?.id,
+      isExpanded: true,
+      decoration: const InputDecoration(
+          labelText: 'Vehicle', border: OutlineInputBorder()),
+      hint: const Text('No vehicles'),
+      items: state.vehicles
+          .map((vehicle) => DropdownMenuItem(
+              value: vehicle.id,
+              child: Text(vehicle.displayName,
+                  maxLines: 1, overflow: TextOverflow.ellipsis)))
+          .toList(),
+      onChanged: _exporting || state.vehicles.isEmpty
+          ? null
+          : (value) {
+              if (value == null || value == _selectedVehicle?.id) return;
+              setState(() => _vehicleId = value);
+              _inspect();
+            },
+    );
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 360 ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+        return Column(
+            children: [yearPicker, const SizedBox(height: 16), vehiclePicker]);
+      }
+      return Row(children: [
+        Expanded(child: yearPicker),
+        const SizedBox(width: 12),
+        Expanded(child: vehiclePicker)
+      ]);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = _appState!;
     final report = _report;
     final vehicle = report.vehicle;
-    final summary = state.taxSummary;
+    final rule = _rule;
+    final summary = rule == null
+        ? null
+        : TaxCalculatorService.evaluateSummary(
+            trips: report.trips, expenses: report.expenses, taxRule: rule);
     final isCpk =
         (vehicle?.taxMethod ?? TaxMethod.centsPerKm) == TaxMethod.centsPerKm;
-    final actionLabel = vehicle == null
-        ? 'Set up vehicle'
-        : !report.hasRecords
-            ? 'Add your first trip'
-            : 'Send to accountant';
+    const actionLabel = 'Prepare pack';
     return Scaffold(
       backgroundColor: AppColor.canvas,
       appBar: AppBar(
         backgroundColor: AppColor.canvas,
-        title: const Text('Tax Summary'),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        title: const Text('Reports & export'),
         centerTitle: false,
       ),
       bottomNavigationBar: SafeArea(
@@ -185,18 +312,21 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
             children: [
               FilledButton.icon(
                 key: const ValueKey('tax-primary-action'),
-                onPressed: _exporting ? null : () => _primaryAction(report),
+                onPressed: _exporting || !report.canExport || rule == null
+                    ? null
+                    : () => _primaryAction(report),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColor.ink,
+                  backgroundColor: AppColor.brand,
                   foregroundColor: AppColor.onNavy,
-                  elevation: 2,
-                  shadowColor: AppColor.ink.withValues(alpha: 0.3),
+                  elevation: 0,
                   minimumSize: const Size.fromHeight(56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                   textStyle: AppType.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontFamily:
+                        Theme.of(context).textTheme.bodyMedium?.fontFamily,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -209,24 +339,18 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                           color: AppColor.onNavy,
                         ),
                       )
-                    : Icon(
-                        !report.hasRecords
-                            ? Icons.add
-                            : report.vehicle == null
-                                ? Icons.directions_car_outlined
-                                : Icons.send_rounded,
-                        size: 22,
-                      ),
-                label: Text(_exporting ? 'Generating export pack...' : actionLabel),
+                    : const Icon(Icons.folder_zip_outlined, size: 22),
+                label: Text(_exporting ? 'Preparing pack…' : actionLabel,
+                    textAlign: TextAlign.center),
               ),
               if (report.hasRecords && report.vehicle != null) ...[
                 const SizedBox(height: 6),
                 Center(
                   child: Text(
-                    'Pre-flight review & verified ATO export package',
-                    style: AppType.eyebrow.copyWith(
+                    'Review before sharing.',
+                    style: AppType.secondary.copyWith(
                       color: AppColor.inkSubtle,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -238,49 +362,169 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
-          Text('FY ${report.financialYear}', style: AppType.secondary),
-          if (vehicle != null) ...[
-            const SizedBox(height: 4),
-            Text(vehicle.displayName, style: AppType.bodyStrong),
-          ],
+          _scopeSelectors(),
           const SizedBox(height: 16),
-          if (report.hasRecords) ...[
-            _buildCompactTaxClaimStrip(
-              appState: state,
-              totalClaim:
-                  isCpk ? summary.centsPerKmClaim : summary.logbookClaim,
-              isCpk: isCpk,
-              primaryVehicle: vehicle,
-            ),
-            const SizedBox(height: 24),
+          if (rule == null) ...[
+            const Text(
+                'Tax settings are unavailable for this year. Choose another year or try again later.',
+                style: AppType.secondary),
+            const SizedBox(height: 12),
           ],
-          _buildReadiness(report),
+          _buildPackOverview(report),
+          const SizedBox(height: 20),
           if (report.hasRecords) ...[
-            const SizedBox(height: 24),
-            const Text('Report details', style: AppType.section),
-            const SizedBox(height: 8),
-            _buildArbitrageAdvisorCard(summary: summary),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Detailed record checks',
-                  style: AppType.bodyStrong),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => ComplianceCenterScreen(appState: state),
-              )),
+            _buildReadiness(report),
+            const SizedBox(height: 20),
+          ],
+          _buildPackContents(hasRecords: report.hasRecords),
+          if (report.hasRecords && summary != null && rule != null) ...[
+            const SizedBox(height: 16),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title:
+                  const Text('Estimated deduction', style: AppType.bodyStrong),
+              subtitle: const Text('View the estimate and calculation basis',
+                  style: AppType.secondary),
+              children: [
+                _buildCompactTaxClaimStrip(
+                  taxRule: rule,
+                  businessKm: summary.businessKm,
+                  totalClaim:
+                      isCpk ? summary.centsPerKmClaim : summary.logbookClaim,
+                  isCpk: isCpk,
+                  primaryVehicle: vehicle,
+                ),
+                if (vehicle?.taxMethod != TaxMethod.actualExpenses)
+                  _buildArbitrageAdvisorCard(summary: summary),
+              ],
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Trip → Job → Receipt → Pack',
-                  style: AppType.bodyStrong),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => WorkflowScreen.show(context, state),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title:
+                  const Text('More report options', style: AppType.bodyStrong),
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Detailed record checks',
+                      style: AppType.bodyStrong),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _reviewRecords,
+                ),
+              ],
             ),
           ],
         ],
       ),
     );
   }
+
+  Widget _buildPackOverview(EvidenceReviewReport report) => Container(
+        key: const ValueKey('accountant-pack-overview'),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+            color: AppColor.surfaceNavy,
+            borderRadius: BorderRadius.circular(24)),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Expanded(
+                child: Text('YOUR ACCOUNTANT PACK',
+                    style:
+                        AppType.eyebrow.copyWith(color: AppColor.onNavyMuted))),
+            const ExcludeSemantics(
+                child: Icon(Icons.folder_copy_outlined,
+                    color: AppColor.onNavyMuted, size: 32)),
+          ]),
+          const SizedBox(height: 20),
+          Text(
+              report.vehicle == null
+                  ? 'Choose a vehicle.'
+                  : report.hasRecords
+                      ? 'Your vehicle records.\nOne clear handover.'
+                      : 'No records in this period.',
+              style: AppType.title.copyWith(
+                  color: AppColor.onNavy,
+                  fontSize: MediaQuery.textScalerOf(context).scale(1) > 1.3
+                      ? 22
+                      : 28)),
+          const SizedBox(height: 12),
+          Text(
+              report.vehicle == null
+                  ? 'Select a vehicle to prepare its records for your accountant.'
+                  : report.hasRecords
+                      ? 'Prepare one ZIP with your report, spreadsheet and available receipts.'
+                      : 'No records for this vehicle and financial year. Choose another scope or view your records.',
+              style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+          if (!report.hasRecords) ...[
+            const SizedBox(height: 12),
+            Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _viewRecords,
+                  style: TextButton.styleFrom(
+                      foregroundColor: AppColor.onNavy,
+                      minimumSize: const Size(48, 48)),
+                  child: const Text('View records'),
+                )),
+          ],
+          if (report.hasRecords) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: AppColor.navyLine),
+            const SizedBox(height: 16),
+            Wrap(spacing: 24, runSpacing: 12, children: [
+              Text(
+                  '${report.trips.length} ${report.trips.length == 1 ? 'trip' : 'trips'}',
+                  style: AppType.bodyStrong.copyWith(color: AppColor.onNavy)),
+              Text(
+                  '${report.expenses.length} ${report.expenses.length == 1 ? 'expense' : 'expenses'}',
+                  style: AppType.bodyStrong.copyWith(color: AppColor.onNavy)),
+            ]),
+          ],
+        ]),
+      );
+
+  Widget _buildPackContents({required bool hasRecords}) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(hasRecords ? 'Inside your pack' : 'Your pack will include',
+              style: AppType.section),
+          const SizedBox(height: 12),
+          Material(
+            color: AppColor.surface,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColor.hairline)),
+            child: Column(children: [
+              _packFile(Icons.picture_as_pdf_outlined, 'Summary report',
+                  'PDF · overview and review notes'),
+              const Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: AppColor.hairline),
+              _packFile(Icons.table_chart_outlined, 'Detailed records',
+                  'Excel · trips and expenses'),
+              const Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: AppColor.hairline),
+              _packFile(Icons.receipt_long_outlined, 'Receipt files',
+                  'Available attachments only'),
+            ]),
+          ),
+        ],
+      );
+
+  Widget _packFile(IconData icon, String title, String detail) => ListTile(
+        dense: true,
+        minVerticalPadding: 8,
+        minTileHeight: 64,
+        leading: Icon(icon, color: AppColor.brand, size: 24),
+        title: Text(title, style: AppType.bodyStrong),
+        subtitle: Text(detail, style: AppType.secondary),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      );
 
   Widget _buildReadiness(EvidenceReviewReport report) {
     final tripCount = report.items.whereType<TripReviewItem>().length;
@@ -302,7 +546,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                     : report.items.isEmpty
                         ? 'No outstanding record checks'
                         : '${report.items.length} ${report.items.length == 1 ? 'item needs' : 'items need'} attention';
-    final isAuditProofReady = report.hasRecords &&
+    final checksComplete = report.hasRecords &&
         !_checking &&
         !_checkFailed &&
         report.items.isEmpty;
@@ -311,10 +555,10 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
       color: AppColor.surface,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: isAuditProofReady
+          color: checksComplete
               ? AppColor.positive.withValues(alpha: 0.5)
               : AppColor.hairline,
-          width: isAuditProofReady ? 1.5 : 1.0,
+          width: checksComplete ? 1.5 : 1.0,
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -324,15 +568,16 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: const Text('Evidence check', style: AppType.secondary),
-                ),
-                if (isAuditProofReady)
+                const Text('Evidence check', style: AppType.secondary),
+                if (checksComplete)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColor.positiveTint,
                       borderRadius: BorderRadius.circular(12),
@@ -344,13 +589,13 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
-                          Icons.verified_rounded,
+                          Icons.check_circle_outline,
                           size: 14,
                           color: AppColor.positiveStrong,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'ACCOUNTANT READY',
+                          'Checks complete',
                           style: AppType.eyebrow.copyWith(
                             color: AppColor.positiveStrong,
                             fontWeight: FontWeight.w700,
@@ -397,8 +642,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
-                  onPressed: () =>
-                      EvidenceReviewScreen.show(context, appState: _appState!),
+                  onPressed: () => _reviewRecords(),
                   child: Text(_checking || _checkFailed
                       ? 'Review records'
                       : report.items.isEmpty
@@ -406,20 +650,6 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                           : 'Review ${report.items.length} ${report.items.length == 1 ? 'item' : 'items'}'),
                 ),
               ),
-              const SizedBox(height: 16),
-              _statusRow(
-                  Icons.route_outlined, 'Trip details', tripCount, 'to review'),
-              _statusRow(
-                  Icons.receipt_long_outlined,
-                  'Receipts',
-                  expenseCount,
-                  _checking || _checkFailed
-                      ? 'awaiting file check'
-                      : 'to review',
-                  unresolved: _checking || _checkFailed),
-              if (setupCount > 0)
-                _statusRow(Icons.directions_car_outlined, 'Vehicle & odometer',
-                    setupCount, 'to review'),
             ],
             if (report.vehicle != null) ...[
               const SizedBox(height: 8),
@@ -431,6 +661,20 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                 subtitle: const Text('View the records behind this summary',
                     style: AppType.secondary),
                 children: [
+                  const SizedBox(height: 16),
+                  _statusRow(Icons.route_outlined, 'Trip details', tripCount,
+                      'to review'),
+                  _statusRow(
+                      Icons.receipt_long_outlined,
+                      'Receipts',
+                      expenseCount,
+                      _checking || _checkFailed
+                          ? 'awaiting file check'
+                          : 'to review',
+                      unresolved: _checking || _checkFailed),
+                  if (setupCount > 0)
+                    _statusRow(Icons.directions_car_outlined,
+                        'Vehicle & odometer', setupCount, 'to review'),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Recorded trip history',
@@ -438,22 +682,8 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                     subtitle: Text('${report.trips.length} drives recorded',
                         style: AppType.secondary),
                     trailing: TextButton(
-                      onPressed: () {
-                        if (report.trips.isEmpty) {
-                          _primaryAction(report);
-                        } else if (widget.onViewTrips != null) {
-                          widget.onViewTrips!();
-                        } else {
-                          Navigator.of(context).push(MaterialPageRoute<void>(
-                            builder: (_) => TripsLedgerTab(
-                              appState: _appState!,
-                              initialVehicleId: report.vehicle?.id,
-                              financialYear: report.financialYear,
-                            ),
-                          ));
-                        }
-                      },
-                      child: Text(report.trips.isEmpty ? 'Log drive' : 'View'),
+                      onPressed: _viewRecords,
+                      child: const Text('View'),
                     ),
                   ),
                   ListTile(
@@ -465,10 +695,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
                             ? 'Awaiting Drives'
                             : '$tripCount trips to review',
                         style: AppType.secondary),
-                    onTap: report.trips.isEmpty
-                        ? null
-                        : () => EvidenceReviewScreen.show(context,
-                            appState: _appState!),
+                    onTap: report.trips.isEmpty ? null : () => _reviewRecords(),
                     trailing: report.trips.isEmpty
                         ? null
                         : const Icon(Icons.chevron_right),
@@ -499,17 +726,18 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
           style: AppType.secondary.copyWith(
               color: pending ? AppColor.attentionInk : AppColor.inkMuted)),
       trailing: const Icon(Icons.chevron_right, size: 20),
-      onTap: () => EvidenceReviewScreen.show(context, appState: _appState!),
+      onTap: () => _reviewRecords(),
     );
   }
 
   Widget _buildCompactTaxClaimStrip({
-    required AppState appState,
+    required AtoTaxRule taxRule,
+    required double businessKm,
     required double totalClaim,
     required bool isCpk,
     required Vehicle? primaryVehicle,
   }) {
-    final rateCents = (appState.activeTaxRule.centsPerKmRate * 100).toInt();
+    final rateCents = (taxRule.centsPerKmRate * 100).toInt();
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -534,10 +762,9 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
         if (isCpk) ...[
           const SizedBox(height: 8),
           Text(
-              '${Formatters.distance(appState.taxSummary.businessKm)} business recorded · Calculation limited to ${appState.activeTaxRule.centsPerKmMaxKm.toStringAsFixed(0)} km',
+              '${Formatters.distance(businessKm)} business recorded · Calculation limited to ${taxRule.centsPerKmMaxKm.toStringAsFixed(0)} km',
               style: AppType.secondary),
-          if (appState.taxSummary.businessKm >=
-              appState.activeTaxRule.centsPerKmMaxKm)
+          if (businessKm >= taxRule.centsPerKmMaxKm)
             Text('Kilometre limit reached for this estimate.',
                 style:
                     AppType.secondary.copyWith(color: AppColor.attentionInk)),

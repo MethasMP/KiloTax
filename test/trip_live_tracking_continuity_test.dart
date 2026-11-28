@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/services/tracking/location_permission_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/trips/trip_live_tracking_screen.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/services/tracking/location_permission_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_live_tracking_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -19,7 +19,7 @@ void main() {
         distanceFilter: 3,
         intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: 'KiloTax Live Tracking Active',
+          notificationTitle: 'KiloClaim Live Tracking Active',
           notificationText:
               'Accurately recording your business trip for ATO tax compliance...',
           notificationIcon:
@@ -39,7 +39,7 @@ void main() {
           androidSettings.foregroundNotificationConfig!.enableWakeLock, isTrue);
       expect(androidSettings.foregroundNotificationConfig!.setOngoing, isTrue);
       expect(androidSettings.foregroundNotificationConfig!.notificationTitle,
-          contains('KiloTax'));
+          contains('KiloClaim'));
     });
 
     test('AppleSettings enables background updates without automatic pausing',

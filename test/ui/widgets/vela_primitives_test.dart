@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/ui/widgets/tax_visor_header.dart';
-import 'package:kilotax/ui/widgets/money_display.dart';
-import 'package:kilotax/ui/widgets/audit_evidence_strip.dart';
+import 'package:kiloclaim/ui/widgets/tax_visor_header.dart';
+import 'package:kiloclaim/ui/widgets/money_display.dart';
+import 'package:kiloclaim/ui/widgets/audit_evidence_strip.dart';
 
 void main() {
   testWidgets('TaxVisorHeader renders title, subtitle, and status pill', (tester) async {

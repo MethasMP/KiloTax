@@ -1,14 +1,14 @@
-# Privacy Policy — KiloTax
+# Privacy Policy — KiloClaim
 
 **Effective Date:** 1 October 2026  
 **Last Updated:** 1 October 2026  
 **Contact Email:** methaspak@gmail.com  
-**Application:** KiloTax (iOS & Android)
+**Application:** KiloClaim (iOS & Android)
 
 ---
 
 ## 1. Introduction & Commitment to Privacy
-KiloTax ("we", "us", or "our") is dedicated to protecting the privacy and confidentiality of Australian sole traders, tradies, contractors, and individuals who use our mobile application ("KiloTax" or the "App").
+KiloClaim ("we", "us", or "our") is dedicated to protecting the privacy and confidentiality of Australian sole traders, tradies, contractors, and individuals who use our mobile application ("KiloClaim" or the "App").
 
 This Privacy Policy explains how we collect, store, handle, and protect your information in strict adherence with:
 - **Australian Privacy Principles (APPs)** contained in the *Privacy Act 1988* (Cth)
@@ -18,7 +18,7 @@ This Privacy Policy explains how we collect, store, handle, and protect your inf
 ---
 
 ## 2. Privacy by Design: Local-First Principle
-In our base and manual tracking modes (including the Cents per Kilometre / CPK log), KiloTax operates on a **Local-First Architecture**:
+In our base and manual tracking modes (including the Cents per Kilometre / CPK log), KiloClaim operates on a **Local-First Architecture**:
 - All trip entries, odometer readings, vehicle details, and tax calculations are stored directly in your device’s local sandbox storage (`SQLite` / secure preferences).
 - We do not sell, rent, monetize, or harvest your personal records.
 - You can use the core features of the App without creating an account or transmitting personal data to our servers.
@@ -46,7 +46,7 @@ In our base and manual tracking modes (including the Cents per Kilometre / CPK l
 ## 4. Statutory ATO 5-Year Record Retention
 Under Australian taxation law (including *Income Tax Assessment Act 1997* Subdivision 28-F), taxpayers claiming motor vehicle deductions must maintain evidentiary records for **5 years** from the date of lodging the relevant tax return.
 
-- KiloTax provides tools to export your complete records in standard open formats (`CSV` and `PDF`).
+- KiloClaim provides tools to export your complete records in standard open formats (`CSV` and `PDF`).
 - We strongly recommend exporting your records and backing them up securely to your own personal storage or providing them to your registered tax agent.
 
 ---

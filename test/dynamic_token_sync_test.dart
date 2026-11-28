@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/auth/supabase_auth_service.dart';
-import 'package:kilotax/services/sync/sync_engine_service.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/auth/supabase_auth_service.dart';
+import 'package:kiloclaim/services/sync/sync_engine_service.dart';
 
 class MockHttpClient extends http.BaseClient {
   String? lastAuthHeader;

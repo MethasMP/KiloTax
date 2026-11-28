@@ -1,5 +1,5 @@
 /// Sanitizes taxpayer names and registration plates for safe cross-platform file naming
-/// Aligned with KiloTax Compliance Architecture dynamic file naming specification.
+/// Aligned with KiloClaim Compliance Architecture dynamic file naming specification.
 class ExportFileNameHelper {
   /// Standard document type slugs
   static const String boxD1LodgementSlip = 'BoxD1_Lodgement_Slip';
@@ -30,7 +30,7 @@ class ExportFileNameHelper {
   }
 
   /// Builds a deterministic, cross-platform file name:
-  /// `KiloTax_{Method}_{FY}_{TaxpayerName}_{SanitizedRego}_{DocumentType}.{extension}`
+  /// `KiloClaim_{Method}_{FY}_{TaxpayerName}_{SanitizedRego}_{DocumentType}.{extension}`
   static String buildFileName({
     required String method, // 'CPK' | 'Logbook' | 'Combined'
     required String fy, // e.g. 'FY2025-26' or 'FY2026-27'
@@ -48,6 +48,6 @@ class ExportFileNameHelper {
         extension.startsWith('.') ? extension.substring(1) : extension;
     final cleanFy = fy.startsWith('FY') ? fy : 'FY$fy';
 
-    return 'KiloTax_${method}_${cleanFy}_${cleanName}_${cleanRego}_$documentType.$cleanExt';
+    return 'KiloClaim_${method}_${cleanFy}_${cleanName}_${cleanRego}_$documentType.$cleanExt';
   }
 }

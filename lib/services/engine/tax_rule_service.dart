@@ -21,10 +21,10 @@ import '../../services/storage/local_storage_service.dart';
 ///    gracefully without popping error dialogs or technical banners.
 class TaxRuleService {
   static const String _remoteEndpoint =
-      'https://raw.githubusercontent.com/MethasMP/KiloTax/main/assets/data/ato_rates_baseline.json';
+      'https://raw.githubusercontent.com/MethasMP/KiloClaim/main/assets/data/ato_rates_baseline.json';
 
-  static const String _cacheKey = 'kilotax_cached_tax_rule_v1';
-  static const String _cachedRatesKey = 'kilotax_cached_rates_map_v1';
+  static const String _cacheKey = 'kiloclaim_cached_tax_rule_v1';
+  static const String _cachedRatesKey = 'kiloclaim_cached_rates_map_v1';
 
   final LocalStorageService? _storageService;
   final http.Client _httpClient;
@@ -122,7 +122,7 @@ class TaxRuleService {
           'Authorization': 'Bearer $_anonKey',
           'Content-Type': 'application/json',
         },
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final List<dynamic> rows = jsonDecode(response.body) as List<dynamic>;
@@ -167,7 +167,7 @@ class TaxRuleService {
     try {
       final response = await _httpClient
           .get(Uri.parse(_remoteEndpoint))
-          .timeout(const Duration(seconds: 4));
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);

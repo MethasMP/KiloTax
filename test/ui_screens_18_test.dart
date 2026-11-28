@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/onboarding/onboarding_flow_screen.dart';
-import 'package:kilotax/ui/screens/dashboard/evidence_home_screen.dart';
-import 'package:kilotax/ui/screens/trips/trip_detection_screen.dart';
-import 'package:kilotax/ui/screens/trips/trip_detail_screen.dart';
-import 'package:kilotax/ui/screens/expenses/scan_receipt_screen.dart';
-import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
-import 'package:kilotax/ui/screens/expenses/evidence_expenses_screen.dart';
-import 'package:kilotax/ui/screens/tax/tax_summary_screen.dart';
-import 'package:kilotax/ui/screens/logbook/logbook_setup_screen.dart';
-import 'package:kilotax/ui/screens/logbook/logbook_progress_screen.dart';
-import 'package:kilotax/ui/screens/compliance/compliance_center_screen.dart';
-import 'package:kilotax/ui/screens/home/main_scaffold_screen.dart';
-import 'package:kilotax/ui/screens/evidence/evidence_review_screen.dart';
-import 'package:kilotax/core/theme/app_typography.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/onboarding/onboarding_flow_screen.dart';
+import 'package:kiloclaim/ui/screens/dashboard/evidence_home_screen.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_detection_screen.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/scan_receipt_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/expense_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/evidence_expenses_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/tax_summary_screen.dart';
+import 'package:kiloclaim/ui/screens/logbook/logbook_setup_screen.dart';
+import 'package:kiloclaim/ui/screens/logbook/logbook_progress_screen.dart';
+import 'package:kiloclaim/ui/screens/compliance/compliance_center_screen.dart';
+import 'package:kiloclaim/ui/screens/home/main_scaffold_screen.dart';
+import 'package:kiloclaim/ui/screens/evidence/evidence_review_screen.dart';
+import 'package:kiloclaim/core/theme/app_typography.dart';
 
 void main() {
   setUp(() {
@@ -88,15 +88,22 @@ void main() {
         create: (_) => AppState(),
         child: const MaterialApp(home: OnboardingFlowScreen()),
       ));
-      expect(find.text('Your work trips.\nReady for review.'), findsOneWidget);
-      expect(find.text('Already have an account? Sign in'), findsOneWidget);
+      expect(find.text('Work kilometres.\nWithout the paperwork.'),
+          findsOneWidget);
+      expect(
+          find.text(
+              'Record work trips, keep receipts together, and prepare records for your accountant.'),
+          findsOneWidget);
 
       await tester.ensureVisible(find.text('Get started'));
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
       expect(find.text('Continue without an account'), findsOneWidget);
+      expect(find.text('Already have an account?'), findsNothing);
       await tester.tap(find.text('Continue without an account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue on this device'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('I’ll log trips manually instead'));
       await tester.pumpAndSettle();
@@ -242,30 +249,36 @@ void main() {
     testWidgets(
         'Master Navigation Scaffold renders adaptive nav for CPK & Logbook',
         (tester) async {
-      // In Cents-per-km mode (default): 3-tab lean layout (Dashboard, Trips, Tax)
-      await tester.pumpWidget(wrap(const MainScaffoldScreen()));
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Trips'), findsOneWidget);
-      expect(find.text('Tax'), findsOneWidget);
-      expect(find.text('Expenses'), findsNothing);
+      final semantics = tester.ensureSemantics();
+      try {
+        // In Cents-per-km mode (default): 3-tab lean layout (Dashboard, Trips, Tax)
+        await tester.pumpWidget(wrap(const MainScaffoldScreen()));
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.text('Trips'), findsOneWidget);
+        expect(find.text('Tax'), findsOneWidget);
+        expect(find.text('Expenses'), findsNothing);
+        expect(find.bySemanticsLabel('Add trip'), findsOneWidget);
 
-      // Switch to Logbook mode and test adaptive 4-tab + quick capture FAB
-      appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
-      await tester.pumpAndSettle();
+        // Switch to Logbook mode and test adaptive 4-tab + quick capture FAB
+        appState.updatePrimaryVehicleTaxMethod(TaxMethod.logbook);
+        await tester.pumpAndSettle();
 
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Trips'), findsOneWidget);
-      expect(find.textContaining('Expenses'), findsWidgets);
-      expect(find.text('Tax'), findsOneWidget);
-      expect(find.text('Scan'), findsOneWidget);
-      await tester.tap(find.text('Scan'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ScanReceiptScreen), findsNothing);
-      await tester.tap(find.text('Trips').hitTestable());
-      await tester.pumpAndSettle();
-      expect(find.byTooltip('Add trip'), findsOneWidget);
-      expect(find.byTooltip('Trip tools'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+        expect(find.text('Home'), findsOneWidget);
+        expect(find.text('Trips'), findsOneWidget);
+        expect(find.textContaining('Expenses'), findsWidgets);
+        expect(find.text('Tax'), findsOneWidget);
+        expect(find.bySemanticsLabel('Scan receipt'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Scan receipt'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ScanReceiptScreen), findsNothing);
+        await tester.tap(find.text('Trips').hitTestable());
+        await tester.pumpAndSettle();
+        expect(find.byTooltip('Add trip'), findsOneWidget);
+        expect(find.byTooltip('Trip tools'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_color.dart';
+import '../../../../services/tracking/road_snap_routing_service.dart';
 
 /// Renders an Australian Snapped-Road Route & Trade POI Badge preview
 /// Designed for low-latency, zero-battery-drain rendering without heavy map tiles.
@@ -24,6 +25,9 @@ class TripRoutePreviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPolyline = routePolyline != null && routePolyline!.isNotEmpty;
+    final decodedPoints = hasPolyline
+        ? RoadSnapRoutingService.decodePolyline(routePolyline!)
+        : const <({double lat, double lng})>[];
     final merchantName = detectedPoi?['merchantName'] as String?;
 
     return Container(
@@ -45,11 +49,12 @@ class TripRoutePreviewWidget extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Abstract Road-Snap Curvature Visualizer
+                // Real Road-Snap Polyline Visualizer (with geodesic fallback)
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _SnappedRoadPathPainter(
                       hasPolyline: hasPolyline,
+                      points: decodedPoints,
                       strokeColor: AppColors.workBlue,
                     ),
                   ),
@@ -131,7 +136,7 @@ class TripRoutePreviewWidget extends StatelessWidget {
                           ),
                         ),
                         const Text(
-                          'Recognised Trade Supplier · 100% Deductible',
+                          'Recognised Trade Supplier · Review purpose before claiming',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.muted,
@@ -179,23 +184,62 @@ class TripRoutePreviewWidget extends StatelessWidget {
 
 class _SnappedRoadPathPainter extends CustomPainter {
   final bool hasPolyline;
+  final List<({double lat, double lng})> points;
   final Color strokeColor;
 
-  _SnappedRoadPathPainter({required this.hasPolyline, required this.strokeColor});
+  _SnappedRoadPathPainter({
+    required this.hasPolyline,
+    required this.points,
+    required this.strokeColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = strokeColor.withValues(alpha: 0.4)
+      ..color = strokeColor.withValues(alpha: 0.55)
       ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final path = Path();
-    path.moveTo(37, size.height - 37);
 
-    if (hasPolyline) {
-      // Bézier curve resembling road routing grid
+    if (points.length >= 2) {
+      double minLat = points.first.lat;
+      double maxLat = points.first.lat;
+      double minLng = points.first.lng;
+      double maxLng = points.first.lng;
+      for (final p in points) {
+        if (p.lat < minLat) minLat = p.lat;
+        if (p.lat > maxLat) maxLat = p.lat;
+        if (p.lng < minLng) minLng = p.lng;
+        if (p.lng > maxLng) maxLng = p.lng;
+      }
+
+      const padX = 37.0;
+      const padY = 28.0;
+      final drawW = (size.width - padX * 2).clamp(1.0, size.width);
+      final drawH = (size.height - padY * 2).clamp(1.0, size.height);
+      final dLng = maxLng - minLng;
+      final dLat = maxLat - minLat;
+
+      Offset project(({double lat, double lng}) p) {
+        final nx = dLng > 1e-7 ? (p.lng - minLng) / dLng : 0.5;
+        final ny = dLat > 1e-7 ? (p.lat - minLat) / dLat : 0.5;
+        return Offset(
+          padX + nx * drawW,
+          padY + (1.0 - ny) * drawH,
+        );
+      }
+
+      final first = project(points.first);
+      path.moveTo(first.dx, first.dy);
+      for (int i = 1; i < points.length; i++) {
+        final pt = project(points[i]);
+        path.lineTo(pt.dx, pt.dy);
+      }
+    } else if (hasPolyline) {
+      path.moveTo(37, size.height - 37);
       path.cubicTo(
         size.width * 0.3,
         size.height * 0.8,
@@ -205,7 +249,7 @@ class _SnappedRoadPathPainter extends CustomPainter {
         37,
       );
     } else {
-      // Direct chord line
+      path.moveTo(37, size.height - 37);
       path.lineTo(size.width - 37, 37);
     }
 
@@ -214,5 +258,7 @@ class _SnappedRoadPathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SnappedRoadPathPainter oldDelegate) =>
-      oldDelegate.hasPolyline != hasPolyline;
+      oldDelegate.hasPolyline != hasPolyline ||
+      oldDelegate.points.length != points.length ||
+      oldDelegate.strokeColor != strokeColor;
 }

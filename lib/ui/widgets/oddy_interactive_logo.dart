@@ -1,3 +1,4 @@
+import 'kiloclaim_brand_lockup.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -84,7 +85,7 @@ class _OddyInteractiveLogoState extends State<OddyInteractiveLogo>
 
     setState(() {
       _tiltX = -dy * 0.28; // Radians pitch
-      _tiltY = dx * 0.28;  // Radians yaw
+      _tiltY = dx * 0.28; // Radians yaw
     });
   }
 
@@ -193,12 +194,7 @@ class _OddyInteractiveLogoState extends State<OddyInteractiveLogo>
                 children: [
                   ClipRRect(
                     borderRadius: radius,
-                    child: Image.asset(
-                      'assets/icon_master.png',
-                      width: widget.size,
-                      height: widget.size,
-                      fit: BoxFit.cover,
-                    ),
+                    child: KiloClaimBrandMark(size: widget.size, tile: true),
                   ),
                   Positioned.fill(
                     child: Container(

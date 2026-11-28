@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/audit/forensic_audit_analyzer.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/audit/forensic_audit_analyzer.dart';
 
 void main() {
   group('ForensicAuditAnalyzer (The 102 Value Engine) TDD Tests', () {

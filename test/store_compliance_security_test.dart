@@ -3,16 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
-import 'package:kilotax/services/receipts/receipt_database.dart';
+import 'package:kiloclaim/services/receipts/receipt_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/auth/supabase_auth_service.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/auth/supabase_auth_service.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 class ConfirmedDeletionAuth extends SupabaseAuthService {
   @override
@@ -248,9 +248,9 @@ void main() {
       expect(content.contains('NSPrivacyAccessedAPICategoryDiskSpace'), isTrue);
 
       expect(AppConstants.privacyPolicyUrl,
-          equals('https://methasmp.github.io/KiloTax/legal/#privacy'));
+          equals('https://methasmp.github.io/KiloClaim/legal/#privacy'));
       expect(AppConstants.termsOfServiceUrl,
-          equals('https://methasmp.github.io/KiloTax/legal/#terms'));
+          equals('https://methasmp.github.io/KiloClaim/legal/#terms'));
     });
   });
 }

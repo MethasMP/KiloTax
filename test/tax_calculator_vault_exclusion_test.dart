@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/services/engine/tax_calculator_service.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/services/engine/tax_calculator_service.dart';
 
 void main() {
   group('TaxCalculatorService - Vault-Only Receipt Exclusion Rules', () {

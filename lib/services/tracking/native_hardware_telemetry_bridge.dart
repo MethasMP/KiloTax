@@ -2,20 +2,27 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Dart bridge to iOS Native [KiloTaxBackgroundEngine]
-/// Handles CoreBluetooth State Restoration and low-memory native GPS logging.
+/// Dart bridge to iOS/Android Native background telemetry daemons.
+/// Handles Bluetooth State Restoration / ACL BroadcastReceiver and native GPS logging.
 class NativeHardwareTelemetryBridge {
   static const MethodChannel _channel =
-      MethodChannel('kilotax/hardware_telemetry');
+      MethodChannel('kiloclaim/hardware_telemetry');
 
   static final NativeHardwareTelemetryBridge _instance =
       NativeHardwareTelemetryBridge._internal();
   factory NativeHardwareTelemetryBridge() => _instance;
   NativeHardwareTelemetryBridge._internal();
 
-  /// Synchronize the user's primary vehicle Bluetooth device name down to iOS Native
+  @visibleForTesting
+  static bool? testOverrideIsMobileHost;
+
+  bool get _isMobileHost =>
+      testOverrideIsMobileHost ??
+      (!kIsWeb && (Platform.isIOS || Platform.isAndroid));
+
+  /// Synchronize the user's primary vehicle Bluetooth device name/UUID down to Native
   Future<void> syncTargetBluetoothName(String? bluetoothName, {String? bluetoothUuid}) async {
-    if (!Platform.isIOS) return;
+    if (!_isMobileHost) return;
 
     try {
       if (bluetoothUuid != null && bluetoothUuid.isNotEmpty) {
@@ -27,7 +34,7 @@ class NativeHardwareTelemetryBridge {
         await _channel.invokeMethod('setTargetBluetoothName', bluetoothName);
       }
       debugPrint(
-          '[NativeTelemetryBridge] Synced vehicle Bluetooth to iOS Native: $bluetoothName (UUID: $bluetoothUuid)');
+          '[NativeTelemetryBridge] Synced vehicle Bluetooth to Native: $bluetoothName (UUID: $bluetoothUuid)');
     } on MissingPluginException {
       // Graceful fallback during tests, simulator runs, or unattached channels.
       return;
@@ -36,10 +43,10 @@ class NativeHardwareTelemetryBridge {
     }
   }
 
-  /// Retrieve any trips that were autonomously logged by the native Swift engine
+  /// Retrieve any trips that were autonomously logged by the native engine
   /// while the Flutter process was completely dead (Non-destructive read).
   Future<List<Map<String, dynamic>>> fetchCompletedNativeTrips() async {
-    if (!Platform.isIOS) return [];
+    if (!_isMobileHost) return [];
 
     try {
       final List<dynamic>? raw =
@@ -57,12 +64,14 @@ class NativeHardwareTelemetryBridge {
   }
 
   /// Two-Phase Commit Acknowledgement: Notifies native engine that Flutter has successfully
-  /// persisted the trips to SQLite, safely removing them from UserDefaults.
+  /// persisted the trips, safely removing them from native buffer.
   Future<void> acknowledgeNativeTripsIngested(List<String> tripIds) async {
-    if (!Platform.isIOS || tripIds.isEmpty) return;
+    if (!_isMobileHost || tripIds.isEmpty) return;
 
     try {
       await _channel.invokeMethod<bool>('acknowledgeNativeTripsIngested', tripIds);
+    } on MissingPluginException {
+      return;
     } catch (e) {
       debugPrint('[NativeTelemetryBridge] Error acknowledging native trips: $e');
     }

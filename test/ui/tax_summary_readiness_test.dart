@@ -4,17 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/core/theme/app_color.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/cpk/cpk_trip_entry_screen.dart';
-import 'package:kilotax/ui/screens/evidence/evidence_review_screen.dart';
-import 'package:kilotax/ui/screens/logbook/logbook_trip_entry_screen.dart';
-import 'package:kilotax/ui/screens/tax/tax_summary_screen.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/core/theme/app_color.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/evidence/evidence_review_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/tax_summary_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
 
 class _State extends AppState {
   @override
@@ -110,9 +108,13 @@ void main() {
     await tester.pumpWidget(_wrap(state));
     await tester.pumpAndSettle();
     expect(find.text('Estimated deduction'), findsNothing);
-    await tester.tap(find.text('Set up vehicle'));
-    await tester.pumpAndSettle();
-    expect(find.byType(VehicleSetupFlow), findsOneWidget);
+    expect(find.text('Set up vehicle'), findsNothing);
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.byKey(const ValueKey('tax-primary-action')))
+            .onPressed,
+        isNull);
   });
 
   for (final method in TaxMethod.values) {
@@ -123,13 +125,17 @@ void main() {
       await tester.pumpWidget(_wrap(state));
       await tester.pumpAndSettle();
       expect(find.text('Estimated deduction'), findsNothing);
-      await tester.tap(find.text('Add your first trip'));
-      await tester.pumpAndSettle();
+      expect(find.text('Add your first trip'), findsNothing);
       expect(
-          find.byType(method == TaxMethod.centsPerKm
-              ? CpkTripEntryScreen
-              : LogbookTripEntryScreen),
-          findsOneWidget);
+          tester
+              .widget<FilledButton>(
+                  find.byKey(const ValueKey('tax-primary-action')))
+              .onPressed,
+          isNull);
+      await tester.ensureVisible(find.text('View records'));
+      await tester.tap(find.text('View records'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TripsLedgerTab), findsOneWidget);
     });
   }
 
@@ -146,15 +152,15 @@ void main() {
     }));
     expect(find.text('Checking receipt files…'), findsOneWidget);
     expect(find.text('No outstanding record checks'), findsNothing);
-    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(find.text('Prepare pack'), findsOneWidget);
     expect(find.text('Review records'), findsOneWidget);
-    await tester.tap(find.text('Send to accountant'));
+    await tester.tap(find.text('Prepare pack'));
     await tester.pump();
     expect(sentState, same(state));
     service.result.complete({});
     await tester.pumpAndSettle();
     expect(find.text('No outstanding record checks'), findsOneWidget);
-    await tester.tap(find.text('Send to accountant'));
+    await tester.tap(find.text('Prepare pack'));
     await tester.pumpAndSettle();
     expect(sentState, same(state));
     expect(find.byType(EvidenceReviewScreen), findsNothing);
@@ -167,8 +173,9 @@ void main() {
     final service = _FailOnceInspection();
     await tester.pumpWidget(_wrap(state, service: service));
     await tester.pumpAndSettle();
-    expect(find.text('Estimated deduction'), findsOneWidget);
-    expect(find.text('Send to accountant'), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('accountant-pack-overview')), findsOneWidget);
+    expect(find.text('Prepare pack'), findsOneWidget);
     await Scrollable.ensureVisible(
         tester.element(find.text('Retry receipt check')),
         alignment: .5);
@@ -177,6 +184,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No outstanding record checks'), findsOneWidget);
     expect(service.calls, 2);
+    await tester.scrollUntilVisible(find.text('Estimated deduction'), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Estimated deduction'), findsOneWidget);
   });
 
   testWidgets(

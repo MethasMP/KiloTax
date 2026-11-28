@@ -5,8 +5,8 @@ import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:kilotax/services/receipts/receipt_inbox_service.dart';
-import 'package:kilotax/services/storage/receipt_backup_archive.dart';
+import 'package:kiloclaim/services/receipts/receipt_inbox_service.dart';
+import 'package:kiloclaim/services/storage/receipt_backup_archive.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

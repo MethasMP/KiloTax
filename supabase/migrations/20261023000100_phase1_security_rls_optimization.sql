@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Phase 1 - Security & Core RLS Optimization
+-- KiloClaim Database Migration: Phase 1 - Security & Core RLS Optimization
 -- Migration: 20261023_phase1_security_rls_optimization.sql
 --
 -- References:

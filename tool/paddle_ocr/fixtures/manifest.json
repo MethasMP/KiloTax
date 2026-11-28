@@ -1,1 +1,0 @@
-{"schemaVersion":1,"fixtures":[{"id":"synthetic-fuel-001","kind":"synthetic","image":"synthetic_fuel.png","expected":{"merchant":"SYNTHETIC FUEL SHOP","amount":60.50,"gstAmount":5.50,"currency":"AUD","date":"2026-11-10","abn":"12345678901"},"expectedReady":false}]}

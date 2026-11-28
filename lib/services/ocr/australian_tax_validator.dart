@@ -46,6 +46,125 @@ class AustralianTaxValidator {
     return sum % 89 == 0;
   }
 
+  /// Attempts to auto-repair common OCR optical misrecognitions in an 11-character string
+  /// (such as 'O'/'D' -> '0', 'I'/'l' -> '1', 'B' -> '8', 'S' -> '5', 'Z' -> '2').
+  ///
+  /// If the repaired digits satisfy the ATO Modulus-89 algorithm, returns the valid 11-digit string.
+  /// Otherwise, returns null.
+  static String? repairOcrAbn(String? rawAbn) {
+    if (rawAbn == null) return null;
+    final cleaned = rawAbn
+        .replaceAll(RegExp(r'^(?:abn|a\.b\.n|aust\w*\s+bus\w*\s+no\.?)\s*[:#]?', caseSensitive: false), '')
+        .replaceAll(RegExp(r'[\s.-]'), '')
+        .trim();
+
+    if (cleaned.length != 11) return null;
+
+    // Check if already valid
+    if (isValidAbn(cleaned)) return cleaned;
+
+    // Direct character substitution map for high-frequency OCR confusions
+    final substitutions = <int, List<String>>{};
+    for (var i = 0; i < 11; i++) {
+      final ch = cleaned[i].toUpperCase();
+      switch (ch) {
+        case 'O':
+        case 'D':
+        case 'Q':
+          substitutions[i] = ['0'];
+          break;
+        case 'I':
+        case 'L':
+        case '|':
+        case '!':
+          substitutions[i] = ['1'];
+          break;
+        case 'Z':
+          substitutions[i] = ['2'];
+          break;
+        case 'E':
+          substitutions[i] = ['3'];
+          break;
+        case 'A':
+          substitutions[i] = ['4'];
+          break;
+        case 'S':
+          substitutions[i] = ['5'];
+          break;
+        case 'G':
+        case 'b':
+          substitutions[i] = ['6'];
+          break;
+        case 'T':
+          substitutions[i] = ['7'];
+          break;
+        case 'B':
+          substitutions[i] = ['8'];
+          break;
+        case 'g':
+        case 'q':
+          substitutions[i] = ['9'];
+          break;
+      }
+    }
+
+    if (substitutions.isEmpty) {
+      // If all are digits but mod89 failed, check single-digit error (Hamming distance 1)
+      if (RegExp(r'^\d{11}$').hasMatch(cleaned)) {
+        return _searchSingleDigitCorrection(cleaned);
+      }
+      return null;
+    }
+
+    // Replace characters with top candidate digits
+    final chars = cleaned.toUpperCase().split('');
+    for (final entry in substitutions.entries) {
+      chars[entry.key] = entry.value.first;
+    }
+    final candidate = chars.join();
+    if (isValidAbn(candidate)) {
+      return candidate;
+    }
+
+    // If still failing, check single-digit error on candidate
+    if (RegExp(r'^\d{11}$').hasMatch(candidate)) {
+      return _searchSingleDigitCorrection(candidate);
+    }
+
+    return null;
+  }
+
+  static String? _searchSingleDigitCorrection(String elevenDigits) {
+    // If only 1 digit was corrupted (e.g. 3 vs 8, 5 vs 6, 0 vs 8)
+    const confusionPairs = {
+      '0': ['8', '6', '9'],
+      '1': ['7'],
+      '2': ['7'],
+      '3': ['8', '5'],
+      '4': ['1'],
+      '5': ['6', '3'],
+      '6': ['8', '5', '0'],
+      '7': ['1'],
+      '8': ['0', '3', '6', '9'],
+      '9': ['8', '0', '7'],
+    };
+
+    final chars = elevenDigits.split('');
+    for (var i = 0; i < 11; i++) {
+      final original = chars[i];
+      final alternates = confusionPairs[original] ?? const [];
+      for (final alt in alternates) {
+        chars[i] = alt;
+        final testCandidate = chars.join();
+        if (isValidAbn(testCandidate)) {
+          return testCandidate;
+        }
+      }
+      chars[i] = original; // revert
+    }
+    return null;
+  }
+
   /// Checks if the provided [total] and [gst] amounts are mathematically consistent
   /// with standard Australian 10% GST (where Gross Total = 11 * GST).
   ///

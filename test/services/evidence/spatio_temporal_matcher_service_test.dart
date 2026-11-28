@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/evidence/evidence_auto_match_engine.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/evidence/evidence_auto_match_engine.dart';
 
 void main() {
   group('SpatioTemporalMatcherService Tests (Phase 2 Auto-Matcher Criteria)', () {
@@ -17,16 +17,61 @@ void main() {
       destinationAddress: '200 Barangaroo Ave, Sydney NSW',
     );
 
-    group('Criterion (a): Fuel stops', () {
-      test('Matches fuel stop when trip end is within 300m of expense GPS', () {
+    group('Criterion (a): Direct travel expenses & 2-Bucket fuel pool isolation', () {
+      test('Matches direct toll/parking expense when trip end is within 300m of expense GPS', () {
         // Destination is Sydney CBD (-33.8640, 151.2010)
-        // Fuel stop is 180m away at (-33.8655, 151.2015)
+        // Parking stop is 180m away at (-33.8655, 151.2015)
+        final parkingExpense = VehicleExpense(
+          id: 'exp_parking_gps',
+          vehicleId: 'veh_hilux_01',
+          amount: 24.00,
+          category: ExpenseCategory.tollsParking,
+          date: now, // 1 hour after trip start
+        );
+
+        final match = SpatioTemporalMatcherService.findBestMatchingTrip(
+          expense: parkingExpense,
+          candidateTrips: [workTrip],
+          receiptLatitude: -33.8655,
+          receiptLongitude: 151.2015,
+          tripLatitude: -33.8640,
+          tripLongitude: 151.2010,
+        );
+
+        expect(match, isNotNull);
+        expect(match!.trip.id, equals('trip_site_1'));
+        expect(match.confidenceScore, greaterThanOrEqualTo(0.90));
+        expect(match.matchReason, contains('Matched work trip'));
+      });
+
+      test('Matches direct toll/parking expense when timestamp is within +/- 30 minutes of trip', () {
+        // Expense captured at 1:20 PM (20 mins after 1:00 PM trip start)
+        final tollExpense = VehicleExpense(
+          id: 'exp_toll_time',
+          vehicleId: 'veh_hilux_01',
+          amount: 9.50,
+          category: ExpenseCategory.tollsParking,
+          date: DateTime(2026, 11, 8, 13, 20),
+        );
+
+        final match = SpatioTemporalMatcherService.findBestMatchingTrip(
+          expense: tollExpense,
+          candidateTrips: [workTrip],
+        );
+
+        expect(match, isNotNull);
+        expect(match!.trip.id, equals('trip_site_1'));
+        expect(match.confidenceScore, greaterThanOrEqualTo(0.85));
+        expect(match.matchReason, contains('Matched work trip'));
+      });
+
+      test('Excludes pooled fuel expenses from individual trip matching (ATO 2-Bucket Rule)', () {
         final fuelExpense = VehicleExpense(
-          id: 'exp_fuel_gps',
+          id: 'exp_fuel_pool',
           vehicleId: 'veh_hilux_01',
           amount: 110.00,
           category: ExpenseCategory.fuel,
-          date: now, // 1 hour after trip start
+          date: DateTime(2026, 11, 8, 13, 20),
         );
 
         final match = SpatioTemporalMatcherService.findBestMatchingTrip(
@@ -38,31 +83,7 @@ void main() {
           tripLongitude: 151.2010,
         );
 
-        expect(match, isNotNull);
-        expect(match!.trip.id, equals('trip_site_1'));
-        expect(match.confidenceScore, greaterThanOrEqualTo(0.90));
-        expect(match.matchReason.toLowerCase(), contains('fuel stop location verified'));
-      });
-
-      test('Matches fuel stop when expense timestamp is within +/- 30 minutes of trip start/end', () {
-        // Expense captured at 1:20 PM (20 mins after 1:00 PM trip start)
-        final fuelExpense = VehicleExpense(
-          id: 'exp_fuel_time',
-          vehicleId: 'veh_hilux_01',
-          amount: 95.00,
-          category: ExpenseCategory.fuel,
-          date: DateTime(2026, 11, 8, 13, 20),
-        );
-
-        final match = SpatioTemporalMatcherService.findBestMatchingTrip(
-          expense: fuelExpense,
-          candidateTrips: [workTrip],
-        );
-
-        expect(match, isNotNull);
-        expect(match!.trip.id, equals('trip_site_1'));
-        expect(match.confidenceScore, greaterThanOrEqualTo(0.90));
-        expect(match.matchReason.toLowerCase(), contains('fuel stop timestamp matched within'));
+        expect(match, isNull);
       });
     });
 

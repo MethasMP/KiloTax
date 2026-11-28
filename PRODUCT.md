@@ -11,7 +11,7 @@ adaptive
 - Secondary: Their tax agents and accountants who review deduction evidence at EOFY.
 
 ## Product Purpose
-"Tax Evidence Tool for Australian Tradies" (KiloTax).
+"Tax Evidence Tool for Australian Tradies" (KiloClaim).
 Help Australian tradies and sole traders capture, review, explain and hand over connected vehicle-tax evidence: trips, receipts, job references and odometer records. Success means a user can complete the workflow with trustworthy records and recover from mistakes, not merely see a mileage total or a polished dashboard. Evidence completeness is not a guarantee of tax deductibility or acceptance.
 
 ## Workflow Quality Standard
@@ -24,7 +24,7 @@ Help Australian tradies and sole traders capture, review, explain and hand over 
 - Visual polish follows validated workflows; do not add decorative redesign work while critical evidence-flow gaps remain unresolved.
 
 ## Positioning
-Not a generic mileage tracker with spreadsheets. KiloTax is an audit-ready tax evidence engine specifically designed around ATO compliance rules (Logbook Method vs. Cents per km arbitrage, 5,000 km threshold caps, Bulky Tools exception, and immutable audit logs).
+Not a generic mileage tracker with spreadsheets. KiloClaim is an audit-ready tax evidence engine specifically designed around ATO compliance rules (Logbook Method vs. Cents per km arbitrage, 5,000 km threshold caps, Bulky Tools exception, and immutable audit logs).
 
 ## Operating Context
 - End of day in the ute cabin: 1-tap resolution, high contrast, large tap targets (minimum 48x48dp), zero tedious data entry.
@@ -39,7 +39,7 @@ Not a generic mileage tracker with spreadsheets. KiloTax is an audit-ready tax e
 - Light mode first; dark mode explicitly deferred.
 
 ## Brand Commitments
-- Name: KiloTax (internal repo DriveLog).
+- Name: KiloClaim (internal repo DriveLog).
 - Voice: Calm, authoritative, precise, professional, zero panic ("Evidence over panic").
 - Color Palette: Deep Navy (`surfaceNavy`), Slate/Ink neutrals, Crisp Emerald Green (`positiveBright`), Amber (`attention`).
 

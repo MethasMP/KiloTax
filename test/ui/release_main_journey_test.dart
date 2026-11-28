@@ -5,22 +5,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/main.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/services/engine/tax_pack_builder.dart';
+import 'package:kiloclaim/main.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/services/engine/tax_pack_builder.dart';
 import 'package:archive/archive.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/home/main_scaffold_screen.dart';
-import 'package:kilotax/ui/screens/trips/trip_detail_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/home/main_scaffold_screen.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_detail_screen.dart';
 
 void main({bool nativeStorage = false}) {
   testWidgets(
       'fresh guest completes vehicle, trip, correction, expense and restart',
       (tester) async {
     if (nativeStorage) {
-      SharedPreferences.setPrefix('kilotax_release_smoke.');
+      SharedPreferences.setPrefix('kiloclaim_release_smoke.');
     } else {
       SharedPreferences.setMockInitialValues({});
     }
@@ -28,8 +28,8 @@ void main({bool nativeStorage = false}) {
     if (nativeStorage) await storage.clearAll();
     final state = AppState(storageService: storage);
     addTearDown(state.dispose);
-    await tester.pumpWidget(
-        ChangeNotifierProvider.value(value: state, child: const KiloTaxApp()));
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+        value: state, child: const KiloClaimApp()));
 
     Future<void> tap(String text) async {
       expect(find.text(text), findsWidgets, reason: 'Missing action: $text');
@@ -44,16 +44,18 @@ void main({bool nativeStorage = false}) {
 
     await tap('Get started');
     await tap('Continue without an account');
+    await tap('Continue on this device');
     await tap('I’ll log trips manually instead');
     await tap('Ford Ranger');
     await tap('Save & Continue');
+    await tap('Logbook Method');
     await tap('Save vehicle');
     expect(find.byType(MainScaffoldScreen), findsOneWidget);
     expect(state.isGuestMode, isTrue);
     expect(state.isAuthenticated, isFalse);
     expect(state.primaryVehicle!.taxMethod, TaxMethod.logbook);
 
-    await tap('Trips');
+    await tap('Records');
     await tester.tap(find.byTooltip('Add trip').hitTestable());
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), '12.5');
@@ -65,7 +67,7 @@ void main({bool nativeStorage = false}) {
     expect(state.trips.single.distanceKm, 12.5);
     expect(state.trips.single.classification, TripClassification.business);
 
-    await tap('Trips');
+    await tap('Records');
     final capturedRoute = find.textContaining('Blacktown');
     expect(capturedRoute, findsWidgets);
     await tester.ensureVisible(capturedRoute.first);
@@ -110,7 +112,7 @@ void main({bool nativeStorage = false}) {
     await restored.init();
     await tester.pumpAndSettle();
     await tester.pumpWidget(ChangeNotifierProvider.value(
-        value: restored, child: const KiloTaxApp()));
+        value: restored, child: const KiloClaimApp()));
     await tester.pumpAndSettle();
     expect(find.byType(MainScaffoldScreen), findsOneWidget);
     expect(restored.isGuestMode, isTrue);

@@ -3,9 +3,11 @@ import '../../../../core/theme/app_color.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/models/trip.dart';
+import '../../../../services/engine/evidence_review_service.dart';
 import '../../../../state/app_state.dart';
 import '../../home/widgets/quick_capture_bottom_sheet.dart';
 import '../../trips/trip_detail_screen.dart';
+import '../../trips/widgets/bulky_tools_badge.dart';
 
 /// Recent records support the next task; amounts belong in Tax.
 class HomeRecentActivity extends StatelessWidget {
@@ -35,7 +37,9 @@ class HomeRecentActivity extends StatelessWidget {
       ]),
       const SizedBox(height: 8),
       if (trips.isEmpty) ...[
-        const Text('No trips recorded yet.', style: AppType.body),
+        const Text(
+            'No trips logged for this vehicle yet. Auto-GPS or manual trips appear here.',
+            style: AppType.body),
         const SizedBox(height: 8),
         Align(
             alignment: Alignment.centerLeft,
@@ -68,22 +72,26 @@ class HomeRecentActivity extends StatelessWidget {
   }
 
   Widget _row(BuildContext context, Trip trip) {
-    final needsReview =
-        appState.missingComplianceTrips.any((t) => t.id == trip.id);
+    final needsReview = appState.evidenceReview.items
+        .whereType<TripReviewItem>()
+        .any((i) => i.tripId == trip.id);
     final isBusiness = trip.classification == TripClassification.business;
-    final rate = appState.activeTaxRule.centsPerKmRate;
-    final claimValue = trip.distanceKm * rate;
+    final classificationLabel = isBusiness
+        ? 'Work'
+        : trip.classification == TripClassification.personal
+            ? 'Personal'
+            : 'Unclassified';
 
     // Check for linked expenses (e.g. Bunnings, Fuel)
     final linkedExpenses = appState.expenses
-        .where((e) => trip.linkedExpenseIds.contains(e.id))
+        .where((e) => !e.isDeleted && trip.linkedExpenseIds.contains(e.id))
         .toList();
 
     final timeStr =
         '${trip.date.hour.toString().padLeft(2, '0')}:${trip.date.minute.toString().padLeft(2, '0')}';
     final dest = _place(trip.destinationAddress,
-        trip.purpose.isEmpty ? 'Job Site' : trip.purpose);
-    final orig = _place(trip.originAddress, 'Origin');
+        trip.purpose.isEmpty ? 'Purpose not added' : trip.purpose);
+    final orig = _place(trip.originAddress, 'Start not recorded');
 
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
@@ -98,20 +106,29 @@ class HomeRecentActivity extends StatelessWidget {
             Text(timeStr, style: AppType.secondary),
             const SizedBox(width: 8),
             const Spacer(),
-            if (isBusiness)
-              Flexible(
-                child: Text(
-                  '+${Formatters.currency(claimValue)} claim',
-                  style: AppType.secondary.copyWith(
-                      color: AppColor.positiveStrong,
-                      fontWeight: FontWeight.w700),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            Flexible(
+              child: Text(
+                classificationLabel,
+                style: AppType.secondary.copyWith(
+                    color: AppColor.inkMuted, fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
           ]),
           const SizedBox(height: 6),
-          Text('$orig ➔ $dest', style: AppType.bodyStrong),
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: '$orig '),
+              const WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Icon(Icons.arrow_forward,
+                    size: 16, color: AppColor.inkMuted, semanticLabel: 'to'),
+              ),
+              TextSpan(text: ' $dest'),
+            ]),
+            style: AppType.bodyStrong,
+          ),
           const SizedBox(height: 4),
           Wrap(
             spacing: 8,
@@ -119,12 +136,18 @@ class HomeRecentActivity extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                '${Formatters.distance(trip.distanceKm)} business',
+                Formatters.distance(trip.distanceKm),
                 style: AppType.secondary,
               ),
               if (trip.endOdometer > 0)
                 Text('· Odo ${trip.endOdometer.toInt()}',
                     style: AppType.secondary),
+              if (trip.purpose.contains('Bulky Tools') ||
+                  trip.purpose.contains('Heavy Tools'))
+                BulkyToolsBadge(
+                  compact: true,
+                  onTap: () => BulkyToolsBadge.showAtoExplanationSheet(context),
+                ),
               if (needsReview)
                 Container(
                   padding:
@@ -134,8 +157,8 @@ class HomeRecentActivity extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text('Needs review',
-                      style: AppType.secondary
-                          .copyWith(color: AppColor.attentionInk, fontSize: 11)),
+                      style: AppType.secondary.copyWith(
+                          color: AppColor.attentionInk, fontSize: 11)),
                 ),
             ],
           ),
@@ -144,7 +167,8 @@ class HomeRecentActivity extends StatelessWidget {
             Wrap(
               spacing: 6,
               children: linkedExpenses.map((expense) {
-                final supplierName = expense.supplier ?? expense.category.displayName;
+                final supplierName =
+                    expense.supplier ?? expense.category.displayName;
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -157,11 +181,12 @@ class HomeRecentActivity extends StatelessWidget {
                     const Icon(Icons.receipt_long_outlined,
                         size: 13, color: AppColor.inkSubtle),
                     const SizedBox(width: 4),
-                    Text(
+                    Flexible(
+                        child: Text(
                       'Attached Receipt: $supplierName ${Formatters.currency(expense.amount)}',
                       style: AppType.secondary
                           .copyWith(color: AppColor.inkMuted, fontSize: 11),
-                    ),
+                    )),
                   ]),
                 );
               }).toList(),

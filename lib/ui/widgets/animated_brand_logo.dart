@@ -1,3 +1,4 @@
+import 'kiloclaim_brand_lockup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
@@ -130,21 +131,7 @@ class _AnimatedBrandLogoState extends State<AnimatedBrandLogo>
                 ),
                 child: ClipRRect(
                   borderRadius: borderRadius,
-                  child: Image.asset(
-                    'assets/icon_master.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.deepNavy,
-                        child: const Center(
-                          child: Icon(
-                            Icons.receipt_long_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  child: KiloClaimBrandMark(size: widget.size, tile: true),
                 ),
               ),
             ),

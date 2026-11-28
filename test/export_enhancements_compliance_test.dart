@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/core/utils/export_file_name_helper.dart';
-import 'package:kilotax/data/models/tax_config.dart';
-import 'package:kilotax/data/models/tax_summary.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/ato_report_service.dart';
-import 'package:kilotax/services/engine/cpk_export_service.dart';
-import 'package:kilotax/services/engine/logbook_export_service.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/core/utils/export_file_name_helper.dart';
+import 'package:kiloclaim/data/models/tax_config.dart';
+import 'package:kiloclaim/data/models/tax_summary.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/ato_report_service.dart';
+import 'package:kiloclaim/services/engine/cpk_export_service.dart';
+import 'package:kiloclaim/services/engine/logbook_export_service.dart';
 
 void main() {
   group('1. Dynamic File Naming & Sanitization Tests', () {
@@ -25,7 +25,7 @@ void main() {
       expect(
           cpkSlip,
           equals(
-              'KiloTax_CPK_FY2025-26_John_Smith_1ABC234_BoxD1_Lodgement_Slip.pdf'));
+              'KiloClaim_CPK_FY2025-26_John_Smith_1ABC234_BoxD1_Lodgement_Slip.pdf'));
 
       final logbookLedger = AtoReportService.generateExportFileName(
         method: 'Logbook',
@@ -38,7 +38,7 @@ void main() {
       expect(
           logbookLedger,
           equals(
-              'KiloTax_Logbook_FY2026-27_Acme_Plumbing__Gas_XYZ888_Continuous_Odometer_Ledger.csv'));
+              'KiloClaim_Logbook_FY2026-27_Acme_Plumbing__Gas_XYZ888_Continuous_Odometer_Ledger.csv'));
 
       final xeroJournal = AtoReportService.generateExportFileName(
         method: 'Logbook',
@@ -49,7 +49,7 @@ void main() {
         extension: 'csv',
       );
       expect(xeroJournal,
-          equals('KiloTax_Logbook_FY2026-27_Dave_123_Manual_Journal_Xero.csv'));
+          equals('KiloClaim_Logbook_FY2026-27_Dave_123_Manual_Journal_Xero.csv'));
     });
 
     test(
@@ -73,7 +73,7 @@ void main() {
         extension: 'csv',
       );
       expect(emptyName,
-          equals('KiloTax_CPK_FY2026-27_TradieClient_VEHICLE_Trip_Ledger.csv'));
+          equals('KiloClaim_CPK_FY2026-27_TradieClient_VEHICLE_Trip_Ledger.csv'));
     });
   });
 
@@ -377,7 +377,7 @@ void main() {
           contains(
               'Review actual equipment, transport purpose, and storage circumstances before claiming.'));
       expect(cpkText, isNot(contains('No lock-up facilities available')));
-      expect(cpkText, isNot(contains('Verified by KiloTax Engine')));
+      expect(cpkText, isNot(contains('Verified by KiloClaim Engine')));
 
       final logbookText = LogbookExportService.generateLogbookAuditDossierText(
         vehicle: vehicle,

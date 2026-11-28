@@ -36,7 +36,7 @@ class FeedbackDraft {
     this.note = '',
   });
 
-  String get message => '''KiloTax product feedback
+  String get message => '''KiloClaim product feedback
 Topic: ${topic.label}
 Accountant handoff: ${outcome.label}
 

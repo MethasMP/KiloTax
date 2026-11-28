@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
-/// Normalized domain permission status for KiloTax location lifecycle
+/// Normalized domain permission status for KiloClaim location lifecycle
 enum AppLocationPermissionStatus {
   grantedForeground, // While Using the App (Foreground tracking)
   grantedBackground, // Always Allow (Autonomous Background tracking)

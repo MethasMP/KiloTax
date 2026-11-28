@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:archive/archive.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/audit_evidence.dart';
-import 'package:kilotax/data/models/tax_summary.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/logbook_export_service.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/audit_evidence.dart';
+import 'package:kiloclaim/data/models/tax_summary.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/logbook_export_service.dart';
 
 void main() {
   group('LogbookExportService Tab 3 & Provenance (INV-B05)', () {
@@ -55,7 +55,7 @@ void main() {
         supplier: 'Bunnings Warehouse',
         supplierAbn: '26 008 672 179',
         category: ExpenseCategory.fuel,
-        receiptPath: 'https://storage.kilotax.com/receipts/exp-1.webp',
+        receiptPath: 'https://storage.kiloclaim.com/receipts/exp-1.webp',
         businessPercentage: 80.0,
         sha256Hash:
             'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -123,7 +123,7 @@ void main() {
       expect(content, contains('80'), reason: 'Business_Percent value missing');
       expect(content, contains('88'),
           reason: 'Deductible_Amount_AUD value missing');
-      expect(content, contains('https://storage.kilotax.com/receipts/exp-1.webp'),
+      expect(content, contains('https://storage.kiloclaim.com/receipts/exp-1.webp'),
           reason: 'Cloud_Receipt_URL value missing');
       expect(content, contains('ev-999'),
           reason: 'AuditEvidence_Id value missing');

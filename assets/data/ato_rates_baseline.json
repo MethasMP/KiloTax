@@ -9,6 +9,16 @@
     "source": "Australian Government Gazette (F2026L00785)"
   },
   {
+    "financialYear": "2025-26",
+    "startYear": 2025,
+    "centsPerKmRate": 0.88,
+    "centsPerKmMaxKm": 5000.0,
+    "carDepreciationLimit": 69674.0,
+    "isActive": false,
+    "source": "ATO D1 Work-related car expenses 2026",
+    "sourceUrl": "https://www.ato.gov.au/forms-and-instructions/tax-return-for-individuals-2026/deduction-questions-d1-d10-individual-tax-return-2026/d1-work-related-car-expenses-2026"
+  },
+  {
     "financialYear": "2024-25",
     "startYear": 2024,
     "centsPerKmRate": 0.88,

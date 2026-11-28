@@ -16,7 +16,7 @@ if (keystorePropertiesFile != null) {
 }
 
 android {
-    namespace = "com.kilotax.kilotax"
+    namespace = "com.kiloclaim.kiloclaim"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.kilotax.kilotax"
+        applicationId = "com.kiloclaim.kiloclaim"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION

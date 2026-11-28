@@ -1,4 +1,4 @@
-# KiloTax icon exploration
+# KiloClaim icon exploration
 
 Three editable vector concepts, exported at 1024 px:
 

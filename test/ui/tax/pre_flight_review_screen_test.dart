@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/engine/accountant_handoff_service.dart';
-import 'package:kilotax/services/engine/accounting_export_validator.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/tax/pre_flight_review_screen.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/engine/accountant_handoff_service.dart';
+import 'package:kiloclaim/services/engine/accounting_export_validator.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/tax/pre_flight_review_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -158,5 +159,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(exportInvoked, isTrue);
+  });
+
+  testWidgets('1-tap Fix Now on NO_CLOSING_ODOMETER saves reading and unlocks export',
+      (tester) async {
+    final state = AppState();
+    addTearDown(state.dispose);
+
+    final vehicle = Vehicle(
+      id: 'v-c2-fix',
+      make: 'Ford',
+      model: 'Ranger',
+      regoPlate: 'FIX001',
+      initialOdometer: 50000,
+      taxMethod: TaxMethod.centsPerKm,
+    );
+    await state.addVehicle(vehicle);
+    state.recordTrip(
+      Trip(
+        id: 't-fix-1',
+        vehicleId: vehicle.id,
+        date: DateTime(2026, 8, 10),
+        distanceKm: 45.0,
+        startOdometer: 50000,
+        endOdometer: 50045,
+        purpose: 'Site inspection',
+        classification: TripClassification.business,
+      ),
+    );
+
+    final package = createDummyPackage(vehicle);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PreFlightReviewScreen(
+          appState: state,
+          outputDirectory: tempDir,
+          initialPackage: package,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fixBtn = find.byKey(const Key('fix_error_NO_CLOSING_ODOMETER'));
+    expect(fixBtn, findsOneWidget);
+
+    ElevatedButton exportBtn =
+        tester.widget<ElevatedButton>(find.byKey(const Key('export_button')));
+    expect(exportBtn.onPressed, isNull);
+
+    await tester.tap(fixBtn);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.byKey(const Key('closing_odometer_input')), '50500');
+    await tester.tap(find.byKey(const Key('closing_odometer_save')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('fix_error_NO_CLOSING_ODOMETER')), findsNothing);
+    expect(state.annualOdometers.any((a) => a.closingOdometer == 50500), isTrue);
+
+    exportBtn =
+        tester.widget<ElevatedButton>(find.byKey(const Key('export_button')));
+    expect(exportBtn.onPressed, isNotNull);
   });
 }

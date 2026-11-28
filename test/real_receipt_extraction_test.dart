@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
   test(
@@ -57,7 +57,7 @@ ampol feedback@ampo | .com.au
     final result = service.analyseText(ocrText);
 
     print('\n======================================================');
-    print('KILOTAX ALGORITHM EXTRACTION REPORT (ZERO AI)');
+    print('KILOCLAIM ALGORITHM EXTRACTION REPORT (ZERO AI)');
     print('======================================================');
     print('Merchant Name   : ${result.merchant}');
     print('ABN Number      : ${result.abn}');

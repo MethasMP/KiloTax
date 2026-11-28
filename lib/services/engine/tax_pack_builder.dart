@@ -262,7 +262,7 @@ class TaxPackBuilder {
         utf8.encode(const JsonEncoder.withIndent('  ').convert(metadata));
     archive.addFile(ArchiveFile(
         'Supporting/record-history.json', metadataBytes.length, metadataBytes));
-    final directory = await outputDirectory.createTemp('kilotax-pack-');
+    final directory = await outputDirectory.createTemp('kiloclaim-pack-');
     try {
       final name = ExportFileNameHelper.buildFileName(
         method: switch (vehicle.taxMethod) {

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/services/engine/tax_rule_service.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/services/engine/tax_rule_service.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -106,7 +106,7 @@ void main() {
       expect(service.getRateCentsForDate(date2026), equals(91));
 
       // Should be saved into local storage cache
-      final cachedJson = storage.loadRawString('kilotax_cached_tax_rule_v1');
+      final cachedJson = storage.loadRawString('kiloclaim_cached_tax_rule_v1');
       expect(cachedJson, isNotNull);
       expect(cachedJson, contains('2026-27'));
     });

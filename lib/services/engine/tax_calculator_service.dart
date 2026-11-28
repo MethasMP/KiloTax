@@ -4,6 +4,13 @@ import '../../data/models/vehicle_expense.dart';
 import '../../data/models/tax_summary.dart';
 
 class TaxCalculatorService {
+  /// Estimates annual Australian ute running costs (rego, insurance, servicing,
+  /// and diesel/fuel per km) when a CPK user has not yet recorded receipts.
+  static double estimateAnnualUteRunningCost(double annualizedTotalKm) {
+    final safeKm = annualizedTotalKm.clamp(0.0, 100000.0);
+    return 4200.0 + (safeKm * 0.24);
+  }
+
   /// CENTS / KM (Layer 4A):
   /// Statutory formula: min(Business KM, Cap KM) * ATO Rate
   static double calculateCentsPerKm(double businessKm, [AtoTaxRule? rule]) {

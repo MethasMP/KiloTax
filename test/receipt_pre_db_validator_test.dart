@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
-import 'package:kilotax/services/ocr/receipt_pre_db_validator.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_pre_db_validator.dart';
 
 void main() {
   const validator = ReceiptPreDbValidator();

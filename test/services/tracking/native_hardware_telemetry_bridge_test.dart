@@ -1,12 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/tracking/native_hardware_telemetry_bridge.dart';
+import 'package:kiloclaim/services/tracking/native_hardware_telemetry_bridge.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('NativeHardwareTelemetryBridge & App Lifecycle Integration Tests', () {
-    const channel = MethodChannel('kilotax/hardware_telemetry');
+    const channel = MethodChannel('kiloclaim/hardware_telemetry');
     final List<MethodCall> methodCalls = [];
 
     setUp(() {

@@ -201,7 +201,7 @@ For immediate 30-second entry into Xero Tax, HandiTax, and MYOB Practice:
 ====================================================================================================
 
 ====================================================================================================
-KILOTAX • ATO MOTOR VEHICLE TAX LODGEMENT SLIP (ITAA 1997 Subdiv 28-C)
+KILOCLAIM • ATO MOTOR VEHICLE TAX LODGEMENT SLIP (ITAA 1997 Subdiv 28-C)
 METHOD: CENTS-PER-KILOMETRE | ATO BOX D1 CODE: S | FINANCIAL YEAR: ${taxRule.financialYear}
 ====================================================================================================
 
@@ -251,7 +251,7 @@ Tax Agent Signature: __________________________        RAN:  ___________________
 STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Division 28-C / TPB Notice):
 Calculated under ATO Cents per Kilometre method (ITAA 1997 Division 28-C). Not tax advice. Confirm
 claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.
-KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected
+KiloClaim is an independent software application and is NOT affiliated with, endorsed by, or connected
 to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).
 ====================================================================================================
 ''';

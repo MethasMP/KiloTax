@@ -25,6 +25,11 @@ class AppMotion {
   /// One-time welcome illustration and copy entrance.
   static const Duration welcome = Duration(milliseconds: 800);
 
+  /// Folio planes settle before the rest of the welcome entrance completes.
+  static const Duration brandAssembly = Duration(milliseconds: 560);
+  static const Duration brandPlaneStagger = Duration(milliseconds: 80);
+  static const double brandAssemblyTravel = 6;
+
   /// Background-only ambience: sheen, pulse. Never used as user feedback.
   static const Duration ambient = Duration(milliseconds: 1400);
 

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/services/tracking/autonomous_trip_detector.dart';
-import 'package:kilotax/services/tracking/sensor_fusion_tracking_engine.dart';
+import 'package:kiloclaim/services/tracking/autonomous_trip_detector.dart';
+import 'package:kiloclaim/services/tracking/sensor_fusion_tracking_engine.dart';
 
 Position createTestPosition({
   required double latitude,

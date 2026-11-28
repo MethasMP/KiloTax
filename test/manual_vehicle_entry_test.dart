@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
-import 'package:kilotax/ui/widgets/tactile_primary_button.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/ui/widgets/tactile_primary_button.dart';
 import 'package:provider/provider.dart';
 
 void main() {

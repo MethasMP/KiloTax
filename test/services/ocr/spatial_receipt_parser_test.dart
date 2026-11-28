@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/ocr/receipt_ocr_engine.dart';
-import 'package:kilotax/services/ocr/spatial_receipt_parser.dart';
+import 'package:kiloclaim/services/ocr/receipt_ocr_engine.dart';
+import 'package:kiloclaim/services/ocr/spatial_receipt_parser.dart';
 
 void main() {
   group('SpatialReceiptParser', () {

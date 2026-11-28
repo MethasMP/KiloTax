@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/vehicle/australian_vehicle_catalog.dart';
-import 'package:kilotax/services/vehicle/vehicle_lookup_service.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/vehicle/australian_vehicle_catalog.dart';
+import 'package:kiloclaim/services/vehicle/vehicle_lookup_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

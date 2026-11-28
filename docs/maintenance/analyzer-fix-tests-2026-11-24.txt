@@ -1,0 +1,35 @@
+00:00 +0: loading /Users/methas/Desktop/DriveLog/test/services/engine/xero_export_service_test.dart
+00:00 +0: /Users/methas/Desktop/DriveLog/test/services/engine/xero_export_service_test.dart: XeroExportService generates compliant Xero Bills CSV with exact mandatory headers
+00:07 +1: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+00:08 +2: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+00:08 +3: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+00:08 +4: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+Unable to download https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf
+Error loading Inter-Regular, fallback to Helvetica.
+Unable to download https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf
+Error loading Inter-Bold, fallback to Helvetica.
+00:08 +5: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+00:08 +6: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+Helvetica has no Unicode support see https://github.com/DavBfr/dart_pdf/wiki/Fonts-Management
+00:09 +6: /Users/methas/Desktop/DriveLog/test/services/engine/pdf_export_service_test.dart: PdfExportService ATO Required Fields (ITAA 1997 Div 28) PDF contains all 7 ATO required audit fields and non-empty values
+Unable to download https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf
+Error loading Inter-Regular, fallback to Helvetica.
+Unable to download https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf
+Error loading Inter-Bold, fallback to Helvetica.
+Helvetica has no Unicode support see https://github.com/DavBfr/dart_pdf/wiki/Fonts-Management
+00:09 +6: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 1 (CPK) generates exactly 2 files (PDF + 2-Tab XLSX) with no fuel receipt attachments
+00:09 +7: /Users/methas/Desktop/DriveLog/test/services/engine/pdf_export_service_test.dart: PdfExportService ATO Required Fields (ITAA 1997 Div 28) PDF contains all 7 ATO required audit fields and non-empty values
+00:09 +8: /Users/methas/Desktop/DriveLog/test/services/ocr/thermal_preprocessor_pipeline_test.dart: ThermalReceiptImagePreprocessor - Clarity Assessment & Pipeline (TDD) assessClarity returns high edge variance for sharp receipt image
+00:09 +9: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 2 (Logbook) generates exactly 2 files (PDF + Multi-Tab XLSX) with 3 sheets and D1 breakdown
+00:10 +10: /Users/methas/Desktop/DriveLog/test/services/engine/accountant_handoff_service_test.dart: AccountantHandoffService Case 2 (Logbook) generates exactly 2 files (PDF + Multi-Tab XLSX) with 3 sheets and D1 breakdown
+00:10 +11: /Users/methas/Desktop/DriveLog/test/services/ocr/thermal_preprocessor_pipeline_test.dart: ThermalReceiptImagePreprocessor - Clarity Assessment & Pipeline (TDD) preprocessReceipt processes sharp image and outputs enhanced file
+00:10 +12: /Users/methas/Desktop/DriveLog/test/services/ocr/thermal_preprocessor_pipeline_test.dart: ThermalReceiptImagePreprocessor - Clarity Assessment & Pipeline (TDD) (tearDownAll)
+00:13 +12: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Sunlight Readability & Button Touch Target Standards AppColor.inkSubtle meets WCAG AA sunlight readability contrast
+00:13 +13: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Sunlight Readability & Button Touch Target Standards AppTheme enforces 48x48dp minimum touch targets across button themes
+00:13 +14: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Bulky Tools ATO s 8-1 Badge & Explanation BulkyToolsBadge renders compact label and meets 48x48dp touch target
+00:14 +15: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Bulky Tools ATO s 8-1 Badge & Explanation Tapping BulkyToolsBadge opens ATO s 8-1 explanation modal
+00:14 +16: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Bulky Tools ATO s 8-1 Badge & Explanation TripDetailScreen renders enhanced Bulky Tools s 8-1 badge and confirmation
+[KiloClaim Integrity Guard] Ignored invalid zero/negative drive record.
+00:14 +17: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Low-confidence (<70%) Receipt OCR Highlight ReceiptProcessingView displays low-confidence alert when confidence < 70%
+00:14 +18: /Users/methas/Desktop/DriveLog/test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart: Low-confidence (<70%) Receipt OCR Highlight ExpenseDetailScreen displays amber warning card for low-confidence OCR
+00:15 +19: All tests passed!

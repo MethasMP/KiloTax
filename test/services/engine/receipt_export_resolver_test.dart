@@ -7,13 +7,13 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
-import 'package:kilotax/services/engine/receipt_export_resolver.dart';
-import 'package:kilotax/services/engine/tax_pack_builder.dart';
-import 'package:kilotax/services/sync/sync_engine_service.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/services/engine/receipt_export_resolver.dart';
+import 'package:kiloclaim/services/engine/tax_pack_builder.dart';
+import 'package:kiloclaim/services/sync/sync_engine_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

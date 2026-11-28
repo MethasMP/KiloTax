@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Migration: Phase 3 - Audit Evidence Vault & Storage Security
+-- KiloClaim Migration: Phase 3 - Audit Evidence Vault & Storage Security
 -- File: 20261023_phase3_audit_evidence_vault.sql
 -- Description:
 -- 1. Storage bucket 'receipts' security hardening:

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/theme/app_theme.dart';
-import 'package:kilotax/ui/screens/expenses/widgets/receipt_processing_view.dart';
+import 'package:kiloclaim/core/theme/app_theme.dart';
+import 'package:kiloclaim/ui/screens/expenses/widgets/receipt_processing_view.dart';
 
 void main() {
   testWidgets('Processing describes actual work without fabricated completion',

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/tracking/hardware_bluetooth_service.dart';
+import 'package:kiloclaim/services/tracking/hardware_bluetooth_service.dart';
 
 void main() {
   group('PR-16: Hardware Bluetooth Pairing by UUID and Hardware Identifier', () {

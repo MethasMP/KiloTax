@@ -1,8 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:http/http.dart' as http;
 
 class ReceiptOcrBlock {
   final int page;
@@ -105,124 +101,8 @@ class MlKitReceiptOcrEngine implements ReceiptOcrEngine {
   }
 }
 
-class PaddleReceiptOcrEngine implements ReceiptOcrEngine {
-  final Uri endpoint;
-  final String token;
-  final Duration timeout;
-  final http.Client? client;
-  static const maxImageBytes = 12 * 1024 * 1024;
-  PaddleReceiptOcrEngine(
-      {required this.endpoint,
-      this.token = '',
-      this.timeout = const Duration(seconds: 90),
-      this.client}) {
-    if (!['http', 'https'].contains(endpoint.scheme) ||
-        endpoint.host.isEmpty ||
-        endpoint.userInfo.isNotEmpty ||
-        endpoint.hasFragment) {
-      throw ArgumentError(
-          'Configure a full HTTP(S) PaddleOCR endpoint without credentials or fragment');
-    }
-    if (endpoint.scheme != 'https' &&
-        !['localhost', '127.0.0.1', '::1'].contains(endpoint.host)) {
-      throw ArgumentError('Remote PaddleOCR endpoints require HTTPS');
-    }
-  }
-
-  @override
-  Future<ReceiptOcrExtraction> recognizeFile(String path) async {
-    final file = File(path);
-    final size = await file.length();
-    if (size == 0 || size > maxImageBytes) {
-      throw const FormatException('OCR image must be 1 byte to 12 MiB');
-    }
-    final transport = client ?? http.Client();
-    try {
-      final response = await transport
-          .post(endpoint,
-              headers: {
-                'Content-Type': 'application/octet-stream',
-                if (token.isNotEmpty) 'Authorization': 'Bearer $token'
-              },
-              body: await file.readAsBytes())
-          .timeout(timeout);
-      if (response.statusCode != 200) {
-        throw HttpException('PaddleOCR failed (HTTP ${response.statusCode})');
-      }
-      if (response.bodyBytes.length > 4 * 1024 * 1024) {
-        throw const FormatException('OCR response too large');
-      }
-      return parseResponse(jsonDecode(utf8.decode(response.bodyBytes)));
-    } finally {
-      if (client == null) transport.close();
-    }
-  }
-
-  static ReceiptOcrExtraction parseResponse(dynamic value) {
-    if (value is! Map<String, dynamic> ||
-        value['engine'] != 'paddleocr' ||
-        value['version'] is! String ||
-        (value['version'] as String).isEmpty ||
-        value['text'] is! String ||
-        value['blocks'] is! List ||
-        value['extractedAt'] is! String) {
-      throw const FormatException('Invalid PaddleOCR response');
-    }
-    final extractedAt = DateTime.tryParse(value['extractedAt']);
-    if (extractedAt == null) {
-      throw const FormatException('Invalid extraction time');
-    }
-    final blocks = <ReceiptOcrBlock>[];
-    for (final block in value['blocks']) {
-      if (block is! Map ||
-          block['page'] is! int ||
-          block['page'] < 1 ||
-          block['text'] is! String ||
-          block['bounds'] is! List ||
-          block['bounds'].length != 4) {
-        throw const FormatException('Invalid OCR block');
-      }
-      final bounds = <double>[];
-      for (final coordinate in block['bounds']) {
-        if (coordinate is! num || !coordinate.isFinite || coordinate < 0) {
-          throw const FormatException('Invalid OCR bounds');
-        }
-        bounds.add(coordinate.toDouble());
-      }
-      if (bounds[2] < bounds[0] || bounds[3] < bounds[1]) {
-        throw const FormatException('Inverted OCR bounds');
-      }
-      final score = block['score'];
-      if (score != null &&
-          (score is! num || !score.isFinite || score < 0 || score > 1)) {
-        throw const FormatException('Invalid OCR score');
-      }
-      blocks.add(ReceiptOcrBlock(
-          page: block['page'],
-          text: block['text'],
-          bounds: bounds,
-          score: (score as num?)?.toDouble()));
-    }
-    return ReceiptOcrExtraction(
-        text: ReceiptReadingOrder.assemble(blocks,
-            fallback: value['text'] as String),
-        blocks: blocks,
-        engine: value['engine'],
-        version: value['version'],
-        extractedAt: extractedAt.toUtc());
-  }
-}
-
 class ReceiptOcrEngineFactory {
-  /// Calling with usePaddle:true must follow a user action consenting to upload.
-  static ReceiptOcrEngine create(
-      {bool usePaddle = false,
-      String endpoint = const String.fromEnvironment('PADDLE_OCR_URL'),
-      String token = const String.fromEnvironment('PADDLE_OCR_TOKEN')}) {
-    if (!usePaddle) return MlKitReceiptOcrEngine();
-    if (endpoint.trim().isEmpty) {
-      throw StateError('PaddleOCR is not configured; no image was uploaded');
-    }
-    return PaddleReceiptOcrEngine(endpoint: Uri.parse(endpoint), token: token);
+  static ReceiptOcrEngine create() {
+    return MlKitReceiptOcrEngine();
   }
 }

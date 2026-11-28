@@ -1,0 +1,38 @@
+Analyzing DriveLog...                                           
+
+  error • The argument type 'int' can't be assigned to the parameter type 'double'.  • bin/generate_accountant_pilot_pack.dart:88:22 • argument_type_not_assignable
+  error • The argument type 'int' can't be assigned to the parameter type 'double'.  • bin/generate_accountant_pilot_pack.dart:89:20 • argument_type_not_assignable
+  error • The named parameter 'vendor' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'vendor' • bin/generate_accountant_pilot_pack.dart:102:7 • undefined_named_parameter
+  error • The named parameter 'merchantAbn' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'merchantAbn' • bin/generate_accountant_pilot_pack.dart:103:7 • undefined_named_parameter
+  error • The named parameter 'cloudReceiptUrl' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'cloudReceiptUrl' • bin/generate_accountant_pilot_pack.dart:104:7 • undefined_named_parameter
+  error • The named parameter 'auditEvidenceId' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'auditEvidenceId' • bin/generate_accountant_pilot_pack.dart:105:7 • undefined_named_parameter
+  error • The named parameter 'imageSha256' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'imageSha256' • bin/generate_accountant_pilot_pack.dart:106:7 • undefined_named_parameter
+  error • The named parameter 'vendor' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'vendor' • bin/generate_accountant_pilot_pack.dart:114:7 • undefined_named_parameter
+  error • The named parameter 'merchantAbn' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'merchantAbn' • bin/generate_accountant_pilot_pack.dart:115:7 • undefined_named_parameter
+  error • The named parameter 'cloudReceiptUrl' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'cloudReceiptUrl' • bin/generate_accountant_pilot_pack.dart:116:7 • undefined_named_parameter
+  error • The named parameter 'auditEvidenceId' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'auditEvidenceId' • bin/generate_accountant_pilot_pack.dart:117:7 • undefined_named_parameter
+  error • The named parameter 'imageSha256' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'imageSha256' • bin/generate_accountant_pilot_pack.dart:118:7 • undefined_named_parameter
+  error • There's no constant named 'maintenance' in 'ExpenseCategory'. Try correcting the name to the name of an existing constant, or defining a constant named 'maintenance' • bin/generate_accountant_pilot_pack.dart:125:33 • undefined_enum_constant
+  error • The named parameter 'vendor' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'vendor' • bin/generate_accountant_pilot_pack.dart:126:7 • undefined_named_parameter
+  error • The named parameter 'merchantAbn' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'merchantAbn' • bin/generate_accountant_pilot_pack.dart:127:7 • undefined_named_parameter
+  error • The named parameter 'cloudReceiptUrl' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'cloudReceiptUrl' • bin/generate_accountant_pilot_pack.dart:128:7 • undefined_named_parameter
+  error • The named parameter 'auditEvidenceId' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'auditEvidenceId' • bin/generate_accountant_pilot_pack.dart:129:7 • undefined_named_parameter
+  error • The named parameter 'imageSha256' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'imageSha256' • bin/generate_accountant_pilot_pack.dart:130:7 • undefined_named_parameter
+warning • Unused import: 'dart:async'. Try removing the import directive • lib/main.dart:1:8 • unused_import
+warning • The operand can't be 'null', so the condition is always 'true'. Remove the condition • lib/services/engine/pdf_export_service.dart:183:45 • unnecessary_null_comparison
+warning • The operand can't be 'null', so the condition is always 'true'. Remove the condition • lib/services/engine/pdf_export_service.dart:206:36 • unnecessary_null_comparison
+   info • The imported package 'intl' isn't a dependency of the importing package. Try adding a dependency for 'intl' in the 'pubspec.yaml' file • lib/services/engine/xero_export_service.dart:1:8 • depend_on_referenced_packages
+warning • Unused import: 'dart:convert'. Try removing the import directive • lib/services/ocr/australian_business_register_service.dart:1:8 • unused_import
+warning • The declaration '_extractAbn' isn't referenced. Try removing the declaration of '_extractAbn' • lib/services/ocr/receipt_intelligence_service.dart:332:11 • unused_element
+warning • Unused import: 'dart:math'. Try removing the import directive • lib/services/ocr/thermal_receipt_image_preprocessor.dart:2:8 • unused_import
+   info • Use the null-aware operator '?.' rather than an explicit 'null' comparison. Try using '?.' • lib/ui/screens/logbook/logbook_progress_screen.dart:50:10 • prefer_null_aware_operators
+warning • Unused import: '../auth/sign_in_screen.dart'. Try removing the import directive • lib/ui/screens/onboarding/onboarding_slides_screen.dart:8:8 • unused_import
+warning • Unused import: '../../../../core/theme/app_typography.dart'. Try removing the import directive • lib/ui/screens/trips/widgets/bulky_tools_badge.dart:4:8 • unused_import
+warning • Unused import: 'dart:io'. Try removing the import directive • lib/ui/screens/vehicle/vehicle_setup_flow.dart:3:8 • unused_import
+warning • Unused import: 'dart:io'. Try removing the import directive • test/context_assisted_ocr_test.dart:1:8 • unused_import
+warning • Unused import: 'dart:convert'. Try removing the import directive • test/services/ocr/comprehensive_stress_test.dart:1:8 • unused_import
+   info • 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion. Try replacing the use of the deprecated member with the replacement • test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart:19:20 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion. Try replacing the use of the deprecated member with the replacement • test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart:20:20 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion. Try replacing the use of the deprecated member with the replacement • test/ui/bulky_tools_badge_and_sunlight_contrast_test.dart:21:19 • deprecated_member_use
+
+34 issues found. (ran in 104.0s)

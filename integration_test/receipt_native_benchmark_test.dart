@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:kilotax/services/ocr/receipt_ocr_engine.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_ocr_engine.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

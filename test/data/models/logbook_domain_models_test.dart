@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/logbook_period.dart';
-import 'package:kilotax/data/models/annual_odometer.dart';
+import 'package:kiloclaim/data/models/logbook_period.dart';
+import 'package:kiloclaim/data/models/annual_odometer.dart';
 
 void main() {
   group('LogbookPeriod domain model tests', () {

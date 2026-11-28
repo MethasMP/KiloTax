@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Realign KiloTax with real-world Australian market reality by eliminating false-promise claims ("audit-proof"), delivering a turnkey Accountant Pilot Pack with test fixtures, and enforcing 100% zero-friction ergonomics for the 5-minute tradie ute test.
+**Goal:** Realign KiloClaim with real-world Australian market reality by eliminating false-promise claims ("audit-proof"), delivering a turnkey Accountant Pilot Pack with test fixtures, and enforcing 100% zero-friction ergonomics for the 5-minute tradie ute test.
 
 **Architecture:** Maintain the pure-Dart offline-first architecture. Strip compliance-violating slogans across UI and notifications. Add a deterministic export generator CLI and sample pack fixture (`assets/samples/accountant_sample_pack/`) with accompanying practitioner documentation (`ACCOUNTANT_PILOT_GUIDE.md`). Build an automated integration verification test simulating the 5-minute ute test workflow.
 
 **Tech Stack:** Flutter / Dart, SQLite, OpenXML (.xlsx via archive package), PDF (pdf package), Crypto SHA-256.
 
-**Spec:** [Google Docs Competitive & Founder Strategy Analysis](https://docs.google.com/document/d/1P7ncruby5STCOTGOkJ3iknPWgQ5f7ylXRcRD7HHtBB8/edit?usp=sharing) and [KiloTax Product Readiness Checklist](file:///Users/methas/.gemini/antigravity/brain/cb06f9f1-1812-4c77-8f3f-eb89b3d507c8/kilotax-product-readiness-checklist.md).
+**Spec:** [Google Docs Competitive & Founder Strategy Analysis](https://docs.google.com/document/d/1P7ncruby5STCOTGOkJ3iknPWgQ5f7ylXRcRD7HHtBB8/edit?usp=sharing) and [KiloClaim Product Readiness Checklist](file:///Users/methas/.gemini/antigravity/brain/cb06f9f1-1812-4c77-8f3f-eb89b3d507c8/kiloclaim-product-readiness-checklist.md).
 
 ## Global Constraints
 
@@ -43,7 +43,7 @@
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/ui/screens/tax/tax_summary_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/tax_summary_screen.dart';
 
 void main() {
   testWidgets('TaxSummaryScreen displays ACCOUNTANT READY badge instead of AUDIT-PROOF',
@@ -83,9 +83,9 @@ git commit -m "fix(copy): replace unsafe audit-proof claims with defensible acco
 **Files:**
 - Create: `bin/generate_accountant_pilot_pack.dart`
 - Create: `ACCOUNTANT_PILOT_GUIDE.md`
-- Output: `assets/samples/accountant_sample_pack/KiloTax_Accountant_Pack_CPK_Sample.xlsx`
-- Output: `assets/samples/accountant_sample_pack/KiloTax_Accountant_Pack_Logbook_Sample.xlsx`
-- Output: `assets/samples/accountant_sample_pack/KiloTax_Tax_Summary_Sample.pdf`
+- Output: `assets/samples/accountant_sample_pack/KiloClaim_Accountant_Pack_CPK_Sample.xlsx`
+- Output: `assets/samples/accountant_sample_pack/KiloClaim_Accountant_Pack_Logbook_Sample.xlsx`
+- Output: `assets/samples/accountant_sample_pack/KiloClaim_Tax_Summary_Sample.pdf`
 - Test: `test/services/engine/accountant_pilot_pack_test.dart`
 
 **Interfaces:**

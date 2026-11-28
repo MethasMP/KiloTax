@@ -1,5 +1,5 @@
 ---
-name: KiloTax (DriveLog)
+name: KiloClaim (DriveLog)
 description: The Tax Evidence OS for Australian Tradies & Sole Traders
 theme: Obsidian & Terracotta
 colors:
@@ -101,10 +101,10 @@ components:
     width: "48px"
 ---
 
-# KiloTax Design System (Obsidian & Terracotta)
+# KiloClaim Design System (Obsidian & Terracotta)
 
 ## Overview
-KiloTax is the Tax Evidence OS purpose-built for Australian tradies, contractors, and sole traders.
+KiloClaim is the Tax Evidence OS purpose-built for Australian tradies, contractors, and sole traders.
 The design theme is **Obsidian & Terracotta**:
 - Warm linen canvas with neutral stone text hierarchy.
 - Restrained terracotta orange (`#C2410C` / `#EA580C`) for primary CTAs and brand identity.
@@ -126,8 +126,8 @@ The design theme is **Obsidian & Terracotta**:
 
 ### Content & Typography Colors
 - **Ink (`#18181B`)**: Primary text color meeting WCAG AA against linen canvas (`AppColor.ink`).
-- **Ink Muted (`#52525B`)**: Secondary descriptive copy (`AppColor.inkMuted`).
-- **Ink Subtle (`#71717A`)**: Captions, timestamps, and placeholder copy (`AppColor.inkSubtle`).
+- **Ink Muted (`#3F3F46`)**: Secondary descriptive copy (`AppColor.inkMuted`).
+- **Ink Subtle (`#52525B`)**: Captions, timestamps, and placeholder copy tuned for sunlight readability (`AppColor.inkSubtle`).
 - **On Navy (`#FFFFFF`)**: Pure white text for dark hero cards (`AppColor.onNavy`).
 - **On Navy Muted (`#D4D4D8`)**: Subdued metadata text on dark cards (`AppColor.onNavyMuted`).
 
@@ -188,3 +188,9 @@ Font Family: **Inter** throughout the application.
 - **Accessibility & Contrast**:
   - Never communicate status through color alone (always combine with icons and text labels).
   - Explicit `Semantics(button: true, label: ...)` on all custom ink touches.
+
+## Folio brand identity
+
+KiloClaim uses the approved Folio mark: three folded planes in vermilion `#E74716`, paired with an aubergine `#351329` wordmark. Assets and regeneration instructions live in `assets/brand/folio/README.md`.
+
+Use `KiloClaimBrandLockup` for welcome and sign-in, and its compact variant on Home and root Settings. `KiloClaimBrandMark` supplies the standalone mark or app tile. Typography is centralized in `AppBrand`: bundled Inter Bold, restrained negative tracking, mixed-case `KiloClaim`, system text scaling. General UI typography remains in `AppType`; the brand palette does not replace semantic action/status colours.

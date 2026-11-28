@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/logbook_period.dart';
-import 'package:kilotax/data/models/annual_odometer.dart';
-import 'package:kilotax/services/notifications/notification_service.dart';
-import 'package:kilotax/services/tax/ato_tax_period_engine.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/logbook_period.dart';
+import 'package:kiloclaim/data/models/annual_odometer.dart';
+import 'package:kiloclaim/services/notifications/notification_service.dart';
+import 'package:kiloclaim/services/tax/ato_tax_period_engine.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   group('Item 1: 12-Week Representative Travel Check (ITAA 1997 s 28-G)', () {
@@ -325,7 +325,7 @@ void main() {
       );
 
       expect(notif1, isNotNull);
-      expect(notif1!.type, KiloTaxNotificationType.eofyAlert);
+      expect(notif1!.type, KiloClaimNotificationType.eofyAlert);
       expect(notif1.title, contains('15 Days Left'));
       expect(notif1.body, contains('Transit (TRANSIT-1)'));
 

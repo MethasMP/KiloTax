@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +72,7 @@ void main() {
         gstAmount: 13.24,
         category: ExpenseCategory.fuel,
         date: DateTime.utc(2026, 8, 20, 14, 10, 0),
-        receiptPath: '/data/user/0/com.kilotax/receipts/fuel_999.jpg',
+        receiptPath: '/data/user/0/com.kiloclaim/receipts/fuel_999.jpg',
         businessPercentage: 100.0,
         notes: 'BP Ultimate Diesel for Job #88',
         linkedTripId: 't_audit_001',

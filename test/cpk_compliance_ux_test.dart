@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/compliance/compliance_center_screen.dart';
-import 'package:kilotax/ui/screens/cpk/cpk_trip_entry_screen.dart';
-import 'package:kilotax/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
-import 'package:kilotax/ui/screens/home/widgets/trips_ledger_tab.dart';
-import 'package:kilotax/ui/screens/logbook/logbook_trip_entry_screen.dart';
-import 'package:kilotax/ui/screens/tax/tax_summary_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/compliance/compliance_center_screen.dart';
+import 'package:kiloclaim/ui/screens/cpk/cpk_trip_entry_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/quick_capture_bottom_sheet.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
+import 'package:kiloclaim/ui/screens/logbook/logbook_trip_entry_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/tax_summary_screen.dart';
 import 'package:provider/provider.dart';
 
 void main() {

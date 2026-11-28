@@ -21,6 +21,9 @@ class MethodArbitrageCard extends StatefulWidget {
   final double centsPerKmClaim;
   final double logbookClaim;
   final double thresholdDelta;
+  final double? annualizedBusinessKm;
+  final int? trackingDays;
+  final bool isBenchmarkEstimate;
   final VoidCallback? onExplore;
   final VoidCallback? onDismiss;
   final bool isDark;
@@ -31,6 +34,9 @@ class MethodArbitrageCard extends StatefulWidget {
     required this.centsPerKmClaim,
     required this.logbookClaim,
     this.thresholdDelta = 250.0,
+    this.annualizedBusinessKm,
+    this.trackingDays,
+    this.isBenchmarkEstimate = false,
     this.onExplore,
     this.onDismiss,
     this.isDark = false,
@@ -70,7 +76,15 @@ class _MethodArbitrageCardState extends State<MethodArbitrageCard> {
     }
 
     final delta = widget.logbookClaim - widget.centsPerKmClaim;
-    final isEligible = widget.businessKm >= 4000.0 && delta >= widget.thresholdDelta;
+    final bool isEligible;
+    if (widget.annualizedBusinessKm != null && widget.trackingDays != null) {
+      isEligible = (widget.businessKm >= 500.0 || widget.trackingDays! >= 14) &&
+          widget.annualizedBusinessKm! >= 5000.0 &&
+          delta >= widget.thresholdDelta;
+    } else {
+      isEligible =
+          widget.businessKm >= 4000.0 && delta >= widget.thresholdDelta;
+    }
 
     if (!isEligible) {
       return const SizedBox.shrink();
@@ -242,6 +256,17 @@ class _MethodArbitrageCardState extends State<MethodArbitrageCard> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                if (widget.isBenchmarkEstimate) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Estimated from typical AU ute running costs. Add receipts to refine.',
+                    style: AppType.secondary.copyWith(
+                      color: microLabelColor,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ],
             ),
           ),

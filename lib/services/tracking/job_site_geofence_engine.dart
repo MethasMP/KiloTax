@@ -38,6 +38,108 @@ class JobSiteMatchResult {
 /// (default 150m). Automatically associates the trip with the job site name and client
 /// without requiring manual typing from the user.
 class JobSiteGeofenceEngine {
+  /// Evaluates whether a trip or movement is a ghost micro-trip (< 500m on-site).
+  ///
+  /// Ghost micro-trips occur when a vehicle moves short distances (< 500m)
+  /// within or around an active JobSite (e.g., repositioning a ute, moving tools,
+  /// on-site parking maneuvers). These should be suppressed from the tax ledger
+  /// to prevent cluttering ATO records with non-travel micro movements.
+  static bool isGhostMicroTrip({
+    required double distanceKm,
+    required List<JobSite> jobSites,
+    double? startLatitude,
+    double? startLongitude,
+    double? endLatitude,
+    double? endLongitude,
+    double maxDistanceMeters = 500.0,
+  }) {
+    if (jobSites.isEmpty) return false;
+
+    final activeSites =
+        jobSites.where((s) => s.isActive && s.trackingEnabled).toList();
+    if (activeSites.isEmpty) return false;
+
+    final effectiveDistanceMeters = distanceKm * 1000.0;
+    final straightMeters = (startLatitude != null &&
+            startLongitude != null &&
+            endLatitude != null &&
+            endLongitude != null)
+        ? Wgs84GeodesicEngine.calculateDistanceMeters(
+            lat1: startLatitude,
+            lon1: startLongitude,
+            lat2: endLatitude,
+            lon2: endLongitude,
+          )
+        : null;
+
+    // Must be under maxDistanceMeters (500m) either by road or straight-line distance
+    final isUnderThreshold = (effectiveDistanceMeters < maxDistanceMeters) ||
+        (straightMeters != null && straightMeters < maxDistanceMeters);
+    if (!isUnderThreshold) return false;
+
+    // Check if start or end coordinates fall within any active JobSite
+    for (final site in activeSites) {
+      final startInside = startLatitude != null &&
+          startLongitude != null &&
+          site.containsCoordinate(lat: startLatitude, lng: startLongitude);
+      final endInside = endLatitude != null &&
+          endLongitude != null &&
+          site.containsCoordinate(lat: endLatitude, lng: endLongitude);
+
+      // Both endpoints inside site, or at least one endpoint inside with distance < 500m
+      if (startInside || endInside) {
+        return true;
+      }
+
+      // Proximity check: vehicle moved within vicinity of site
+      if (startLatitude != null && startLongitude != null) {
+        final distStart =
+            site.distanceTo(lat: startLatitude, lng: startLongitude);
+        if (distStart <= (site.radiusMeters + maxDistanceMeters)) {
+          if (endLatitude != null && endLongitude != null) {
+            final distEnd =
+                site.distanceTo(lat: endLatitude, lng: endLongitude);
+            if (distEnd <= (site.radiusMeters + maxDistanceMeters) &&
+                (straightMeters ?? effectiveDistanceMeters) < maxDistanceMeters) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /// Evaluates whether a [Trip] should be suppressed as an on-site ghost micro-trip (< 500m).
+  static bool shouldSuppressTrip({
+    required Trip trip,
+    required List<JobSite> jobSites,
+    double maxDistanceMeters = 500.0,
+  }) {
+    return isGhostMicroTrip(
+      distanceKm: trip.distanceKm,
+      jobSites: jobSites,
+      startLatitude: trip.startLat,
+      startLongitude: trip.startLng,
+      endLatitude: trip.endLat ?? trip.endLatitude,
+      endLongitude: trip.endLng ?? trip.endLongitude,
+      maxDistanceMeters: maxDistanceMeters,
+    );
+  }
+
+  /// Instance method evaluating if a trip is an on-site micro-trip (< 500m).
+  bool isMicroTripOnSite({
+    required Trip trip,
+    required List<JobSite> sites,
+    double maxDistanceMeters = 500.0,
+  }) =>
+      shouldSuppressTrip(
+        trip: trip,
+        jobSites: sites,
+        maxDistanceMeters: maxDistanceMeters,
+      );
+
   /// Evaluates whether a trip stopping at a location for dwell ≥ 120s matches a JobSite geofence (INV-B03).
   GeofenceMatch? matchTripToJobSite(Trip trip, List<JobSite> sites) {
     final dwell = trip.stoppedDuration;

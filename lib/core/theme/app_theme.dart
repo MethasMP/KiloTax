@@ -42,6 +42,16 @@ class AppTheme {
                 foregroundColor: AppColor.brand,
                 minimumSize: const Size(48, 48),
                 textStyle: AppType.bodyStrong.copyWith(fontFamily: 'Inter'))),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)))),
+        iconButtonTheme: IconButtonThemeData(
+            style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48))),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
             backgroundColor: AppColor.ink,
             foregroundColor: AppColor.onNavy,

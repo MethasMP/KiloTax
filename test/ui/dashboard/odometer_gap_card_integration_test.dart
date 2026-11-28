@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/task_home_body.dart';
-import 'package:kilotax/ui/screens/logbook/widgets/odometer_gap_review_card.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/task_home_body.dart';
+import 'package:kiloclaim/ui/screens/logbook/widgets/odometer_gap_review_card.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +55,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    // Scroll down in ListView so lazy children below HomeRecentActivity are built
+    await tester.scrollUntilVisible(find.byType(OdometerGapReviewCard), 200);
     await tester.pumpAndSettle();
 
     // Verify OdometerGapReviewCard is rendered on the screen

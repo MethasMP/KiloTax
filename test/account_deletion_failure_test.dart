@@ -5,19 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as ffi;
-import 'package:kilotax/services/receipts/receipt_database.dart';
+import 'package:kiloclaim/services/receipts/receipt_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/auth/supabase_auth_service.dart';
-import 'package:kilotax/services/evidence/evidence_vault_service.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/services/sync/sync_engine_service.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/account_settings_sheet.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/auth/supabase_auth_service.dart';
+import 'package:kiloclaim/services/evidence/evidence_vault_service.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/services/sync/sync_engine_service.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/account_settings_sheet.dart';
 
 class DeletionAuth extends SupabaseAuthService {
   bool succeeds = false;

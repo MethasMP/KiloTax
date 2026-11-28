@@ -13,13 +13,19 @@ import '../../logbook/logbook_trip_entry_screen.dart';
 import '../../trips/trip_detail_screen.dart';
 import '../../trips/trip_live_tracking_screen.dart';
 import '../../trips/trip_quick_resolve_sheet.dart';
+import '../../trips/widgets/cpk_batch_review_sheet.dart';
+import '../../trips/widgets/bulky_tools_badge.dart';
 import '../../evidence/evidence_review_screen.dart';
+import '../../audit/ato_audit_shield_sheet.dart';
+import '../../trips/back_capture_trip_sheet.dart';
 import '../../workflow/workflow_screen.dart';
 import '../../workflow/workflow_trip_editor.dart';
 import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/app_space.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'scaffold_bottom_nav_bar.dart';
 import '../../../../services/engine/evidence_review_service.dart';
+import '../../../../services/tax/ato_tax_period_engine.dart';
 
 class TripsLedgerTab extends StatefulWidget {
   final AppState appState;
@@ -103,9 +109,9 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColor.canvas,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColor.canvas,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
@@ -117,7 +123,7 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: AppColors.ink,
+                color: AppColor.ink,
                 letterSpacing: -0.5,
               ),
             ),
@@ -129,7 +135,7 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.muted,
+                color: AppColor.inkSubtle,
               ),
             ),
           ],
@@ -152,7 +158,47 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                 ));
               } else if (value == 'evidence') {
                 EvidenceReviewScreen.show(context,
-                    appState: appState, vehicleId: activeVehicleId);
+                    appState: appState,
+                    vehicleId: activeVehicleId,
+                    financialYear: widget.financialYear);
+              } else if (value == 'shield') {
+                final snapshot = appState.buildAuditShieldSnapshot();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => AtoAuditShieldSheet(
+                    slaReport: snapshot.slaReport,
+                    windowReport: snapshot.windowReport,
+                    calibrationResult: snapshot.calibrationResult,
+                    fuelPlausibility: snapshot.fuelPlausibility,
+                    ghostTrips: snapshot.ghostTrips,
+                    watchdogReport: snapshot.watchdogReport,
+                    onRecoverGhostTrip: activeVehicle == null
+                        ? null
+                        : (candidate) {
+                            Navigator.of(context).pop();
+                            showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => BackCaptureTripSheet(
+                                vehicleId: activeVehicle.id,
+                                taxMethod: activeVehicle.taxMethod,
+                                userProfile: appState.userProfile,
+                                jobSites: appState.jobSites,
+                                initialStartOdometer: appState.currentOdometer,
+                                initialPurpose: candidate.suggestedPurpose,
+                                initialDepartureTime:
+                                    candidate.receiptTimestamp,
+                                onSave: (trip) {
+                                  appState.recordTrip(trip);
+                                },
+                              ),
+                            );
+                          },
+                  ),
+                );
               } else {
                 if (activeVehicleId != null) {
                   appState.selectVehicle(activeVehicleId);
@@ -169,6 +215,8 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
               ),
               const PopupMenuItem(
                   value: 'evidence', child: Text('Review evidence')),
+              const PopupMenuItem(
+                  value: 'shield', child: Text('ATO Audit Shield')),
               const PopupMenuItem(
                   value: 'workflow', child: Text('Accountant workflow')),
             ],
@@ -259,90 +307,246 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
               ),
             ),
 
+          // Same-day consecutive business journey chaining (ITAA 1997 s 28-125(3))
+          Builder(
+            builder: (context) {
+              final chains = appState.findSameDayChainCandidates(
+                  vehicleId: activeVehicleId);
+              if (chains.isEmpty) return const SizedBox.shrink();
+              final firstChain = chains.first;
+              return Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColor.surfaceMuted,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColor.hairline),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.link,
+                        size: 18, color: AppColor.brand),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${firstChain.trips.length} consecutive work trips (${firstChain.totalDistanceKm.toStringAsFixed(1)} km) can be combined (s 28-125(3)).',
+                        style: const TextStyle(
+                            fontSize: 12.5, color: AppColors.ink),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        appState.chainSameDayBusinessTrips(firstChain.trips);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Combined consecutive work trips.'),
+                          ),
+                        );
+                      },
+                      child: const Text('Combine'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
           // 3M Lean Optimization: Eliminate Muri (Overburden) & Muda (Waiting/Inventory)
-          if (vehicleTrips.any((t) => _reviewTripIds.contains(t.id)))
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.amberLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.amberDark.withValues(alpha: 0.3)),
-              ),
-              child: AdaptiveRow(
-                children: [
-                  const Icon(AppIcons.warning,
-                      size: AppIconSize.inline, color: AppColors.amberDark),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          if (vehicleTrips.any((t) => _reviewTripIds.contains(t.id))) ...[
+            if (_reviewTripIds.length > 5)
+              Container(
+                key: const ValueKey('prominent-batch-review-card'),
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.deepNavy, AppColor.surfaceNavy],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.deepNavy.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          '${_reviewTripIds.length} ${_reviewTripIds.length == 1 ? "trip" : "trips"} to review',
-                          style: AppTextStyles.secondaryMedium,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.emerald.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(LucideIcons.sparkles,
+                              color: AppColors.emerald, size: 18),
                         ),
-                        const SizedBox(height: 4),
-                        const Text('Confirm the type and business purpose.',
-                            style: AppTextStyles.caption),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${_reviewTripIds.length} Trips Pending Review',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Approve high-confidence work drives with 1 tap.',
+                                style: TextStyle(
+                                  color: AppColor.onNavyMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      final nextTrip = vehicleTrips
-                          .firstWhere((t) => _reviewTripIds.contains(t.id));
-                      TripQuickResolveSheet.show(context,
-                          trip: nextTrip, appState: appState);
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColor.ink,
-                      foregroundColor: AppColor.onNavy,
-                      minimumSize: const Size(48, 48),
-                      textStyle: AppType.secondary.copyWith(
-                          fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            key: const ValueKey('btn-1tap-batch-review'),
+                            onPressed: () {
+                              HapticFeedback.heavyImpact();
+                              CpkBatchReviewSheet.show(context, appState);
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.emerald,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(48, 48),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                            icon: const Icon(LucideIcons.checkCheck, size: 18),
+                            label: const Text('1-Tap Batch Review'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () {
+                            HapticFeedback.mediumImpact();
+                            final nextTrip = vehicleTrips.firstWhere(
+                                (t) => _reviewTripIds.contains(t.id));
+                            TripQuickResolveSheet.show(context,
+                                trip: nextTrip, appState: appState);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColor.onNavy,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.25)),
+                            minimumSize: const Size(48, 48),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          child: const Text('One by one'),
+                        ),
+                      ],
                     ),
-                    child: const Text('Review next'),
-                  ),
-                ],
+                  ],
+                ),
+              )
+            else
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.amberLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.amberDark.withValues(alpha: 0.3)),
+                ),
+                child: AdaptiveRow(
+                  children: [
+                    const Icon(AppIcons.warning,
+                        size: AppIconSize.inline, color: AppColors.amberDark),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_reviewTripIds.length} ${_reviewTripIds.length == 1 ? "trip" : "trips"} to review',
+                            style: AppTextStyles.secondaryMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          const Text('Confirm the type and business purpose.',
+                              style: AppTextStyles.caption),
+                        ],
+                      ),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        final nextTrip = vehicleTrips
+                            .firstWhere((t) => _reviewTripIds.contains(t.id));
+                        TripQuickResolveSheet.show(context,
+                            trip: nextTrip, appState: appState);
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColor.ink,
+                        foregroundColor: AppColor.onNavy,
+                        minimumSize: const Size(48, 48),
+                        textStyle: AppType.secondary.copyWith(
+                            fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                      ),
+                      child: const Text('Review next'),
+                    ),
+                  ],
+                ),
               ),
-            ),
+          ],
 
           const Divider(height: 1, color: AppColors.border),
         ])),
         if (filteredTrips.isEmpty)
           SliverToBoxAdapter(
-              child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                      vehicleTrips.isEmpty
-                          ? 'No trips yet'
-                          : 'No trips in this filter',
-                      style: AppTextStyles.sectionTitle),
-                  const SizedBox(height: 12),
-                  Text(
-                      vehicleTrips.isEmpty
-                          ? 'Add a trip to start your driving record.'
-                          : 'Choose another filter to see your recorded trips.',
-                      style: AppTextStyles.secondaryMedium),
-                  const SizedBox(height: 20),
-                  if (vehicleTrips.isEmpty)
-                    FilledButton.icon(
-                        onPressed: () => _addTrip(context, appState),
-                        icon: const Icon(AppIcons.add),
-                        label: const Text('Add a trip'))
-                  else
-                    OutlinedButton(
-                      onPressed: () => setState(() => _selectedFilter = 'All'),
-                      child: const Text('Show all trips'),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: vehicleTrips.isEmpty
+                  ? _buildEmptyTripsCard(context, appState, activeVehicle)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('No trips in this filter',
+                            style: AppTextStyles.sectionTitle),
+                        const SizedBox(height: 12),
+                        const Text(
+                            'Choose another filter to see your recorded trips.',
+                            style: AppTextStyles.secondaryMedium),
+                        const SizedBox(height: 20),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () =>
+                              setState(() => _selectedFilter = 'All'),
+                          child: const Text('Show all trips'),
+                        ),
+                      ],
                     ),
-                ]),
-          ))
+            ),
+          )
         else
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
@@ -386,12 +590,136 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
     );
   }
 
+  Widget _buildEmptyTripsCard(
+    BuildContext context,
+    AppState appState,
+    Vehicle? activeVehicle,
+  ) {
+    final telemetry = appState.telemetryStatus;
+    final (String gpsLabel, IconData gpsIcon, Color gpsBg, Color gpsFg) =
+        switch (telemetry) {
+      DriveTelemetryStatus.driving => (
+          'Auto-GPS: Recording',
+          LucideIcons.navigation,
+          AppColor.positiveTint,
+          AppColor.positiveStrong,
+        ),
+      DriveTelemetryStatus.armed => (
+          'Auto-GPS: Armed',
+          LucideIcons.radio,
+          AppColor.surfaceMuted,
+          AppColor.inkMuted,
+        ),
+    };
+
+    final isLogbook = activeVehicle?.taxMethod == TaxMethod.logbook;
+    final logbookStarted = activeVehicle?.logbookStartDate != null;
+    final logbookProgress = logbookStarted
+        ? (appState.currentLogbookWeek / 12.0).clamp(0.0, 1.0)
+        : 0.0;
+    final methodLabel = isLogbook
+        ? (logbookStarted
+            ? 'Logbook · Week ${appState.currentLogbookWeek} of 12'
+            : '12-week logbook ready to start')
+        : '0 / ${appState.activeTaxRule.centsPerKmMaxKm.toInt()} km annual cap';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColor.surface,
+        borderRadius: R.cardR,
+        border: Border.all(color: AppColor.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: gpsBg,
+                borderRadius: R.chipR,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(gpsIcon, size: 14, color: gpsFg),
+                  const SizedBox(width: 6),
+                  Text(
+                    gpsLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: gpsFg,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text('No trips yet', style: AppType.section),
+          const SizedBox(height: 6),
+          Text(
+            methodLabel,
+            style: AppType.secondary.copyWith(fontFeatures: AppType.tabular),
+          ),
+          if (isLogbook) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: logbookProgress,
+                minHeight: 4,
+                backgroundColor: AppColor.hairline,
+                color: AppColor.brandBright,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColor.brand,
+              foregroundColor: AppColor.onNavy,
+              minimumSize: const Size(48, 48),
+            ),
+            onPressed: () => _addTrip(context, appState),
+            icon: const Icon(AppIcons.add),
+            label: const Text('Add a trip'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _addTrip(BuildContext context, AppState appState) {
-    if (_selectedVehicleId != null) appState.selectVehicle(_selectedVehicleId!);
+    final vehicle = appState.vehicles
+            .where((vehicle) => vehicle.id == _selectedVehicleId)
+            .firstOrNull ??
+        appState.primaryVehicle;
+    final currentYear = const AtoTaxPeriodEngine().forDate(DateTime.now());
+    final scopedStartYear = widget.financialYear == null
+        ? null
+        : int.tryParse(widget.financialYear!.split(RegExp(r'[-–]')).first);
+    final requiresDate =
+        scopedStartYear != null && scopedStartYear != currentYear.startYear;
+    final initialDate =
+        requiresDate ? AtoFinancialYear(scopedStartYear!).startDate : null;
     Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => appState.primaryVehicle?.taxMethod == TaxMethod.logbook
-            ? LogbookTripEntryScreen(appState: appState)
-            : CpkTripEntryScreen(appState: appState)));
+        builder: (_) => vehicle?.taxMethod == TaxMethod.logbook
+            ? LogbookTripEntryScreen(
+                appState: appState,
+                vehicleId: vehicle?.id,
+                initialDate: initialDate,
+                requireDateConfirmation: requiresDate,
+              )
+            : CpkTripEntryScreen(
+                appState: appState,
+                vehicleId: vehicle?.id,
+                initialDate: initialDate,
+                requireDateConfirmation: requiresDate,
+              )));
   }
 
   String _cleanPlaceName(String? raw, {String fallback = 'Destination'}) {
@@ -433,8 +761,8 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
   }
 
   Color _getTripAccentColor(Trip trip, bool isNeedsReview, bool isBusiness) {
-    if (isNeedsReview) return AppColors.amberDark;
-    if (!isBusiness) return AppColors.muted;
+    if (isNeedsReview) return AppColor.attentionStrong;
+    if (!isBusiness) return AppColor.inkSubtle;
     final text =
         '${trip.purpose} ${trip.destinationAddress ?? ""} ${trip.originAddress ?? ""}'
             .toLowerCase();
@@ -443,14 +771,38 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
         text.contains('materials') ||
         text.contains('tools') ||
         text.contains('timber')) {
-      return AppColors.emerald;
+      return AppColor.positive;
     }
     if (text.contains('site') ||
         text.contains('reno') ||
         text.contains('fitout')) {
       return AppColor.attentionStrong;
     }
-    return AppColors.deepNavy;
+    return AppColor.ink;
+  }
+
+  Widget _buildEvidencePill({
+    required String label,
+    required Color fg,
+    required Color bg,
+    bool tabular = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: fg,
+          fontFeatures: tabular ? AppType.tabular : null,
+        ),
+      ),
+    );
   }
 
   Widget _buildTripCard(Trip trip, AppState appState,
@@ -485,15 +837,20 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
         trip.taxMethod == TaxMethod.logbook;
 
     final distanceText = '${trip.distanceKm.toStringAsFixed(1)} km';
+    final linkedReceiptCount = appState.expenses
+        .where((e) => !e.isDeleted && trip.linkedExpenseIds.contains(e.id))
+        .length;
+    final jobRef = (trip.jobReference ?? '').trim();
+    final isAutoGps = trip.evidenceSource == 'auto_telemetry';
 
     final cardContent = Material(
       color: AppColor.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: R.cardR,
         side: BorderSide(
           color: isNeedsReview
-              ? AppColors.amber.withValues(alpha: 0.6)
-              : AppColors.border,
+              ? AppColor.attention.withValues(alpha: 0.6)
+              : AppColor.hairline,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -543,6 +900,43 @@ class _TripsLedgerTabState extends State<TripsLedgerTab> {
                       style: AppType.secondary
                           .copyWith(fontFeatures: AppType.tabular),
                     ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        _buildEvidencePill(
+                          label: isAutoGps ? 'Auto-GPS' : 'Manual',
+                          fg: isAutoGps
+                              ? AppColor.inkMuted
+                              : AppColor.inkSubtle,
+                          bg: AppColor.surfaceMuted,
+                        ),
+                        if (linkedReceiptCount > 0)
+                          _buildEvidencePill(
+                            label:
+                                '$linkedReceiptCount ${linkedReceiptCount == 1 ? 'receipt' : 'receipts'}',
+                            fg: AppColor.positiveStrong,
+                            bg: AppColor.positiveTint,
+                            tabular: true,
+                          ),
+                        if (jobRef.isNotEmpty)
+                          _buildEvidencePill(
+                            label: 'Job: $jobRef',
+                            fg: AppColor.inkMuted,
+                            bg: AppColor.surfaceMuted,
+                          ),
+                      ],
+                    ),
+                    if (trip.purpose.contains('Bulky Tools') ||
+                        trip.purpose.contains('Heavy Tools')) ...[
+                      const SizedBox(height: 6),
+                      BulkyToolsBadge(
+                        compact: true,
+                        onTap: () =>
+                            BulkyToolsBadge.showAtoExplanationSheet(context),
+                      ),
+                    ],
                     const SizedBox(height: 8),
 
                     if (isNeedsReview) ...[

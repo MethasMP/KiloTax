@@ -1,4 +1,4 @@
-# KiloTax Evidence Graph Contract & Cryptographic Vault Specification
+# KiloClaim Evidence Graph Contract & Cryptographic Vault Specification
 
 > **Version:** 1.0.0 (Production Immutable)
 > **Squad:** Alpha (Lead Data Architect & Cryptographic Vault)
@@ -126,7 +126,7 @@ Violations of Tier B invariants degrade matching scores or require human resolut
 
 ```sql
 -- ==============================================================================
--- KiloTax Migration: Evidence Graph Core (JobSite POI & Cryptographic Vault)
+-- KiloClaim Migration: Evidence Graph Core (JobSite POI & Cryptographic Vault)
 -- Statutory Reference: ATO ITAA 1997 s 900-165 & TR 97/11
 -- ==============================================================================
 

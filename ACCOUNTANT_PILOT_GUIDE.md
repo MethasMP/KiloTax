@@ -1,4 +1,4 @@
-# KiloTax — Accountant Pilot & Substantiation Guide
+# KiloClaim — Accountant Pilot & Substantiation Guide
 **For Australian Tax Practitioners, CPAs, & Registered Tax Agents**
 **Statutory Basis:** ITAA 1997 Division 28 (ITAA 1997 Div 28) & ATO Ruling TR 2021/1
 
@@ -6,11 +6,11 @@
 
 ## 1. Executive Summary for Accountants
 
-KiloTax is designed as a **Tax Evidence Operating System** for Australian sole traders and tradies. 
-Rather than providing unstructured CSV dumps or generic mileage trackers, KiloTax exports a strictly standardized **2-File Accountant Delivery Pack**:
+KiloClaim is designed as a **Tax Evidence Operating System** for Australian sole traders and tradies. 
+Rather than providing unstructured CSV dumps or generic mileage trackers, KiloClaim exports a strictly standardized **2-File Accountant Delivery Pack**:
 
-1. **`KiloTax_Tax_Summary_Sample.pdf`**: A formal summary declaration containing taxpayer identity (Name, ABN), vehicle details, opening/closing odometer readings, business percentage, and claim totals with a system audit timestamp.
-2. **`KiloTax_Accountant_Pack_[CPK|Logbook]_Sample.xlsx`**: An OpenXML multi-tab ledger with pre-formatted cell types (numeric numbers, ISO dates, text) ready for direct copy-paste or macro ingestion into **HandiTax**, **Xero Practice Manager**, or **MYOB**.
+1. **`KiloClaim_Tax_Summary_Sample.pdf`**: A formal summary declaration containing taxpayer identity (Name, ABN), vehicle details, opening/closing odometer readings, business percentage, and claim totals with a system audit timestamp.
+2. **`KiloClaim_Accountant_Pack_[CPK|Logbook]_Sample.xlsx`**: An OpenXML multi-tab ledger with pre-formatted cell types (numeric numbers, ISO dates, text) ready for direct copy-paste or macro ingestion into **HandiTax**, **Xero Practice Manager**, or **MYOB**.
 
 ---
 
@@ -41,7 +41,7 @@ Rather than providing unstructured CSV dumps or generic mileage trackers, KiloTa
 ### 1-Click HandiTax Form D (Motor Vehicle Expenses Workpaper)
 Sheet 1 (`Tax Summary`) contains a dedicated **`1-CLICK HANDITAX FORM D (D1 WORKPAPER RECONCILIATION)`** block that maps 1:1 into HandiTax without copying across disparate sheets:
 
-| HandiTax Field | KiloTax Worksheet Field | Notes / Statutory Reference |
+| HandiTax Field | KiloClaim Worksheet Field | Notes / Statutory Reference |
 | :--- | :--- | :--- |
 | **Calculation Method** | `Calculation Method` | Cents per KM (Code S) or Logbook Method (Code B) |
 | **Business Kilometres** | `Business Kilometres (Capped 5,000 km)` | Strictly capped at 5,000 km for CPK (ITAA 1997 s 28-25) |
@@ -52,7 +52,7 @@ Sheet 1 (`Tax Summary`) contains a dedicated **`1-CLICK HANDITAX FORM D (D1 WORK
 | **Net Item D1 Allowable Claim ($)** | `D1 Box A/B Allowable Deduction` | Direct entry value for Box A (CPK) or Box B (Logbook) |
 
 ### 1-Click Xero Bills to Pay Import Preset
-For practitioners using Xero, KiloTax delivers a dedicated `KiloTax_Xero_Bills_Import_Sample.csv` matching Xero's official Bills Import schema. Drag-and-drop directly into **Xero -> Business -> Bills to pay -> Import -> Bills**:
+For practitioners using Xero, KiloClaim delivers a dedicated `KiloClaim_Xero_Bills_Import_Sample.csv` matching Xero's official Bills Import schema. Drag-and-drop directly into **Xero -> Business -> Bills to pay -> Import -> Bills**:
 
 * `*ContactName`: Merchant / Supplier name (e.g. BP Connect, Ultra Tune, Bunnings)
 * `*InvoiceNumber`: Receipt Reference / Vault Batch ID
@@ -69,11 +69,11 @@ For practitioners using Xero, KiloTax delivers a dedicated `KiloTax_Xero_Bills_I
 1. **Page 2 Statutory Quarantine Certificate:** The summary PDF includes a formal **"Statutory Non-Business Quarantine & Exclusion Certificate"** explicitly detailing quarantined private kilometres and non-allowable expenses. Auditors and tax agents have immediate mathematical proof that private travel contains 0% claimable deduction.
 2. **Cryptographic SHA-256 Audit Seal:** Every certificate and receipt ledger entry is sealed client-side with a deterministic SHA-256 hash, ensuring records cannot be retroactively tampered with.
 3. **Nexus Substantiation:** Trips are linked with known client JobSites when geofence dwell time $\ge 120$ seconds, eliminating generic "work travel" claims.
-4. **Pre-flight Error Gate:** KiloTax blocks export if opening/closing odometer readings are missing or if logbook weeks are unaccounted for.
+4. **Pre-flight Error Gate:** KiloClaim blocks export if opening/closing odometer readings are missing or if logbook weeks are unaccounted for.
 
 ---
 
 ## 5. Feedback & Support for Accountants
 For questions regarding data schema, custom Practice Manager imports, or bulk tradie onboarding:
-- **Email:** `accountants@kilotax.com.au`
-- **Partner Portal:** `https://partners.kilotax.com.au`
+- **Email:** `accountants@kiloclaim.com.au`
+- **Partner Portal:** `https://partners.kiloclaim.com.au`

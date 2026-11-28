@@ -1,4 +1,4 @@
-# KiloTax App Store Screenshots Blueprint & Specification
+# KiloClaim App Store Screenshots Blueprint & Specification
 **Target Device Display:** Apple 6.9" Super Retina XDR (iPhone 16 Pro Max, iPhone 17 Pro Max, iPhone 18 Pro Max)  
 **Document Version:** 1.0.0 (Production Release)  
 **Target Market:** Australia (`en-AU`) — B2B Sole Traders, Tradies, Contractors, Freelancers  
@@ -251,14 +251,14 @@ graph LR
      - Period Selector: `2026–27 Financial Year (1 Jul 2026 – 30 Jun 2027)`
      - File Format Checkboxes: `✓ ATO Division 28 CSV` & `✓ Summary PDF Tax Pack`
   2. *Live Tax Pack Document Preview:*
-     - Header: `KILOTAX AUDIT REPORT · VEHICLE TAX SUMMARY`
+     - Header: `KILOCLAIM AUDIT REPORT · VEHICLE TAX SUMMARY`
      - Summary Box: `Total Work Trips: 142 · Total Distance: 4,890 km · Claim: $4,449.90`
      - Clean Table Preview: Columns for Date, Odometer Start/End, Distance, Purpose, Rate, Claim.
   3. *Direct Action CTA:*
      - Big Tactile Button: `Share Tax Pack with Accountant`
      - Secondary Options: `AirDrop to Mac`, `Save to Files`, `Email to Bookkeeper`
 - **Legal Disclaimer (Y: 2730):**  
-  `Records generated adhere to ATO record-keeping requirements under Section 900-115 of ITAA 1997. KiloTax is not affiliated with the Australian Taxation Office.`
+  `Records generated adhere to ATO record-keeping requirements under Section 900-115 of ITAA 1997. KiloClaim is not affiliated with the Australian Taxation Office.`
 
 ---
 
@@ -308,7 +308,7 @@ graph LR
 ## 6. Apple App Store Guidelines Strict Compliance Checklist
 
 1. **Guideline 2.3.1 (Performance - Accurate Metadata):**
-   - All screenshots accurately represent the actual functionality of the KiloTax iOS app (Division 28-C 91c/km calculations, trip classification, 5,000 km cap tracking, CSV/PDF export, guest mode).
+   - All screenshots accurately represent the actual functionality of the KiloClaim iOS app (Division 28-C 91c/km calculations, trip classification, 5,000 km cap tracking, CSV/PDF export, guest mode).
    - No mockups of non-existent features (e.g. no claims of automatic government tax filing or instant cash deposits).
 2. **Guideline 4.1 (Design - Copycats / Hardware Misrepresentation):**
    - **No fake Apple device frames:** Strictly NO hardware chassis, antenna bands, camera bumps, speaker holes, or physical buttons drawn around the images.

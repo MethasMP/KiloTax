@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/services/tracking/wgs84_geodesic_engine.dart';
-import 'package:kilotax/services/tracking/sensor_fusion_tracking_engine.dart';
+import 'package:kiloclaim/services/tracking/wgs84_geodesic_engine.dart';
+import 'package:kiloclaim/services/tracking/sensor_fusion_tracking_engine.dart';
 
 void main() {
   group(

@@ -14,7 +14,7 @@ import '../../data/models/user_profile.dart';
 /// Archives are decoded in memory with strict budgets; archive paths are never
 /// used as filesystem destinations. Hashes detect corruption, not authorship.
 class ReceiptBackupArchive {
-  static const format = 'KiloTax_Backup_v2';
+  static const format = 'KiloClaim_Backup_v2';
   static const maxBytes = 256 * 1024 * 1024;
   static const maxEntries = 5000;
 

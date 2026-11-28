@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_space.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../state/app_state.dart';
+import '../cpk/cpk_trip_entry_screen.dart';
+import '../logbook/logbook_trip_entry_screen.dart';
+import 'trip_detail_screen.dart';
 import 'widgets/cpk_batch_review_sheet.dart';
 
 /// Spec #2 & #17: [ Review trips ] Sheet
@@ -25,7 +30,7 @@ class TripReviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trips = appState.trips;
+    final trips = appState.evidenceReview.trips;
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     final businessKm = trips
         .where((t) => t.classification == TripClassification.business)
@@ -108,19 +113,45 @@ class TripReviewSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (trips.isEmpty) ...[
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.mapPin, size: 48, color: AppColors.muted),
-                    SizedBox(height: 12),
-                    Text('No trips recorded yet',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800, color: AppColors.ink)),
-                    SizedBox(height: 4),
-                    Text('Use Add trip on Home to record your first drive.',
-                        style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                    const Icon(LucideIcons.mapPin,
+                        size: 48, color: AppColor.inkSubtle),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No trips logged for this vehicle yet',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppColor.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Auto-GPS or manual trips appear here for ATO review.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: AppColor.inkSubtle),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColor.brand,
+                        minimumSize: const Size(48, 48),
+                      ),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text('Add a trip'),
+                      onPressed: () {
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.push(MaterialPageRoute<void>(
+                          builder: (_) => isLogbook
+                              ? LogbookTripEntryScreen(appState: appState)
+                              : CpkTripEntryScreen(appState: appState),
+                        ));
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -134,109 +165,135 @@ class TripReviewSheet extends StatelessWidget {
                   final trip = trips[index];
                   final isBusiness =
                       trip.classification == TripClassification.business;
+                  final purposeLabel = trip.purpose.isNotEmpty
+                      ? trip.purpose
+                      : 'Purpose not added';
 
-                  return Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isBusiness
-                                ? AppColors.workBlueLight
-                                : AppColors.muted.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            isBusiness
-                                ? LucideIcons.briefcase
-                                : LucideIcons.home,
-                            color: isBusiness
-                                ? AppColors.workBlue
-                                : AppColors.muted,
-                            size: 18,
-                          ),
+                  return Semantics(
+                    button: true,
+                    label:
+                        'Open trip $purposeLabel, ${Formatters.distance(trip.distanceKm)}',
+                    child: Material(
+                      color: AppColor.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: R.cardR,
+                        side: const BorderSide(color: AppColor.hairline),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => TripDetailScreen.show(
+                          context,
+                          trip: trip,
+                          appState: appState,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      trip.purpose.isNotEmpty
-                                          ? trip.purpose
-                                          : 'Unknown Purpose',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13.5,
-                                          color: AppColors.ink),
-                                    ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isBusiness
+                                        ? AppColors.workBlueLight
+                                        : AppColor.surfaceSunken,
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  Text(
-                                    Formatters.distance(trip.distanceKm),
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 14,
-                                        color: AppColors.ink),
+                                  child: Icon(
+                                    isBusiness
+                                        ? LucideIcons.briefcase
+                                        : LucideIcons.home,
+                                    color: isBusiness
+                                        ? AppColors.workBlue
+                                        : AppColor.inkSubtle,
+                                    size: 18,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
-                                    Formatters.dateTime(trip.date),
-                                    style: const TextStyle(
-                                        fontSize: 11, color: AppColors.muted),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: isBusiness
-                                          ? AppColors.emeraldLight
-                                          : AppColors.background,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      isBusiness
-                                          ? 'Business (\$${(trip.distanceKm * appState.activeTaxRule.centsPerKmRate).toStringAsFixed(2)} claim)'
-                                          : 'Personal',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        color: isBusiness
-                                            ? AppColors.emerald
-                                            : AppColors.muted,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              purposeLabel,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 13.5,
+                                                  color: AppColor.ink),
+                                            ),
+                                          ),
+                                          Text(
+                                            Formatters.distance(
+                                                trip.distanceKm),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 14,
+                                                color: AppColor.ink),
+                                          ),
+                                        ],
                                       ),
-                                    ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            Formatters.dateTime(trip.date),
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppColor.inkSubtle),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isBusiness
+                                                  ? AppColor.positiveTint
+                                                  : AppColor.surfaceMuted,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              isBusiness
+                                                  ? (isLogbook
+                                                      ? 'Business'
+                                                      : 'Business (\$${(trip.distanceKm * appState.activeTaxRule.centsPerKmRate).toStringAsFixed(2)} claim)')
+                                                  : 'Personal',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: isBusiness
+                                                    ? AppColor.positiveStrong
+                                                    : AppColor.inkSubtle,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (trip.originAddress != null &&
+                                          trip.destinationAddress != null) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${trip.originAddress} → ${trip.destinationAddress}',
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColor.inkSubtle),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
                                   ),
-                                ],
-                              ),
-                              if (trip.originAddress != null &&
-                                  trip.destinationAddress != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${trip.originAddress} → ${trip.destinationAddress}',
-                                  style: const TextStyle(
-                                      fontSize: 11, color: AppColors.muted),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
-                            ],
+                            ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   );
                 },

@@ -85,9 +85,12 @@ class _HardwareBluetoothModalSheetState
     );
   }
 
-  void _selectDevice(String deviceName) {
+  void _selectDevice(String deviceName, {String? bluetoothUuid}) {
     HapticFeedback.mediumImpact();
-    widget.appState.updatePrimaryVehicleBluetoothDevice(deviceName);
+    widget.appState.updatePrimaryVehicleBluetoothDevice(
+      deviceName,
+      bluetoothUuid: bluetoothUuid,
+    );
     Navigator.of(context).pop();
   }
 
@@ -233,7 +236,10 @@ class _HardwareBluetoothModalSheetState
                               size: 18, color: AppColors.workBlue)
                           : const Icon(Icons.arrow_forward_ios_rounded,
                               size: 12, color: AppColors.muted),
-                      onTap: () => _selectDevice(d.name),
+                      onTap: () => _selectDevice(
+                        d.name,
+                        bluetoothUuid: d.id.startsWith('audio_') ? null : d.id,
+                      ),
                     ),
                   );
                 }),

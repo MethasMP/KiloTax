@@ -1,6 +1,6 @@
-# KiloTax Security Remediation Program plan
+# KiloClaim Security Remediation Program plan
 
-KiloTax remediation closes all twenty-one findings across four security axes and four execution phases.
+KiloClaim remediation closes all twenty-one findings across four security axes and four execution phases.
 The program deploys four specialized teams scaled by finding count and severity.
 The nineteen PR ids execute in strict dependency order from PR-01 to PR-19.
 
@@ -840,13 +840,13 @@ Each live lane runs on its own cloud VM at the PR head. Drive through `control-u
 
 **Files.**
 
-- [ ] Edit `ios/Runner/KiloTaxBackgroundEngine.swift`.
+- [ ] Edit `ios/Runner/KiloClaimBackgroundEngine.swift`.
 - [ ] Edit `lib/services/tracking/hardware_bluetooth_service.dart`.
 - [ ] Edit `test/hardware_bluetooth_service_test.dart`.
 
 **Build.**
 
-- [ ] Match Bluetooth peripherals by UUID or MAC address instead of name substring in `ios/Runner/KiloTaxBackgroundEngine.swift` and `lib/services/tracking/hardware_bluetooth_service.dart`.
+- [ ] Match Bluetooth peripherals by UUID or MAC address instead of name substring in `ios/Runner/KiloClaimBackgroundEngine.swift` and `lib/services/tracking/hardware_bluetooth_service.dart`.
 
 **You see.**
 

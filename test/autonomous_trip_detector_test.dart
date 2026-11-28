@@ -1,11 +1,12 @@
 import 'dart:convert';
-import 'package:kilotax/data/models/trip.dart';
+import 'package:kiloclaim/data/models/job_site.dart';
+import 'package:kiloclaim/data/models/trip.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/services/tracking/autonomous_trip_detector.dart';
-import 'package:kilotax/services/tracking/road_snap_routing_service.dart';
+import 'package:kiloclaim/services/tracking/autonomous_trip_detector.dart';
+import 'package:kiloclaim/services/tracking/road_snap_routing_service.dart';
 
 Position createMockFix({
   required double lat,
@@ -422,6 +423,74 @@ void main() {
         isBluetoothCarConnected: true,
       );
       expect(resumedState, equals(AutonomousDetectorState.activeDriving));
+    });
+
+    test('8. Ghost Micro-Trip on Job Site (< 500m) is suppressed and resets to idle', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'code': 'Ok',
+            'routes': [
+              {
+                'distance': 220.0, // 220m (< 500m)
+                'duration': 45.0,
+              }
+            ]
+          }),
+          200,
+        );
+      });
+      final routing = RoadSnapRoutingService(client: mockClient);
+
+      final barangarooSite = JobSite(
+        id: 'site_barangaroo',
+        name: 'Barangaroo Tower B',
+        latitude: -33.8640,
+        longitude: 151.2010,
+        radiusMeters: 200.0,
+      );
+
+      final detector = AutonomousTripDetector(
+        sustainedSpeedThresholdDuration: const Duration(seconds: 5),
+        minDrivingSpeedKmh: 15.0,
+        ghostAnchorTimeout: const Duration(seconds: 30),
+        routingService: routing,
+        jobSitesProvider: () => [barangarooSite],
+      );
+
+      var simTime = DateTime(2026, 11, 23, 11, 0, 0);
+
+      // Start moving on-site (e.g. repositioning ute between gates)
+      await detector.processFix(
+        createMockFix(lat: -33.8640, lon: 151.2010, speedKmh: 20.0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+      simTime = simTime.add(const Duration(seconds: 8));
+      await detector.processFix(
+        createMockFix(lat: -33.8648, lon: 151.2015, speedKmh: 22.0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+      expect(detector.state, equals(AutonomousDetectorState.activeDriving));
+
+      // Stop at new on-site parking spot
+      simTime = simTime.add(const Duration(seconds: 10));
+      await detector.processFix(
+        createMockFix(lat: -33.8650, lon: 151.2018, speedKmh: 0.0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+      expect(detector.state, equals(AutonomousDetectorState.ghostAnchorPending));
+
+      // Dwell past ghost anchor timeout (35s > 30s)
+      simTime = simTime.add(const Duration(seconds: 35));
+      final finalState = await detector.processFix(
+        createMockFix(lat: -33.8650, lon: 151.2018, speedKmh: 0.0, timestamp: simTime),
+        simulatedNow: simTime,
+      );
+
+      // SUPPRESSED: Ghost micro-trip on site discarded! No trip finalized and detector reset to idle.
+      expect(detector.finalizedTrip, isNull);
+      expect(finalState, equals(AutonomousDetectorState.idle));
+      expect(detector.state, equals(AutonomousDetectorState.idle));
     });
   });
 }

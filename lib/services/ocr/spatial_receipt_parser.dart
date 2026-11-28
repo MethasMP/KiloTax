@@ -118,18 +118,26 @@ class SpatialReceiptParser {
         if (gap > maxHorizontalGap) return false;
 
         // Visual row alignment check:
-        // Candidate vertical bounds must overlap or be within tolerance:
-        // [anchorTop - factor * height, anchorBottom + factor * height]
+        // Candidate vertical center must align with anchor vertical center within tolerance
+        final candCenter = (candTop + candBottom) / 2.0;
+        final anchorCenter = (anchorTop + anchorBottom) / 2.0;
         final vTol = anchorHeight * verticalToleranceFactor;
-        final vMin = anchorTop - vTol;
-        final vMax = anchorBottom + vTol;
 
-        // Check vertical overlap/intersection
-        return candBottom >= vMin && candTop <= vMax;
+        return (candCenter - anchorCenter).abs() <= vTol;
       }).toList();
 
-      // Sort by horizontal proximity to the anchor
-      rightCandidates.sort((a, b) => a.bounds[0].compareTo(b.bounds[0]));
+      // Sort by horizontal proximity to the anchor, with vertical alignment tie-breaker
+      rightCandidates.sort((a, b) {
+        final distA = a.bounds[0];
+        final distB = b.bounds[0];
+        if ((distA - distB).abs() > 20.0) {
+          return distA.compareTo(distB);
+        }
+        final anchorCenter = (anchorTop + anchorBottom) / 2.0;
+        final vDistA = (((a.bounds[1] + a.bounds[3]) / 2.0) - anchorCenter).abs();
+        final vDistB = (((b.bounds[1] + b.bounds[3]) / 2.0) - anchorCenter).abs();
+        return vDistA.compareTo(vDistB);
+      });
 
       if (totalStr == null && _isTotalAnchor(upper)) {
         for (final cand in rightCandidates) {

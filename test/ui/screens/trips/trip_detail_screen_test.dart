@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/trips/trip_detail_screen.dart';
-import 'package:kilotax/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/trips/trip_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
 
 void main() {
   late AppState appState;
@@ -218,6 +218,53 @@ void main() {
       // Screen popped back
       expect(find.text('Trip detail'), findsNothing);
       expect(find.text('Open Detail'), findsOneWidget);
+    });
+
+    testWidgets(
+        'shows honest fallbacks for missing addresses/odometer and 48dp toggle',
+        (tester) async {
+      await appState.addVehicle(
+        Vehicle(
+          id: 'v_log',
+          make: 'Isuzu',
+          model: 'D-Max',
+          regoPlate: 'LOG-123',
+          initialOdometer: 10000.0,
+          taxMethod: TaxMethod.logbook,
+        ),
+      );
+      final trip = Trip(
+        id: 't_missing',
+        vehicleId: 'v_log',
+        date: DateTime.now(),
+        distanceKm: 12.0,
+        purpose: 'Site visit',
+        classification: TripClassification.business,
+      );
+      appState.recordTrip(trip);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TripDetailScreen(trip: trip, appState: appState),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start not recorded'), findsOneWidget);
+      expect(find.text('Destination not recorded'), findsOneWidget);
+      expect(find.text('Not recorded'), findsOneWidget);
+      expect(find.text('0 → 0 km'), findsNothing);
+
+      final bizSize = tester.getSize(find.text('Business'));
+      // Parent ConstrainedBox/InkWell enforces minHeight 48
+      final bizInkWell = tester.getSize(
+        find.ancestor(
+          of: find.text('Business'),
+          matching: find.byType(InkWell),
+        ),
+      );
+      expect(bizSize.height, greaterThan(0));
+      expect(bizInkWell.height, greaterThanOrEqualTo(48.0));
     });
   });
 }

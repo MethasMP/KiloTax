@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import '../../../data/models/vehicle_expense.dart';
+import '../../widgets/kiloclaim_brand_lockup.dart';
 import '../../../services/notifications/notification_service.dart';
 import '../notifications/notifications_dropdown.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +10,13 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/engine/evidence_review_service.dart';
+import '../../../services/engine/tax_calculator_service.dart';
 import '../../../state/app_state.dart';
+import 'widgets/method_arbitrage_card.dart';
 import '../auth/sign_in_screen.dart';
 import '../evidence/evidence_review_screen.dart';
+import '../trips/trip_detail_screen.dart';
+import '../expenses/expense_detail_screen.dart';
 import '../home/widgets/scaffold_bottom_nav_bar.dart';
 import '../logbook/logbook_progress_screen.dart';
 import '../logbook/logbook_setup_screen.dart';
@@ -20,30 +27,117 @@ import '../vehicle/vehicle_setup_flow.dart';
 import 'widgets/account_settings_sheet.dart';
 import '../home/widgets/quick_capture_bottom_sheet.dart';
 import '../trips/trip_live_tracking_screen.dart';
-import 'models/home_record_summary.dart';
 import 'widgets/home_record_hero.dart';
-import 'widgets/home_recent_activity.dart';
 import 'widgets/home_telemetry_capsule.dart';
 
-class TaskHomeBody extends StatelessWidget {
+class TaskHomeBody extends StatefulWidget {
   final AppState appState;
+  final EvidenceReviewService evidenceService;
   final VoidCallback? onViewAll;
   final VoidCallback? onReviewTrips;
   final VoidCallback? onViewTax;
   const TaskHomeBody({
     super.key,
     required this.appState,
+    this.evidenceService = const EvidenceReviewService(),
     this.onViewAll,
     this.onReviewTrips,
     this.onViewTax,
   });
 
   @override
+  State<TaskHomeBody> createState() => _TaskHomeBodyState();
+}
+
+class _TaskHomeBodyState extends State<TaskHomeBody> {
+  AppState get appState => widget.appState;
+  VoidCallback? get onViewAll => widget.onViewAll;
+  VoidCallback? get onReviewTrips => widget.onReviewTrips;
+  VoidCallback? get onViewTax => widget.onViewTax;
+  Map<String, ReceiptFileInspection> _files = const {};
+  bool _checking = true;
+  bool _failed = false;
+  int _generation = 0;
+  List<VehicleExpense> _inspectedExpenses = const [];
+  String? _inspectedVehicleId;
+  String? _inspectedYear;
+  EvidenceReviewReport get _report => widget.evidenceService.evaluate(
+      vehicle: appState.primaryVehicle,
+      financialYear: appState.activeTaxRule.financialYear,
+      trips: appState.trips,
+      expenses: appState.expenses,
+      receiptFiles: _files,
+      hasOdometerGaps: appState.pendingOdometerGaps.isNotEmpty);
+  @override
+  void initState() {
+    super.initState();
+    appState.addListener(_refresh);
+    _inspect();
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskHomeBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.appState != appState) {
+      oldWidget.appState.removeListener(_refresh);
+      appState.addListener(_refresh);
+      _inspect();
+    } else if (oldWidget.evidenceService != widget.evidenceService) {
+      _inspect();
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    appState.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    final report = _report;
+    if (_inspectedVehicleId != report.vehicle?.id ||
+        _inspectedYear != report.financialYear ||
+        !listEquals(_inspectedExpenses, report.expenses)) {
+      _inspect();
+    } else {
+      setState(() {});
+    }
+  }
+
+  Future<void> _inspect() async {
+    final report = _report;
+    _inspectedExpenses = List.of(report.expenses);
+    _inspectedVehicleId = report.vehicle?.id;
+    _inspectedYear = report.financialYear;
+    final generation = ++_generation;
+    setState(() {
+      _files = const {};
+      _checking = true;
+      _failed = false;
+    });
+    try {
+      final files =
+          await widget.evidenceService.inspectReceipts(report.expenses);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _files = files;
+        _checking = false;
+      });
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _failed = true;
+        _checking = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final report = appState.evidenceReview;
+    final report = _report;
     final hasTrips = report.trips.isNotEmpty;
-    final summary = HomeRecordSummary.fromReport(report,
-        taxRule: appState.activeTaxRule, now: DateTime.now());
     final isLogbook = appState.primaryVehicle?.taxMethod == TaxMethod.logbook;
     return RefreshIndicator(
       color: AppColor.brand,
@@ -62,7 +156,7 @@ class TaskHomeBody extends StatelessWidget {
                 taxMethod: appState.primaryVehicle?.taxMethod)),
         children: [
           Row(children: [
-            const Expanded(child: Text('Your driving.', style: AppType.title)),
+            const Expanded(child: KiloClaimBrandLockup(compact: true)),
             IconButton(
                 tooltip: 'Notifications',
                 onPressed: () async {
@@ -78,12 +172,16 @@ class TaskHomeBody extends StatelessWidget {
                 onPressed: () => AccountSettingsSheet.show(context, appState),
                 icon: const Icon(Icons.person_outline)),
           ]),
+          const SizedBox(height: 12),
+          const Text('Your evidence.', style: AppType.section),
+          const SizedBox(height: 4),
           Text(
-              appState.primaryVehicle?.displayName ??
-                  'Add your vehicle to begin',
+              appState.primaryVehicle == null
+                  ? 'Add your vehicle to begin'
+                  : '${appState.primaryVehicle!.displayName} · FY ${report.financialYear}',
               style: AppType.secondary),
           const SizedBox(height: 24),
-          HomeTelemetryCapsule(appState: appState),
+          if (appState.isDriving) HomeTelemetryCapsule(appState: appState),
           if (appState.syncStatus == SyncStatus.error)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -107,62 +205,69 @@ class TaskHomeBody extends StatelessWidget {
                 vehicleName:
                     appState.primaryVehicle?.displayName ?? 'Your vehicle',
                 taxMethod: appState.primaryVehicle?.taxMethod,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () {
-                  if (appState.primaryVehicle == null) {
-                    Navigator.of(context).push(MaterialPageRoute<void>(
-                      builder: (routeContext) => VehicleSetupFlow(
-                        onVehicleCreated: (vehicle) async {
-                          await appState.addVehicle(vehicle);
-                          if (routeContext.mounted) {
-                            Navigator.of(routeContext).pop();
-                          }
-                        },
-                        onCancel: () => Navigator.of(routeContext).pop(),
+                actions: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () {
+                        if (appState.primaryVehicle == null) {
+                          Navigator.of(context).push(MaterialPageRoute<void>(
+                            builder: (routeContext) => VehicleSetupFlow(
+                              onVehicleCreated: (vehicle) async {
+                                await appState.addVehicle(vehicle);
+                                if (routeContext.mounted) {
+                                  Navigator.of(routeContext).pop();
+                                }
+                              },
+                              onCancel: () => Navigator.of(routeContext).pop(),
+                            ),
+                          ));
+                        } else {
+                          QuickCaptureBottomSheet.show(context, appState);
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                          backgroundColor: AppColor.brand,
+                          foregroundColor: AppColor.onNavy,
+                          minimumSize: const Size(48, 52),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16)),
+                      icon: const Icon(Icons.add),
+                      label: Text(appState.primaryVehicle == null
+                          ? 'Add your vehicle'
+                          : 'Capture your first record'),
+                    ),
+                    if (appState.primaryVehicle != null)
+                      TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                                builder: (_) => TripLiveTrackingScreen(
+                                    appState: appState))),
+                        style: TextButton.styleFrom(
+                            foregroundColor: AppColor.onNavyMuted,
+                            minimumSize: const Size(48, 48)),
+                        child: const Text('Record a drive with GPS →'),
                       ),
-                    ));
-                  } else {
-                    QuickCaptureBottomSheet.showTripCaptureModeSheet(
-                        context, appState);
-                  }
-                },
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 52)),
-                icon: const Icon(Icons.add),
-                label: Text(appState.primaryVehicle == null
-                    ? 'Add your vehicle'
-                    : 'Add your first trip'),
-              ),
-              if (appState.primaryVehicle != null)
-                TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                          builder: (_) =>
-                              TripLiveTrackingScreen(appState: appState))),
-                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                  child: const Text('Record a drive with GPS →'),
+                  ],
                 ),
+              ),
             ] else
-              _nextAction(context, summary),
+              _nextAction(context, report),
             const SizedBox(height: 24),
           ],
-          if (hasTrips) ...[
-            HomeRecentActivity(appState: appState, onViewAll: onViewAll),
+          _packStatus(context, report),
+          _buildArbitrageCard(context, report),
+          if (report.hasRecords) ...[
+            _recentRecords(context, report),
             const SizedBox(height: 16),
+          ],
+          if (!appState.isDriving) ...[
+            HomeTelemetryCapsule(appState: appState),
+            const SizedBox(height: 8),
           ],
           if (appState.pendingOdometerGaps.isNotEmpty && !isLogbook) ...[
             OdometerGapReviewCard(appState: appState),
             const SizedBox(height: 16),
-          ],
-          if (report.hasRecords) ...[
-            HomeRecordHero(
-              summary: summary,
-              onViewBasis: () => _showBasis(context, summary),
-              onLogbook: () => _openLogbook(context),
-              onViewSummary: () => _openTax(context),
-            ),
-            const SizedBox(height: 24),
           ],
           if (isLogbook) ...[
             const Text('Logbook details', style: AppType.section),
@@ -197,120 +302,189 @@ class TaskHomeBody extends StatelessWidget {
     );
   }
 
-  Widget _nextAction(BuildContext context, HomeRecordSummary summary) {
-    final tripCount = summary.pendingItems.whereType<TripReviewItem>().length;
-    final hasPending = summary.pendingItems.isNotEmpty;
-    final title = tripCount > 0
-        ? 'Review $tripCount ${tripCount == 1 ? 'trip' : 'trips'}'
-        : hasPending
-            ? 'Review your records'
-            : 'Your records are up to date';
+  Widget _nextAction(BuildContext context, EvidenceReviewReport report) {
+    final week = report.itemsForWeek(DateTime.now());
+    final tripCount = week.whereType<TripReviewItem>().length;
+    final expenseCount = week.whereType<ExpenseReviewItem>().length;
+    final allRecords = report.items
+        .where((i) => i is TripReviewItem || i is ExpenseReviewItem)
+        .length;
+    final older = allRecords - tripCount - expenseCount;
+    final setup = report.items
+        .where((i) => i is SetupReviewItem || i is OdometerReviewItem)
+        .length;
     return Container(
-      key: const ValueKey('home-next-task'),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: hasPending ? AppColor.brandTint : AppColor.positiveTint,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: hasPending
-                ? AppColor.brandTintStrong
-                : AppColor.positiveTintStrong),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(hasPending ? 'YOUR NEXT STEP' : 'RECORD REVIEW',
-            style: AppType.eyebrow),
-        const SizedBox(height: 8),
-        Text(title, style: AppType.titleSmall),
-        const SizedBox(height: 8),
-        Text(
-            tripCount > 0
-                ? 'Confirm trip purposes and missing details.'
-                : hasPending
-                    ? 'Check receipts and missing details before sharing.'
-                    : 'No outstanding record details. Check your tax summary before exporting.',
-            style: AppType.secondary),
-        const SizedBox(height: 16),
-        if (hasPending)
+        key: const ValueKey('home-next-task'),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            color: AppColor.surfaceNavy,
+            borderRadius: BorderRadius.circular(24)),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('FINISH YOUR RECORDS',
+              style: AppType.eyebrow.copyWith(color: AppColor.onNavyMuted)),
+          const SizedBox(height: 12),
+          Text(
+              report.items.isEmpty && !_checking && !_failed
+                  ? 'No outstanding record checks'
+                  : 'Review your evidence',
+              style: AppType.titleSmall.copyWith(color: AppColor.onNavy)),
+          const SizedBox(height: 8),
+          Text(
+              '$tripCount ${tripCount == 1 ? 'trip' : 'trips'} · $expenseCount ${expenseCount == 1 ? 'receipt' : 'receipts'} this week',
+              style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+          if (older > 0)
+            Text('$older older records need attention',
+                style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+          if (setup > 0)
+            Text('$setup vehicle or odometer checks · all periods',
+                style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+          const SizedBox(height: 16),
           FilledButton(
-            onPressed: () {
-              if (tripCount > 0 && onReviewTrips != null) {
-                onReviewTrips!();
-              } else {
-                EvidenceReviewScreen.show(context, appState: appState);
-              }
-            },
-            style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-            child: Text(tripCount > 0 ? 'Review trips' : 'Review records'),
-          )
-        else
-          OutlinedButton(
-            onPressed: () => _openTax(context),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-            child: const Text('View tax summary'),
-          ),
-      ]),
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppColor.brand,
+                  foregroundColor: AppColor.onNavy,
+                  minimumSize: const Size(48, 48)),
+              onPressed: () {
+                if (onReviewTrips != null) {
+                  onReviewTrips!();
+                } else {
+                  EvidenceReviewScreen.show(context, appState: appState);
+                }
+              },
+              child: const Text('Review records')),
+          Text('All pending records for FY ${report.financialYear}',
+              style: AppType.secondary.copyWith(color: AppColor.onNavyMuted)),
+        ]));
+  }
+
+  Widget _buildArbitrageCard(BuildContext context, EvidenceReviewReport report) {
+    final vehicle = appState.primaryVehicle;
+    if (vehicle == null ||
+        vehicle.taxMethod != TaxMethod.centsPerKm ||
+        report.trips.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final rule = appState.activeTaxRule;
+    final summary = TaxCalculatorService.evaluateSummary(
+      trips: report.trips,
+      expenses: report.expenses,
+      taxRule: rule,
     );
+    final earliestDate = report.trips
+        .map((t) => t.date)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final trackingDays =
+        DateTime.now().difference(earliestDate).inDays.clamp(1, 365);
+    final annualizedBusinessKm = (summary.businessKm / trackingDays) * 365.0;
+    final annualizedTotalKm = (summary.totalKm / trackingDays) * 365.0;
+
+    final useActual = summary.businessKm >= 4000.0;
+    final projectedCpkClaim = useActual
+        ? summary.centsPerKmClaim
+        : (annualizedBusinessKm.clamp(0.0, rule.centsPerKmMaxKm)) *
+            rule.centsPerKmRate;
+    final isBenchmarkEstimate =
+        summary.logbookClaim <= 0 && summary.businessPercentage > 0;
+    final projectedLogbookClaim = isBenchmarkEstimate
+        ? TaxCalculatorService.estimateAnnualUteRunningCost(annualizedTotalKm) *
+            (summary.businessPercentage / 100.0)
+        : (useActual
+            ? summary.logbookClaim
+            : (summary.logbookClaim / trackingDays) * 365.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: MethodArbitrageCard(
+        businessKm: summary.businessKm,
+        centsPerKmClaim: projectedCpkClaim,
+        logbookClaim: projectedLogbookClaim,
+        annualizedBusinessKm: annualizedBusinessKm,
+        trackingDays: trackingDays,
+        isBenchmarkEstimate: isBenchmarkEstimate,
+        onExplore: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => LogbookSetupScreen(appState: appState),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _packStatus(BuildContext context, EvidenceReviewReport report) => Card(
+      child: Padding(
+          padding: const EdgeInsets.all(16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Text('Accountant pack', style: AppType.section),
+            const SizedBox(height: 8),
+            if (_checking) const LinearProgressIndicator(),
+            Text(
+                _checking
+                    ? 'Checking receipt files…'
+                    : _failed
+                        ? 'Receipt files could not be checked'
+                        : report.isComplete
+                            ? 'No outstanding app checks in this scope'
+                            : !report.hasRecords
+                                ? 'No records in this scope yet'
+                                : 'Records need attention before review',
+                style: AppType.body),
+            if (_failed)
+              TextButton(
+                  onPressed: _inspect,
+                  child: const Text('Retry receipt check')),
+            TextButton(
+                onPressed: () => _openTax(context),
+                child: const Text('Open accountant pack')),
+          ])));
+
+  Widget _recentRecords(BuildContext context, EvidenceReviewReport report) {
+    final records = <({DateTime date, Widget row})>[
+      for (final trip in report.trips)
+        (
+          date: trip.date,
+          row: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.route),
+              title: Text(trip.destinationAddress ?? trip.purpose),
+              subtitle: Text(
+                  '${Formatters.date(trip.date)} · ${trip.distanceKm.toStringAsFixed(1)} km'),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) =>
+                      TripDetailScreen(trip: trip, appState: appState))))
+        ),
+      for (final expense in report.expenses)
+        (
+          date: expense.date,
+          row: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.receipt_long),
+              title: Text(expense.category.displayName),
+              subtitle: Text(
+                  '${Formatters.date(expense.date)} · ${Formatters.currency(expense.amount)}'),
+              onTap: () => ExpenseDetailScreen.show(context,
+                  appState: appState, expense: expense))
+        ),
+    ]..sort((a, b) => b.date.compareTo(a.date));
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('Recent records', style: AppType.section),
+      for (final record in records.take(3)) record.row,
+      if (onViewAll != null)
+        TextButton(onPressed: onViewAll, child: const Text('View records')),
+    ]);
   }
 
   void _openTax(BuildContext context) {
     if (onViewTax != null) {
       onViewTax!();
     } else {
-      Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const TaxSummaryScreen()));
+      Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => TaxSummaryScreen(
+              initialVehicleId: appState.primaryVehicle?.id,
+              initialFinancialYear: appState.activeTaxRule.financialYear)));
     }
-  }
-
-  void _showBasis(BuildContext context, HomeRecordSummary summary) {
-    final navigator = Navigator.of(context);
-    showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) => SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text('Your estimate basis',
-                          style: AppType.titleSmall),
-                      const SizedBox(height: 16),
-                      Text(
-                          '${appState.primaryVehicle?.taxMethod.title ?? 'Selected method'} · FY ${summary.report.financialYear}',
-                          style: AppType.bodyStrong),
-                      const SizedBox(height: 12),
-                      Text(
-                          '${summary.reviewedTripCount} reviewed trips and ${summary.reviewedExpenseCount} reviewed expenses. Records with missing or unconfirmed details and archived receipts are excluded.',
-                          style: AppType.body),
-                      const SizedBox(height: 12),
-                      Text(
-                          summary.isCpk
-                              ? 'Uses ${(summary.taxRule.centsPerKmRate * 100).toStringAsFixed(0)}c/km, capped at ${Formatters.odometer(summary.taxRule.centsPerKmMaxKm)} work km for this financial year. Car running costs are not added again.'
-                              : '${Formatters.currency(summary.reviewed.totalRunningExpenses)} running costs × ${Formatters.percentage(summary.reviewed.businessPercentage)} reviewed work use, plus ${Formatters.currency(summary.reviewed.totalDirectDeductions)} direct expenses. Missing personal travel can change that share.',
-                          style: AppType.body),
-                      const SizedBox(height: 12),
-                      const Text(
-                          'This is a provisional deduction, not a tax refund or an eligibility decision. Receipt file availability is checked separately during export. Elapsed logbook days do not establish completeness.',
-                          style: AppType.secondary),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            if (onViewTax != null) {
-                              onViewTax!();
-                            } else {
-                              navigator.push(MaterialPageRoute<void>(
-                                  builder: (_) => const TaxSummaryScreen()));
-                            }
-                          },
-                          child: const Text('View full tax summary')),
-                      const SizedBox(height: 8),
-                      const Text(
-                          'The full summary includes recorded amounts that may still need review.',
-                          style: AppType.secondary),
-                    ]),
-              ),
-            ));
   }
 
   Widget _odometer(BuildContext context) {

@@ -17,7 +17,7 @@ class LocalBackupService {
   /// Compiles a complete audit snapshot of vehicles, trips, expenses, and evidence into JSON.
   static Map<String, dynamic> createBackupPayload(AppState appState) {
     return {
-      'format': 'KiloTax_Backup_v1',
+      'format': 'KiloClaim_Backup_v1',
       'exportedAt': DateTime.now().toIso8601String(),
       'appVersion': '1.0.0',
       'primaryVehicleId': appState.primaryVehicle?.id,
@@ -121,7 +121,7 @@ class LocalBackupService {
       final now = DateTime.now();
       final dateStr =
           '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
-      final fileName = 'KiloTax_Backup_$dateStr.zip';
+      final fileName = 'KiloClaim_Backup_$dateStr.zip';
       file = File('${tempDir.path}/$fileName');
 
       await ReceiptBackupArchive.createArchive(
@@ -149,9 +149,9 @@ class LocalBackupService {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          subject: 'KiloTax Data Backup ($dateStr)',
+          subject: 'KiloClaim Data Backup ($dateStr)',
           text:
-              'KiloTax Local Data Backup containing ${appState.trips.length} trips, ${appState.expenses.length} expenses, and ${appState.vehicles.length} vehicle(s).',
+              'KiloClaim Local Data Backup containing ${appState.trips.length} trips, ${appState.expenses.length} expenses, and ${appState.vehicles.length} vehicle(s).',
           sharePositionOrigin: origin,
         ),
       );

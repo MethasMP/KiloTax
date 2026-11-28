@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Direct Work Deductions vs Car Running Costs
+-- KiloClaim Database Migration: Direct Work Deductions vs Car Running Costs
 -- Conforms to Clean Code N1 (Intention-revealing names) & PostgreSQL snake_case conventions
 -- References: ITAA 1997 Division 28 & Division 8-1
 -- ==============================================================================

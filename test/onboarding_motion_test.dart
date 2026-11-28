@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/ui/screens/onboarding/onboarding_slides_screen.dart';
-import 'package:kilotax/ui/screens/onboarding/widgets/welcome_journey_illustration.dart';
+import 'package:kiloclaim/ui/screens/onboarding/onboarding_slides_screen.dart';
+import 'package:kiloclaim/ui/widgets/folio_assembly_mark.dart';
 
 void main() {
   Widget welcome({bool reduced = false, required VoidCallback onComplete}) =>
@@ -18,8 +18,7 @@ void main() {
     await tester.pumpWidget(welcome(onComplete: () => started = true));
     expect(
         tester
-            .widget<WelcomeJourneyIllustration>(
-                find.byType(WelcomeJourneyIllustration))
+            .widget<FolioAssemblyMark>(find.byType(FolioAssemblyMark))
             .progress
             .value,
         0);
@@ -36,8 +35,7 @@ void main() {
     await tester.pumpWidget(welcome(reduced: true, onComplete: () {}));
     expect(
         tester
-            .widget<WelcomeJourneyIllustration>(
-                find.byType(WelcomeJourneyIllustration))
+            .widget<FolioAssemblyMark>(find.byType(FolioAssemblyMark))
             .progress
             .value,
         1);
@@ -54,8 +52,7 @@ void main() {
     await tester.pump();
     expect(
         tester
-            .widget<WelcomeJourneyIllustration>(
-                find.byType(WelcomeJourneyIllustration))
+            .widget<FolioAssemblyMark>(find.byType(FolioAssemblyMark))
             .progress
             .value,
         1);

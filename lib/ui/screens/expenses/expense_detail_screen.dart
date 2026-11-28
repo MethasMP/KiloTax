@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/trip.dart';
@@ -31,6 +32,8 @@ class ExpenseDetailScreen extends StatefulWidget {
   final ReceiptOcrResult? receiptOcrResult;
   final VehicleExpense? existingExpense;
   final String? initialLinkedTripId;
+  final String? suggestedTripId;
+  final String? suggestionReason;
   final String? autoMatchReason;
   final DocumentScannerService? documentScanner;
   final ReceiptAuditService? receiptAuditService;
@@ -48,6 +51,8 @@ class ExpenseDetailScreen extends StatefulWidget {
     this.receiptOcrResult,
     this.existingExpense,
     this.initialLinkedTripId,
+    this.suggestedTripId,
+    this.suggestionReason,
     this.autoMatchReason,
     this.documentScanner,
     this.receiptAuditService,
@@ -56,7 +61,10 @@ class ExpenseDetailScreen extends StatefulWidget {
   });
 
   static Future<void> show(BuildContext context,
-      {required AppState appState, required VehicleExpense expense}) {
+      {required AppState appState,
+      required VehicleExpense expense,
+      String? suggestedTripId,
+      String? suggestionReason}) {
     return Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ExpenseDetailScreen(
@@ -68,6 +76,8 @@ class ExpenseDetailScreen extends StatefulWidget {
           receiptDate: expense.date,
           receiptImagePath: expense.receiptPath,
           existingExpense: expense,
+          suggestedTripId: suggestedTripId,
+          suggestionReason: suggestionReason,
         ),
       ),
     );
@@ -141,8 +151,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             (widget.receiptOcrResult == null ? 'AUD' : null);
     _abnController.addListener(_onFieldChanged);
     _invoiceController.addListener(_onFieldChanged);
-    _selectedCategory =
-        widget.existingExpense?.category ?? _resolveInitialCategory();
+    _selectedCategory = widget.existingExpense?.category ??
+        widget.receiptOcrResult?.category ??
+        _resolveInitialCategory();
     _selectedDate = widget.existingExpense?.date ?? widget.receiptDate;
     _dateNeedsReview = widget.purchaseDateUnknown ||
         (widget.receiptOcrResult?.dateNeedsReview ?? false);
@@ -150,9 +161,13 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _isVaultOnly = widget.existingExpense?.isVaultOnly ?? false;
     _vaultReason = widget.existingExpense?.vaultReason;
     _linkedTripId = widget.existingExpense?.linkedTripId;
-    _suggestedTripId =
-        widget.existingExpense == null ? widget.initialLinkedTripId : null;
-    _autoMatchReason = widget.autoMatchReason;
+    _suggestedTripId = widget.suggestedTripId ??
+        (widget.existingExpense == null ? widget.initialLinkedTripId : null);
+    _autoMatchReason = widget.suggestionReason ?? widget.autoMatchReason;
+    if (_suggestedTripId != null && _eligibleTrip(_suggestedTripId) == null) {
+      _suggestedTripId = null;
+      _autoMatchReason = null;
+    }
     _categoryConfirmed = widget.existingExpense != null;
 
     _amountController.addListener(_onFieldChanged);
@@ -160,6 +175,26 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     _merchantController.addListener(_onFieldChanged);
     _notesController.addListener(_onFieldChanged);
 
+    _checkAutoTripSuggestion();
+  }
+
+  bool _isEligibleTrip(Trip trip) =>
+      !_selectedCategory.isCarExpense &&
+      !trip.isDeleted &&
+      _vehicleId != null &&
+      trip.vehicleId == _vehicleId &&
+      trip.classification != TripClassification.personal &&
+      const AtoTaxPeriodEngine()
+          .forDate(_selectedDate)
+          .containsExpenseDate(trip.date);
+
+  Trip? _eligibleTrip(String? id) => widget.appState.trips
+      .where((trip) => trip.id == id && _isEligibleTrip(trip))
+      .firstOrNull;
+
+  void _refreshTripSuggestion() {
+    _suggestedTripId = null;
+    _autoMatchReason = null;
     _checkAutoTripSuggestion();
   }
 
@@ -177,11 +212,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         date: _selectedDate,
         notes: _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
-            : widget.merchant,
+            : _merchantController.text.trim(),
       );
       final match = EvidenceAutoMatchEngine.findBestMatchingTrip(
         expense: tempExpense,
-        candidateTrips: widget.appState.trips,
+        candidateTrips: widget.appState.trips.where(_isEligibleTrip).toList(),
       );
       if (match != null && match.confidenceScore >= 0.80) {
         _suggestedTripId = match.trip.id;
@@ -195,6 +230,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       setState(() {
         _confirmedByUser = false;
         _detailsChanged = true;
+        _refreshTripSuggestion();
       });
     }
   }
@@ -247,6 +283,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
+        _refreshTripSuggestion();
         _dateNeedsReview = false;
         _confirmedByUser = false;
         _detailsChanged = true;
@@ -413,7 +450,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             style: TextStyle(fontSize: 13, color: AppColors.muted),
           ),
           const SizedBox(height: 12),
-
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -519,7 +555,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 ),
             ],
           ),
-
           if (_allocations.isNotEmpty) ...[
             const SizedBox(height: 16),
             ClipRRect(
@@ -581,7 +616,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               ],
             ),
           ],
-
           for (var i = 0; i < _allocations.length; i++) ...[
             const Divider(height: 28),
             TextFormField(
@@ -685,7 +719,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                         });
                       })),
           ],
-
           if (_allocations.isNotEmpty) ...[
             const SizedBox(height: 12),
             Row(
@@ -753,6 +786,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         double.tryParse(_amountController.text.replaceAll(',', '').trim()) ??
             0.0;
     final gst = double.tryParse(_gstController.text.replaceAll(',', '').trim());
+    final rawText = widget.receiptOcrResult?.rawText ??
+        widget.existingExpense?.receiptAudit?.rawOcrText ??
+        _notesController.text.trim();
     final ocr = ReceiptOcrResult(
       merchant: _merchantController.text.trim(),
       amount: amt,
@@ -760,17 +796,28 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       abn: _abnController.text.trim(),
       currency: _currency,
       date: _selectedDate,
+      dateNeedsReview: _dateNeedsReview,
+      lineObservations: widget.receiptOcrResult?.lineObservations ?? const [],
       category: _selectedCategory,
       confidence: widget.receiptOcrResult?.confidence ?? 0.9,
       evidence: widget.receiptOcrResult?.evidence ?? const [],
-      rawText: widget.receiptOcrResult?.rawText ?? '',
+      rawText: rawText,
     );
+    final existingReceipts = widget.appState.expenses
+        .where((e) => !e.isDeleted && e.id != widget.existingExpense?.id)
+        .map((e) => ReceiptFingerprint(
+              merchant: e.supplier ?? '',
+              amount: e.amount,
+              date: e.date,
+            ))
+        .toList(growable: false);
     return _preDbValidator.validateAndSanitize(
       ocrResult: ocr,
       logbookStartDate: widget.appState.vehicles
           .where((v) => v.id == _vehicleId)
           .firstOrNull
           ?.logbookStartDate,
+      existingReceipts: existingReceipts,
     );
   }
 
@@ -876,6 +923,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   }
 
   Future<void> _saveAndCommitExpense() async {
+    if (_linkedTripId != null && _eligibleTrip(_linkedTripId) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Unlink the legacy trip before saving this receipt.'),
+      ));
+      return;
+    }
     if (_pickingReceipt || _isSaving) return;
     if (_dateNeedsReview) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -978,6 +1031,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   Future<void> _commitSaveExpense(
       double parsedAmount, bool isVault, String? reason) async {
     if (_isSaving) return;
+    if (_linkedTripId != null && _eligibleTrip(_linkedTripId) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Unlink the legacy trip before saving this receipt.'),
+      ));
+      return;
+    }
     if (_dateNeedsReview) {
       await _pickDate();
       return;
@@ -1191,6 +1250,53 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   Widget _buildReceiptReviewHeader() {
     final editing = widget.existingExpense != null;
     final extracted = widget.receiptOcrResult != null;
+    final confidence = widget.receiptOcrResult?.confidence ??
+        widget.existingExpense?.receiptAudit?.ocrConfidence;
+    final isLowConfidence = confidence != null && confidence < 0.70;
+
+    if (isLowConfidence) {
+      final confPercent = (confidence * 100).round();
+      return Container(
+        key: const ValueKey('receipt-review-guidance-low-confidence'),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.attentionTintSoft,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColor.attentionTintStrong, width: 1.5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(AppIcons.warning,
+                    color: AppColor.attentionStrong, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Low OCR Confidence ($confPercent%)',
+                    style: AppType.cardTitle.copyWith(
+                      color: AppColor.attentionStrong,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Faded ink, crumpled thermal paper, or glare was detected during scanning. '
+              'Please verify the Merchant, Date, and Total Amount below before saving to ensure unbreakable ATO tax substantiation.',
+              style: AppType.secondary.copyWith(
+                color: AppColor.ink,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       key: const ValueKey('receipt-review-guidance'),
       padding: const EdgeInsets.all(16),
@@ -1591,6 +1697,27 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                                           : const SizedBox.shrink(),
                         ),
                       ),
+                      if (valResult.isDuplicateSuspected)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildStatusPill(
+                              backgroundColor: AppColors.amberLight,
+                              textColor: AppColors.amberDark,
+                              icon: LucideIcons.alertTriangle,
+                              label: 'Possible duplicate receipt',
+                              onTap: () => _showTacticalGuidanceSheet(
+                                context: context,
+                                title: 'Possible duplicate receipt',
+                                explanation:
+                                    'A receipt for ${valResult.sanitizedMerchant} (\$${valResult.sanitizedAmount.toStringAsFixed(2)}) on ${Formatters.date(valResult.validatedDate)} is already saved. Confirm this is a separate purchase before saving.',
+                                primaryLabel: 'Got it',
+                                onPrimary: () {},
+                              ),
+                            ),
+                          ),
+                        ),
 
                       // Interactive Date Trigger
                       InkWell(
@@ -1737,13 +1864,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                         icon: LucideIcons.link,
                         label: 'Linked Trip',
                         value: _linkedTripId != null
-                            ? (widget.appState.trips
-                                    .where((t) => t.id == _linkedTripId)
-                                    .map((t) =>
-                                        '${t.date.day}/${t.date.month} (${t.distanceKm.toStringAsFixed(1)} km)')
-                                    .firstOrNull ??
-                                'Linked')
-                            : 'None (Tap to link)',
+                            ? (_eligibleTrip(_linkedTripId) != null
+                                ? '${_eligibleTrip(_linkedTripId)!.date.day}/${_eligibleTrip(_linkedTripId)!.date.month} (${_eligibleTrip(_linkedTripId)!.distanceKm.toStringAsFixed(1)} km)'
+                                : 'Legacy link — unlink or review')
+                            : (_selectedCategory.isCarExpense
+                                ? 'Annual vehicle running costs — no trip link'
+                                : 'None (Tap to link)'),
                         onTap: _showTripSelectorSheet,
                       ),
                       const Divider(height: 1, color: AppColors.border),
@@ -1774,6 +1900,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                       ),
                       onChanged: (accepted) {
                         if (accepted != true) return;
+                        if (_eligibleTrip(_suggestedTripId) == null) {
+                          setState(_refreshTripSuggestion);
+                          return;
+                        }
                         setState(() {
                           _linkedTripId = _suggestedTripId;
                           _suggestedTripId = null;
@@ -1786,20 +1916,20 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 if (_linkedTripId != null) ...[
                   Builder(
                     builder: (context) {
-                      final linkedTrip = widget.appState.trips
-                          .where((t) => t.id == _linkedTripId)
-                          .firstOrNull;
+                      final linkedTrip = _eligibleTrip(_linkedTripId);
 
                       final tripTitle = linkedTrip != null
                           ? '${_formatTripDayMonth(linkedTrip.date)} at ${_formatTime(linkedTrip.date)} · ${linkedTrip.distanceKm.toStringAsFixed(1)} km'
-                          : 'Trip $_linkedTripId';
+                          : 'Legacy link — unlink or review';
 
-                      final bannerSubtitle = _autoMatchReason != null &&
-                              _autoMatchReason!.isNotEmpty
-                          ? _autoMatchReason!
-                          : (linkedTrip?.purpose.isNotEmpty == true
-                              ? linkedTrip!.purpose
-                              : 'Linked Evidence');
+                      final bannerSubtitle = linkedTrip == null
+                          ? 'This link is outside the current receipt scope. Unlink it before saving.'
+                          : _autoMatchReason != null &&
+                                  _autoMatchReason!.isNotEmpty
+                              ? _autoMatchReason!
+                              : (linkedTrip.purpose.isNotEmpty
+                                  ? linkedTrip.purpose
+                                  : 'Linked Evidence');
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
@@ -2029,8 +2159,50 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('ATO Evidence Checklist',
-                          style: AppTextStyles.cardPrimary),
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text('ATO Evidence Checklist',
+                                style: AppTextStyles.cardPrimary),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            key: const ValueKey('ato-substantiation-score'),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: valResult.atoReport.isAuditReady
+                                  ? AppColors.emeraldLight
+                                  : AppColors.amberLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              valResult.atoReport.isAuditReady
+                                  ? '5/5 Audit Ready'
+                                  : '${valResult.atoReport.score}/5 Substantiated',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: valResult.atoReport.isAuditReady
+                                    ? AppColors.emerald
+                                    : AppColors.amberDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (valResult.atoReport.missingItems.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Missing: ${valResult.atoReport.missingItems.join(' • ')}',
+                          key: const ValueKey('ato-missing-items'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.amberDark,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 14),
                       _buildEvidenceCheck(
                           label: 'Supplier / Merchant',
@@ -2237,6 +2409,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       onTap: () {
         setState(() {
           _selectedCategory = cat;
+          _refreshTripSuggestion();
           _categoryConfirmed = true;
           _confirmedByUser = false;
           _detailsChanged = true;
@@ -2297,10 +2470,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       );
 
   void _showTripSelectorSheet() {
-    final vehicleId = _vehicleId;
-    final candidateTrips = widget.appState.trips
-        .where((t) => vehicleId == null || t.vehicleId == vehicleId)
-        .toList()
+    final candidateTrips = widget.appState.trips.where(_isEligibleTrip).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
 
     showModalBottomSheet(
@@ -2380,7 +2550,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                         child: Padding(
                           padding: EdgeInsets.all(24),
                           child: Text(
-                            'No candidate trips recorded for this vehicle yet.',
+                            'No eligible trips for this receipt’s vehicle, financial year and category.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: AppColors.muted,
@@ -2450,8 +2620,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                                 : const Icon(Icons.chevron_right_rounded,
                                     color: AppColors.muted, size: 18),
                             onTap: () {
+                              if (!_isEligibleTrip(trip)) return;
                               HapticFeedback.selectionClick();
                               setState(() {
+                                _suggestedTripId = null;
+                                _confirmedByUser = false;
+                                _detailsChanged = true;
                                 _linkedTripId = trip.id;
                                 _autoMatchReason =
                                     'Manual selection: Trip on $dateStr ($timeStr)';

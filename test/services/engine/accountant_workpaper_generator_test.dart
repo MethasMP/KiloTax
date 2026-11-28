@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/accountant_workpaper_generator.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/accountant_workpaper_generator.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
 
 void main() {
   group('AccountantWorkpaperGenerator 3-State Receipt Verification', () {

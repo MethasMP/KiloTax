@@ -8,7 +8,7 @@ void main() {
   // This manual-entry test must not drain the user's pending native trips or
   // replace their car pairing when reconstructing the test AppState.
   binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('kilotax/hardware_telemetry'),
+    const MethodChannel('kiloclaim/hardware_telemetry'),
     (call) async => switch (call.method) {
       'getCompletedNativeTrips' => <dynamic>[],
       'setTargetBluetoothName' => null,

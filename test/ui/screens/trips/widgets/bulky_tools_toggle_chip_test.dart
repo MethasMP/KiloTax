@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/theme/app_color.dart';
-import 'package:kilotax/core/theme/app_motion.dart';
-import 'package:kilotax/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
+import 'package:kiloclaim/core/theme/app_color.dart';
+import 'package:kiloclaim/core/theme/app_motion.dart';
+import 'package:kiloclaim/ui/screens/trips/widgets/bulky_tools_toggle_chip.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 void main() {

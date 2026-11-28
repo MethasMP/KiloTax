@@ -61,8 +61,9 @@ class _TactilePrimaryButtonState extends State<TactilePrimaryButton>
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null && !widget.isLoading;
-    final background =
-        widget.isSecondary ? AppColor.surfaceMuted : AppColor.ink;
+    final background = widget.isSecondary
+        ? AppColor.surfaceMuted
+        : (widget.baseColor ?? AppColor.ink);
     final foreground = widget.isSecondary ? AppColor.ink : AppColor.onNavy;
     return ScaleTransition(
       scale: _scaleAnimation,

@@ -1,3 +1,4 @@
+import '../../../widgets/kiloclaim_brand_lockup.dart';
 import '../../tracking/tracking_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -84,6 +85,8 @@ class AccountSettingsSheet {
                         ]),
                         const SizedBox(height: 12),
                         if (section == 'Settings') ...[
+                          const KiloClaimBrandLockup(compact: true),
+                          const SizedBox(height: 20),
                           if (!appState.isAuthenticated) ...[
                             FilledButton.icon(
                               style: FilledButton.styleFrom(

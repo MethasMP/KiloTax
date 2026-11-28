@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/services/feedback/feedback_draft.dart';
+import 'package:kiloclaim/services/feedback/feedback_draft.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ void main() {
     expect(restored.topic, FeedbackTopic.receipt);
     expect(restored.outcome, HandoffOutcome.moreInformation);
     expect(restored.note, 'The receipt index was hard to follow.');
-    expect(restored.message, '''KiloTax product feedback
+    expect(restored.message, '''KiloClaim product feedback
 Topic: Receipts
 Accountant handoff: More information requested
 

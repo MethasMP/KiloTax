@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Elevate KiloTax's receipt OCR extraction accuracy to $\ge 95\%$ on Australian receipts by anchoring extraction to ATO GST mathematical invariants, 2D bounding-box horizontal raycasting, and ABN Modulus-89 validation.
+**Goal:** Elevate KiloClaim's receipt OCR extraction accuracy to $\ge 95\%$ on Australian receipts by anchoring extraction to ATO GST mathematical invariants, 2D bounding-box horizontal raycasting, and ABN Modulus-89 validation.
 
 **Architecture:** 
 1. **ATO Tax Mathematical Validator:** Independent consensus engine verifying $\text{Total} \approx 11 \times \text{GST}$ across numerical candidates.

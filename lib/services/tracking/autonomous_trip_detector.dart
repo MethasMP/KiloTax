@@ -228,7 +228,9 @@ class AutonomousTripDetector {
                 effectiveGhostAnchorTimeout) {
           await _sealTripRetroactively(
               _ghostAnchor!.position, _ghostAnchor!.stationarySince);
-          _state = AutonomousDetectorState.finalized;
+          _state = _finalizedTrip != null
+              ? AutonomousDetectorState.finalized
+              : AutonomousDetectorState.idle;
         }
         break;
 
@@ -253,12 +255,36 @@ class AutonomousTripDetector {
 
     final startFix = _activeTripPath.first;
 
-    final routeResult = await _routingService.calculateRoadDistanceKm(
-      startLat: startFix.latitude,
-      startLon: startFix.longitude,
-      endLat: endFix.latitude,
-      endLon: endFix.longitude,
-    );
+    final routeResult = _activeTripPath.length >= 2
+        ? await _routingService.matchTrace(_activeTripPath)
+        : await _routingService.calculateRoadDistanceKm(
+            startLat: startFix.latitude,
+            startLon: startFix.longitude,
+            endLat: endFix.latitude,
+            endLon: endFix.longitude,
+          );
+
+    // Ghost Micro-Trip Suppression (<500m on-site)
+    // Discards movements < 500m occurring on or within active job sites
+    // (e.g. ute repositioning, moving tools between gates, on-site parking maneuvers).
+    final sites = jobSitesProvider?.call();
+    if (sites != null && sites.isNotEmpty) {
+      final isGhost = JobSiteGeofenceEngine.isGhostMicroTrip(
+        distanceKm: routeResult.roadDistanceKm,
+        jobSites: sites,
+        startLatitude: startFix.latitude,
+        startLongitude: startFix.longitude,
+        endLatitude: endFix.latitude,
+        endLongitude: endFix.longitude,
+      );
+      if (isGhost) {
+        debugPrint(
+            '[AutonomousDetector] Ghost micro-trip on-site (${(routeResult.roadDistanceKm * 1000).toStringAsFixed(0)}m < 500m). Suppressed.');
+        _finalizedTrip = null;
+        reset();
+        return;
+      }
+    }
 
     final originName = await GeocodingService.reverseGeocode(
       startFix.latitude,
@@ -349,7 +375,6 @@ class AutonomousTripDetector {
       stoppedDuration: dwellSeconds > 0 ? dwellSeconds : 300,
     );
 
-    final sites = jobSitesProvider?.call();
     if (sites != null && sites.isNotEmpty) {
       final match = JobSiteGeofenceEngine().matchTripToJobSite(_finalizedTrip!, sites);
       if (match != null) {

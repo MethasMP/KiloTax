@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/accountant_workpaper_generator.dart';
-import 'package:kilotax/services/engine/evidence_review_service.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/accountant_workpaper_generator.dart';
+import 'package:kiloclaim/services/engine/evidence_review_service.dart';
 
 void main() {
   group('AccountantWorkpaperGenerator', () {
@@ -67,7 +67,7 @@ void main() {
         financialYear: '2026-2027',
       );
 
-      expect(workpaper.contains('KILOTAX RECORDED DATA WORKPAPER'), true);
+      expect(workpaper.contains('KILOCLAIM RECORDED DATA WORKPAPER'), true);
       expect(workpaper.contains(r'Mick Dundee \(Sparky\)'), true);
       expect(workpaper.contains('12 345 678 901'), true);
       expect(workpaper.contains('Total Logged: 100.0 km'), true);

@@ -6,7 +6,7 @@ import '../engine/evidence_review_service.dart';
 import '../tax/ato_tax_period_engine.dart';
 
 /// Type of Notification Event
-enum KiloTaxNotificationType {
+enum KiloClaimNotificationType {
   tripDetected,
   dailySummary,
   logbookReminder,
@@ -49,17 +49,17 @@ enum EofyAlertMilestone {
 }
 
 /// In-App & Local Notification Payload
-class KiloTaxNotification {
+class KiloClaimNotification {
   final String id;
   final String title;
   final String body;
-  final KiloTaxNotificationType type;
+  final KiloClaimNotificationType type;
   final DateTime timestamp;
   final bool isRead;
   final String? deepLinkRoute;
   final Map<String, dynamic>? data;
 
-  const KiloTaxNotification({
+  const KiloClaimNotification({
     required this.id,
     required this.title,
     required this.body,
@@ -70,8 +70,8 @@ class KiloTaxNotification {
     this.data,
   });
 
-  KiloTaxNotification copyWith({bool? isRead}) {
-    return KiloTaxNotification(
+  KiloClaimNotification copyWith({bool? isRead}) {
+    return KiloClaimNotification(
       id: id,
       title: title,
       body: body,
@@ -94,14 +94,14 @@ class KiloTaxNotification {
         'data': data,
       };
 
-  factory KiloTaxNotification.fromJson(Map<String, dynamic> json) {
-    return KiloTaxNotification(
+  factory KiloClaimNotification.fromJson(Map<String, dynamic> json) {
+    return KiloClaimNotification(
       id: json['id'] as String,
       title: json['title'] as String,
       body: json['body'] as String,
-      type: KiloTaxNotificationType.values.firstWhere(
+      type: KiloClaimNotificationType.values.firstWhere(
         (t) => t.name == json['type'],
-        orElse: () => KiloTaxNotificationType.complianceAlert,
+        orElse: () => KiloClaimNotificationType.complianceAlert,
       ),
       timestamp: DateTime.parse(json['timestamp'] as String),
       isRead: json['isRead'] as bool? ?? false,
@@ -115,11 +115,11 @@ class KiloTaxNotification {
 
 /// Service managing device local notifications and in-app activity queue
 class NotificationService {
-  static const String _storageKey = 'kilotax_notifications_v1';
+  static const String _storageKey = 'kiloclaim_notifications_v1';
   static NotificationService? _instance;
 
   final SharedPreferences? _prefs;
-  final List<KiloTaxNotification> _notifications = [];
+  final List<KiloClaimNotification> _notifications = [];
 
   NotificationService._(this._prefs) {
     _loadFromStorage();
@@ -140,7 +140,7 @@ class NotificationService {
     return instance;
   }
 
-  List<KiloTaxNotification> get notifications =>
+  List<KiloClaimNotification> get notifications =>
       List.unmodifiable(_notifications);
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
@@ -153,7 +153,7 @@ class NotificationService {
       for (final raw in jsonList) {
         try {
           final map = jsonDecode(raw) as Map<String, dynamic>;
-          _notifications.add(KiloTaxNotification.fromJson(map));
+          _notifications.add(KiloClaimNotification.fromJson(map));
         } catch (e, stack) {
           debugPrint(
               '[NotificationService] Warning decoding notification payload: $e\n$stack');
@@ -169,17 +169,17 @@ class NotificationService {
   }
 
   /// Trigger a Trip Detected Notification (e.g. at destination)
-  Future<KiloTaxNotification> notifyTripDetected({
+  Future<KiloClaimNotification> notifyTripDetected({
     required double distanceKm,
     required double estimatedDeduction,
     String? tripId,
   }) async {
-    final notification = KiloTaxNotification(
+    final notification = KiloClaimNotification(
       id: 'trip_${DateTime.now().millisecondsSinceEpoch}',
       title: '🚗 Trip detected: ${distanceKm.toStringAsFixed(1)} km',
       body:
           'Review the purpose and choose business or personal before claiming.',
-      type: KiloTaxNotificationType.tripDetected,
+      type: KiloClaimNotificationType.tripDetected,
       timestamp: DateTime.now(),
       deepLinkRoute: '/trips',
       data: {'tripId': tripId, 'distanceKm': distanceKm},
@@ -189,16 +189,16 @@ class NotificationService {
   }
 
   /// Trigger 5 PM Daily Wrap-up for tradies
-  Future<KiloTaxNotification> notifyDailyWrapUp({
+  Future<KiloClaimNotification> notifyDailyWrapUp({
     required int unclassifiedTripsCount,
     required double potentialTaxClaim,
   }) async {
-    final notification = KiloTaxNotification(
+    final notification = KiloClaimNotification(
       id: 'daily_${DateTime.now().millisecondsSinceEpoch}',
       title: '📋 5 PM Daily Tax Wrap',
       body:
           'You have $unclassifiedTripsCount unlogged trips today (\$$potentialTaxClaim deduction). Clear before smoko!',
-      type: KiloTaxNotificationType.dailySummary,
+      type: KiloClaimNotificationType.dailySummary,
       timestamp: DateTime.now(),
       deepLinkRoute: '/compliance',
       data: {'count': unclassifiedTripsCount},
@@ -208,16 +208,16 @@ class NotificationService {
   }
 
   /// Trigger Logbook Weekly milestone
-  Future<KiloTaxNotification> notifyLogbookProgress({
+  Future<KiloClaimNotification> notifyLogbookProgress({
     required int currentWeek,
     required double progressPercent,
   }) async {
-    final notification = KiloTaxNotification(
+    final notification = KiloClaimNotification(
       id: 'logbook_w${currentWeek}_${DateTime.now().millisecondsSinceEpoch}',
       title: '📅 Week $currentWeek of 12 Logbook Completed',
       body:
           'Logbook is ${(progressPercent * 100).toStringAsFixed(0)}% valid for ATO 5-year lock.',
-      type: KiloTaxNotificationType.logbookReminder,
+      type: KiloClaimNotificationType.logbookReminder,
       timestamp: DateTime.now(),
       deepLinkRoute: '/logbook',
       data: {'week': currentWeek},
@@ -227,7 +227,7 @@ class NotificationService {
   }
 
   /// Trigger statutory EOFY (June 15, June 28, June 30) odometer snapshot reminder
-  Future<KiloTaxNotification?> notifyEofyOdometerReminder({
+  Future<KiloClaimNotification?> notifyEofyOdometerReminder({
     required Vehicle vehicle,
     required String financialYearLabel,
     required EofyAlertMilestone milestone,
@@ -258,11 +258,11 @@ class NotificationService {
         break;
     }
 
-    final notification = KiloTaxNotification(
+    final notification = KiloClaimNotification(
       id: notifId,
       title: milestone.title,
       body: body,
-      type: KiloTaxNotificationType.eofyAlert,
+      type: KiloClaimNotificationType.eofyAlert,
       timestamp: now,
       deepLinkRoute: '/odometer-closing',
       data: {
@@ -278,7 +278,7 @@ class NotificationService {
 
   /// Automated pipeline: Evaluates vehicles in Years 1-5 of a 12-week logbook
   /// and automatically triggers alerts on June 15, June 28, and June 30 if closing odometer is missing.
-  Future<List<KiloTaxNotification>> evaluateEofyAlertPipeline({
+  Future<List<KiloClaimNotification>> evaluateEofyAlertPipeline({
     required List<Vehicle> vehicles,
     required bool Function(String vehicleId, String fyLabel)
         isMissingClosingOdometer,
@@ -290,7 +290,7 @@ class NotificationService {
 
     final fyEngine = const AtoTaxPeriodEngine();
     final fyLabel = fyEngine.forDate(date).shortLabel;
-    final generated = <KiloTaxNotification>[];
+    final generated = <KiloClaimNotification>[];
 
     for (final vehicle in vehicles) {
       // 1. Must be active (not deleted) and logbook method
@@ -327,7 +327,7 @@ class NotificationService {
   }
 
   /// Add notification to stack
-  Future<KiloTaxNotification?> notifyWeeklyEvidenceReview({
+  Future<KiloClaimNotification?> notifyWeeklyEvidenceReview({
     required EvidenceReviewReport report,
     required DateTime now,
   }) async {
@@ -345,12 +345,12 @@ class NotificationService {
         _notifications.any((item) => item.id == id)) {
       return null;
     }
-    final notice = KiloTaxNotification(
+    final notice = KiloClaimNotification(
       id: id,
       title: 'Weekly evidence review',
       body:
           '$count ${count == 1 ? "record needs" : "records need"} review from completed weeks. Open your pending evidence.',
-      type: KiloTaxNotificationType.complianceAlert,
+      type: KiloClaimNotificationType.complianceAlert,
       timestamp: now,
       deepLinkRoute: '/evidence-review',
       data: {
@@ -363,7 +363,7 @@ class NotificationService {
     return notice;
   }
 
-  Future<void> addNotification(KiloTaxNotification item) async {
+  Future<void> addNotification(KiloClaimNotification item) async {
     _notifications.insert(0, item);
     // Keep max 50 recent notifications
     if (_notifications.length > 50) {

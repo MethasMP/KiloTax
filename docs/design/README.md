@@ -1,4 +1,4 @@
-# Design Documentation — KiloTax (DriveLog)
+# Design Documentation — KiloClaim (DriveLog)
 
 ชุดเอกสารนี้เกิดจากการตรวจ UI/UX ทั้งแอปแบบลงลึก เมื่อ 3 ต.ค. 2026
 (101 ไฟล์ Dart / 32,583 บรรทัด / 44 หน้าจอ) โดย**เรนเดอร์หน้าจอจริงนอกอุปกรณ์**เพื่อดูผลลัพธ์จริง ไม่ใช่แค่อ่านโค้ด

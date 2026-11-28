@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/services/tracking/road_snap_routing_service.dart';
+import 'package:kiloclaim/services/tracking/road_snap_routing_service.dart';
 
 void main() {
   group('RoadSnapRoutingService & Polyline Tests', () {

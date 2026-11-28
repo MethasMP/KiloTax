@@ -827,7 +827,7 @@ class TaxPackDocuments {
       };
 
   Map<String, Object?> buildMetadata() => {
-        'format': 'KiloTax_Tax_Pack_v2',
+        'format': 'KiloClaim_Tax_Pack_v2',
         'packId': packId,
         'generatedAt': generatedAt.toIso8601String(),
         'vehicleId': vehicle.id,
@@ -915,8 +915,8 @@ Future<Uint8List> renderTaxPackPdf(
     }) input) async {
   final data = input.data;
   final pdf = pw.Document(
-      title: 'KiloTax vehicle evidence for accountant review',
-      author: 'KiloTax');
+      title: 'KiloClaim vehicle evidence for accountant review',
+      author: 'KiloClaim');
   final theme = pw.ThemeData.withFont(
       base: pw.Font.ttf(input.regular), bold: pw.Font.ttf(input.bold));
   const ink = PdfColor.fromInt(0xFF142D3B);
@@ -973,7 +973,7 @@ Future<Uint8List> renderTaxPackPdf(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Expanded(
-                  child: pw.Text('KiloTax | ${data['packId']}',
+                  child: pw.Text('KiloClaim | ${data['packId']}',
                       style: const pw.TextStyle(fontSize: 6, color: muted))),
               pw.Text('${context.pageNumber} / ${context.pagesCount}',
                   style: const pw.TextStyle(fontSize: 8, color: muted)),

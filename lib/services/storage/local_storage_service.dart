@@ -9,20 +9,22 @@ import '../../data/models/annual_odometer.dart';
 import '../../data/models/in_flight_trip.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/models/job_site.dart';
+import '../../data/models/logbook_period.dart';
 
 /// Production-ready local persistent storage service.
 /// Ensures all records (Vehicles, Trips, Expenses) survive app termination.
 class LocalStorageService {
-  static const String _keyVehicles = 'kilotax_vehicles_v1';
-  static const String _keyPrimaryVehicleId = 'kilotax_primary_vehicle_id_v1';
-  static const String _keyTrips = 'kilotax_trips_v1';
-  static const String _keyExpenses = 'kilotax_expenses_v1';
-  static const String _keyEvidence = 'kilotax_audit_evidence_v1';
-  static const String _keyAnnualOdometers = 'kilotax_annual_odometers_v1';
-  static const String _keyUserProfile = 'kilotax_user_profile_v1';
-  static const String _keyJobSites = 'kilotax_job_sites_v1';
-  static const String _keyHasSeenOnboarding = 'kilotax_has_seen_onboarding_v1';
-  static const String _keyIsGuestMode = 'kilotax_is_guest_mode_v1';
+  static const String _keyVehicles = 'kiloclaim_vehicles_v1';
+  static const String _keyPrimaryVehicleId = 'kiloclaim_primary_vehicle_id_v1';
+  static const String _keyTrips = 'kiloclaim_trips_v1';
+  static const String _keyExpenses = 'kiloclaim_expenses_v1';
+  static const String _keyEvidence = 'kiloclaim_audit_evidence_v1';
+  static const String _keyAnnualOdometers = 'kiloclaim_annual_odometers_v1';
+  static const String _keyUserProfile = 'kiloclaim_user_profile_v1';
+  static const String _keyJobSites = 'kiloclaim_job_sites_v1';
+  static const String _keyLogbookPeriods = 'kiloclaim_logbook_periods_v1';
+  static const String _keyHasSeenOnboarding = 'kiloclaim_has_seen_onboarding_v1';
+  static const String _keyIsGuestMode = 'kiloclaim_is_guest_mode_v1';
 
   final SharedPreferences _prefs;
   bool _expenseReadCorrupt = false;
@@ -117,7 +119,7 @@ class LocalStorageService {
           .toList();
     } catch (e) {
       _expenseReadCorrupt = true;
-      _prefs.setString('kilotax_expenses_recovery_v1', raw);
+      _prefs.setString('kiloclaim_expenses_recovery_v1', raw);
       debugPrint(
           '[LocalStorageService] Expense data preserved for recovery: $e');
       return [];
@@ -174,7 +176,7 @@ class LocalStorageService {
   }
 
   // --- IN-FLIGHT TRIP (ANTI-CRASH & KILL RESURRECTION) ---
-  static const String _keyInFlightTrip = 'kilotax_in_flight_trip_v1';
+  static const String _keyInFlightTrip = 'kiloclaim_in_flight_trip_v1';
 
   InFlightTrip? loadInFlightTrip() {
     final raw = _prefs.getString(_keyInFlightTrip);
@@ -231,6 +233,27 @@ class LocalStorageService {
     return _prefs.setString(_keyJobSites, raw);
   }
 
+  // --- LOGBOOK PERIODS (12-WEEK STATUTORY LOGBOOK) ---
+  List<LogbookPeriod> loadLogbookPeriods() {
+    final raw = _prefs.getString(_keyLogbookPeriods);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((item) => LogbookPeriod.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      debugPrint(
+          '[LocalStorageService] Warning loading logbook periods: $e\n$stack');
+      return [];
+    }
+  }
+
+  Future<bool> saveLogbookPeriods(List<LogbookPeriod> periods) {
+    final raw = jsonEncode(periods.map((p) => p.toJson()).toList());
+    return _prefs.setString(_keyLogbookPeriods, raw);
+  }
+
   // --- RAW STRING HELPERS (For Tax Rules & Dynamic Caches) ---
   String? loadRawString(String key) => _prefs.getString(key);
   Future<bool> saveRawString(String key, String value) =>
@@ -238,7 +261,7 @@ class LocalStorageService {
 
   // --- RESET ALL DATA (For clean logout / account reset) ---
   Future<void> recoverRestoreIntent() async {
-    final raw = _prefs.getString('kilotax_restore_intent_v2');
+    final raw = _prefs.getString('kiloclaim_restore_intent_v2');
     if (raw == null) return;
     final writes = Map<String, dynamic>.from(jsonDecode(raw) as Map);
     for (final entry in writes.entries) {
@@ -250,7 +273,7 @@ class LocalStorageService {
         throw StateError('Could not finish backup recovery.');
       }
     }
-    if (!await _prefs.remove('kilotax_restore_intent_v2')) {
+    if (!await _prefs.remove('kiloclaim_restore_intent_v2')) {
       throw StateError('Could not finish backup recovery.');
     }
     _expenseReadCorrupt = false;
@@ -269,7 +292,7 @@ class LocalStorageService {
       _keyPrimaryVehicleId: payload['primaryVehicleId'],
     };
     if (!await _prefs.setString(
-        'kilotax_restore_intent_v2', jsonEncode(writes))) {
+        'kiloclaim_restore_intent_v2', jsonEncode(writes))) {
       throw StateError(
           'Could not prepare backup recovery. Existing records are unchanged.');
     }

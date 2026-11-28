@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/services/evidence/evidence_vault_service.dart';
-import 'package:kilotax/services/storage/receipt_image_optimization_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/services/evidence/evidence_vault_service.dart';
+import 'package:kiloclaim/services/storage/receipt_image_optimization_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
   group('PR-10: Evidence Vault Wipe on Local Wipe Sign Out', () {
@@ -13,7 +13,7 @@ void main() {
     late EvidenceVaultService evidenceVaultService;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('kilotax_vault_test_');
+      tempDir = await Directory.systemTemp.createTemp('kiloclaim_vault_test_');
       vaultDir = Directory('${tempDir.path}/evidence_vault');
       await vaultDir.create(recursive: true);
 

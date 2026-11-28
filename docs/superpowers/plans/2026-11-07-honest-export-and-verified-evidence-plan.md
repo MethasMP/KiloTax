@@ -8,7 +8,7 @@
 
 **Tech Stack:** Dart, Flutter, SQLite, Crypto (SHA-256), Archive (ZIP)
 
-**Spec:** `docs/superpowers/specs/2026-11-07-kilotax-strategic-weapons-architecture.md`
+**Spec:** `docs/superpowers/specs/2026-11-07-kiloclaim-strategic-weapons-architecture.md`
 
 ## Global Constraints
 - Preserve existing dirty checkout and unrelated files.

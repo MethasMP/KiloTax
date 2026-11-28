@@ -47,7 +47,7 @@ class AccountantWorkpaperGenerator {
       }
     }
     final buffer = StringBuffer()
-      ..writeln('# KILOTAX RECORDED DATA WORKPAPER')
+      ..writeln('# KILOCLAIM RECORDED DATA WORKPAPER')
       ..writeln('Review records and tax treatment with your tax agent.')
       ..writeln('Taxpayer / Client: ${_cell(clientName)}')
       ..writeln('ABN: ${_cell(abn)}')
@@ -79,6 +79,10 @@ class AccountantWorkpaperGenerator {
           'File inspection is unknown when no inspection result was supplied. A saved OCR match is not human confirmation.')
       ..writeln(
           'Vault-only expenses are records, not additions to the calculation. Use summary.pdf and review-issues.csv for the selected method and unresolved checks.')
+      ..writeln('')
+      ..writeln('## Statutory Expense Substantiation & Record Categorization')
+      ..writeln(
+          'ATO substantiation separates pooled vehicle running costs (Fuel, Rego, Insurance, Maintenance scaled by Logbook %) from direct work/project supply expenses.')
       ..writeln('')
       ..writeln('## Linked records')
       ..writeln(

@@ -506,7 +506,7 @@ For immediate 30-second entry into Xero Tax, HandiTax, and MYOB Practice:
 ====================================================================================================
 
 ====================================================================================================
-KILOTAX COMPLIANCE DOSSIER | ATO MOTOR VEHICLE LOGBOOK SCHEDULE (ITAA 1997 Subdiv 28-F & TR 97/11)
+KILOCLAIM COMPLIANCE DOSSIER | ATO MOTOR VEHICLE LOGBOOK SCHEDULE (ITAA 1997 Subdiv 28-F & TR 97/11)
 METHOD: LOGBOOK | ATO BOX D1 CODE: B | FINANCIAL YEAR: ${taxRule.financialYear}
 ====================================================================================================
 
@@ -581,7 +581,7 @@ Tax Agent Signature: __________________________        RAN:  ___________________
 STATUTORY COMPLIANCE & LEGAL DISCLAIMER (ITAA 1997 Subdivision 28-F / TPB Notice):
 Calculated under ATO Logbook method (ITAA 1997 Subdivision 28-F & TR 97/11). Not tax advice.
 Confirm claims with a registered tax agent. Retain for 5 years per Subdivision 28-H / Section 900-165.
-KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected
+KiloClaim is an independent software application and is NOT affiliated with, endorsed by, or connected
 to the Australian Taxation Office (ATO) or the Tax Practitioners Board (TPB).
 ====================================================================================================
 ''';

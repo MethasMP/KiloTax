@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KiloTax App Store Screenshot Generator
+KiloClaim App Store Screenshot Generator
 Target: 1320 x 2868 px (Apple 6.9" display - iPhone 16/17/18 Pro Max)
 Color Theme: High-Vis Aussie Tradie (Amber #F59E0B, Carbon #0F172A, Mint #10B981)
 Compliance: Strict Apple HIG (No fake device hardware bezels, no alpha channel, legal disclaimers included)
@@ -572,7 +572,7 @@ def generate_slide_5():
       
       <!-- PDF Document Header -->
       <g transform="translate(48, 50)">
-        <text x="0" y="40" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="38" font-weight="900" fill="#0F172A">KILOTAX AUDIT REPORT</text>
+        <text x="0" y="40" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="38" font-weight="900" fill="#0F172A">KILOCLAIM AUDIT REPORT</text>
         <text x="0" y="75" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="600" fill="#64748B">ATO CENTS PER KM COMPLIANCE DOSSIER • 2026–27 FINANCIAL YEAR</text>
         <rect x="740" y="0" width="190" height="40" rx="10" fill="#ECFDF5" />
         <text x="835" y="27" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="18" font-weight="800" fill="#059669">AUDIT CERTIFIED</text>
@@ -656,7 +656,7 @@ def generate_slide_5():
 
   <!-- Legal Disclaimer -->
   <text x="660" y="2755" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="400" fill="#64748B">
-    Records generated adhere to ATO record-keeping requirements under Section 900-115 of ITAA 1997. KiloTax is not affiliated with the Australian Taxation Office.
+    Records generated adhere to ATO record-keeping requirements under Section 900-115 of ITAA 1997. KiloClaim is not affiliated with the Australian Taxation Office.
   </text>
 </svg>"""
 
@@ -750,7 +750,7 @@ def generate_slide_6():
 
   <!-- Legal Disclaimer -->
   <text x="660" y="2755" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="22" font-weight="400" fill="#64748B">
-    All trip logs and tax calculations are processed on your device. Optional cloud backup is encrypted. KiloTax never sells user location data.
+    All trip logs and tax calculations are processed on your device. Optional cloud backup is encrypted. KiloClaim never sells user location data.
   </text>
 </svg>"""
 
@@ -774,7 +774,7 @@ HTML_GALLERY = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>KiloTax App Store Screenshots Inspector (6.9" Display)</title>
+  <title>KiloClaim App Store Screenshots Inspector (6.9" Display)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -895,7 +895,7 @@ HTML_GALLERY = """<!DOCTYPE html>
 <body>
   <header>
     <div>
-      <h1>KiloTax App Store Screenshots (6.9" Display)</h1>
+      <h1>KiloClaim App Store Screenshots (6.9" Display)</h1>
       <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">iPhone 16 Pro Max / 17 Pro Max / 18 Pro Max • Native 1320 × 2868 px</p>
     </div>
     <div class="specs-badge">

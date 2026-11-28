@@ -76,7 +76,7 @@ class HardwareBluetoothService {
         }
       }
     } catch (e) {
-      debugPrint('[KiloTax Bluetooth] Error querying system audio devices: $e');
+      debugPrint('[KiloClaim Bluetooth] Error querying system audio devices: $e');
     }
     return audioDevices;
   }
@@ -107,7 +107,7 @@ class HardwareBluetoothService {
       }
       yield discovered.values.toList();
     } catch (e) {
-      debugPrint('[KiloTax Bluetooth] Note querying system devices: $e');
+      debugPrint('[KiloClaim Bluetooth] Note querying system devices: $e');
     }
 
     try {
@@ -146,7 +146,7 @@ class HardwareBluetoothService {
       }
     } catch (e) {
       debugPrint(
-          '[KiloTax Bluetooth] Live scan error or simulator fallback: $e');
+          '[KiloClaim Bluetooth] Live scan error or simulator fallback: $e');
     } finally {
       try {
         if (FlutterBluePlus.isScanningNow) {
@@ -208,7 +208,7 @@ class HardwareBluetoothService {
       }
       yield _rankDevices(discovered.values.toList(), preferredVehicleMake);
     } catch (e) {
-      debugPrint('[KiloTax Bluetooth] System devices query note: $e');
+      debugPrint('[KiloClaim Bluetooth] System devices query note: $e');
     }
 
     // Also query generic system devices without filter for Android & compatible iOS devices
@@ -234,7 +234,7 @@ class HardwareBluetoothService {
     try {
       final isSupported = await FlutterBluePlus.isSupported;
       if (!isSupported) {
-        debugPrint('[KiloTax Bluetooth] Bluetooth is not supported on this device');
+        debugPrint('[KiloClaim Bluetooth] Bluetooth is not supported on this device');
         return;
       }
 
@@ -246,11 +246,11 @@ class HardwareBluetoothService {
             .timeout(const Duration(milliseconds: 1200), onTimeout: () => BluetoothAdapterState.on);
         if (adapterState == BluetoothAdapterState.off ||
             adapterState == BluetoothAdapterState.unauthorized) {
-          debugPrint('[KiloTax Bluetooth] Bluetooth adapter is not enabled ($adapterState)');
+          debugPrint('[KiloClaim Bluetooth] Bluetooth adapter is not enabled ($adapterState)');
           return;
         }
       } catch (e) {
-        debugPrint('[KiloTax Bluetooth] Note reading adapter state: $e');
+        debugPrint('[KiloClaim Bluetooth] Note reading adapter state: $e');
       }
 
       if (!FlutterBluePlus.isScanningNow) {
@@ -296,7 +296,7 @@ class HardwareBluetoothService {
         }
       }
     } catch (e) {
-      debugPrint('[KiloTax Bluetooth] Continuous radar scan error: $e');
+      debugPrint('[KiloClaim Bluetooth] Continuous radar scan error: $e');
     } finally {
       await stopScan();
     }

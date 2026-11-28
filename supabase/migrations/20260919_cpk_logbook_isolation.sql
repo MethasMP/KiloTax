@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: CPK & Logbook Isolation & Telemetry Evidence Source
+-- KiloClaim Database Migration: CPK & Logbook Isolation & Telemetry Evidence Source
 -- Adds explicit tax_method and evidence_source columns to trips table.
 -- Ensures zero cross-contamination between CPK (Subdiv 28-C) & Logbook (Subdiv 28-F).
 -- ==============================================================================

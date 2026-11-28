@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kilotax/data/models/user_profile.dart';
-import 'package:kilotax/services/tracking/autonomous_trip_detector.dart';
-import 'package:kilotax/services/tracking/road_snap_routing_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/user_profile.dart';
+import 'package:kiloclaim/services/tracking/autonomous_trip_detector.dart';
+import 'package:kiloclaim/services/tracking/road_snap_routing_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Position _createFix({

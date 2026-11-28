@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn KiloTax's core value proposition into visceral "Magic Moments" for the exhausted Tradie by connecting spatial bounding boxes directly into single-shot camera capture, providing instant tactile feedback, and making Accountant Export a 1-tap joy.
+**Goal:** Turn KiloClaim's core value proposition into visceral "Magic Moments" for the exhausted Tradie by connecting spatial bounding boxes directly into single-shot camera capture, providing instant tactile feedback, and making Accountant Export a 1-tap joy.
 
 **Architecture:**
 1. **End-to-End Spatial OCR Plumbing:** Wire `extraction.blocks` directly from `ReceiptOcrEngine` into `_intelligence.analyseText(extraction.text, blocks: extraction.blocks)` inside [scan_receipt_screen.dart](file:///Users/methas/Desktop/DriveLog/lib/ui/screens/expenses/scan_receipt_screen.dart).

@@ -18,12 +18,18 @@ import '../trips/widgets/trip_purpose_selector.dart';
 /// 100% Focused on Gapless Continuous Odometer & Statutory Business/Personal Ratio.
 class LogbookTripEntryScreen extends StatefulWidget {
   final AppState appState;
+  final String? vehicleId;
+  final DateTime? initialDate;
+  final bool requireDateConfirmation;
   final Trip? detectedTrip;
   final OdometerGap? odometerGap;
 
   const LogbookTripEntryScreen({
     super.key,
     required this.appState,
+    this.vehicleId,
+    this.initialDate,
+    this.requireDateConfirmation = false,
     this.detectedTrip,
     this.odometerGap,
   });
@@ -47,8 +53,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     super.initState();
     final detected = widget.detectedTrip;
     final gap = widget.odometerGap;
-    _dateConfirmed = gap == null;
-    _tripDate = detected?.date ?? DateTime.now();
+    _dateConfirmed = gap == null && !widget.requireDateConfirmation;
+    _tripDate = detected?.date ?? widget.initialDate ?? DateTime.now();
     _selectedPurpose = detected?.classification == TripClassification.personal
         ? 'Personal'
         : detected?.purpose ?? '';
@@ -65,7 +71,17 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     );
     _customStartOdo = gap?.startOdo ??
         widget.detectedTrip?.startOdometer ??
-        widget.appState.currentOdometer;
+        (widget.vehicleId == null
+            ? widget.appState.currentOdometer
+            : widget.appState.trips
+                .where((t) => t.vehicleId == widget.vehicleId && !t.isDeleted)
+                .fold<double>(
+                    widget.appState.vehicles
+                        .where((v) => v.id == widget.vehicleId)
+                        .first
+                        .initialOdometer,
+                    (reading, t) =>
+                        t.endOdometer > reading ? t.endOdometer : reading));
   }
 
   @override
@@ -77,7 +93,9 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
   }
 
   Future<void> _saveTrip() async {
-    if (widget.appState.primaryVehicle == null && widget.detectedTrip == null) {
+    if (widget.vehicleId == null &&
+        widget.appState.primaryVehicle == null &&
+        widget.detectedTrip == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Choose a vehicle before adding a trip.')));
       return;
@@ -111,7 +129,8 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     final endOdo = startOdo + parsedDist;
     final gap = widget.odometerGap;
     if (gap != null &&
-        (widget.appState.primaryVehicle?.id != gap.vehicleId ||
+        ((widget.vehicleId ?? widget.appState.primaryVehicle?.id) !=
+                gap.vehicleId ||
             !widget.appState.isUnrecordedOdometerSpan(
                 vehicleId: gap.vehicleId,
                 startOdo: startOdo,
@@ -189,7 +208,7 @@ class _LogbookTripEntryScreenState extends State<LogbookTripEntryScreen> {
     final baseTrip = widget.detectedTrip ??
         Trip(
           id: 'logbook_trip_${DateTime.now().microsecondsSinceEpoch}',
-          vehicleId: widget.appState.primaryVehicle!.id,
+          vehicleId: widget.vehicleId ?? widget.appState.primaryVehicle!.id,
           date: _tripDate,
           purpose: _selectedPurpose,
           taxMethod: TaxMethod.logbook,

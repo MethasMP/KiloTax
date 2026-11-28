@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/onboarding/onboarding_flow_screen.dart';
-import 'package:kilotax/ui/screens/onboarding/onboarding_slides_screen.dart';
-import 'package:kilotax/ui/screens/onboarding/widgets/permission_preprompt_screen.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/first_trip_card.dart';
-import 'package:kilotax/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
-import 'package:kilotax/ui/screens/tracking/tracking_setup_screen.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/onboarding/onboarding_flow_screen.dart';
+import 'package:kiloclaim/ui/screens/onboarding/onboarding_slides_screen.dart';
+import 'package:kiloclaim/ui/screens/onboarding/widgets/permission_preprompt_screen.dart';
+import 'package:kiloclaim/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/first_trip_card.dart';
+import 'package:kiloclaim/ui/screens/dashboard/widgets/home_telemetry_capsule.dart';
+import 'package:kiloclaim/ui/screens/tracking/tracking_setup_screen.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -24,14 +24,17 @@ void main() {
       (tester) async {
     await tester.pumpWidget(wrap(const OnboardingFlowScreen()));
     expect(find.byType(OnboardingSlidesScreen), findsOneWidget);
-    expect(find.text('Already have an account? Sign in'), findsOneWidget);
     expect(find.text('No account needed to get started.'), findsNothing);
     expect(find.textContaining('Step 1 of'), findsNothing);
     await tester.ensureVisible(find.text('Get started'));
     await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
+    expect(find.text('Already have an account?'), findsNothing);
     expect(find.text('Continue without an account'), findsOneWidget);
     await tester.tap(find.text('Continue without an account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start on this device'), findsOneWidget);
+    await tester.tap(find.text('Continue on this device'));
     await tester.pumpAndSettle();
     expect(find.byType(PermissionPrepromptScreen), findsOneWidget);
     await tester.tap(find.text('I’ll log trips manually instead'));
@@ -76,6 +79,9 @@ void main() {
     expect(find.text('Continue with Apple'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
     await tester.tap(find.text('Continue without an account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start on this device'), findsOneWidget);
+    await tester.tap(find.text('Continue on this device'));
     await tester.pumpAndSettle();
     expect(state.isGuestMode, isTrue);
     expect(find.byType(PermissionPrepromptScreen), findsOneWidget);

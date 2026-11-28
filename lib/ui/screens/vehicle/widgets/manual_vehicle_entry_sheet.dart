@@ -52,7 +52,8 @@ class __ManualVehicleEntrySheetState extends State<ManualVehicleEntrySheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: EdgeInsets.only(
           top: 14,
           left: 20,

@@ -3,9 +3,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
-import 'package:kilotax/services/ocr/receipt_audit_service.dart';
-import 'package:kilotax/services/ocr/receipt_pre_db_validator.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_audit_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_pre_db_validator.dart';
 
 void main() {
   test('record current extraction and audit boundary behavior', () async {

@@ -1,11 +1,11 @@
 # Implementation Plan: Sensor Fusion & iOS Background Telemetry Hardening
 
 ## Overview
-Implement and verify the end-to-end 3-stage core tracking pipeline for KiloTax iOS First, ensuring zero battery drain, zero phantom distance accumulation at red lights, 100% background survival through CoreBluetooth State Restoration, and seamless EOD trip review.
+Implement and verify the end-to-end 3-stage core tracking pipeline for KiloClaim iOS First, ensuring zero battery drain, zero phantom distance accumulation at red lights, 100% background survival through CoreBluetooth State Restoration, and seamless EOD trip review.
 
 ## User Review Required
 > [!IMPORTANT]
-> The primary focus is **iOS First**: Hardening `KiloTaxBackgroundEngine.swift`, ensuring ZUPT stationary suppression passes 100%, and validating the data pipeline from dead-app state restoration to Flutter SQLite ledger and EOD Review UI.
+> The primary focus is **iOS First**: Hardening `KiloClaimBackgroundEngine.swift`, ensuring ZUPT stationary suppression passes 100%, and validating the data pipeline from dead-app state restoration to Flutter SQLite ledger and EOD Review UI.
 
 ---
 
@@ -13,7 +13,7 @@ Implement and verify the end-to-end 3-stage core tracking pipeline for KiloTax i
 
 ```
 [ Stage 1: Vehicle Engine Start (Anchor) ]
-  └── iOS CBCentralManager with State Restoration ('KiloTaxCarBeacon') wakes dead app.
+  └── iOS CBCentralManager with State Restoration ('KiloClaimCarBeacon') wakes dead app.
   └── Low-memory native GPS pipeline activates (RAM < 2MB).
   └── Stationary anti-drift filter (ZUPT) engages (0.00 km accumulation while parked/idling).
 
@@ -41,11 +41,11 @@ Implement and verify the end-to-end 3-stage core tracking pipeline for KiloTax i
 
 ### Task 2: Verify and Harden Native Telemetry Bridge on iOS
 - **Files:**
-  - `ios/Runner/KiloTaxBackgroundEngine.swift`
+  - `ios/Runner/KiloClaimBackgroundEngine.swift`
   - `lib/services/tracking/native_hardware_telemetry_bridge.dart`
 - **Changes:**
-  - Ensure `KiloTaxBackgroundEngine` correctly stores in-flight trip coordinates into `UserDefaults` with atomic commit.
-  - Expose `finalizeNativeTrip()` method via Flutter `MethodChannel('kilotax/hardware_telemetry')`.
+  - Ensure `KiloClaimBackgroundEngine` correctly stores in-flight trip coordinates into `UserDefaults` with atomic commit.
+  - Expose `finalizeNativeTrip()` method via Flutter `MethodChannel('kiloclaim/hardware_telemetry')`.
   - Handle state restoration callback `centralManager(_:willRestoreState:)` so when Bluetooth beacon reconnects, location updates resume without launching full Flutter UI into foreground.
 - **Verification:** Create unit test `test/services/tracking/native_telemetry_bridge_test.dart`.
 

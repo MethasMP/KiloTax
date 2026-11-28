@@ -117,13 +117,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       try {
         await FlutterEmailSender.send(Email(
           recipients: const ['methaspak@gmail.com'],
-          subject: 'KiloTax product feedback',
+          subject: 'KiloClaim product feedback',
           body: draft.message,
           attachmentPaths: const [],
         ));
       } catch (_) {
         await SharePlus.instance.share(ShareParams(
-          subject: 'KiloTax product feedback',
+          subject: 'KiloClaim product feedback',
           text: draft.message,
           sharePositionOrigin: origin,
         ));

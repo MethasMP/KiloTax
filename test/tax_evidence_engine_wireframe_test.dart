@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 void main() {
-  group('KiloTax Wireframe & Architecture Verification (21 Specifications)',
+  group('KiloClaim Wireframe & Architecture Verification (21 Specifications)',
       () {
     test('Spec #2: Cents-per-km 5,000 km statutory cap & 91c rate', () {
       expect(AppConstants.activeTaxRule.financialYear, equals('2026-27'));

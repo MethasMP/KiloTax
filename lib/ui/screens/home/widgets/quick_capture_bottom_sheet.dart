@@ -11,6 +11,7 @@ import '../../logbook/logbook_trip_entry_screen.dart';
 import '../../logbook/logbook_progress_screen.dart';
 import '../../logbook/logbook_setup_screen.dart';
 import '../../trips/trip_live_tracking_screen.dart';
+import '../../trips/back_capture_trip_sheet.dart';
 
 class QuickCaptureBottomSheet {
   static void show(BuildContext context, AppState appState) {
@@ -111,6 +112,34 @@ class QuickCaptureBottomSheet {
                   ));
                 },
               ),
+              if (appState.primaryVehicle != null) ...[
+                const SizedBox(height: 10),
+                QuickCaptureOptionTile(
+                  icon: LucideIcons.route,
+                  color: AppColors.workBlue,
+                  title: 'Back-capture missed trip',
+                  subtitle: 'Reconstruct route & km when GPS was off',
+                  onTap: () {
+                    final vehicle = appState.primaryVehicle!;
+                    Navigator.of(ctx).pop();
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => BackCaptureTripSheet(
+                        vehicleId: vehicle.id,
+                        taxMethod: vehicle.taxMethod,
+                        userProfile: appState.userProfile,
+                        jobSites: appState.jobSites,
+                        initialStartOdometer: appState.currentOdometer,
+                        onSave: (trip) {
+                          appState.recordTrip(trip);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
               if (isLogbook) ...[
                 const SizedBox(height: 10),
                 QuickCaptureOptionTile(

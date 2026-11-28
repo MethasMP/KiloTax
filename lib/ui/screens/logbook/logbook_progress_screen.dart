@@ -46,8 +46,7 @@ class LogbookProgressScreen extends StatelessWidget {
     final vehicle = appState.primaryVehicle;
     final period = appState.activeLogbookPeriod;
     final startDate = period?.startDate ?? vehicle?.logbookStartDate;
-    final endDate = period?.endDate ??
-        (startDate != null ? startDate.add(const Duration(days: 84)) : null);
+    final endDate = period?.endDate ?? startDate?.add(const Duration(days: 84));
 
     int gapWeeks = 0;
     if (startDate != null && endDate != null) {
@@ -62,8 +61,8 @@ class LogbookProgressScreen extends StatelessWidget {
           .toSet()
           .length;
 
-      final gapDays =
-          (totalDaysInPeriod - daysWithAtLeastOneTrip).clamp(0, totalDaysInPeriod);
+      final gapDays = (totalDaysInPeriod - daysWithAtLeastOneTrip)
+          .clamp(0, totalDaysInPeriod);
       gapWeeks = (gapDays / 7).round();
     }
 

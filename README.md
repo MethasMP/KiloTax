@@ -1,8 +1,8 @@
-# KiloTax (DriveLog)
+# KiloClaim (DriveLog)
 
 **Australian ATO Logbook & Vehicle Tax Engine Micro-SaaS**
 
-KiloTax is a privacy-first, local-first Flutter application designed for Australian sole traders, tradies, and small businesses to maximize their vehicle tax deductions under ATO rules (Cents per km vs Logbook method).
+KiloClaim is a privacy-first, local-first Flutter application designed for Australian sole traders, tradies, and small businesses to maximize their vehicle tax deductions under ATO rules (Cents per km vs Logbook method).
 
 ## Features
 - **Dual Tax Engine:** Real-time side-by-side comparison between ATO 91c/km (capped at 5,000 km) and the 12-Week Logbook Method.
@@ -14,4 +14,4 @@ KiloTax is a privacy-first, local-first Flutter application designed for Austral
 The dataset `australia_vehicles.json` provides standard vehicle categorizations sourced from BITRE Road Vehicles Australia under Creative Commons Attribution (CC BY 3.0 AU).
 
 CDN Endpoint:
-`https://cdn.jsdelivr.net/gh/MethasMP/KiloTax@main/australia_vehicles.json`
+`https://cdn.jsdelivr.net/gh/MethasMP/KiloClaim@main/australia_vehicles.json`

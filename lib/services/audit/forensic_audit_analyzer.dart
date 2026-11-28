@@ -1,5 +1,7 @@
+import '../../core/constants/app_constants.dart';
 import '../../data/models/trip.dart';
 import '../../data/models/vehicle_expense.dart';
+import '../tracking/odometer_gap_reconciler.dart';
 
 enum AuditRiskStatus {
   auditProof,
@@ -52,21 +54,32 @@ class ForensicAuditReport {
 /// The "102 Value Engine" that scans imported or existing vehicle logs against
 /// strict ATO Subdivision 28-G ITAA 1997 audit requirements, quantifying gaps and lost dollars.
 class ForensicAuditAnalyzer {
-  static const double gapThresholdKm = 5.0;
-  static const double defaultCentsPerKmRate = 0.88; // FY24-25/26 ATO CPK rate
+  static const double gapThresholdKm =
+      OdometerGapReconciler.defaultGapThresholdKm;
+  static double get defaultCentsPerKmRate => AppConstants.centsPerKmRate2026;
 
   ForensicAuditReport analyze({
     required List<Trip> trips,
     required List<VehicleExpense> expenses,
   }) {
-    final sortedTrips = List<Trip>.from(trips)..sort((a, b) => a.date.compareTo(b.date));
+    final activeTrips = trips.where((t) => !t.isDeleted).toList();
+    final sortedByDate = List<Trip>.from(activeTrips)
+      ..sort((a, b) => a.date.compareTo(b.date));
+    final sortedByOdometer = activeTrips
+        .where((t) =>
+            t.startOdometer.isFinite &&
+            t.startOdometer > 0.0 &&
+            t.endOdometer.isFinite &&
+            t.endOdometer > t.startOdometer)
+        .toList()
+      ..sort((a, b) => a.startOdometer.compareTo(b.startOdometer));
     final List<OdometerGap> gaps = [];
     final List<String> recs = [];
 
-    // 1. Odometer Continuity Audit
-    for (int i = 0; i < sortedTrips.length - 1; i++) {
-      final current = sortedTrips[i];
-      final next = sortedTrips[i + 1];
+    // 1. Odometer Continuity Audit (aligned with OdometerGapReconciler)
+    for (int i = 0; i < sortedByOdometer.length - 1; i++) {
+      final current = sortedByOdometer[i];
+      final next = sortedByOdometer[i + 1];
 
       if (next.startOdometer > current.endOdometer + gapThresholdKm) {
         final gap = next.startOdometer - current.endOdometer;
@@ -82,7 +95,7 @@ class ForensicAuditAnalyzer {
     // 2. Expense Substantiation & Linking Audit
     final missingReceipts = expenses.where((e) => e.receiptPath == null || e.receiptPath!.isEmpty).toList();
     final unlinkedExpenses = expenses.where((e) {
-      return !sortedTrips.any((t) => t.linkedExpenseIds.contains(e.id));
+      return !activeTrips.any((t) => t.linkedExpenseIds.contains(e.id));
     }).toList();
 
     double substantiatedExpense = 0.0;
@@ -99,9 +112,9 @@ class ForensicAuditAnalyzer {
     // 3. ATO 12-Week Logbook Duration Audit
     int completedWeeks = 0;
     bool is12WeeksComplete = false;
-    if (sortedTrips.isNotEmpty) {
-      final start = sortedTrips.first.date;
-      final end = sortedTrips.last.date;
+    if (sortedByDate.isNotEmpty) {
+      final start = sortedByDate.first.date;
+      final end = sortedByDate.last.date;
       final diffDays = end.difference(start).inDays;
       completedWeeks = (diffDays / 7).floor();
       is12WeeksComplete = completedWeeks >= 12;

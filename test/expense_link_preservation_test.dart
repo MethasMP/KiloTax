@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'package:kilotax/services/ocr/receipt_audit_service.dart';
-import 'package:kilotax/services/ocr/receipt_intelligence_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_audit_service.dart';
+import 'package:kiloclaim/services/ocr/receipt_intelligence_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/expense_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/storage/local_storage_service.dart';
-import 'package:kilotax/state/app_state.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/storage/local_storage_service.dart';
+import 'package:kiloclaim/state/app_state.dart';
 
 class PausedReceiptAudit extends ReceiptAuditService {
   final completer = Completer<ReceiptAuditTrail>();

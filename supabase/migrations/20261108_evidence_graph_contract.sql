@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Migration: Evidence Graph Core (JobSite POI & Cryptographic Vault)
+-- KiloClaim Migration: Evidence Graph Core (JobSite POI & Cryptographic Vault)
 -- Statutory Reference: ATO ITAA 1997 s 900-165, TR 97/11 & TR 95/34
 -- File: 20261108_evidence_graph_contract.sql
 -- ==============================================================================

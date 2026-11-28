@@ -7,13 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/core/theme/app_theme.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/dashboard/task_home_body.dart';
-import 'package:kilotax/ui/screens/home/main_scaffold_screen.dart';
-import 'package:kilotax/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
-import 'package:kilotax/ui/screens/home/widgets/trips_ledger_tab.dart';
+import 'package:kiloclaim/core/theme/app_theme.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/dashboard/task_home_body.dart';
+import 'package:kiloclaim/ui/screens/home/main_scaffold_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
 import '../support/main_menu_fixtures.dart' as fixtures;
 
 void main() {

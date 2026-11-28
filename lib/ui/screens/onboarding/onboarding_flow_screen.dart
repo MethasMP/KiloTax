@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../state/app_state.dart';
@@ -46,15 +47,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     }
 
     if (_currentStep == 0) {
-      return OnboardingSlidesScreen(onComplete: () async {
-        await appState.completeOnboarding();
-        if (mounted) {
-          if (appState.isAuthenticated) {
-            setState(() => _currentStep = 2);
-          } else {
-            setState(() => _currentStep = 1);
-          }
-        }
+      return OnboardingSlidesScreen(onComplete: () {
+        setState(() => _currentStep = appState.isAuthenticated ? 2 : 1);
+        unawaited(appState.completeOnboarding());
       });
     }
 

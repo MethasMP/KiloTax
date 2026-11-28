@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/services/engine/evidence_engine.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/services/engine/evidence_engine.dart';
 
 void main() {
   group('EvidenceEngine Receipt Auto-Link Tests (INV-B01, INV-B02, INV-B04)', () {

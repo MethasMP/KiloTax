@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Security Invoker Views & Safe Search Path
+-- KiloClaim Database Migration: Security Invoker Views & Safe Search Path
 -- Hardens PostgreSQL database against security definer privilege escalation
 -- and enforces RLS context propagation by setting (security_invoker = true) on views.
 -- References: Supabase Database Security Advisors & PostgreSQL Best Practices

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/ui/screens/home/widgets/trips_ledger_tab.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
 import '../support/main_menu_fixtures.dart' as fixtures;
 
 void main() {
@@ -85,6 +86,56 @@ void main() {
     expect(find.text('Archived site'), findsOneWidget);
     expect(find.text('Smith renovation'), findsNothing);
     expect(state.primaryVehicle?.id, 'audit');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'empty state shows Auto-GPS status, logbook progress, and 48dp CTA',
+      (tester) async {
+    final state = await fixtures.seed(TaxMethod.logbook, empty: true);
+    addTearDown(state.dispose);
+    await tester.pumpWidget(MaterialApp(home: TripsLedgerTab(appState: state)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Auto-GPS: Armed'), findsOneWidget);
+    expect(find.text('No trips yet'), findsOneWidget);
+    expect(find.text('12-week logbook ready to start'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    final ctaSize = tester.getSize(find.widgetWithText(FilledButton, 'Add a trip'));
+    expect(ctaSize.height, greaterThanOrEqualTo(48.0));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('trip card displays provenance, linked receipt count, and job tag',
+      (tester) async {
+    final state = await fixtures.seed(TaxMethod.centsPerKm, empty: true);
+    addTearDown(state.dispose);
+    state.recordExpense(VehicleExpense(
+      id: 'exp-1',
+      vehicleId: 'audit',
+      date: DateTime.now(),
+      amount: 45.0,
+      supplier: 'BP',
+      category: ExpenseCategory.fuel,
+    ));
+    state.recordTrip(Trip(
+      id: 'ev-trip',
+      vehicleId: 'audit',
+      date: DateTime.now(),
+      distanceKm: 18.4,
+      purpose: 'Site inspection',
+      classification: TripClassification.business,
+      destinationAddress: '12 Oak St',
+      evidenceSource: 'auto_telemetry',
+      linkedExpenseIds: const ['exp-1'],
+      jobReference: 'JOB-42',
+    ));
+    await tester.pumpWidget(MaterialApp(home: TripsLedgerTab(appState: state)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Auto-GPS'), findsOneWidget);
+    expect(find.text('1 receipt'), findsOneWidget);
+    expect(find.text('Job: JOB-42'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

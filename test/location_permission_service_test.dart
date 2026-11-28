@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:kilotax/services/tracking/location_permission_service.dart';
-import 'package:kilotax/ui/widgets/location_escalation_dialog.dart';
+import 'package:kiloclaim/services/tracking/location_permission_service.dart';
+import 'package:kiloclaim/ui/widgets/location_escalation_dialog.dart';
 
 void main() {
   group('LocationPermissionService Architecture & Correctness Tests', () {

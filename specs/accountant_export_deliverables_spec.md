@@ -3,7 +3,7 @@
 
 ### Business & Domain Context
 Under ATO guidelines (ITAA 1997 Division 28 & Subdivision 28-F, TR 97/11), tax agents (accountants) require mathematically immutable, audit-proof, and clean deliverables without junk or unverified claims.
-KiloTax provides exactly 2 files:
+KiloClaim provides exactly 2 files:
 1. One A4 PDF (Master Report / Summary Declaration)
 2. One Multi-Tab OpenXML Excel Workbook (`.xlsx`)
 

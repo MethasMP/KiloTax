@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/services/vehicle/vehicle_classification_engine.dart';
-import 'package:kilotax/data/models/vehicle.dart';
+import 'package:kiloclaim/services/vehicle/vehicle_classification_engine.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
 
 void main() {
   group('VehicleClassificationEngine Tests', () {

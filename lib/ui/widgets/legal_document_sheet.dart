@@ -75,7 +75,8 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                const Expanded(
+                    child: Text(
                   'Legal',
                   style: TextStyle(
                     fontSize: 17,
@@ -83,8 +84,10 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
                     color: AppColors.ink,
                     letterSpacing: -0.3,
                   ),
-                ),
-                TextButton(
+                )),
+                const SizedBox(width: 12),
+                Flexible(
+                    child: TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.deepNavy,
                     padding: const EdgeInsets.symmetric(
@@ -100,7 +103,7 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
                       fontSize: 15,
                     ),
                   ),
-                ),
+                )),
               ],
             ),
           ),
@@ -195,7 +198,7 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
         Text(
-          'KiloTax Privacy Policy',
+          'KiloClaim Privacy Policy',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -215,14 +218,14 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
         _LegalSection(
           title: '1. Overview & Compliance Framework',
           content:
-              'KiloTax ("we", "us", or "our") respects your fundamental right to privacy. We handle your personal and telemetry information in strict compliance with the Australian Privacy Principles (APPs) set out in the Privacy Act 1988 (Cth), Apple App Store Review Guidelines (Section 5.1.1), and Google Play User Data & Location Policies.',
+              'KiloClaim ("we", "us", or "our") respects your fundamental right to privacy. We handle your personal and telemetry information in strict compliance with the Australian Privacy Principles (APPs) set out in the Privacy Act 1988 (Cth), Apple App Store Review Guidelines (Section 5.1.1), and Google Play User Data & Location Policies.',
         ),
         _LegalSection(
           title:
               '2. Location & Background Tracking Disclosures (Google Play & Apple Compliant)',
           content:
-              'To automatically detect business trips and generate Australian Taxation Office (ATO) compliant vehicle logbooks, KiloTax accesses your device\'s precise location (GPS) and physical activity/motion sensors.\n\n'
-              '• Prominent Disclosure: KiloTax collects location data to calculate trip distances, start/end locations, and route logs even when the app is closed or not in use, strictly for automated trip detection.\n'
+              'To automatically detect business trips and generate Australian Taxation Office (ATO) compliant vehicle logbooks, KiloClaim accesses your device\'s precise location (GPS) and physical activity/motion sensors.\n\n'
+              '• Prominent Disclosure: KiloClaim collects location data to calculate trip distances, start/end locations, and route logs even when the app is closed or not in use, strictly for automated trip detection.\n'
               '• Absolute Purpose Limitation: Location data is exclusively used for your mileage logbook deductions and is never shared, rented, or sold to third-party advertisers, data brokers, or insurance companies.\n'
               '• Full User Control: Automated background trip detection can be paused or disabled at any time in the app settings, allowing purely manual trip entry.',
         ),
@@ -236,7 +239,7 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
         _LegalSection(
           title: '4. Data Retention & ATO 5-Year Requirement',
           content:
-              'Under ATO taxation rules, business vehicle logbooks and deduction evidence must be retained for 5 years. KiloTax stores your finalized tax logs in your secure cloud vault to preserve your audit defense trail. You retain full ownership to export your records at any time.',
+              'Under ATO taxation rules, business vehicle logbooks and deduction evidence must be retained for 5 years. KiloClaim stores your finalized tax logs in your secure cloud vault to preserve your audit defense trail. You retain full ownership to export your records at any time.',
         ),
         _LegalSection(
           title:
@@ -261,7 +264,7 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
         Text(
-          'KiloTax Terms of Service',
+          'KiloClaim Terms of Service',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -281,8 +284,8 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
         _LegalSection(
           title: '1. Tax & Legal Advice Disclaimer',
           content:
-              'KiloTax is a mileage tracking and record-keeping software tool designed to assist Australian sole traders, tradies, and businesses in maintaining records in line with ATO guidelines. KiloTax is NOT a Registered Tax Agent with the Tax Practitioners Board (TPB) or a financial advisory firm. The software and its generated summaries do not constitute tax, financial, or legal advice. Users must verify all deductions and consult a licensed tax agent or accountant before lodging returns.\n\n'
-              'KiloTax is an independent software application and is NOT affiliated with, endorsed by, or connected to the Australian Taxation Office (ATO). Statutory mileage rates (e.g. 91c/km for 2026-27) are sourced from publicly available ATO published rates at ato.gov.au.',
+              'KiloClaim is a mileage tracking and record-keeping software tool designed to assist Australian sole traders, tradies, and businesses in maintaining records in line with ATO guidelines. KiloClaim is NOT a Registered Tax Agent with the Tax Practitioners Board (TPB) or a financial advisory firm. The software and its generated summaries do not constitute tax, financial, or legal advice. Users must verify all deductions and consult a licensed tax agent or accountant before lodging returns.\n\n'
+              'KiloClaim is an independent software application and is NOT affiliated with, endorsed by, or connected to the Australian Taxation Office (ATO). Statutory mileage rates (e.g. 91c/km for 2026-27) are sourced from publicly available ATO published rates at ato.gov.au.',
         ),
         _LegalSection(
           title: '2. User Responsibility for ATO Compliance',
@@ -302,12 +305,12 @@ class _LegalDocumentSheetState extends State<LegalDocumentSheet> {
         _LegalSection(
           title: '4. Intellectual Property & License',
           content:
-              'We grant you a revocable, non-exclusive, non-transferable license to download, install, and use KiloTax for personal or sole trader record-keeping in accordance with these Terms.',
+              'We grant you a revocable, non-exclusive, non-transferable license to download, install, and use KiloClaim for personal or sole trader record-keeping in accordance with these Terms.',
         ),
         _LegalSection(
           title: '5. Limitation of Liability & Consumer Guarantees',
           content:
-              'Our services come with non-excludable guarantees under Australian Consumer Law (Competition and Consumer Act 2010). Subject to those non-excludable rights, KiloTax shall not be liable for any indirect, incidental, or tax-related penalties, fines, or loss of deductions arising from device inaccuracies, signal loss, user misclassification, or system interruption.',
+              'Our services come with non-excludable guarantees under Australian Consumer Law (Competition and Consumer Act 2010). Subject to those non-excludable rights, KiloClaim shall not be liable for any indirect, incidental, or tax-related penalties, fines, or loss of deductions arising from device inaccuracies, signal loss, user misclassification, or system interruption.',
         ),
         _LegalSection(
           title: '6. Governing Law & Jurisdiction',

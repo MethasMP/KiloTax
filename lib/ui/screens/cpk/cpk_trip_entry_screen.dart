@@ -1,3 +1,4 @@
+import '../../../services/tax/ato_tax_period_engine.dart';
 import '../../widgets/adaptive_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,11 +16,17 @@ import '../../../core/theme/app_color.dart';
 /// 100% Lean: Net Distance + 1-Tap Bulky Tools Exception. No Odometer. No Personal Trip.
 class CpkTripEntryScreen extends StatefulWidget {
   final AppState appState;
+  final String? vehicleId;
+  final DateTime? initialDate;
+  final bool requireDateConfirmation;
   final Trip? detectedTrip;
 
   const CpkTripEntryScreen({
     super.key,
     required this.appState,
+    this.vehicleId,
+    this.initialDate,
+    this.requireDateConfirmation = false,
     this.detectedTrip,
   });
 
@@ -36,7 +43,9 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
   late TextEditingController _jobRefController;
   double _currentDistance = 0.0;
   bool _isSaving = false;
-  late DateTime _tripDate = widget.detectedTrip?.date ?? DateTime.now();
+  late DateTime _tripDate =
+      widget.detectedTrip?.date ?? widget.initialDate ?? DateTime.now();
+  late bool _dateConfirmed = !widget.requireDateConfirmation;
   TradePoiMatch? _detectedTradePoi;
 
   @override
@@ -97,6 +106,11 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
 
   void _saveTrip() {
     if (_isSaving) return;
+    if (!_dateConfirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Choose the actual trip date before saving.')));
+      return;
+    }
     setState(() => _isSaving = true);
     HapticFeedback.heavyImpact();
     final parsedDist =
@@ -136,7 +150,10 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
     final trip = Trip(
       id: widget.detectedTrip?.id ??
           'cpk_trip_${DateTime.now().millisecondsSinceEpoch}',
-      vehicleId: widget.appState.primaryVehicle?.id ?? 'default_vehicle',
+      vehicleId: widget.vehicleId ??
+          widget.detectedTrip?.vehicleId ??
+          widget.appState.primaryVehicle?.id ??
+          'default_vehicle',
       distanceKm: parsedDist,
       date: _tripDate,
       purpose: effectivePurpose,
@@ -170,10 +187,22 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
     if (!mounted || date == null) return;
     setState(() => _tripDate = DateTime(
         date.year, date.month, date.day, _tripDate.hour, _tripDate.minute));
+    _dateConfirmed = true;
   }
 
   @override
   Widget build(BuildContext context) {
+    final activeYear =
+        widget.appState.activeTaxRule.financialYear.replaceAll('–', '-');
+    final hasEstimateScope = (widget.vehicleId ??
+                widget.detectedTrip?.vehicleId ??
+                widget.appState.primaryVehicle?.id) ==
+            widget.appState.primaryVehicle?.id &&
+        const AtoTaxPeriodEngine()
+                .forDate(_tripDate)
+                .shortLabel
+                .replaceAll('–', '-') ==
+            activeYear;
     final rate = widget.appState.activeTaxRule.centsPerKmRate;
     final rateCents = (rate * 100).toInt();
     final claimAmount = _currentDistance * rate;
@@ -221,7 +250,9 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
             const Text('Trip details', style: AppTextStyles.sectionTitle),
             const SizedBox(height: 12),
             Text(
-                'Record the distance and work purpose for this trip. Estimate uses $rateCents¢/km.',
+                hasEstimateScope
+                    ? 'Record the distance and work purpose for this trip. Estimate uses $rateCents¢/km.'
+                    : 'Record the distance and work purpose. View the estimate in the accountant pack for this vehicle and year.',
                 style: AppTextStyles.secondaryMedium),
             const SizedBox(height: 12),
             Align(
@@ -229,7 +260,9 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
                 child: TextButton.icon(
                     onPressed: _chooseDate,
                     icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                    label: Text(Formatters.date(_tripDate)))),
+                    label: Text(_dateConfirmed
+                        ? Formatters.date(_tripDate)
+                        : 'Choose actual trip date'))),
             const SizedBox(height: 12),
             TextField(
               controller: _distanceController,
@@ -518,24 +551,28 @@ class _CpkTripEntryScreenState extends State<CpkTripEntryScreen> {
             ),
             const SizedBox(height: 24),
 
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text('Deduction estimate',
-                  style: AppTextStyles.secondaryMedium),
-              children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const SizedBox(height: 12),
-                  Text('Estimated deduction', style: AppTextStyles.caption),
-                  Text('+${Formatters.currency(claimAmount)}',
-                      style: AppTextStyles.sectionTitle),
-                  const SizedBox(height: 8),
-                  Text(
-                      '${(widget.appState.activeTaxRule.centsPerKmMaxKm - (widget.appState.taxSummary.businessKm + _currentDistance)).clamp(0.0, 5000.0).toStringAsFixed(0)} km remaining of 5,000 km annual ATO quota',
-                      style: AppTextStyles.caption),
-                  const SizedBox(height: 20),
-                ])
-              ],
-            ),
+            if (hasEstimateScope)
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('Deduction estimate',
+                    style: AppTextStyles.secondaryMedium),
+                children: [
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        Text('Estimated deduction',
+                            style: AppTextStyles.caption),
+                        Text('+${Formatters.currency(claimAmount)}',
+                            style: AppTextStyles.sectionTitle),
+                        const SizedBox(height: 8),
+                        Text(
+                            '${(widget.appState.activeTaxRule.centsPerKmMaxKm - (widget.appState.taxSummary.businessKm + _currentDistance)).clamp(0.0, 5000.0).toStringAsFixed(0)} km remaining of 5,000 km annual ATO quota',
+                            style: AppTextStyles.caption),
+                        const SizedBox(height: 20),
+                      ])
+                ],
+              ),
             ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: TextButton.icon(

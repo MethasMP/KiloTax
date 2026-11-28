@@ -7,24 +7,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kilotax/core/theme/app_color.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/ui/screens/expenses/expense_detail_screen.dart';
-import 'package:kilotax/ui/screens/expenses/scan_receipt_screen.dart';
-import 'package:kilotax/ui/screens/tax/pre_flight_review_screen.dart';
-import 'package:kilotax/services/scanner/document_scanner_service.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/state/app_state.dart';
-import 'package:kilotax/ui/screens/cpk/cpk_trip_entry_screen.dart';
-import 'package:kilotax/ui/screens/home/main_scaffold_screen.dart';
-import 'package:kilotax/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
-import 'package:kilotax/ui/screens/logbook/logbook_setup_screen.dart';
-import 'package:kilotax/ui/screens/home/widgets/trips_ledger_tab.dart';
-import 'package:kilotax/ui/screens/expenses/evidence_expenses_screen.dart';
-import 'package:kilotax/ui/screens/tax/tax_summary_screen.dart';
-import 'package:kilotax/ui/widgets/tactile_primary_button.dart';
-import 'package:kilotax/ui/screens/logbook/widgets/logbook_design.dart';
+import 'package:kiloclaim/core/theme/app_color.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/ui/screens/expenses/expense_detail_screen.dart';
+import 'package:kiloclaim/ui/screens/expenses/scan_receipt_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/pre_flight_review_screen.dart';
+import 'package:kiloclaim/services/scanner/document_scanner_service.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/state/app_state.dart';
+import 'package:kiloclaim/ui/screens/cpk/cpk_trip_entry_screen.dart';
+import 'package:kiloclaim/ui/screens/home/main_scaffold_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/scaffold_bottom_nav_bar.dart';
+import 'package:kiloclaim/ui/screens/logbook/logbook_setup_screen.dart';
+import 'package:kiloclaim/ui/screens/home/widgets/trips_ledger_tab.dart';
+import 'package:kiloclaim/ui/screens/expenses/evidence_expenses_screen.dart';
+import 'package:kiloclaim/ui/screens/tax/tax_summary_screen.dart';
+import 'package:kiloclaim/ui/widgets/tactile_primary_button.dart';
+import 'package:kiloclaim/ui/screens/logbook/widgets/logbook_design.dart';
 import '../tool/design_audit/menu_audit_test.dart' as fixtures;
 
 class AuditScanner extends DocumentScannerService {
@@ -216,7 +216,7 @@ void main() {
     final s = await fixtures.seed(TaxMethod.centsPerKm);
     addTearDown(s.dispose);
     final dir = await tester.runAsync(() async {
-      final dir = await Directory.systemTemp.createTemp('kilotax-ui-package-');
+      final dir = await Directory.systemTemp.createTemp('kiloclaim-ui-package-');
       await File('${dir.path}/fixture-Tax_Report.pdf')
           .writeAsString('visual fixture');
       await File('${dir.path}/fixture-Trip_Ledger.csv')

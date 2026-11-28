@@ -1,13 +1,11 @@
 import '../../widgets/adaptive_row.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../services/tracking/geocoding_service.dart';
 import '../../../services/tracking/hardware_bluetooth_service.dart';
@@ -63,6 +61,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
   late AustralianVehicleCatalogEntry _selectedVehicle = widget.initialVehicle ??
       AustralianVehicleCatalog.popularTradieVehicles.first;
   bool _isSearching = false;
+  bool _searchPending = false;
   List<AustralianVehicleCatalogEntry> _searchResults = [];
 
   // Opening Odometer Evidence
@@ -107,8 +106,9 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
     });
   }
 
-  // Tax method: Default to Logbook matching RECOMMENDED status
+  // No UI recommendation: a method must be explicitly confirmed.
   TaxMethod _selectedTaxMethod = TaxMethod.logbook;
+  bool _hasChosenTaxMethod = false;
 
   // Bluetooth link
   String? _selectedBluetoothDevice;
@@ -199,15 +199,23 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
     if (q.isEmpty) {
       setState(() {
         _isSearching = false;
+        _searchPending = false;
         _searchResults = AustralianVehicleCatalog.popularTradieVehicles;
       });
       return;
     }
 
-    setState(() => _isSearching = true);
+    setState(() {
+      _isSearching = true;
+      _searchPending = true;
+      _searchResults = [];
+    });
     AustralianVehicleCatalog.searchAsync(q).then((results) {
       if (mounted && _searchController.text.trim() == q) {
-        setState(() => _searchResults = results);
+        setState(() {
+          _searchResults = results;
+          _searchPending = false;
+        });
       }
     });
   }
@@ -218,6 +226,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
     _odometerController.clear();
     setState(() {
       _selectedVehicle = vehicle;
+      _hasChosenTaxMethod = false;
       _selectedState = 'NSW';
       _regoError = null;
       _odometerError = null;
@@ -285,6 +294,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
           _regoController.clear();
           _odometerController.clear();
           setState(() {
+            _hasChosenTaxMethod = false;
             _selectedVehicle = AustralianVehicleCatalogEntry(
               make: make,
               model: model,
@@ -323,22 +333,17 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
     return Scaffold(
       backgroundColor: AppColor.canvas,
       appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: widget.onCancel != null
             ? IconButton(
+                tooltip: 'Close',
                 icon: const Icon(Icons.close_rounded, color: AppColor.ink),
                 onPressed: widget.onCancel,
               )
             : null,
-        title: const Text('Add Vehicle',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: AppColor.ink,
-            )),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -372,6 +377,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       size: 18, color: AppColor.inkSubtle),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
+                          tooltip: 'Clear search',
                           icon: const Icon(Icons.clear,
                               size: 16, color: AppColor.inkSubtle),
                           onPressed: () {
@@ -407,45 +413,68 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       color: AppColor.ink),
                 ),
                 const SizedBox(height: 8),
-                Material(
-                  color: AppColor.surface,
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: const BorderSide(color: AppColor.line),
+                if (_searchPending)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: const Text('Finding matching vehicles…'),
+                    ),
+                  )
+                else if (_searchResults.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: const Text(
+                        'No matching vehicles. Try another make or model, or enter yours manually below.',
+                        style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: AppColor.inkSubtle),
+                      ),
+                    ),
+                  )
+                else
+                  Material(
+                    color: AppColor.surface,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: AppColor.line),
+                    ),
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, color: AppColor.hairline),
+                      itemBuilder: (ctx, idx) {
+                        final item = _searchResults[idx];
+                        return ListTile(
+                          title: Text(
+                            '${item.make} ${item.model}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14.5,
+                                color: AppColor.ink),
+                          ),
+                          subtitle: Text(
+                            item.vehicleType.displayName,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColor.inkSubtle),
+                          ),
+                          trailing: const Icon(LucideIcons.chevronRight,
+                              size: 16, color: AppColor.inkSubtle),
+                          onTap: () => _selectVehicle(item),
+                        );
+                      },
+                    ),
                   ),
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _searchResults.length,
-                    separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: AppColor.hairline),
-                    itemBuilder: (ctx, idx) {
-                      final item = _searchResults[idx];
-                      return ListTile(
-                        title: Text(
-                          '${item.make} ${item.model}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14.5,
-                              color: AppColor.ink),
-                        ),
-                        subtitle: Text(
-                          item.vehicleType.displayName,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColor.inkSubtle),
-                        ),
-                        trailing: const Icon(LucideIcons.chevronRight,
-                            size: 16, color: AppColor.inkSubtle),
-                        onTap: () => _selectVehicle(item),
-                      );
-                    },
-                  ),
-                ),
               ] else ...[
                 const Text(
-                  'Popular models',
+                  'Common work vehicles',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -473,8 +502,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                       final item =
                           AustralianVehicleCatalog.popularTradieVehicles[idx];
                       return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
                         title: Text(
                           '${item.make} ${item.model}',
                           style: const TextStyle(
@@ -530,6 +559,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       backgroundColor: AppColor.canvas,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -685,8 +715,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                             color: _regoError != null
                                 ? AppColor.critical
                                 : (hasPlate ? AppColor.ink : AppColor.line),
-                            width:
-                                _regoError != null || hasPlate ? 1.4 : 1.0,
+                            width: _regoError != null || hasPlate ? 1.4 : 1.0,
                           ),
                         ),
                         child: AdaptiveRow(
@@ -701,8 +730,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                               },
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                side:
-                                    const BorderSide(color: AppColor.line),
+                                side: const BorderSide(color: AppColor.line),
                               ),
                               color: AppColor.surface,
                               elevation: 4,
@@ -727,8 +755,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                                         if (_selectedState == st) ...[
                                           const Spacer(),
                                           const Icon(LucideIcons.check,
-                                              size: 14,
-                                              color: AppColor.brand),
+                                              size: 14, color: AppColor.brand),
                                         ],
                                       ],
                                     ),
@@ -736,8 +763,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                                 }).toList();
                               },
                               child: Container(
-                                constraints:
-                                    const BoxConstraints(minWidth: 54),
+                                constraints: const BoxConstraints(minWidth: 54),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 14),
                                 decoration: const BoxDecoration(
@@ -860,9 +886,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                             color: _odometerError != null
                                 ? AppColor.critical
                                 : (hasOdo ? AppColor.ink : AppColor.line),
-                            width: _odometerError != null || hasOdo
-                                ? 1.4
-                                : 1.0,
+                            width: _odometerError != null || hasOdo ? 1.4 : 1.0,
                           ),
                         ),
                         child: TextField(
@@ -925,7 +949,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                         style: TextButton.styleFrom(
                           foregroundColor: AppColor.brand,
                           minimumSize: const Size(48, 48),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
                         ),
                         icon: const Icon(LucideIcons.camera, size: 17),
                         label: const Text(
@@ -940,7 +965,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   else
                     Container(
                       key: const Key('odometer_photo_attached_card'),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColor.positiveTint,
                         borderRadius: BorderRadius.circular(10),
@@ -977,10 +1003,12 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                           ),
                           IconButton(
                             key: const Key('remove_odometer_photo_button'),
-                            icon: const Icon(LucideIcons.x, size: 16, color: AppColor.inkSubtle),
+                            icon: const Icon(LucideIcons.x,
+                                size: 16, color: AppColor.inkSubtle),
                             onPressed: _removeOdometerPhoto,
                             tooltip: 'Remove photo',
-                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            constraints: const BoxConstraints(
+                                minWidth: 48, minHeight: 48),
                           ),
                         ],
                       ),
@@ -1078,8 +1106,8 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
                   },
                   style: TextButton.styleFrom(
                     foregroundColor: AppColor.inkSubtle,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   child: const Text(
                     "I'll add plate & odometer later",
@@ -1129,178 +1157,144 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
         VehicleClassificationEngine.isCarForTaxPurposes(previewVehicle);
     final allowedMethods =
         VehicleClassificationEngine.allowedTaxMethods(previewVehicle);
-
     if (!allowedMethods.contains(_selectedTaxMethod)) {
       _selectedTaxMethod = allowedMethods.first;
+      _hasChosenTaxMethod = false;
     }
+    final visibleMethods = isCar
+        ? [TaxMethod.logbook, TaxMethod.centsPerKm]
+        : [TaxMethod.actualExpenses];
 
     return Scaffold(
       backgroundColor: AppColor.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColor.canvas,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: AppColor.ink),
           onPressed: () =>
               setState(() => _stage = VehicleSetupStage.confirmVehicle),
         ),
-        title: const Text('Tax Method',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: AppColor.ink,
-            )),
-        centerTitle: true,
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 40,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Text(
-                          'Choose a record-keeping method',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: AppColor.ink,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'You can change this later in vehicle settings.',
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            color: AppColor.inkMuted,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // If non-car (Truck / commercial vehicle): show Section 8-1 actual expenses callout
-                        if (!isCar) ...[
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: AppColors.amberLight,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                  color:
-                                      AppColors.amber.withValues(alpha: 0.4)),
-                            ),
-                            child: AdaptiveRow(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(LucideIcons.alertTriangle,
-                                    size: 20, color: AppColors.amber),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    VehicleClassificationEngine
-                                            .disqualificationReason(
-                                                previewVehicle) ??
-                                        'Commercial vehicles carrying 1,000 kg or more cannot use Cents per km under ATO rules. Claim actual expenses under Section 8-1 instead.',
-                                    style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.amberDark,
-                                        height: 1.4),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TaxOptionCard(
-                            method: TaxMethod.actualExpenses,
-                            isSelected:
-                                _selectedTaxMethod == TaxMethod.actualExpenses,
-                            onSelect: () => setState(() =>
-                                _selectedTaxMethod = TaxMethod.actualExpenses),
-                          ),
-                        ] else ...[
-                          TaxOptionCard(
-                            method: TaxMethod.logbook,
-                            isSelected: _selectedTaxMethod == TaxMethod.logbook,
-                            onSelect: () => setState(
-                                () => _selectedTaxMethod = TaxMethod.logbook),
-                          ),
-                          const SizedBox(height: 16),
-                          TaxOptionCard(
-                            method: TaxMethod.centsPerKm,
-                            isSelected:
-                                _selectedTaxMethod == TaxMethod.centsPerKm,
-                            onSelect: () => setState(() =>
-                                _selectedTaxMethod = TaxMethod.centsPerKm),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        ExpansionTile(
-                          tilePadding: EdgeInsets.zero,
-                          childrenPadding: const EdgeInsets.only(bottom: 16),
-                          title: const Text('Compare methods'),
-                          children: const [
-                            Text(
-                              'Logbook: keep a representative 12-week logbook, odometer readings and expense records to work out the business-use share.\n\n'
-                              'Cents per kilometre: keep a record of work kilometres and how you calculated them. Claims are limited to 5,000 business km per car per income year.\n\n'
-                              'Actual expenses: keep expense records and evidence of business use for eligible commercial vehicles.',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  height: 1.5,
-                                  color: AppColor.inkMuted),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 24),
-                      child: TactilePrimaryButton(
-                        label: widget.includeBluetoothSetup
-                            ? 'Continue to Auto-Track'
-                            : 'Save vehicle',
-                        trailingIcon: LucideIcons.arrowRight,
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          if (!widget.includeBluetoothSetup) {
-                            _finishVehicleCreation();
-                            return;
-                          }
-                          setState(() {
-                            _stage = VehicleSetupStage.bluetoothLink;
-                          });
-                          _startBluetoothScan();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('How will you keep your records?',
+                style: TextStyle(
+                    fontSize: MediaQuery.textScalerOf(context).scale(1) > 1.3
+                        ? 18
+                        : 24,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.ink,
+                    letterSpacing: -0.5)),
+            const SizedBox(height: 12),
+            const Text('Select one to continue.',
+                style: TextStyle(
+                    fontSize: 14, height: 1.5, color: AppColor.inkMuted)),
+            const SizedBox(height: 24),
+            if (!isCar) ...[
+              Text(
+                  VehicleClassificationEngine.disqualificationReason(
+                          previewVehicle) ??
+                      'This vehicle uses actual expenses rather than the car expense methods.',
+                  style: const TextStyle(
+                      fontSize: 14, height: 1.5, color: AppColor.inkMuted)),
+              const SizedBox(height: 16),
+            ],
+            for (var i = 0; i < visibleMethods.length; i++) ...[
+              if (i > 0) const SizedBox(height: 12),
+              TaxOptionCard(
+                method: visibleMethods[i],
+                isSelected: _hasChosenTaxMethod &&
+                    _selectedTaxMethod == visibleMethods[i],
+                onSelect: () => setState(() {
+                  _selectedTaxMethod = visibleMethods[i];
+                  _hasChosenTaxMethod = true;
+                }),
               ),
-            );
-          },
+            ],
+            const SizedBox(height: 16),
+            const Text('You can change this later in vehicle settings.',
+                style: TextStyle(
+                    fontSize: 14, height: 1.5, color: AppColor.inkMuted)),
+            const SizedBox(height: 16),
+            ExpansionTile(
+              key: ValueKey('method-details-${isCar ? 'car' : 'commercial'}'),
+              initiallyExpanded: false,
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 16),
+              title:
+                  Text(isCar ? 'Compare methods' : 'What records do I need?'),
+              children: [
+                if (isCar) ...[
+                  _methodRecordDetails('Logbook', [
+                    'Trips: a representative logbook for at least 12 continuous weeks.',
+                    'Also keep: odometer readings and expense records.',
+                  ]),
+                  const Divider(height: 24, color: AppColor.hairline),
+                  _methodRecordDetails('Cents per kilometre', [
+                    'Trips: work kilometres and how you calculated them.',
+                    'Claim limit: 5,000 business km per car per income year.',
+                  ]),
+                ] else
+                  _methodRecordDetails('Actual expenses', [
+                    'Keep: expense records and evidence of business use.',
+                    'Record how you worked out the work-related share.',
+                  ]),
+              ],
+            ),
+          ]),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+        child: TactilePrimaryButton(
+          label: widget.includeBluetoothSetup
+              ? 'Continue to Auto-Track'
+              : 'Save vehicle',
+          trailingIcon: LucideIcons.arrowRight,
+          onPressed: !_hasChosenTaxMethod
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  if (!widget.includeBluetoothSetup) {
+                    _finishVehicleCreation();
+                    return;
+                  }
+                  setState(() => _stage = VehicleSetupStage.bluetoothLink);
+                  _startBluetoothScan();
+                },
         ),
       ),
     );
   }
 
-  // -------------------------------------------------------------
-  // STAGE 4: CAR BLUETOOTH LINK
-  // -------------------------------------------------------------
+  Widget _methodRecordDetails(String title, List<String> records) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.ink)),
+          for (final record in records) ...[
+            const SizedBox(height: 8),
+            Text(record,
+                style: const TextStyle(
+                    fontSize: 14, height: 1.5, color: AppColor.inkMuted)),
+          ],
+        ],
+      );
+
   Widget _buildBluetoothLinkView() {
     if (_btScanSub == null && !_isBtScanning) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1316,6 +1310,7 @@ class _VehicleSetupFlowState extends State<VehicleSetupFlow> {
       backgroundColor: AppColor.canvas,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(

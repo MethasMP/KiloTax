@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KiloTax Database Migration: Base Schema & Multi-Tenant Core (ITAA 1997 Compliant)
+-- KiloClaim Database Migration: Base Schema & Multi-Tenant Core (ITAA 1997 Compliant)
 -- Sets up initial tables (vehicles, trips, expenses), RLS policies, helper functions,
 -- and secure account deletion RPC (Apple Guideline 5.1.1(v)).
 -- ==============================================================================

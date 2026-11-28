@@ -5,14 +5,14 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:kilotax/core/constants/app_constants.dart';
-import 'package:kilotax/data/models/annual_odometer.dart';
-import 'package:kilotax/data/models/logbook_period.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/data/models/user_profile.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/data/models/vehicle_expense.dart';
-import 'package:kilotax/services/engine/tax_pack_builder.dart';
+import 'package:kiloclaim/core/constants/app_constants.dart';
+import 'package:kiloclaim/data/models/annual_odometer.dart';
+import 'package:kiloclaim/data/models/logbook_period.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/data/models/user_profile.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/data/models/vehicle_expense.dart';
+import 'package:kiloclaim/services/engine/tax_pack_builder.dart';
 
 import 'support/tax_pack_reader.dart';
 
@@ -502,7 +502,7 @@ void main() {
         expenses: [expense('actual').copyWith(clearLinkedTripId: true)],
         outputDirectory: temp);
     final result = await read(pack);
-    expect(pack.file.path, contains('KiloTax_Actuals_'));
+    expect(pack.file.path, contains('KiloClaim_Actuals_'));
     expect(result.summaryValue('Selected method'), 'Actual expenses');
     expect(result.sheetNames, isNot(contains('Logbook records')));
     expect(

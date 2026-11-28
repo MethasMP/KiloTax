@@ -2,8 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:kilotax/data/models/vehicle.dart';
-import 'package:kilotax/ui/screens/vehicle/vehicle_setup_flow.dart';
+import 'package:kiloclaim/data/models/vehicle.dart';
+import 'package:kiloclaim/ui/screens/vehicle/vehicle_setup_flow.dart';
 
 class MockImagePicker extends Fake implements ImagePicker {
   final XFile? returnedFile;
@@ -28,7 +28,8 @@ class MockImagePicker extends Fake implements ImagePicker {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('VehicleSetupFlow displays photo proof button and attaches SHA-256 evidence',
+  testWidgets(
+      'VehicleSetupFlow displays photo proof button and attaches SHA-256 evidence',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
@@ -94,7 +95,9 @@ void main() {
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    // 6. Advance through Tax Method screen to finish vehicle creation
+    // 6. Explicitly select the method before saving.
+    await tester.tap(find.text('Logbook Method'));
+    await tester.pumpAndSettle();
     final saveVehicleButton = find.text('Save vehicle');
     expect(saveVehicleButton, findsOneWidget);
     await tester.tap(saveVehicleButton);

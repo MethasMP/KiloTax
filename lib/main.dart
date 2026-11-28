@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -18,20 +17,20 @@ void main() async {
     ).timeout(const Duration(seconds: 4));
   } catch (e) {
     debugPrint(
-        '[KiloTax] Offline Launch: Supabase unreachable ($e). Operating in offline-first mode.');
+        '[KiloClaim] Offline Launch: Supabase unreachable ($e). Operating in offline-first mode.');
   }
   final appState = AppState();
   await appState.init();
   runApp(
     ChangeNotifierProvider<AppState>.value(
       value: appState,
-      child: const KiloTaxApp(),
+      child: const KiloClaimApp(),
     ),
   );
 }
 
-class KiloTaxApp extends StatelessWidget {
-  const KiloTaxApp({super.key});
+class KiloClaimApp extends StatelessWidget {
+  const KiloClaimApp({super.key});
 
   Widget _resolveRootScreen(AppState appState) {
     if (appState.hasVehicle) {
@@ -49,7 +48,7 @@ class KiloTaxApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'KiloTax',
+      title: 'KiloClaim',
       debugShowCheckedModeBanner: false,
       locale: const Locale('en', 'AU'),
       supportedLocales: const [

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kilotax/data/models/trip.dart';
-import 'package:kilotax/services/engine/trip_confidence_classifier.dart';
+import 'package:kiloclaim/data/models/trip.dart';
+import 'package:kiloclaim/services/engine/trip_confidence_classifier.dart';
 
 void main() {
   Trip journey(String origin, String destination, DateTime date,
